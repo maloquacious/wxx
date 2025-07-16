@@ -22,7 +22,7 @@ import (
 var (
 	Version = semver.Version{
 		Major:      0,
-		Minor:      2,
+		Minor:      3,
 		Patch:      0,
 		PreRelease: "alpha",
 	}
@@ -53,25 +53,10 @@ func main() {
 		log.Fatal(err)
 	}
 	log.Printf("len(xmlInput) %d\n", len(xmlInput))
-	// verify the xml header was utf-16 and then force it to utf-8
-	var xmlMeta struct{ release, version, schema string }
-	xmlHeaderClassic := []byte("<?xml version='1.0' encoding='utf-16'?>\n")
-	xmlHeader2025 := []byte("<?xml version='1.1' encoding='utf-16'?>\n")
-	if bytes.HasPrefix(xmlInput, xmlHeaderClassic) {
-		// NB: I'm making up the release, version, and schema for now
-		xmlMeta.release, xmlMeta.version, xmlMeta.schema = "2017", "1.74", "1.0"
-		xmlInput = append([]byte("<?xml version='1.0' encoding='utf-8'?>\n"), xmlInput[len(xmlHeaderClassic):]...)
-	} else if bytes.HasPrefix(xmlInput, xmlHeader2025) {
-		// NB: I'm making up the release, version, and schema for now
-		xmlMeta.release, xmlMeta.version, xmlMeta.schema = "2025", "1.10", "1.01"
-		xmlInput = append([]byte("<?xml version='1.0' encoding='utf-8'?>\n"), xmlInput[len(xmlHeader2025):]...)
-	} else {
-		if len(xmlInput) < 64 {
-			log.Printf("xml: header %q\n", xmlInput)
-		} else {
-			log.Printf("xml: header %q\n", xmlInput[:64])
-		}
-		log.Fatal(readers.ErrMissingXMLHeader)
+	// extract metadata and convert to UTF-8
+	xmlMeta, xmlInput, err := extractXMLMeta(xmlInput)
+	if err != nil {
+		log.Fatal(err)
 	}
 	// write it out for analysis
 	err = os.WriteFile("output/blank-2025-1.10-1.01.xml", xmlInput, 0600)
@@ -79,6 +64,7 @@ func main() {
 		log.Fatal(err)
 	}
 	log.Printf("created 'output/blank-2025-1.10-1.01.xml'\n")
+	log.Printf("xmlMeta: release=%s version=%s schema=%s\n", xmlMeta.Release, xmlMeta.Version, xmlMeta.Schema)
 
 	root, err := inferSchema(bytes.NewReader(xmlInput))
 	if err != nil {
@@ -89,6 +75,59 @@ func main() {
 
 	fmt.Printf("\nXML Hierarchy\n")
 	generateHierarchy(root, 1, os.Stdout)
+}
+
+type XMLMeta struct {
+	Release string
+	Version string
+	Schema  string
+}
+
+func extractXMLMeta(xmlInput []byte) (*XMLMeta, []byte, error) {
+	xmlHeaderClassic := []byte("<?xml version='1.0' encoding='utf-16'?>\n")
+	xmlHeader2025 := []byte("<?xml version='1.1' encoding='utf-16'?>\n")
+	
+	var meta *XMLMeta
+	var headerLen int
+	
+	if bytes.HasPrefix(xmlInput, xmlHeaderClassic) {
+		// NB: I'm making up the release, version, and schema for now
+		meta = &XMLMeta{
+			Release: "2017",
+			Version: "1.74", 
+			Schema:  "1.0",
+		}
+		headerLen = len(xmlHeaderClassic)
+	} else if bytes.HasPrefix(xmlInput, xmlHeader2025) {
+		// NB: I'm making up the release, version, and schema for now
+		meta = &XMLMeta{
+			Release: "2025",
+			Version: "1.10",
+			Schema:  "1.01",
+		}
+		headerLen = len(xmlHeader2025)
+	} else {
+		if len(xmlInput) < 64 {
+			log.Printf("xml: header %q\n", xmlInput)
+		} else {
+			log.Printf("xml: header %q\n", xmlInput[:64])
+		}
+		return nil, nil, readers.ErrMissingXMLHeader
+	}
+	
+	// Normalize XML for Go's XML decoder
+	normalizedXML := normalizeXMLForGo(meta, xmlInput, headerLen)
+	return meta, normalizedXML, nil
+}
+
+// normalizeXMLForGo converts XML headers to version 1.0 with UTF-8 encoding
+// so that Go's XML decoder can process them (Go doesn't support XML 1.1)
+func normalizeXMLForGo(meta *XMLMeta, xmlInput []byte, originalHeaderLen int) []byte {
+	// Always use XML 1.0 with UTF-8 encoding for Go compatibility
+	normalizedHeader := []byte("<?xml version='1.0' encoding='utf-8'?>\n")
+	
+	// Replace the original header with the normalized one
+	return append(normalizedHeader, xmlInput[originalHeaderLen:]...)
 }
 
 type Element struct {
