@@ -22,7 +22,7 @@ import (
 var (
 	Version = semver.Version{
 		Major:      0,
-		Minor:      1,
+		Minor:      2,
 		Patch:      0,
 		PreRelease: "alpha",
 	}
@@ -87,11 +87,8 @@ func main() {
 
 	//generateSQL(root, os.Stdout)
 
-	//fmt.Printf("\nXML Hierarchy\n")
-	//generateHierarchy(root, false, 1, os.Stdout)
-
-	fmt.Printf("\nXML Hierarchy with Attributes\n")
-	generateHierarchy(root, true, 1, os.Stdout)
+	fmt.Printf("\nXML Hierarchy\n")
+	generateHierarchy(root, 1, os.Stdout)
 }
 
 type Element struct {
@@ -162,7 +159,7 @@ func generateSQL(root *Element, w io.Writer) {
 	}
 }
 
-func generateHierarchy(root *Element, withAttributes bool, level int, w io.Writer) {
+func generateHierarchy(root *Element, level int, w io.Writer) {
 	// sort the children before printing them so that we can have some consistency between versions
 	var children []string
 	for name := range root.Children {
@@ -171,20 +168,21 @@ func generateHierarchy(root *Element, withAttributes bool, level int, w io.Write
 	sort.Strings(children)
 	for _, name := range children {
 		child := root.Children[name]
-		_, _ = fmt.Fprintf(w, "%*s %-42s struct\n", level*2, "", child.Name)
+		_, _ = fmt.Fprintf(w, "%*s %-42s struct {\n", level*2, "", child.Name)
 
-		if withAttributes {
-			// sort the attributes before printing them so that we can have some consistency between versions
-			var attributes []string
-			for attr := range child.Attributes {
-				attributes = append(attributes, attr)
-			}
-			sort.Strings(attributes)
-			for _, attr := range attributes {
-				_, _ = fmt.Fprintf(w, "%*s %-42s string\n", (level+1)*2, "", "."+attr)
-			}
+		// sort the attributes before printing them so that we can have some consistency between versions
+		var attributes []string
+		for attr := range child.Attributes {
+			attributes = append(attributes, attr)
 		}
+		sort.Strings(attributes)
+		for _, attr := range attributes {
+			_, _ = fmt.Fprintf(w, "%*s %-42s string\n", (level+1)*2, "", attr)
+		}
+
 		// Recursively process children
-		generateHierarchy(child, withAttributes, level+1, w)
+		generateHierarchy(child, level+1, w)
+
+		_, _ = fmt.Fprintf(w, "%*s } // %s\n", level*2, "", child.Name)
 	}
 }
