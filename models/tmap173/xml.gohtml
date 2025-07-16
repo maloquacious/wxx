@@ -1,0 +1,57 @@
+{{/* gotype: github.com/playbymail/tnwxx/internal/wxml.TemplateXML */}}<map type="{{.Type}}" version="{{.Version}}" lastViewLevel="{{.LastViewLevel}}" continentFactor="{{.ContinentFactor}}" kingdomFactor="{{.KingdomFactor}}" provinceFactor="{{.ProvinceFactor}}" worldToContinentHOffset="{{.WorldToContinentHOffset}}" continentToKingdomHOffset="{{.ContinentToKingdomHOffset}}" kingdomToProvinceHOffset="{{.KingdomToProvinceHOffset}}" worldToContinentVOffset="{{.WorldToContinentVOffset}}" continentToKingdomVOffset="{{.ContinentToKingdomVOffset}}" kingdomToProvinceVOffset="{{.KingdomToProvinceVOffset}}"{{" "}}
+hexWidth="{{.HexWidth}}" hexHeight="{{.HexHeight}}" hexOrientation="{{.HexOrientation}}" mapProjection="{{.MapProjection}}" showNotes="{{.ShowNotes}}" showGMOnly="{{.ShowGMOnly}}" showGMOnlyGlow="{{.ShowGMOnlyGlow}}" showFeatureLabels="{{.ShowFeatureLabels}}" showGrid="{{.ShowGrid}}" showGridNumbers="{{.ShowGridNumbers}}" showShadows="{{.ShowShadows}}"  triangleSize="{{.TriangleSize}}">
+<gridandnumbering {{with .GridAndNumbering}}color0="{{.Color0}}" color1="{{.Color1}}" color2="{{.Color2}}" color3="{{.Color3}}" color4="{{.Color4}}" width0="{{.Width0}}" width1="{{.Width1}}" width2="{{.Width2}}" width3="{{.Width3}}" width4="{{.Width4}}" gridOffsetContinentKingdomX="{{.GridOffsetContinentKingdomX}}" gridOffsetContinentKingdomY="{{.GridOffsetContinentKingdomY}}" gridOffsetWorldContinentX="{{.GridOffsetWorldContinentX}}" gridOffsetWorldContinentY="{{.GridOffsetWorldContinentY}}" gridOffsetWorldKingdomX="{{.GridOffsetWorldKingdomX}}" gridOffsetWorldKingdomY="{{.GridOffsetWorldKingdomY}}" gridSquare="{{.GridSquare}}" gridSquareHeight="{{.GridSquareHeight}}" gridSquareWidth="{{.GridSquareWidth}}" gridOffsetX="{{.GridOffsetX}}" gridOffsetY="{{.GridOffsetY}}" numberFont="{{.NumberFont}}" numberColor="{{.NumberColor}}" numberSize="{{.NumberSize}}" numberStyle="{{.NumberStyle}}" numberFirstCol="{{.NumberFirstCol}}" numberFirstRow="{{.NumberFirstRow}}" numberOrder="{{.NumberOrder}}" numberPosition="{{.NumberPosition}}" numberPrePad="{{.NumberPrePad}}" numberSeparator="{{.NumberSeparator}}"{{end}} />
+<terrainmap>{{.TerrainMap}}</terrainmap>
+{{- range .MapLayer}}
+<maplayer name="{{.Name}}" isVisible="{{.IsVisible}}"/>{{end}}
+<tiles viewLevel="{{.Tiles.ViewLevel}}" tilesWide="{{.Tiles.TilesWide}}" tilesHigh="{{.Tiles.TilesHigh}}">
+{{ range .Tiles.TileRows -}}
+<tilerow>
+{{.}}</tilerow>
+{{end -}}
+</tiles>
+<mapkey {{with .MapKey}}positionx="{{.PositionX}}" positiony="{{.PositionY}}" viewlevel="{{.Viewlevel}}" height="{{.Height}}" backgroundcolor="{{.BackgroundColor}}" backgroundopacity="{{.BackgroundOpacity}}" titleText="{{.TitleText}}" titleFontFace="{{.TitleFontFace}}"  titleFontColor="{{.TitleFontColor}}" titleFontBold="{{.TitleFontBold}}" titleFontItalic="{{.TitleFontItalic}}" titleScale="{{.TitleScale}}" scaleText="{{.ScaleText}}" scaleFontFace="{{.ScaleFontFace}}"  scaleFontColor="{{.ScaleFontColor}}" scaleFontBold="{{.ScaleFontBold}}" scaleFontItalic="{{.ScaleFontItalic}}" scaleScale="{{.ScaleScale}}" entryFontFace="{{.EntryFontFace}}"  entryFontColor="{{.EntryFontColor}}" entryFontBold="{{.EntryFontBold}}" entryFontItalic="{{.EntryFontItalic}}" entryScale="{{.EntryScale}}"{{end}}  >
+</mapkey>
+<features>{{range .Features}}
+<feature type="{{.Type}}" rotate="{{.Rotate}}" uuid="{{.Uuid}}" mapLayer="{{.MapLayer}}" isFlipHorizontal="{{.IsFlipHorizontal}}" isFlipVertical="{{.IsFlipVertical}}" scale="{{.Scale}}" scaleHt="{{.ScaleHt}}" tags="{{.Tags}}" color="{{.Color}}" ringcolor="{{.RingColor}}" isGMOnly="{{.IsGMOnly}}" isPlaceFreely="{{.IsPlaceFreely}}" labelPosition="{{.LabelPosition}}" labelDistance="{{.LabelDistance}}" isWorld="{{.IsWorld}}" isContinent="{{.IsContinent}}" isKingdom="{{.IsKingdom}}" isProvince="{{.IsProvince}}" isFillHexBottom="{{.IsFillHexBottom}}" isHideTerrainIcon="{{.IsHideTerrainIcon}}"><location viewLevel="{{.Location.ViewLevel}}" x="{{.Location.X}}" y="{{.Location.Y}}" />{{with .Label}}<label  mapLayer="{{.MapLayer}}" style="{{.Style}}" fontFace="{{.FontFace}}" color="{{.Color}}" outlineColor="{{.OutlineColor}}" outlineSize="{{.OutlineSize}}" rotate="{{.Rotate}}" isBold="{{.IsBold}}" isItalic="{{.IsItalic}}" isWorld="{{.IsWorld}}" isContinent="{{.IsContinent}}" isKingdom="{{.IsKingdom}}" isProvince="{{.IsProvince}}" isGMOnly="{{.IsGMOnly}}" tags="{{.Tags}}">{{with .Location}}<location viewLevel="{{.ViewLevel}}" x="{{.X}}" y="{{.Y}}" scale="{{.Scale}}" />{{end}}</label>{{end}}
+</feature>{{end}}
+</features>
+<labels>{{range .Labels}}
+<label  mapLayer="{{.MapLayer}}" style="{{.Style}}" fontFace="{{.FontFace}}" color="{{.Color}}" {{if .BackgroundColor}}backgroundColor="{{.BackgroundColor}}" {{end}}outlineColor="{{.OutlineColor}}" outlineSize="{{.OutlineSize}}" rotate="{{.Rotate}}" isBold="{{.IsBold}}" isItalic="{{.IsItalic}}" isWorld="{{.IsWorld}}" isContinent="{{.IsContinent}}" isKingdom="{{.IsKingdom}}" isProvince="{{.IsProvince}}" isGMOnly="{{.IsGMOnly}}" tags="{{.Tags}}">{{with .Location}}<location viewLevel="{{.ViewLevel}}" x="{{.X}}" y="{{.Y}}" scale="{{.Scale}}" />{{end}}{{.InnerText}}</label>{{end}}
+</labels>
+<shapes>{{range .Shapes}}
+<shape  type="{{.Type}}" isCurve="{{.IsCurve}}" isGMOnly="{{.IsGMOnly}}" isSnapVertices="{{.IsSnapVertices}}" isMatchTileBorders="{{.IsMatchTileBorders}}" tags="{{.Tags}}" creationType="{{.CreationType}}" isDropShadow="{{.IsDropShadow}}" isInnerShadow="{{.IsInnerShadow}}" isBoxBlur="{{.IsBoxBlur}}" isWorld="{{.IsWorld}}" isContinent="{{.IsContinent}}" isKingdom="{{.IsKingdom}}" isProvince="{{.IsProvince}}" dsSpread="{{.DsSpread}}" dsRadius="{{.DsRadius}}" dsOffsetX="{{.DsOffsetX}}" dsOffsetY="{{.DsOffsetY}}" insChoke="{{.InsChoke}}" insRadius="{{.InsRadius}}" insOffsetX="{{.InsOffsetX}}" insOffsetY="{{.InsOffsetY}}" bbWidth="{{.BbWidth}}" bbHeight="{{.BbHeight}}" bbIterations="{{.BbIterations}}" mapLayer="{{.MapLayer}}" fillTexture="{{.FillTexture}}" strokeTexture="{{.StrokeTexture}}" strokeType="{{.StrokeType}}" highestViewLevel="{{.HighestViewLevel}}" currentShapeViewLevel="{{.CurrentShapeViewLevel}}" lineCap="{{.LineCap}}" lineJoin="{{.LineJoin}}" opacity="{{.Opacity}}" fillRule="{{.FillRule}}" strokeColor="{{.StrokeColor}}" strokeWidth="{{.StrokeWidth}}" dsColor="{{.DsColor}}" insColor="{{.InsColor}}">{{range .Points}}
+ <p {{if .Type}}type="{{.Type}}" {{end}}x="{{.X}}" y = "{{.Y}}"/>{{end}}
+</shape>{{end}}
+</shapes>
+<notes>
+</notes>
+<informations>
+{{range .Information}}<information uuid="{{.Uuid}}" type="{{.Type}}" title="{{.Title}}"><![CDATA[{{.InnerText}}]]>
+{{range .Details}}<information uuid="{{.Uuid}}" type="{{.Type}}" title="{{.Title}}"
+{{- if eq .Type "Culture"}} language="{{.Language}}"{{end -}}
+{{- if eq .Type "Nation"}} rulers="{{.Rulers}}" government="{{.Government}}" cultures="{{.Cultures}}"{{end -}}
+{{- if eq .Type "Religion"}} religionType="{{.ReligionType}}" culture="{{.Culture}}" holySymbol="{{.HolySymbol}}" domains="{{.Domains}}"{{end -}}
+{{" "}}><![CDATA[{{.InnerText}}]]>
+
+</information>
+{{end}}
+</information>
+{{end}}
+</informations>
+<configuration>
+  <terrain-config>
+  </terrain-config>
+  <feature-config>
+  </feature-config>
+  <texture-config>
+  </texture-config>
+  <text-config>{{range .Configuration.TextConfig.LabelStyles}}
+<labelstyle name="{{.Name}}" fontFace="{{.FontFace}}" scale="{{.Scale}}" isBold="{{.IsBold}}" isItalic="{{.IsItalic}}"  color="{{.Color}}"  backgroundColor="{{.BackgroundColor}}"  outlineSize="{{.OutlineSize}}" outlineColor="{{.OutlineColor}}" />
+{{end}}
+  </text-config>
+  <shape-config>{{range .Configuration.ShapeConfig.ShapeStyles}}
+<shapestyle name="{{.Name}}" strokeType="{{.StrokeType}}" isFractal="{{.IsFractal}}" strokeWidth="{{.StrokeWidth}}" opacity="{{.Opacity}}" snapVertices="{{.SnapVertices}}" tags="{{.Tags}}" dropShadow="{{.DropShadow}}" innerShadow="{{.InnerShadow}}" boxBlur="{{.BoxBlur}}" dsSpread="{{.DsSpread}}" dsRadius="{{.DsRadius}}" dsOffsetX="{{.DsOffsetX}}" dsOffsetY="{{.DsOffsetY}}" insChoke="{{.InsChoke}}" insRadius="{{.InsRadius}}" insOffsetX="{{.InsOffsetX}}" insOffsetY="{{.InsOffsetY}}" bbWidth="{{.BbWidth}}" bbHeight="{{.BbHeight}}" bbIterations="{{.BbIterations}}" fillTexture="{{.FillTexture}}" strokeTexture="{{.StrokeTexture}}"  strokePaint="{{.StrokePaint}}"  fillPaint="{{.FillPaint}}"  dscolor="{{.DsColor}}"  insColor="{{.InsColor}}" />{{end}}
+  </shape-config>
+  </configuration>
+</map>

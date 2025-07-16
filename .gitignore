@@ -1,0 +1,12 @@
+*~
+*.dll
+*.dylib
+*.exe
+*.out
+*.so
+*.swp
+*.test
+.DS_Store
+.idea/
+.vscode/
+go.work

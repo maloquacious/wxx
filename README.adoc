@@ -1,0 +1,95 @@
+= WXX
+
+The goal of this package is to provide methods to read and write Worldographer WXX files.
+
+== Data Format Versioning
+
+There is no versioning of the data format for Worldographer files.
+The version number in the data is for the application that created the file.
+
+I asked about adding a version for the format on the Discord server.
+The developer replied that he had higher priority things to work on.
+
+I am going to arbitrarily apply version numbers to the data format, starting with v1.0.0 for the format used by version 1.73 of Worldographer.
+
+|===
+|Worldographer Version |XML Data Format
+
+|1.73 |1.0.0
+|===
+
+[NOTE]
+====
+The data format for Worldographer versions prior to 1.73 may be compatible with XML Data Format version 1.0.0.
+====
+
+== Design Notes
+
+A WXX file contains compressed XML data using a UTF-16 (big-endian) encoding.
+
+When we import the WXX file, we unzip the data, convert to UTF-8, and then unmarshall to our `XML` data type.
+This process depends on the data format version.
+
+The XML data type is not meant to be used outside of this package, so it is defined in an `internal` folder.
+This makes the type very clumsy to use, but makes the intention very clear.
+Please read
+https://dave.cheney.net/2019/10/06/use-internal-packages-to-reduce-your-public-api-surface[Dave Cheney's article]
+for details on the `internal` designation.
+
+== Adapters
+
+I am assuming that we'll use _adapters_ to decode and encode the Worldographer data file.
+
+In general, we'll always decode the Worldographer data file to an internal Map structure.
+We'll use an external adapter to convert to the global `Map` structure.
+
+Likewise, we'll use an adapter to convert the global `Map` structure to our internal Map when we need to write data,
+and then we'll encode that Map to write the Worldographer data file.
+
+=== Decoding Pipeline
+
+Decoding starts by reading the `.wxx` file into a `[]byte`.
+You can do that or use a helper function.
+
+Our `gzip` adapter uncompresses the slice and returns a new `[]byte`.
+This slice contains UTF-16 data in a big-endian encoding.
+
+Our `UTF-16 to UTF-8` adapter verifies that the data starts with a `<?xml version='1.0' encoding='utf-16'?>` header.
+If it doesn't, an error is returned.
+Otherwise, the header is removed and the remainder of the slice is converted to UTF-8 encoding.
+
+The generic decoder looks for the Worldographer Version near the start of the data.
+If it can't find it, an error is returned.
+Otherwise, the Worldographer Version is used to determine the XML Data Format.
+That determines which version of the decoder is used to unmarshal the data into our `Map` structure.
+
+[NOTE]
+====
+It is important to note that we only have one version of this `Map`.
+====
+
+The `Map` is an exported Go struct and is documented in a separate file.
+You can make updates but be warned: there is very little sanity checking when we convert it back to a WXX file.
+
+=== Encoding Pipeline
+
+The encoding pipeline converts a `Map` structure to a `[]byte` containing the compressed XML data for Worldographer.
+
+You must specify the Worldographer Version to target for the encoding.
+That version determines the version of the XML Data Format to create.
+The version is also stored in the XML data.
+
+The generic encoder uses the Worldographer Version to pick a suitable encoder.
+If it can't find one, an error is returned.
+Otherwise, the `Map` data is translated into XML data.
+
+The XML data is marshalled to a `[]byte` using a UTF-8 encoding.
+That slice is returned.
+
+Our `UTF-8 to UTF-16` adapter converts the slice to UTF-16 and adds the `<?xml version='1.0' encoding='utf-16'?>` header.
+It returns a new `[]byte`.
+
+Our `gzip` adapter compresses the slice and returns a new `[]byte`.
+
+Encoding ends by writing the slice to a file with the `.wxx` extension.
+You can do that or use a helper function.
