@@ -2,24 +2,35 @@
 
 The goal of this package is to provide methods to read and write Worldographer WXX files.
 
+== Worldographer Applications
+This package uses "Worldographer 2025" or "W2025" to refer to the newest release.
+"Worldographer 2017," "W2017," "Worldographer Classic," or "Classic" refer to the older release.
+"Worldographer" can refer to either.
+
 == Data Format Versioning
 
-There is no versioning of the data format for Worldographer files.
 The version number in the data is for the application that created the file.
+There is no versioning of the data format for W2017 files.
 
-I asked about adding a version for the format on the Discord server.
-The developer replied that he had higher priority things to work on.
+1. map.release is only in W2025 files and identifies the Worldographer application major version.
+2. map.version is in both files and identifies the application minor version.
+3. map.schema is only in W2025 files and identifies the XML Schema version.
 
-I am going to arbitrarily apply version numbers to the data format, starting with v1.0.0 for the format used by version 1.73 of Worldographer.
+At the moment, the current W2017 map.version is 1.74 and the W2025 map.version is 1.10.
+
+This package assigns arbitrary version numbers to the data format so that we can track things in the code.
+I think that we're starting with v1.0.0 for the format used by W2017 version 1.73 of Worldographer and v2.0.0 for W2025 version 1.10.
 
 |===
-|Worldographer Version |XML Data Format
+|Worldographer|Version|XML Data Format
 
-|1.73 |1.0.0
+|2017|1.73 |1.0.0
+|2025|1.10 |2.0.0
 |===
 
 [NOTE]
 ====
+Right now, these values are educated guesses.
 The data format for Worldographer versions prior to 1.73 may be compatible with XML Data Format version 1.0.0.
 ====
 
@@ -49,10 +60,9 @@ and then we'll encode that Map to write the Worldographer data file.
 === Decoding Pipeline
 
 Decoding starts by reading the `.wxx` file into a `[]byte`.
-You can do that or use a helper function.
+The `gzutf16` package provides a ReadCloser for this.
 
-Our `gzip` adapter uncompresses the slice and returns a new `[]byte`.
-This slice contains UTF-16 data in a big-endian encoding.
+BUG: the following is already out of date.
 
 Our `UTF-16 to UTF-8` adapter verifies that the data starts with a `<?xml version='1.0' encoding='utf-16'?>` header.
 If it doesn't, an error is returned.
@@ -92,4 +102,4 @@ It returns a new `[]byte`.
 Our `gzip` adapter compresses the slice and returns a new `[]byte`.
 
 Encoding ends by writing the slice to a file with the `.wxx` extension.
-You can do that or use a helper function.
+The `gzutf16` package provides a Buffer to help with that and an WriteFile function, too.
