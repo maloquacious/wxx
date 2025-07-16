@@ -22,7 +22,7 @@ import (
 var (
 	Version = semver.Version{
 		Major:      0,
-		Minor:      3,
+		Minor:      4,
 		Patch:      0,
 		PreRelease: "alpha",
 	}
@@ -86,15 +86,15 @@ type XMLMeta struct {
 func extractXMLMeta(xmlInput []byte) (*XMLMeta, []byte, error) {
 	xmlHeaderClassic := []byte("<?xml version='1.0' encoding='utf-16'?>\n")
 	xmlHeader2025 := []byte("<?xml version='1.1' encoding='utf-16'?>\n")
-	
+
 	var meta *XMLMeta
 	var headerLen int
-	
+
 	if bytes.HasPrefix(xmlInput, xmlHeaderClassic) {
 		// NB: I'm making up the release, version, and schema for now
 		meta = &XMLMeta{
 			Release: "2017",
-			Version: "1.74", 
+			Version: "1.74",
 			Schema:  "1.0",
 		}
 		headerLen = len(xmlHeaderClassic)
@@ -114,7 +114,7 @@ func extractXMLMeta(xmlInput []byte) (*XMLMeta, []byte, error) {
 		}
 		return nil, nil, readers.ErrMissingXMLHeader
 	}
-	
+
 	// Normalize XML for Go's XML decoder
 	normalizedXML := normalizeXMLForGo(meta, xmlInput, headerLen)
 	return meta, normalizedXML, nil
@@ -125,7 +125,7 @@ func extractXMLMeta(xmlInput []byte) (*XMLMeta, []byte, error) {
 func normalizeXMLForGo(meta *XMLMeta, xmlInput []byte, originalHeaderLen int) []byte {
 	// Always use XML 1.0 with UTF-8 encoding for Go compatibility
 	normalizedHeader := []byte("<?xml version='1.0' encoding='utf-8'?>\n")
-	
+
 	// Replace the original header with the normalized one
 	return append(normalizedHeader, xmlInput[originalHeaderLen:]...)
 }

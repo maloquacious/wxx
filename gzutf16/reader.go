@@ -6,6 +6,11 @@
 //
 // ReadCloser implements the io.ReadCloser interface and returns the file data
 // as an uncompressed UTF-8 stream.
+//
+// Buffer acts like bytes.Buffer but converts output to gzip-compressed UTF-16 big-endian format.
+// This is intended for building XML output that will be written to Worldographer WXX files.
+//
+// WriteFile writes data to the named file in Worldographer format, creating it if necessary.
 package gzutf16
 
 import (
@@ -38,7 +43,7 @@ func Open(path string) (rc *ReadCloser, err error) {
 
 // NewReadCloser creates a ReadCloser from an existing io.ReadCloser.
 // The input reader must contain gzip-compressed UTF-16 big-endian data.
-// If there are errors (the data isn't a gzip file, or the uncompressed data 
+// If there are errors (the data isn't a gzip file, or the uncompressed data
 // isn't encoded as UTF-16 in big-endian format), we return the error.
 func NewReadCloser(r io.ReadCloser) (rc *ReadCloser, err error) {
 	// ensure that any Readers we create get closed if we exit early due to any error.
@@ -90,22 +95,23 @@ func (rc *ReadCloser) Read(p []byte) (n int, err error) {
 func (rc *ReadCloser) Close() (err error) {
 	// utf-8 transformer is not a ReadCloser, so we don't need to close it
 	rc.utf8r = nil
-	
+
 	// close the gzip reader only if it is open
 	if rc.gz != nil {
-		if closeErr := rc.gz.Close(); closeErr != nil && err == nil {
-			err = closeErr
-		}
+		err = rc.gz.Close()
 		rc.gz = nil
 	}
-	
+
 	// close the file reader only if it is open
 	if rc.fp != nil {
-		if closeErr := rc.fp.Close(); closeErr != nil && err == nil {
-			err = closeErr
+		// capture the error only if there were no previous errors
+		if closeErr := rc.fp.Close(); closeErr != nil {
+			if err != nil {
+				err = closeErr
+			}
 		}
 		rc.fp = nil
 	}
-	
+
 	return err
 }
