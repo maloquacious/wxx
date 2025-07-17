@@ -15,7 +15,7 @@ import (
 // WXMLToWXX translates any known WXML mapping to the current WXX mapping.
 // It returns an error if the input is not a known WXML mapping or
 // if there are errors translating between the two mappings.
-// Panics is the input is not a WXML mapping.
+// Panics if the input is not a WXML mapping.
 func WXMLToWXX(wxml any) (*wxx.Map, error) {
 	switch m := wxml.(type) {
 	case *wxml173.Map:
