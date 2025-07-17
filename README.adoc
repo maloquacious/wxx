@@ -3,35 +3,41 @@
 The goal of this package is to provide methods to read and write Worldographer WXX files.
 
 == Worldographer Applications
-This package uses "Worldographer 2025" or "W2025" to refer to the newest release.
-"Worldographer 2017," "W2017," "Worldographer Classic," or "Classic" refer to the older release.
-"Worldographer" can refer to either.
+Inkwell publishes two versions of Worldographer.
+
+The older version has an opening splash with "Worldographer / Hexographer 2."
+It was first released in 2017 so we use "H2017" as the code for the XML schema used by this version.
+
+The newer version has an opening splash with just "Worldographer."
+Inkwell calls it "Worldographer 2025," so we use "W2025" as the code for the XML schema used by this version.
+
+These codes (H2017 and W2025) help us keep the XML schema versions straight.
+
+We generally call either version "Worldographer."
 
 == Data Format Versioning
 
 The version number in the data is for the application that created the file.
-There is no versioning of the data format for W2017 files.
+There is no versioning of the data format for H2017 files.
 
 1. map.release is only in W2025 files and identifies the Worldographer application major version.
 2. map.version is in both files and identifies the application minor version.
 3. map.schema is only in W2025 files and identifies the XML Schema version.
 
-At the moment, the current W2017 map.version is 1.74 and the W2025 map.version is 1.10.
 
-This package assigns arbitrary version numbers to the data format so that we can track things in the code.
-I think that we're starting with v1.0.0 for the format used by W2017 version 1.73 of Worldographer and v2.0.0 for W2025 version 1.10.
+The following table maps values from the XML data to the WXX Package Schema Version.
 
 |===
-|Worldographer|Version|XML Data Format
+|Encoding|map.release|map.version|map.schema|WXX Package Schema Version
 
-|2017|1.73 |1.0.0
-|2025|1.10 |2.0.0
+|UTF-16/BE||1.73||1.0.0
+|UTF-16/BE||1.74||1.0.0
+|UTF-16/BE|2025|1.10|1.01|2.0.0
 |===
 
 [NOTE]
 ====
-Right now, these values are educated guesses.
-The data format for Worldographer versions prior to 1.73 may be compatible with XML Data Format version 1.0.0.
+Only the combinations of values listed in the table are supported by this package.
 ====
 
 == Design Notes
@@ -41,8 +47,14 @@ A WXX file contains compressed XML data using a UTF-16 (big-endian) encoding.
 When we import the WXX file, we unzip the data, convert to UTF-8, and then unmarshall to our `XML` data type.
 This process depends on the data format version.
 
+[WARNING]
+====
+The design of this package is not fixed; the following comments on the directory structure are out of date.
+====
+
 The XML data type is not meant to be used outside of this package, so it is defined in an `internal` folder.
 This makes the type very clumsy to use, but makes the intention very clear.
+
 Please read
 https://dave.cheney.net/2019/10/06/use-internal-packages-to-reduce-your-public-api-surface[Dave Cheney's article]
 for details on the `internal` designation.
@@ -57,12 +69,16 @@ We'll use an external adapter to convert to the global `Map` structure.
 Likewise, we'll use an adapter to convert the global `Map` structure to our internal Map when we need to write data,
 and then we'll encode that Map to write the Worldographer data file.
 
+[NOTE]
+====
+See the `cmd/wxxdemo` for an example of how to use the pipelines.
+====
+
 === Decoding Pipeline
 
 Decoding starts by reading the `.wxx` file into a `[]byte`.
 The `gzutf16` package provides a ReadCloser for this.
 
-BUG: the following is already out of date.
 
 Our `UTF-16 to UTF-8` adapter verifies that the data starts with a `<?xml version='1.0' encoding='utf-16'?>` header.
 If it doesn't, an error is returned.
@@ -79,7 +95,8 @@ It is important to note that we only have one version of this `Map`.
 ====
 
 The `Map` is an exported Go struct and is documented in a separate file.
-You can make updates but be warned: there is very little sanity checking when we convert it back to a WXX file.
+
+I imagine that the typical command will read a `.wxx` into a `Map`, manipulate it, then write it back to a `.wxx` file.
 
 === Encoding Pipeline
 
