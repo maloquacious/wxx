@@ -19,6 +19,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -168,7 +169,7 @@ func runDemo(inputFile, outputPath string) error {
 
 	// read and convert the input from XML to Map data
 	step = time.Now()
-	inputMap, err := readers.ReadWXML(src)
+	inputMap, err := readers.ReadWXML(bytes.NewReader(src))
 	if err != nil {
 		log.Printf("src %q\n", src[:35])
 		return fmt.Errorf("%s: %w", inputFile, err)

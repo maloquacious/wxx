@@ -8,6 +8,7 @@ import (
 	"github.com/maloquacious/wxx/adapters"
 	"github.com/maloquacious/wxx/models/wxml173"
 	"github.com/maloquacious/wxx/models/wxx"
+	"io"
 )
 
 // ReadWXML loads a Worldographer data file (which normally has an extension of ".wxx").
@@ -15,7 +16,12 @@ import (
 // (UTF-16, big-endian format). If it is, the version number is extracted. If we do not
 // find a version, we return an error. If we don't know how to unmarshall that version,
 // we return an error. Otherwise, we unmarshal the data to a wxx.Map and return it.
-func ReadWXML(src []byte) (*wxx.Map, error) {
+func ReadWXML(r io.Reader) (*wxx.Map, error) {
+	src, err := io.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+
 	// verify the xml header
 	xmlHeader := []byte("<?xml version='1.0' encoding='utf-16'?>\n")
 	if !bytes.HasPrefix(src, xmlHeader) {
