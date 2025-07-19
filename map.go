@@ -2,10 +2,12 @@
 
 package wxx
 
-// Map is the entire map.
+import "github.com/maloquacious/semver"
+
+// Map should be replaced by models.Map!
 type Map struct {
 	MetaData struct {
-		Version string `json:"version"` // version of this application
+		Version semver.Version `json:"version"` // version of this application
 		Source  struct {
 			Name    string `json:"name"`    // name of input
 			Created string `json:"created"` // timestamp of input

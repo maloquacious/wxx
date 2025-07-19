@@ -1,16 +1,26 @@
-// Copyright (c) 2024 Michael D Henderson. All rights reserved.
+// Copyright (c) 2024-2025 Michael D Henderson. All rights reserved.
 
-// Package wxx defines the types for our Worldographer interface.
-package wxx
+package models
 
-// Map is the entire map.
+import (
+	"github.com/maloquacious/semver"
+	"time"
+)
+
+// Map is the in-memory representation of the map data.
+// We have created this to work with the known versions of Worldographer XML data.
+// We are assuming that this will continue to work with future versions of the application.
 type Map struct {
 	MetaData struct {
-		Version string `json:"version"` // version of this application
-		Source  struct {
-			Name    string `json:"name"`    // name of input
-			Created string `json:"created"` // timestamp of input
-		} `json:"source"` // name of input
+		Version semver.Version `json:"version"` // version of this application
+		// Worldographer defines the metadata for the WXX file
+		Worldographer struct {
+			Name    string    `json:"name"`    // name of input
+			Created time.Time `json:"created"` // timestamp of input
+			Release string    `json:"release"` // Worldographer release (eg, 2025)
+			Version string    `json:"version"` // Worldographer/Hexographer version (eg 1.73)
+			Schema  string    `json:"schema"`  // Worldographer XML Schema version
+		} `json:"worldographer"`
 		Created string `json:"created"` // timestamp of this file
 	} `json:"meta-data"`
 

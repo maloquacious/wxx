@@ -4,7 +4,7 @@ package adapters
 
 import (
 	"fmt"
-	"github.com/maloquacious/wxx/models/wxx"
+	"github.com/maloquacious/wxx/models"
 )
 
 // rgbaToXmlAttr converts an RGBA struct into an XML attribute string.
@@ -19,7 +19,7 @@ import (
 //
 // Returns:
 // - A XML attribute string representing the rgba. If rgba is nil, returns "0.0,0.0,0.0,1.0"
-func rgbaToXmlAttr(rgba *wxx.RGBA) string {
+func rgbaToXmlAttr(rgba *models.RGBA) string {
 	if rgba == nil {
 		return "0.0,0.0,0.0,1.0"
 	}
@@ -30,7 +30,7 @@ func rgbaToXmlAttr(rgba *wxx.RGBA) string {
 		FToXF(rgba.A))
 }
 
-func rgbaToNullableXmlAttr(rgba *wxx.RGBA) string {
+func rgbaToNullableXmlAttr(rgba *models.RGBA) string {
 	s := rgbaToXmlAttr(rgba)
 	if s == "0.0,0.0,0.0,1.0" {
 		s = "null"

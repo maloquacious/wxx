@@ -3,12 +3,12 @@
 package writers
 
 import (
-	"github.com/maloquacious/wxx/models/wxx"
+	"github.com/maloquacious/wxx/models"
 	"io"
 )
 
 // Write serializes the WXX data to the given io.Writer.
-func Write(w io.Writer, m *wxx.Map) error {
+func Write(w io.Writer, m *models.Map) error {
 	// insert the xml version and encoding header
 	if _, err := w.Write([]byte("<?xml version='1.0' encoding='utf-16'?>\n")); err != nil {
 		return err

@@ -4,13 +4,13 @@ package adapters
 
 import (
 	"fmt"
+	"github.com/maloquacious/wxx/models"
 	"github.com/maloquacious/wxx/models/tmap173"
-	"github.com/maloquacious/wxx/models/wxx"
 	"sort"
 	"strings"
 )
 
-func WMAPToTMAPv173(w *wxx.Map) (*tmap173.Map, error) {
+func WMAPToTMAPv173(w *models.Map) (*tmap173.Map, error) {
 	t := &tmap173.Map{
 		Version: "1.73",
 	}

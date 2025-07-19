@@ -4,6 +4,7 @@ package wxx
 
 import (
 	"fmt"
+	"github.com/maloquacious/semver"
 	"github.com/maloquacious/wxx/xml_1_0_0"
 	"log"
 	"strconv"
@@ -16,7 +17,7 @@ func xml_1_0_0_to_Map(m *xml_1_0_0.XML) (*Map, error) {
 	var err error
 
 	w := &Map{}
-	w.MetaData.Version = "1.0.0"
+	w.MetaData.Version = semver.Version{Major: 1}
 	w.MetaData.Created = time.Now().UTC().Format(time.RFC3339)
 	w.MetaData.Source.Name = "unknown"
 	w.MetaData.Source.Created = "0001-01-01T00:00:00Z"

@@ -6,8 +6,8 @@ import (
 	"bytes"
 	"encoding/xml"
 	"github.com/maloquacious/wxx/adapters"
+	"github.com/maloquacious/wxx/models"
 	"github.com/maloquacious/wxx/models/wxml173"
-	"github.com/maloquacious/wxx/models/wxx"
 	"io"
 )
 
@@ -16,7 +16,7 @@ import (
 // (UTF-16, big-endian format). If it is, the version number is extracted. If we do not
 // find a version, we return an error. If we don't know how to unmarshall that version,
 // we return an error. Otherwise, we unmarshal the data to a wxx.Map and return it.
-func ReadWXML(r io.Reader) (*wxx.Map, error) {
+func ReadWXML(r io.Reader) (*models.Map, error) {
 	src, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func ReadWXML(r io.Reader) (*wxx.Map, error) {
 // unmarshalV173 unmarshalls XML data into a new wxx.Map structure.
 // It assumes that the input is UTF-8 data and is compatible with version 1.73.
 // Returns the new wxx.Map structure or an error.
-func unmarshalV173(src []byte) (*wxx.Map, error) {
+func unmarshalV173(src []byte) (*models.Map, error) {
 	srcMap := &wxml173.Map{}
 
 	// convert from xml to a structure that's built just for the conversion

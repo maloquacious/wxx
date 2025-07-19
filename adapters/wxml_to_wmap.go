@@ -4,8 +4,9 @@ package adapters
 
 import (
 	"fmt"
+	"github.com/maloquacious/semver"
+	"github.com/maloquacious/wxx/models"
 	"github.com/maloquacious/wxx/models/wxml173"
-	"github.com/maloquacious/wxx/models/wxx"
 	"log"
 	"strconv"
 	"strings"
@@ -16,7 +17,7 @@ import (
 // It returns an error if the input is not a known WXML mapping or
 // if there are errors translating between the two mappings.
 // Panics if the input is not a WXML mapping.
-func WXMLToWXX(wxml any) (*wxx.Map, error) {
+func WXMLToWXX(wxml any) (*models.Map, error) {
 	switch m := wxml.(type) {
 	case *wxml173.Map:
 		return wxmlV173ToWXX(m)
@@ -24,14 +25,14 @@ func WXMLToWXX(wxml any) (*wxx.Map, error) {
 	panic(fmt.Sprintf("assert(wxml.type != %T)", wxml))
 }
 
-func wxmlV173ToWXX(m *wxml173.Map) (*wxx.Map, error) {
+func wxmlV173ToWXX(m *wxml173.Map) (*models.Map, error) {
 	var err error
 
-	w := &wxx.Map{}
-	w.MetaData.Version = "0.0.1"
+	w := &models.Map{}
+	w.MetaData.Version = semver.Version{Patch: 1}
 	w.MetaData.Created = time.Now().UTC().Format(time.RFC3339)
-	w.MetaData.Source.Name = "unknown"
-	w.MetaData.Source.Created = "0001-01-01T00:00:00Z"
+	w.MetaData.Worldographer.Name = "unknown"
+	// w.MetaData.Worldographer.Created = time.Time{}
 
 	w.ContinentFactor = m.ContinentFactor
 	w.ContinentToKingdomHOffset = m.ContinentToKingdomHOffset
@@ -105,7 +106,7 @@ func wxmlV173ToWXX(m *wxml173.Map) (*wxx.Map, error) {
 		return w, fmt.Errorf("expected even number of fields, got odd")
 	} else {
 		for len(fields) != 0 {
-			t := &wxx.Terrain{
+			t := &models.Terrain{
 				Label: fields[0],
 			}
 			t.Index, err = strconv.Atoi(fields[1])
@@ -119,7 +120,7 @@ func wxmlV173ToWXX(m *wxml173.Map) (*wxx.Map, error) {
 	}
 
 	for _, layer := range m.MapLayers {
-		w.MapLayer = append(w.MapLayer, wxx.MapLayer{Name: layer.Name, IsVisible: layer.IsVisible})
+		w.MapLayer = append(w.MapLayer, models.MapLayer{Name: layer.Name, IsVisible: layer.IsVisible})
 	}
 
 	w.Tiles.ViewLevel = m.Tiles.ViewLevel
@@ -129,13 +130,13 @@ func wxmlV173ToWXX(m *wxml173.Map) (*wxx.Map, error) {
 	isFirstTileRow := true
 	for _, tilerow := range m.Tiles.TileRows {
 		x, y := len(w.Tiles.TileRows), 0
-		w.Tiles.TileRows = append(w.Tiles.TileRows, make([]*wxx.Tile, w.Tiles.TilesHigh))
+		w.Tiles.TileRows = append(w.Tiles.TileRows, make([]*models.Tile, w.Tiles.TilesHigh))
 		for _, line := range strings.Split(tilerow.InnerText, "\n") {
 			if len(line) == 0 { // ignore blank lines
 				continue
 			}
 			isXEdge, isYEdge := x == 0, y == 0
-			t := &wxx.Tile{Row: x, Column: y}
+			t := &models.Tile{Row: x, Column: y}
 			w.Tiles.TileRows[x][y] = t
 			y++
 			// values are TerrainMapIndex Elevation IsIcy IsGMOnly Animals (Z|(Brick Crops Gems Lumber Metals Rock)) RGBA?
@@ -265,7 +266,7 @@ func wxmlV173ToWXX(m *wxml173.Map) (*wxx.Map, error) {
 	}
 
 	for _, mFeature := range m.Features.Features {
-		f := &wxx.Feature{}
+		f := &models.Feature{}
 		f.Type = mFeature.Type
 		f.Rotate = mFeature.Rotate
 		f.Uuid = mFeature.Uuid
@@ -291,13 +292,13 @@ func wxmlV173ToWXX(m *wxml173.Map) (*wxx.Map, error) {
 		f.IsProvince = mFeature.IsProvince
 		f.IsFillHexBottom = mFeature.IsFillHexBottom
 		f.IsHideTerrainIcon = mFeature.IsHideTerrainIcon
-		f.Location = &wxx.FeatureLocation{
+		f.Location = &models.FeatureLocation{
 			ViewLevel: mFeature.Location.ViewLevel,
 			X:         mFeature.Location.X,
 			Y:         mFeature.Location.Y,
 		}
 
-		f.Label = &wxx.Label{
+		f.Label = &models.Label{
 			MapLayer:    mFeature.Label.MapLayer,
 			Style:       mFeature.Label.Style,
 			FontFace:    mFeature.Label.FontFace,
@@ -321,7 +322,7 @@ func wxmlV173ToWXX(m *wxml173.Map) (*wxx.Map, error) {
 		if f.Label.BackgroundColor, err = decodeRgba(mFeature.Label.BackgroundColor); err != nil {
 			return w, fmt.Errorf("feature.label.backgroundColor: %w", err)
 		}
-		f.Label.Location = &wxx.LabelLocation{
+		f.Label.Location = &models.LabelLocation{
 			ViewLevel: mFeature.Label.Location.ViewLevel,
 			X:         mFeature.Label.Location.X,
 			Y:         mFeature.Label.Location.Y,
@@ -331,7 +332,7 @@ func wxmlV173ToWXX(m *wxml173.Map) (*wxx.Map, error) {
 	}
 
 	for _, mLabel := range m.Labels.Labels {
-		wLabel := &wxx.Label{
+		wLabel := &models.Label{
 			MapLayer:    mLabel.MapLayer,
 			Style:       mLabel.Style,
 			FontFace:    mLabel.FontFace,
@@ -357,7 +358,7 @@ func wxmlV173ToWXX(m *wxml173.Map) (*wxx.Map, error) {
 		} else if wLabel.BackgroundColor, err = decodeZeroableRgba(mLabel.BackgroundColor); err != nil {
 			return w, fmt.Errorf("label.backgroundColor: %w", err)
 		}
-		wLabel.Location = &wxx.LabelLocation{
+		wLabel.Location = &models.LabelLocation{
 			ViewLevel: mLabel.Location.ViewLevel,
 			X:         mLabel.Location.X,
 			Y:         mLabel.Location.Y,
@@ -368,7 +369,7 @@ func wxmlV173ToWXX(m *wxml173.Map) (*wxx.Map, error) {
 	}
 
 	for _, shape := range m.Shapes.Shapes {
-		wShape := &wxx.Shape{
+		wShape := &models.Shape{
 			BbHeight:              shape.BbHeight,
 			BbIterations:          shape.BbIterations,
 			BbWidth:               shape.BbWidth,
@@ -411,7 +412,7 @@ func wxmlV173ToWXX(m *wxml173.Map) (*wxx.Map, error) {
 		}
 
 		for _, point := range shape.Points {
-			wPoint := &wxx.Point{
+			wPoint := &models.Point{
 				Type: point.Type,
 				X:    point.X,
 				Y:    point.Y,
@@ -423,14 +424,14 @@ func wxmlV173ToWXX(m *wxml173.Map) (*wxx.Map, error) {
 	}
 
 	for _, note := range m.Notes.Notes {
-		wNote := &wxx.Note{
+		wNote := &models.Note{
 			InnerText: note.InnerText,
 		}
 		w.Notes = append(w.Notes, wNote)
 	}
 
 	for _, info := range m.Informations.Informations {
-		wInfo := &wxx.Information{
+		wInfo := &models.Information{
 			Uuid:         info.Uuid,
 			Type:         info.Type,
 			Title:        info.Title,
@@ -446,7 +447,7 @@ func wxmlV173ToWXX(m *wxml173.Map) (*wxx.Map, error) {
 		}
 
 		for _, detail := range info.Details {
-			wDetail := &wxx.InformationDetail{
+			wDetail := &models.InformationDetail{
 				Uuid:         detail.Uuid,
 				Type:         detail.Type,
 				Title:        detail.Title,
@@ -469,27 +470,27 @@ func wxmlV173ToWXX(m *wxml173.Map) (*wxx.Map, error) {
 
 	// convert m.Configuration to w.Configuration
 	for _, mTerrainConfig := range m.Configuration.TerrainConfig {
-		wTerrainConfig := &wxx.TerrainConfig{
+		wTerrainConfig := &models.TerrainConfig{
 			InnerText: mTerrainConfig.InnerText,
 		}
 		// append the terrain configuration
 		w.Configuration.TerrainConfig = append(w.Configuration.TerrainConfig, wTerrainConfig)
 	}
 	for _, mFeatureConfig := range m.Configuration.FeatureConfig {
-		wFeatureConfig := &wxx.FeatureConfig{
+		wFeatureConfig := &models.FeatureConfig{
 			InnerText: mFeatureConfig.InnerText,
 		}
 		w.Configuration.FeatureConfig = append(w.Configuration.FeatureConfig, wFeatureConfig)
 	}
 	for _, mTextureConfig := range m.Configuration.TextureConfig {
-		wTextureConfig := &wxx.TextureConfig{
+		wTextureConfig := &models.TextureConfig{
 			InnerText: mTextureConfig.InnerText,
 		}
 		w.Configuration.TextureConfig = append(w.Configuration.TextureConfig, wTextureConfig)
 	}
 	for _, mTextConfig := range m.Configuration.TextConfig {
 		for _, mLabelStyle := range mTextConfig.LabelStyles {
-			wLabelStyle := &wxx.LabelStyle{
+			wLabelStyle := &models.LabelStyle{
 				Name:        mLabelStyle.Name,
 				FontFace:    mLabelStyle.FontFace,
 				Scale:       mLabelStyle.Scale,
@@ -513,7 +514,7 @@ func wxmlV173ToWXX(m *wxml173.Map) (*wxx.Map, error) {
 	}
 	for _, mShapeConfig := range m.Configuration.ShapeConfig {
 		for _, mShapeStyle := range mShapeConfig.ShapeStyles {
-			wShapeStyle := &wxx.ShapeStyle{
+			wShapeStyle := &models.ShapeStyle{
 				Name:          mShapeStyle.Name,
 				StrokeType:    mShapeStyle.StrokeType,
 				IsFractal:     mShapeStyle.IsFractal,
