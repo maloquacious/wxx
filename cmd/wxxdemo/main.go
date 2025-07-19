@@ -20,6 +20,7 @@ package main
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -27,6 +28,9 @@ import (
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/adapters"
 	"github.com/maloquacious/wxx/readers"
+	"golang.org/x/text/encoding/unicode"
+	"golang.org/x/text/transform"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -42,7 +46,7 @@ var (
 )
 
 func main() {
-	log.SetFlags(log.LUTC | log.Ltime)
+	log.SetFlags(log.Lshortfile | log.Ltime)
 
 	// when the showVersion flag is true, the program will write the
 	// application version (from the global 'mv' variable) and the
@@ -113,38 +117,31 @@ func runDemo(inputFile, outputPath string) error {
 	}
 	log.Printf("demo: completed setup checks      in %v\n", time.Now().Sub(step))
 
-	// open a reader for the input
+	// load the file
 	step = time.Now()
-	input, err := os.Open(inputFile)
+	input, err := os.ReadFile(inputFile)
 	if err != nil {
-		return fmt.Errorf("%s: %w", inputFile, err)
+		return err
 	}
-	defer func() {
-		// readers must be closed to avoid leaking resources
-		if input != nil {
-			_ = input.Close()
-			log.Printf("demo: closed  reader for %s\n", inputFile)
-		}
-	}()
-	log.Printf("demo: created reader for %s\n", inputFile)
-	log.Printf("demo: completed input reader      in %v\n", time.Now().Sub(step))
+	log.Printf("demo: read file from disk         in %v\n", time.Now().Sub(step))
 
 	// unzip the input
 	step = time.Now()
-	src, err := adapters.GZipToUTF16(input)
+	input, err = unzip(input)
 	if err != nil {
 		return fmt.Errorf("%s: %w", inputFile, err)
 	}
 	log.Printf("demo: completed unzip             in %v\n", time.Now().Sub(step))
 
-	// we are done with it, so cleanup the reader and free resources
-	_ = input.Close()
-	input = nil
+	// input should be UTF-16/BE
+	if len(input)%2 != 0 || !bytes.HasPrefix(input, []byte{0xfe, 0xff}) {
+		return fmt.Errorf("%s: not utf-16/be encoded", inputFile)
+	}
 
 	// write the uncompressed input to the output folder
 	step = time.Now()
 	filename := filepath.Join(outputPath, "input-utf-16.xml")
-	if err = os.WriteFile(filename, src, 0644); err != nil {
+	if err = os.WriteFile(filename, input, 0644); err != nil {
 		return err
 	}
 	log.Printf("demo: created %s\n", filename)
@@ -152,16 +149,35 @@ func runDemo(inputFile, outputPath string) error {
 
 	// convert input from UTF-16 to UTF-8
 	step = time.Now()
-	src, err = readers.ReadUTF16(src)
+	utf16Encoding := unicode.UTF16(unicode.BigEndian, unicode.ExpectBOM)
+	input, err = io.ReadAll(transform.NewReader(bytes.NewReader(input), utf16Encoding.NewDecoder()))
 	if err != nil {
 		return fmt.Errorf("%s: %w", inputFile, err)
 	}
 	log.Printf("demo: completed utf-16 to utf-8   in %v\n", time.Now().Sub(step))
 
+	// verify the xml header.
+	xmlHeaderIndex, xmlHeaders := -1, []string{
+		"<?xml version='1.0' encoding='utf-16'?>\n",
+		"<?xml version='1.1' encoding='utf-16'?>\n",
+	}
+	for i, xmlHeader := range xmlHeaders {
+		if bytes.HasPrefix(input, []byte(xmlHeader)) {
+			xmlHeaderIndex = i
+			break
+		}
+	}
+	if xmlHeaderIndex == -1 {
+		return fmt.Errorf("%s: missing xml header", inputFile)
+	}
+	// strip the xml header
+	input = input[len(xmlHeaders[xmlHeaderIndex]):]
+	log.Printf("demo: updated utf-8 encoding      in %v\n", time.Now().Sub(step))
+
 	// write the utf-8 data to the output folder
 	step = time.Now()
 	filename = filepath.Join(outputPath, "input-utf-8.xml")
-	if err = os.WriteFile(filename, src, 0644); err != nil {
+	if err = os.WriteFile(filename, input, 0644); err != nil {
 		return err
 	}
 	log.Printf("demo: created %s\n", filename)
@@ -169,9 +185,13 @@ func runDemo(inputFile, outputPath string) error {
 
 	// read and convert the input from XML to Map data
 	step = time.Now()
-	inputMap, err := readers.ReadWXML(bytes.NewReader(src))
+	inputMap, err := readers.ReadWXML(bytes.NewReader(input))
 	if err != nil {
-		log.Printf("src %q\n", src[:35])
+		if len(input) < 55 {
+			log.Printf("src %q\n", input)
+		} else {
+			log.Printf("src %q\n", input[:55])
+		}
 		return fmt.Errorf("%s: %w", inputFile, err)
 	}
 	log.Printf("demo: read map from %s %v\n", inputFile, inputMap.Version)
@@ -218,7 +238,7 @@ func runDemo(inputFile, outputPath string) error {
 	}
 	log.Printf("demo: completed tmap to xml       in %v %d\n", time.Now().Sub(step), len(data))
 
-	// write the UTF-8 encode XML to the output folder
+	// write the UTF-8 encoded XML to the output folder
 	filename = filepath.Join(outputPath, "output-utf-8.xml")
 	if err = os.WriteFile(filename, data, 0644); err != nil {
 		return err
@@ -228,6 +248,7 @@ func runDemo(inputFile, outputPath string) error {
 
 	// convert the UTF-8 encoded XML to UTF-16 encoded XML
 	step = time.Now()
+	data = append([]byte(xmlHeaders[xmlHeaderIndex]), data...)
 	data, err = adapters.UTF8ToUTF16(data)
 	if err != nil {
 		return fmt.Errorf("%s: %w", inputFile, err)
@@ -263,4 +284,16 @@ func runDemo(inputFile, outputPath string) error {
 	log.Printf("demo: completed                   in %v\n", time.Now().Sub(started))
 
 	return nil
+}
+
+func unzip(input []byte) ([]byte, error) {
+	// create a new gzip reader to process the source
+	gzr, err := gzip.NewReader(bytes.NewReader(input))
+	if err != nil {
+		return nil, err
+	}
+	defer func(gzr *gzip.Reader) {
+		_ = gzr.Close() // ignore errors
+	}(gzr)
+	return io.ReadAll(gzr)
 }

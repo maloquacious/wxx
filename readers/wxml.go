@@ -5,42 +5,32 @@ package readers
 import (
 	"bytes"
 	"encoding/xml"
+	"errors"
+	"fmt"
 	"github.com/maloquacious/wxx/adapters"
 	"github.com/maloquacious/wxx/models"
 	"github.com/maloquacious/wxx/models/wxml173"
 	"io"
 )
 
-// ReadWXML loads a Worldographer data file (which normally has an extension of ".wxx").
-// The input is verified to be in the expected format for a Worldographer file
-// (UTF-16, big-endian format). If it is, the version number is extracted. If we do not
-// find a version, we return an error. If we don't know how to unmarshall that version,
-// we return an error. Otherwise, we unmarshal the data to a wxx.Map and return it.
+// ReadWXML reads the XML data from Worldographer file.
+// We extract the <map.version> element. If we do not find it, we return an error.
+// If we don't know how to unmarshall that version, we return an error. Otherwise,
+// we unmarshal the data to a wxx.Map and return it.
 func ReadWXML(r io.Reader) (*models.Map, error) {
 	src, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
 
-	// verify the xml header
-	xmlHeader := []byte("<?xml version='1.0' encoding='utf-16'?>\n")
-	if !bytes.HasPrefix(src, xmlHeader) {
-		return nil, ErrMissingXMLHeader
-	}
-
-	// remove the xml header
-	src = src[len(xmlHeader):]
-
-	// read the version from the xml data
-	var version struct {
-		Version string `xml:"version,attr"`
-	}
-	if err := xml.Unmarshal(src, &version); err != nil {
+	// read the metadata from the xml data
+	xmlMetaData, err := readMapMetadata(src)
+	if err != nil {
 		return nil, err
 	}
-	// log.Printf("read: read version %+v\n", version)
+	// log.Printf("read: read version %+v\n", xmlMetaData)
 
-	switch version.Version {
+	switch xmlMetaData.Version {
 	case "1.73":
 		return unmarshalV173(src)
 	}
@@ -60,4 +50,33 @@ func unmarshalV173(src []byte) (*models.Map, error) {
 
 	// process source into a WXX structure and return it or any errors
 	return adapters.WXMLToWXX(srcMap)
+}
+
+type mapMetaData struct {
+	Version string `xml:"version,attr"` // required
+	Release string `xml:"release,attr"` // H2017 optional, W2025 required
+	Schema  string `xml:"schema,attr"`  // H2017 optional, W2025 required
+}
+
+// readMapMetadata
+func readMapMetadata(input []byte) (mapMetaData, error) {
+	// sanity check, sweet sanity checks
+	if !bytes.HasPrefix(input, []byte(`<map `)) {
+		return mapMetaData{}, fmt.Errorf("<map> element missing")
+	}
+	// speed up the remaining sanity checks by extracting the map attributes.
+	// we have to make the map element self-closing for this to work.
+	endOfMap := bytes.IndexByte(input, '>')
+	if endOfMap == -1 {
+		return mapMetaData{}, fmt.Errorf("<map> not closed")
+	}
+	// initialize metadata with a copy of the source up to (but not including) the first closing '>'
+	metadata := append(make([]byte, 0, endOfMap+1), input[:endOfMap]...)
+	metadata = append(metadata, '/', '>')
+	// read the version from the xml data
+	var results mapMetaData
+	if err := xml.Unmarshal(metadata, &results); err != nil {
+		return mapMetaData{}, errors.Join(models.ErrInvalidMapMetadata, err)
+	}
+	return results, nil
 }
