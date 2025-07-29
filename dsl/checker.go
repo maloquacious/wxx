@@ -32,7 +32,7 @@ func (e CheckError) Error() string {
 
 type Checker struct {
 	errors []CheckError
-	funcs  map[string]int  // func name → arity
+	funcs  map[string]int  // func name → arity, assumes -1 means variable number of arguments
 	vars   map[string]bool // local loop vars, simple scoping for now
 }
 
@@ -42,11 +42,11 @@ type Checker struct {
 
 func Check(prog *ast.Program) []CheckError {
 	c := &Checker{
-		funcs: map[string]int{
-			"save":  1,
-			"print": 1, // or -1 for variadic
-		},
-		vars: map[string]bool{},
+		funcs: map[string]int{},
+		vars:  map[string]bool{},
+	}
+	for k, v := range builtins {
+		c.funcs[k] = v.numberOfInputArgs
 	}
 	c.checkProgram(prog)
 	return c.errors

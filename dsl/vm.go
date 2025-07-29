@@ -85,29 +85,22 @@ func NewMockMap() *MapRoot {
 
 type Value interface{}
 
-type BuiltinFunction func(args []Value) error
-
 // ---
 
 // 🧪 VM Entry Point
 
 func NewVM(root *MapRoot) *VM {
-	return &VM{
+	vm := &VM{
 		vars: make(map[string]Value),
-		funcs: map[string]BuiltinFunction{
-			"print": func(args []Value) error {
-				for _, arg := range args {
-					fmt.Println(arg)
-				}
-				return nil
-			},
-			"save": func(args []Value) error {
-				fmt.Printf("Saving to: %v (mock)\n", args[0])
-				return nil
-			},
-		},
 		root: root,
 	}
+
+	vm.funcs = map[string]BuiltinFunction{}
+	for k, v := range builtins {
+		vm.funcs[k] = v.fn
+	}
+
+	return vm
 }
 
 func NewVMWithFilename(root *MapRoot, filename string) *VM {
@@ -118,7 +111,7 @@ func NewVMWithFilename(root *MapRoot, filename string) *VM {
 
 func (vm *VM) Execute(program *ast.Program) error {
 	for _, stmt := range program.Statements {
-		if err := vm.execStmt(stmt); err != nil {
+		if _, err := vm.execStmt(stmt); err != nil {
 			return err
 		}
 	}
@@ -129,42 +122,48 @@ func (vm *VM) Execute(program *ast.Program) error {
 
 // 🔁 Statement Execution
 
-func (vm *VM) execStmt(s ast.Stmt) error {
+// execStmt returns the results of executing the statement.
+// An error is returned if there is a syntax or run-time error.
+func (vm *VM) execStmt(s ast.Stmt) (any, error) {
 	switch s := s.(type) {
 	case *ast.AssignStmt:
 		val, err := vm.evalExpr(s.Value)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		return vm.assign(&s.Target, val)
+		return val, vm.assign(&s.Target, val)
 	case *ast.CallStmt:
 		return vm.evalCall(s.Call)
 	case *ast.IfStmt:
 		cond, err := vm.evalExpr(s.Condition)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		truthy, ok := cond.(bool)
 		if !ok {
-			return vm.newRuntimeError("if condition must be true or false", s.At)
+			return nil, vm.newRuntimeError("if condition must be true or false", s.At)
 		}
 		if truthy {
 			for _, stmt := range s.Then {
-				if err := vm.execStmt(stmt); err != nil {
-					return err
+				_, err = vm.execStmt(stmt)
+				if err != nil {
+					return nil, err
 				}
 			}
-		} else {
-			for _, stmt := range s.Else {
-				if err := vm.execStmt(stmt); err != nil {
-					return err
-				}
+			return nil, nil
+		}
+		// not truthy, so execute the else
+		for _, stmt := range s.Else {
+			_, err = vm.execStmt(stmt)
+			if err != nil {
+				return nil, err
 			}
 		}
+		return nil, nil
 	case *ast.ForStmt:
 		iter, err := vm.evalExpr(s.Iterator)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		slice, ok := iter.([]Value)
 		if !ok {
@@ -182,21 +181,21 @@ func (vm *VM) execStmt(s ast.Stmt) error {
 				//		slice[i] = &vm.root.Hexes[i]
 				//	}
 			} else {
-				return vm.newRuntimeError("cannot iterate over this value - use something like 'map.hexes'", s.At)
+				return nil, vm.newRuntimeError("cannot iterate over this value - use something like 'map.hexes'", s.At)
 			}
 		}
 		for _, item := range slice {
 			vm.vars[s.VarName] = item
 			for _, stmt := range s.Body {
-				if err := vm.execStmt(stmt); err != nil {
-					return err
+				if _, err := vm.execStmt(stmt); err != nil {
+					return nil, err
 				}
 			}
 		}
+		return nil, nil
 	default:
-		return vm.newRuntimeError("unknown statement type", s.Pos())
+		return nil, vm.newRuntimeError("unknown statement type", s.Pos())
 	}
-	return nil
 }
 
 // ---
@@ -218,7 +217,7 @@ func (vm *VM) evalExpr(e ast.Expr) (Value, error) {
 		}
 		val, ok := vm.vars[e.Name]
 		if !ok {
-			return nil, vm.newRuntimeError("variable '" + e.Name + "' is not defined", e.At)
+			return nil, vm.newRuntimeError("variable '"+e.Name+"' is not defined", e.At)
 		}
 		return val, nil
 	case *ast.BinaryExpr:
@@ -236,9 +235,9 @@ func (vm *VM) evalExpr(e ast.Expr) (Value, error) {
 		case "+":
 			return fmt.Sprintf("%v%v", left, right), nil
 		}
-		return nil, vm.newRuntimeError("unsupported binary operator: " + e.Operator, e.At)
+		return nil, vm.newRuntimeError("unsupported binary operator: "+e.Operator, e.At)
 	case *ast.CallExpr:
-		return nil, vm.evalCall(e)
+		return vm.evalCall(e)
 	default:
 		return nil, vm.newRuntimeError("unknown expression", e.Pos())
 	}
@@ -248,16 +247,18 @@ func (vm *VM) evalExpr(e ast.Expr) (Value, error) {
 
 // 🧾 Call Evaluation
 
-func (vm *VM) evalCall(c *ast.CallExpr) error {
+// evalCall returns the results of evaluating the call or an error.
+// An error is returned for syntax or run-time errors.
+func (vm *VM) evalCall(c *ast.CallExpr) (any, error) {
 	fn, ok := vm.funcs[c.FuncName]
 	if !ok {
-		return vm.newRuntimeError("function '" + c.FuncName + "' does not exist", c.At)
+		return nil, vm.newRuntimeError("function '"+c.FuncName+"' does not exist", c.At)
 	}
 	args := []Value{}
 	for _, arg := range c.Args {
 		val, err := vm.evalExpr(arg)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		args = append(args, val)
 	}
@@ -284,7 +285,7 @@ func (vm *VM) assign(lv *ast.LValue, val Value) error {
 			}
 		}
 	}
-	
+
 	if lv.Root == "map" && len(lv.Steps) >= 2 {
 		// Handle map.hexes[i].terrain = "swamp"
 		if prop1, ok := lv.Steps[0].(*ast.PropAccess); ok && prop1.Name == "hexes" {
