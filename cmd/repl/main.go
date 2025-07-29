@@ -4,14 +4,22 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"github.com/maloquacious/wxx/dsl"
-	"github.com/maloquacious/wxx/dsl/ast"
 	"os"
+	"runtime/debug"
 	"strings"
 )
 
+var (
+	// global flag for debugging, set on command line or `$debug` command.
+	debugMode = false
+)
+
 func main() {
+	flag.BoolVar(&debugMode, "debug", debugMode, "enable debugging mode")
+
 	fmt.Println("WXX DSL REPL - type `$exit` to quit")
 
 	vm := dsl.NewVM(dsl.NewMockMap())
@@ -20,7 +28,11 @@ func main() {
 	var lines []string
 
 	for {
-		fmt.Print("> ")
+		if len(lines) == 0 {
+			fmt.Print("> ")
+		} else {
+			fmt.Print(". ") // continuation line
+		}
 		if !scanner.Scan() {
 			break
 		}
@@ -40,37 +52,45 @@ func main() {
 			input := strings.Join(lines, "\n")
 			lines = nil
 
-			tokens := []dsl.Token{}
-			lexer := dsl.NewLexer(input)
-			for {
-				tok := lexer.NextToken()
-				tokens = append(tokens, tok)
-				if tok.Type == dsl.TokenEOF {
-					break
-				}
-			}
-
-			parser := dsl.NewParser(tokens)
-			var prog *ast.Program
 			func() {
 				defer func() {
 					if r := recover(); r != nil {
-						fmt.Println("Parse error:", r)
-						prog = nil
+						fmt.Println("Internal error:", r)
+						if debugMode {
+							fmt.Println("--- Stack Trace ---")
+							printStack()
+						}
 					}
 				}()
-				prog = parser.ParseProgram()
-			}()
 
-			if prog != nil {
+				// LEXING
+				tokens := []dsl.Token{}
+				lexer := dsl.NewLexer(input)
+				for {
+					tok := lexer.NextToken()
+					tokens = append(tokens, tok)
+					if tok.Type == dsl.TokenEOF {
+						break
+					}
+				}
+
+				// PARSING
+				parser := dsl.NewParser(tokens)
+				prog := parser.ParseProgram()
+
+				// CHECKING
 				if errs := dsl.Check(prog); len(errs) > 0 {
 					for _, err := range errs {
 						fmt.Println("Check error:", err)
 					}
-				} else if err := vm.Execute(prog); err != nil {
+					return
+				}
+
+				// EXECUTION
+				if err := vm.Execute(prog); err != nil {
 					fmt.Println("Runtime error:", err)
 				}
-			}
+			}()
 		}
 	}
 }
@@ -96,6 +116,19 @@ func handleReplCommand(vm *dsl.VM, line string) {
 	switch args[0] {
 	case "exit":
 		os.Exit(0)
+	case "debug":
+		if len(args) > 1 && args[1] == "on" {
+			debugMode = true
+			fmt.Println("Debug mode now enabled")
+		} else if len(args) > 1 && args[1] == "off" {
+			debugMode = false
+			fmt.Println("Debug mode now disabled")
+		} else if debugMode {
+			fmt.Println("Debug mode is enabled")
+		} else {
+			fmt.Println("Debug mode is disabled")
+		}
+
 	//case "vars":
 	//	for k := range vm.Vars() {
 	//		fmt.Println(k)
@@ -107,4 +140,8 @@ func handleReplCommand(vm *dsl.VM, line string) {
 	default:
 		fmt.Printf("Unknown REPL command: %s\n", args[0])
 	}
+}
+
+func printStack() {
+	debug.PrintStack()
 }
