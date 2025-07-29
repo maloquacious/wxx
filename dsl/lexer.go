@@ -35,6 +35,20 @@ func (lx *Lexer) peek() rune {
 	return rune(lx.input[lx.pos])
 }
 
+func (lx *Lexer) peekNext() rune {
+	if lx.pos+1 >= len(lx.input) {
+		return 0
+	}
+	return rune(lx.input[lx.pos+1])
+}
+
+func (lx *Lexer) peekAhead(n int) rune {
+	if lx.pos+n >= len(lx.input) {
+		return 0
+	}
+	return rune(lx.input[lx.pos+n])
+}
+
 func (lx *Lexer) advance() rune {
 	if lx.pos >= len(lx.input) {
 		return 0
@@ -56,15 +70,117 @@ func (lx *Lexer) skipWhitespace() {
 	}
 }
 
+func (lx *Lexer) skipLineComment() {
+	// Skip until end of line (but not the newline itself)
+	for lx.peek() != '\n' && lx.peek() != 0 {
+		lx.advance()
+	}
+}
+
+func (lx *Lexer) skipBlockComment() {
+	// Skip /* ... */
+	lx.advance() // consume '/'
+	lx.advance() // consume '*'
+	
+	for lx.peek() != 0 {
+		if lx.peek() == '*' {
+			lx.advance()
+			if lx.peek() == '/' {
+				lx.advance()
+				return
+			}
+		} else {
+			lx.advance()
+		}
+	}
+	panic(fmt.Sprintf("unterminated block comment at %d:%d", lx.line, lx.column))
+}
+
+func (lx *Lexer) skipLuaBlockComment() {
+	// Skip /*- ... -*/ with balanced dashes
+	lx.advance() // consume '/'
+	lx.advance() // consume '*'
+	
+	// Count opening dashes
+	dashCount := 0
+	for lx.peek() == '-' {
+		dashCount++
+		lx.advance()
+	}
+	
+	for lx.peek() != 0 {
+		if lx.peek() == '-' {
+			// Check for closing pattern: dashCount dashes followed by */
+			saved_pos := lx.pos
+			saved_line := lx.line  
+			saved_col := lx.column
+			
+			closeDashCount := 0
+			for lx.peek() == '-' {
+				closeDashCount++
+				lx.advance()
+			}
+			
+			if closeDashCount == dashCount && lx.peek() == '*' {
+				lx.advance()
+				if lx.peek() == '/' {
+					lx.advance()
+					return
+				}
+			}
+			
+			// Not a match, restore position
+			lx.pos = saved_pos
+			lx.line = saved_line
+			lx.column = saved_col
+			lx.advance()
+		} else {
+			lx.advance()
+		}
+	}
+	panic(fmt.Sprintf("unterminated Lua-style block comment at %d:%d", lx.line, lx.column))
+}
+
 func (lx *Lexer) NextToken() Token {
-	lx.skipWhitespace()
+	var startLine, startCol int
+	var ch rune
+	
+	for {
+		lx.skipWhitespace()
 
-	startLine := lx.line
-	startCol := lx.column
-	ch := lx.peek()
+		startLine = lx.line
+		startCol = lx.column
+		ch = lx.peek()
 
-	if ch == 0 {
-		return Token{Type: TokenEOF, Line: startLine, Column: startCol}
+		if ch == 0 {
+			return Token{Type: TokenEOF, Line: startLine, Column: startCol}
+		}
+
+		// Handle comments
+		if ch == '#' {
+			lx.skipLineComment()
+			continue // Skip to next token
+		}
+		
+		if ch == '/' {
+			next := lx.peekNext()
+			if next == '/' {
+				lx.advance() // consume '/'
+				lx.skipLineComment()
+				continue // Skip to next token
+			} else if next == '*' {
+				// Check for Lua-style block comment
+				if lx.peekAhead(2) == '-' {
+					lx.skipLuaBlockComment()
+				} else {
+					lx.skipBlockComment()
+				}
+				continue // Skip to next token
+			}
+		}
+
+		// Regular token processing
+		break
 	}
 
 	switch ch {

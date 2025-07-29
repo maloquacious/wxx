@@ -96,7 +96,9 @@ func (c *Checker) checkExpr(e ast.Expr) {
 	case *ast.LiteralExpr:
 		// OK
 	case *ast.IdentExpr:
-		if !c.vars[e.Name] {
+		if e.Name == "map.hexes" {
+			// Special case: map.hexes is always valid
+		} else if !c.vars[e.Name] {
 			c.error(e.Pos(), fmt.Sprintf("undefined variable: %s", e.Name))
 		}
 	case *ast.CallExpr:

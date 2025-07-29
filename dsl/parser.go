@@ -48,7 +48,7 @@ func (p *Parser) advance() Token {
 func (p *Parser) match(expected TokenType) Token {
 	tok := p.advance()
 	if tok.Type != expected {
-		panic(fmt.Sprintf("expected %v, got %v at line %d", expected, tok.Type, tok.Line))
+		panic(fmt.Sprintf("Syntax error at line %d: expected %s but found %s", tok.Line, expected, tok.Type))
 	}
 	return tok
 }
@@ -79,7 +79,7 @@ func (p *Parser) parseStatement() ast.Stmt {
 	case TokenIdentifier:
 		return p.parseAssignmentOrCall()
 	default:
-		panic(fmt.Sprintf("unexpected token %v at line %d", tok.Type, tok.Line))
+		panic(fmt.Sprintf("Syntax error at line %d: unexpected %s '%s'", tok.Line, tok.Type, tok.Value))
 	}
 }
 
@@ -110,7 +110,8 @@ func (p *Parser) parseAssignmentOrCall() ast.Stmt {
 		}
 	}
 
-	panic(fmt.Sprintf("unexpected token after identifier: %v", p.peek().Type))
+	tok := p.peek()
+	panic(fmt.Sprintf("Syntax error at line %d: unexpected %s '%s' after identifier", tok.Line, tok.Type, tok.Value))
 }
 
 // ---
@@ -228,9 +229,13 @@ func (p *Parser) parseExpr() ast.Expr {
 		if p.peek().Type == TokenLParen {
 			return p.parseCallExpr(tok.Value)
 		}
+		// Check for property access like map.hexes
+		if p.peek().Type == TokenDot {
+			return p.parsePropertyAccess(tok)
+		}
 		return &ast.IdentExpr{Name: tok.Value, At: toPos(tok)}
 	default:
-		panic(fmt.Sprintf("unexpected token in expression: %v", tok))
+		panic(fmt.Sprintf("Syntax error at line %d: unexpected %s '%s' in expression", tok.Line, tok.Type, tok.Value))
 	}
 }
 
@@ -261,6 +266,20 @@ func (p *Parser) parseCallExpr(name string) *ast.CallExpr {
 
 func toPos(tok Token) ast.Pos {
 	return ast.Pos{Line: tok.Line, Column: tok.Column}
+}
+
+func (p *Parser) parsePropertyAccess(startTok Token) ast.Expr {
+	// For expressions like "map.hexes", we'll create a special identifier
+	// that includes the full path, since the VM knows how to handle "map.hexes"
+	name := startTok.Value
+	
+	for p.peek().Type == TokenDot {
+		p.match(TokenDot)
+		prop := p.match(TokenIdentifier)
+		name += "." + prop.Value
+	}
+	
+	return &ast.IdentExpr{Name: name, At: toPos(startTok)}
 }
 
 func parseNumber(val string) interface{} {

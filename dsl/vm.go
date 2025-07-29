@@ -32,7 +32,7 @@ type RuntimeError struct {
 }
 
 func (e RuntimeError) Error() string {
-	return fmt.Sprintf("Line %d:%d: %s", e.Pos.Line, e.Pos.Column, e.Msg)
+	return fmt.Sprintf("Runtime error at line %d: %s", e.Pos.Line, e.Msg)
 }
 
 // ---
@@ -127,7 +127,7 @@ func (vm *VM) execStmt(s ast.Stmt) error {
 		}
 		truthy, ok := cond.(bool)
 		if !ok {
-			return RuntimeError{"if condition is not boolean", s.At}
+			return RuntimeError{"if condition must be true or false", s.At}
 		}
 		if truthy {
 			for _, stmt := range s.Then {
@@ -163,7 +163,7 @@ func (vm *VM) execStmt(s ast.Stmt) error {
 				//		slice[i] = &vm.root.Hexes[i]
 				//	}
 			} else {
-				return RuntimeError{"for-loop target is not iterable", s.At}
+				return RuntimeError{"cannot iterate over this value - use something like 'map.hexes'", s.At}
 			}
 		}
 		for _, item := range slice {
@@ -189,9 +189,17 @@ func (vm *VM) evalExpr(e ast.Expr) (Value, error) {
 	case *ast.LiteralExpr:
 		return e.Value, nil
 	case *ast.IdentExpr:
+		if e.Name == "map.hexes" {
+			// Special case: return the hexes slice
+			slice := make([]Value, len(vm.root.Hexes))
+			for i := range vm.root.Hexes {
+				slice[i] = &vm.root.Hexes[i]
+			}
+			return slice, nil
+		}
 		val, ok := vm.vars[e.Name]
 		if !ok {
-			return nil, RuntimeError{"undefined variable: " + e.Name, e.At}
+			return nil, RuntimeError{"variable '" + e.Name + "' is not defined", e.At}
 		}
 		return val, nil
 	case *ast.BinaryExpr:
@@ -224,7 +232,7 @@ func (vm *VM) evalExpr(e ast.Expr) (Value, error) {
 func (vm *VM) evalCall(c *ast.CallExpr) error {
 	fn, ok := vm.funcs[c.FuncName]
 	if !ok {
-		return RuntimeError{"unknown function: " + c.FuncName, c.At}
+		return RuntimeError{"function '" + c.FuncName + "' does not exist", c.At}
 	}
 	args := []Value{}
 	for _, arg := range c.Args {
@@ -242,6 +250,22 @@ func (vm *VM) evalCall(c *ast.CallExpr) error {
 // 🖊 Assignment to LValue
 
 func (vm *VM) assign(lv *ast.LValue, val Value) error {
+	// Handle assignment to loop variable properties like h.terrain
+	if len(lv.Steps) == 1 {
+		if prop, ok := lv.Steps[0].(*ast.PropAccess); ok && prop.Name == "terrain" {
+			if hexVar, ok := vm.vars[lv.Root]; ok {
+				if hex, ok := hexVar.(*Hex); ok {
+					s, ok := val.(string)
+					if !ok {
+						return RuntimeError{"terrain must be a text value", prop.Pos()}
+					}
+					hex.Terrain = s
+					return nil
+				}
+			}
+		}
+	}
+	
 	if lv.Root == "map" && len(lv.Steps) >= 2 {
 		// Handle map.hexes[i].terrain = "swamp"
 		if prop1, ok := lv.Steps[0].(*ast.PropAccess); ok && prop1.Name == "hexes" {
@@ -252,17 +276,17 @@ func (vm *VM) assign(lv *ast.LValue, val Value) error {
 				}
 				idx, ok := idxVal.(float64) // numbers are float64 in literal
 				if !ok {
-					return RuntimeError{"index must be number", indexStep.Pos()}
+					return RuntimeError{"index must be a number", indexStep.Pos()}
 				}
 				i := int(idx)
 				if i < 0 || i >= len(vm.root.Hexes) {
-					return RuntimeError{fmt.Sprintf("index out of range: %d", i), indexStep.Pos()}
+					return RuntimeError{fmt.Sprintf("index %d is out of range (valid: 0 to %d)", i, len(vm.root.Hexes)-1), indexStep.Pos()}
 				}
 				if len(lv.Steps) == 3 {
 					if prop2, ok := lv.Steps[2].(*ast.PropAccess); ok && prop2.Name == "terrain" {
 						s, ok := val.(string)
 						if !ok {
-							return RuntimeError{"terrain must be string", prop2.Pos()}
+							return RuntimeError{"terrain must be a text value", prop2.Pos()}
 						}
 						vm.root.Hexes[i].Terrain = s
 						return nil
@@ -271,7 +295,7 @@ func (vm *VM) assign(lv *ast.LValue, val Value) error {
 			}
 		}
 	}
-	return RuntimeError{"unsupported assignment target", lv.At}
+	return RuntimeError{"cannot assign to this - try 'map.hexes[index].terrain := \"value\"'", lv.At}
 }
 
 // ---

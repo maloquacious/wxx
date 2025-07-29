@@ -3,10 +3,14 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
+	"github.com/chzyer/readline"
+	"github.com/maloquacious/semver"
+	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/dsl"
+	"io"
+	"log"
 	"os"
 	"runtime/debug"
 	"strings"
@@ -15,29 +19,44 @@ import (
 var (
 	// global flag for debugging, set on command line or `$debug` command.
 	debugMode = false
+
+	version = semver.Version{Minor: 1}
 )
 
 func main() {
 	flag.BoolVar(&debugMode, "debug", debugMode, "enable debugging mode")
 
-	fmt.Println("WXX DSL REPL - type `$exit` to quit")
+	rl, err := readline.NewEx(&readline.Config{
+		Prompt:            "> ",
+		HistoryFile:       "/tmp/wxxdsl.repl.history",
+		InterruptPrompt:   "^C",
+		EOFPrompt:         "exit",
+		HistorySearchFold: true,
+	})
+	if err != nil {
+		panic(fmt.Sprintf("failed to initialize readline: %v\n", err))
+	}
+	defer rl.Close()
+	rl.CaptureExitSignal()
+	log.SetOutput(rl.Stderr())
 
 	vm := dsl.NewVM(dsl.NewMockMap())
-	scanner := bufio.NewScanner(os.Stdin)
+
+	println("WXX DSL REPL - type `$exit` to quit, `$help` for help\n")
 
 	var lines []string
-
 	for {
-		if len(lines) == 0 {
-			fmt.Print("> ")
-		} else {
-			fmt.Print(". ") // continuation line
-		}
-		if !scanner.Scan() {
+		line, err := rl.Readline()
+		if err == readline.ErrInterrupt {
+			if len(lines) > 0 {
+				lines = nil
+				continue
+			}
+			break
+		} else if err == io.EOF {
 			break
 		}
 
-		line := scanner.Text()
 		if strings.TrimSpace(line) == "" {
 			continue
 		} else if strings.HasPrefix(strings.TrimSpace(line), "$") {
@@ -46,53 +65,19 @@ func main() {
 		}
 
 		lines = append(lines, line)
-
-		// Simple block detection (improve later)
 		if blockComplete(lines) {
 			input := strings.Join(lines, "\n")
 			lines = nil
 
-			func() {
-				defer func() {
-					if r := recover(); r != nil {
-						fmt.Println("Internal error:", r)
-						if debugMode {
-							fmt.Println("--- Stack Trace ---")
-							printStack()
-						}
-					}
-				}()
+			// Change prompt back to single line
+			rl.SetPrompt("> ")
 
-				// LEXING
-				tokens := []dsl.Token{}
-				lexer := dsl.NewLexer(input)
-				for {
-					tok := lexer.NextToken()
-					tokens = append(tokens, tok)
-					if tok.Type == dsl.TokenEOF {
-						break
-					}
-				}
-
-				// PARSING
-				parser := dsl.NewParser(tokens)
-				prog := parser.ParseProgram()
-
-				// CHECKING
-				if errs := dsl.Check(prog); len(errs) > 0 {
-					for _, err := range errs {
-						fmt.Println("Check error:", err)
-					}
-					return
-				}
-
-				// EXECUTION
-				if err := vm.Execute(prog); err != nil {
-					fmt.Println("Runtime error:", err)
-				}
-			}()
+			runCode(vm, input)
+		} else {
+			rl.SetPrompt(". ")
 		}
 	}
+	fmt.Printf("\n\n")
 }
 
 // A simple heuristic to know when the user is done typing a block:
@@ -114,8 +99,14 @@ func handleReplCommand(vm *dsl.VM, line string) {
 		return
 	}
 	switch args[0] {
-	case "exit":
-		os.Exit(0)
+	case "cwd":
+		wd, err := os.Getwd()
+		if err != nil {
+			println(err)
+			return
+		}
+		println(wd)
+		return
 	case "debug":
 		if len(args) > 1 && args[1] == "on" {
 			debugMode = true
@@ -128,6 +119,12 @@ func handleReplCommand(vm *dsl.VM, line string) {
 		} else {
 			fmt.Println("Debug mode is disabled")
 		}
+		return
+	case "exit":
+		os.Exit(0)
+	case "version":
+		println(fmt.Sprintf("repl %s: wxx %s", version, wxx.Version()))
+		return
 
 	//case "vars":
 	//	for k := range vm.Vars() {
@@ -144,4 +141,40 @@ func handleReplCommand(vm *dsl.VM, line string) {
 
 func printStack() {
 	debug.PrintStack()
+}
+
+func runCode(vm *dsl.VM, input string) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Internal error:", r)
+			if debugMode {
+				fmt.Println("--- Stack Trace ---")
+				printStack()
+			}
+		}
+	}()
+
+	tokens := []dsl.Token{}
+	lexer := dsl.NewLexer(input)
+	for {
+		tok := lexer.NextToken()
+		tokens = append(tokens, tok)
+		if tok.Type == dsl.TokenEOF {
+			break
+		}
+	}
+
+	parser := dsl.NewParser(tokens)
+	prog := parser.ParseProgram()
+
+	if errs := dsl.Check(prog); len(errs) > 0 {
+		for _, err := range errs {
+			fmt.Println("Check error:", err)
+		}
+		return
+	}
+
+	if err := vm.Execute(prog); err != nil {
+		fmt.Println("Runtime error:", err)
+	}
 }

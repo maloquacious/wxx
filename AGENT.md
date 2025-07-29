@@ -18,3 +18,7 @@ We are working to implement a Sqlite3 data store. To do that, we need
 4. Routines to read and write the database data using Go structs
 
 There is not much documentation available for the WXX files. We should create it as we go, taking care to track differences between the XML schema versions.
+
+## Building
+* REPL: `go build -o dist/local/repl ./cmd/repl`
+* WXX runner: `go build -o dist/local/wxx ./cmd/wxx`
