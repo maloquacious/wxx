@@ -20,9 +20,8 @@ package dsl
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 	"github.com/maloquacious/wxx/dsl/ast"
+	"strconv"
 )
 
 type Parser struct {
@@ -286,25 +285,24 @@ func (p *Parser) parsePropertyAccess(startTok Token) ast.Expr {
 	// For expressions like "map.hexes", we'll create a special identifier
 	// that includes the full path, since the VM knows how to handle "map.hexes"
 	name := startTok.Value
-	
+
 	for p.peek().Type == TokenDot {
 		p.match(TokenDot)
 		prop := p.match(TokenIdentifier)
 		name += "." + prop.Value
 	}
-	
+
 	return &ast.IdentExpr{Name: name, At: toPos(startTok)}
 }
 
 func parseNumber(val string) interface{} {
-	if strings.Contains(val, ".") {
-		if f, err := strconv.ParseFloat(val, 64); err == nil {
-			return f
-		}
-	} else {
-		if i, err := strconv.Atoi(val); err == nil {
-			return float64(i) // Convert to float64 for consistency
-		}
+	// Try parsing as int64 first
+	if i, err := strconv.ParseInt(val, 10, 64); err == nil {
+		return i
+	}
+	// Then try parsing as float64
+	if f, err := strconv.ParseFloat(val, 64); err == nil {
+		return f
 	}
 	// Fallback to string if parsing fails
 	return val
