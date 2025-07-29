@@ -18,14 +18,26 @@ import (
 // Add error reporting with position info and recovery if needed.
 
 type Lexer struct {
-	input  string
-	pos    int
-	line   int
-	column int
+	input    string
+	pos      int
+	line     int
+	column   int
+	filename string
 }
 
 func NewLexer(input string) *Lexer {
 	return &Lexer{input: input, line: 1}
+}
+
+func NewLexerWithFilename(input, filename string) *Lexer {
+	return &Lexer{input: input, line: 1, filename: filename}
+}
+
+func (lx *Lexer) formatError(msg string) string {
+	if lx.filename != "" {
+		return fmt.Sprintf("%s:%d:%d: %s", lx.filename, lx.line, lx.column, msg)
+	}
+	return fmt.Sprintf("%d:%d: %s", lx.line, lx.column, msg)
 }
 
 func (lx *Lexer) peek() rune {
@@ -93,7 +105,7 @@ func (lx *Lexer) skipBlockComment() {
 			lx.advance()
 		}
 	}
-	panic(fmt.Sprintf("unterminated block comment at %d:%d", lx.line, lx.column))
+	panic(lx.formatError("unterminated block comment"))
 }
 
 func (lx *Lexer) skipLuaBlockComment() {
@@ -138,7 +150,7 @@ func (lx *Lexer) skipLuaBlockComment() {
 			lx.advance()
 		}
 	}
-	panic(fmt.Sprintf("unterminated Lua-style block comment at %d:%d", lx.line, lx.column))
+	panic(lx.formatError("unterminated Lua-style block comment"))
 }
 
 func (lx *Lexer) NextToken() Token {
@@ -227,7 +239,7 @@ func (lx *Lexer) NextToken() Token {
 		return lx.lexOperator()
 	}
 
-	panic(fmt.Sprintf("unexpected character '%c' at %d:%d", ch, lx.line, lx.column))
+	panic(lx.formatError(fmt.Sprintf("unexpected character '%c'", ch)))
 }
 
 func (lx *Lexer) lexIdentifierOrKeyword() Token {

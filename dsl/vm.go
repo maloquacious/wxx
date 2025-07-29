@@ -27,12 +27,24 @@ import (
 // 🧱 Runtime Error with Position
 
 type RuntimeError struct {
-	Msg string
-	Pos ast.Pos
+	Msg      string
+	Pos      ast.Pos
+	Filename string
 }
 
 func (e RuntimeError) Error() string {
+	if e.Filename != "" {
+		return fmt.Sprintf("%s:%d:%d: Runtime error: %s", e.Filename, e.Pos.Line, e.Pos.Column, e.Msg)
+	}
 	return fmt.Sprintf("Runtime error at line %d: %s", e.Pos.Line, e.Msg)
+}
+
+func (vm *VM) newRuntimeError(msg string, pos ast.Pos) RuntimeError {
+	return RuntimeError{
+		Msg:      msg,
+		Pos:      pos,
+		Filename: vm.filename,
+	}
 }
 
 // ---
@@ -40,9 +52,10 @@ func (e RuntimeError) Error() string {
 // 🧠 Execution Context
 
 type VM struct {
-	vars  map[string]Value           // for loop vars, etc.
-	funcs map[string]BuiltinFunction // built-in function handlers
-	root  *MapRoot                   // root object (e.g., WXX DOM)
+	vars     map[string]Value           // for loop vars, etc.
+	funcs    map[string]BuiltinFunction // built-in function handlers
+	root     *MapRoot                   // root object (e.g., WXX DOM)
+	filename string                     // current script filename
 }
 
 // ---
@@ -97,6 +110,12 @@ func NewVM(root *MapRoot) *VM {
 	}
 }
 
+func NewVMWithFilename(root *MapRoot, filename string) *VM {
+	vm := NewVM(root)
+	vm.filename = filename
+	return vm
+}
+
 func (vm *VM) Execute(program *ast.Program) error {
 	for _, stmt := range program.Statements {
 		if err := vm.execStmt(stmt); err != nil {
@@ -127,7 +146,7 @@ func (vm *VM) execStmt(s ast.Stmt) error {
 		}
 		truthy, ok := cond.(bool)
 		if !ok {
-			return RuntimeError{"if condition must be true or false", s.At}
+			return vm.newRuntimeError("if condition must be true or false", s.At)
 		}
 		if truthy {
 			for _, stmt := range s.Then {
@@ -163,7 +182,7 @@ func (vm *VM) execStmt(s ast.Stmt) error {
 				//		slice[i] = &vm.root.Hexes[i]
 				//	}
 			} else {
-				return RuntimeError{"cannot iterate over this value - use something like 'map.hexes'", s.At}
+				return vm.newRuntimeError("cannot iterate over this value - use something like 'map.hexes'", s.At)
 			}
 		}
 		for _, item := range slice {
@@ -175,7 +194,7 @@ func (vm *VM) execStmt(s ast.Stmt) error {
 			}
 		}
 	default:
-		return RuntimeError{"unknown statement type", s.Pos()}
+		return vm.newRuntimeError("unknown statement type", s.Pos())
 	}
 	return nil
 }
@@ -199,7 +218,7 @@ func (vm *VM) evalExpr(e ast.Expr) (Value, error) {
 		}
 		val, ok := vm.vars[e.Name]
 		if !ok {
-			return nil, RuntimeError{"variable '" + e.Name + "' is not defined", e.At}
+			return nil, vm.newRuntimeError("variable '" + e.Name + "' is not defined", e.At)
 		}
 		return val, nil
 	case *ast.BinaryExpr:
@@ -217,11 +236,11 @@ func (vm *VM) evalExpr(e ast.Expr) (Value, error) {
 		case "+":
 			return fmt.Sprintf("%v%v", left, right), nil
 		}
-		return nil, RuntimeError{"unsupported binary operator: " + e.Operator, e.At}
+		return nil, vm.newRuntimeError("unsupported binary operator: " + e.Operator, e.At)
 	case *ast.CallExpr:
 		return nil, vm.evalCall(e)
 	default:
-		return nil, RuntimeError{"unknown expression", e.Pos()}
+		return nil, vm.newRuntimeError("unknown expression", e.Pos())
 	}
 }
 
@@ -232,7 +251,7 @@ func (vm *VM) evalExpr(e ast.Expr) (Value, error) {
 func (vm *VM) evalCall(c *ast.CallExpr) error {
 	fn, ok := vm.funcs[c.FuncName]
 	if !ok {
-		return RuntimeError{"function '" + c.FuncName + "' does not exist", c.At}
+		return vm.newRuntimeError("function '" + c.FuncName + "' does not exist", c.At)
 	}
 	args := []Value{}
 	for _, arg := range c.Args {
@@ -257,7 +276,7 @@ func (vm *VM) assign(lv *ast.LValue, val Value) error {
 				if hex, ok := hexVar.(*Hex); ok {
 					s, ok := val.(string)
 					if !ok {
-						return RuntimeError{"terrain must be a text value", prop.Pos()}
+						return vm.newRuntimeError("terrain must be a text value", prop.Pos())
 					}
 					hex.Terrain = s
 					return nil
@@ -276,17 +295,17 @@ func (vm *VM) assign(lv *ast.LValue, val Value) error {
 				}
 				idx, ok := idxVal.(float64) // numbers are float64 in literal
 				if !ok {
-					return RuntimeError{"index must be a number", indexStep.Pos()}
+					return vm.newRuntimeError("index must be a number", indexStep.Pos())
 				}
 				i := int(idx)
 				if i < 0 || i >= len(vm.root.Hexes) {
-					return RuntimeError{fmt.Sprintf("index %d is out of range (valid: 0 to %d)", i, len(vm.root.Hexes)-1), indexStep.Pos()}
+					return vm.newRuntimeError(fmt.Sprintf("index %d is out of range (valid: 0 to %d)", i, len(vm.root.Hexes)-1), indexStep.Pos())
 				}
 				if len(lv.Steps) == 3 {
 					if prop2, ok := lv.Steps[2].(*ast.PropAccess); ok && prop2.Name == "terrain" {
 						s, ok := val.(string)
 						if !ok {
-							return RuntimeError{"terrain must be a text value", prop2.Pos()}
+							return vm.newRuntimeError("terrain must be a text value", prop2.Pos())
 						}
 						vm.root.Hexes[i].Terrain = s
 						return nil
@@ -295,7 +314,7 @@ func (vm *VM) assign(lv *ast.LValue, val Value) error {
 			}
 		}
 	}
-	return RuntimeError{"cannot assign to this - try 'map.hexes[index].terrain := \"value\"'", lv.At}
+	return vm.newRuntimeError("cannot assign to this - try 'map.hexes[index].terrain := \"value\"'", lv.At)
 }
 
 // ---

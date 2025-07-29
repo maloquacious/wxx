@@ -14,7 +14,7 @@ import (
 
 var (
 	debugMode = false
-	version   = semver.Version{Minor: 1}
+	version   = semver.Version{Minor: 2}
 )
 
 func main() {
@@ -43,9 +43,10 @@ func main() {
 
 	input := args[0]
 	
-	// Check if it looks like a filename (contains a dot)
-	if strings.Contains(input, ".") {
-		// If it contains a dot, it must be a .wxxsh file
+	// Check if it looks like a filename (starts with a path or contains a file extension)
+	if strings.Contains(input, "/") || strings.Contains(input, "\\") || 
+	   (strings.Contains(input, ".") && len(strings.Fields(input)) == 1) {
+		// If it looks like a filename, it must be a .wxxsh file
 		if !strings.HasSuffix(input, ".wxxsh") {
 			fmt.Printf("Error: Script files must have .wxxsh extension (got: %s)\n", input)
 			fmt.Println("This is a safety measure to distinguish WXX scripts from Worldographer data files (.wxx)")
@@ -63,17 +64,25 @@ func main() {
 		input = strings.Join(args, " ")
 	}
 
+	// Determine the filename to use for error reporting
+	var filename string
+	if (strings.Contains(args[0], "/") || strings.Contains(args[0], "\\") || 
+	    (strings.Contains(args[0], ".") && len(strings.Fields(args[0])) == 1)) && 
+	   strings.HasSuffix(args[0], ".wxxsh") {
+		filename = args[0]
+	}
+
 	if debugMode {
 		fmt.Printf("Executing: %s\n", input)
 		fmt.Println("---")
 	}
 
-	executeCode(input)
+	executeCode(input, filename)
 }
 
 
 
-func executeCode(input string) {
+func executeCode(input, filename string) {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("Error:", r)
@@ -87,7 +96,13 @@ func executeCode(input string) {
 
 	// Tokenize
 	tokens := []dsl.Token{}
-	lexer := dsl.NewLexer(input)
+	var lexer *dsl.Lexer
+	if filename != "" {
+		lexer = dsl.NewLexerWithFilename(input, filename)
+	} else {
+		lexer = dsl.NewLexer(input)
+	}
+	
 	for {
 		tok := lexer.NextToken()
 		tokens = append(tokens, tok)
@@ -107,7 +122,12 @@ func executeCode(input string) {
 	}
 
 	// Parse
-	parser := dsl.NewParser(tokens)
+	var parser *dsl.Parser
+	if filename != "" {
+		parser = dsl.NewParserWithFilename(tokens, filename)
+	} else {
+		parser = dsl.NewParser(tokens)
+	}
 	prog := parser.ParseProgram()
 
 	if debugMode {
@@ -124,7 +144,12 @@ func executeCode(input string) {
 	}
 
 	// Execute
-	vm := dsl.NewVM(dsl.NewMockMap())
+	var vm *dsl.VM
+	if filename != "" {
+		vm = dsl.NewVMWithFilename(dsl.NewMockMap(), filename)
+	} else {
+		vm = dsl.NewVM(dsl.NewMockMap())
+	}
 	if err := vm.Execute(prog); err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)

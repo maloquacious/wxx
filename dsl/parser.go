@@ -20,16 +20,30 @@ package dsl
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"github.com/maloquacious/wxx/dsl/ast"
 )
 
 type Parser struct {
-	tokens []Token
-	pos    int
+	tokens   []Token
+	pos      int
+	filename string
 }
 
 func NewParser(tokens []Token) *Parser {
 	return &Parser{tokens: tokens}
+}
+
+func NewParserWithFilename(tokens []Token, filename string) *Parser {
+	return &Parser{tokens: tokens, filename: filename}
+}
+
+func (p *Parser) formatError(tok Token, msg string) string {
+	if p.filename != "" {
+		return fmt.Sprintf("%s:%d:%d: %s", p.filename, tok.Line, tok.Column, msg)
+	}
+	return fmt.Sprintf("%d:%d: %s", tok.Line, tok.Column, msg)
 }
 
 func (p *Parser) peek() Token {
@@ -48,7 +62,7 @@ func (p *Parser) advance() Token {
 func (p *Parser) match(expected TokenType) Token {
 	tok := p.advance()
 	if tok.Type != expected {
-		panic(fmt.Sprintf("Syntax error at line %d: expected %s but found %s", tok.Line, expected, tok.Type))
+		panic(p.formatError(tok, fmt.Sprintf("Syntax error: expected %s but found %s", expected, tok.Type)))
 	}
 	return tok
 }
@@ -79,7 +93,7 @@ func (p *Parser) parseStatement() ast.Stmt {
 	case TokenIdentifier:
 		return p.parseAssignmentOrCall()
 	default:
-		panic(fmt.Sprintf("Syntax error at line %d: unexpected %s '%s'", tok.Line, tok.Type, tok.Value))
+		panic(p.formatError(tok, fmt.Sprintf("Syntax error: unexpected %s '%s'", tok.Type, tok.Value)))
 	}
 }
 
@@ -111,7 +125,7 @@ func (p *Parser) parseAssignmentOrCall() ast.Stmt {
 	}
 
 	tok := p.peek()
-	panic(fmt.Sprintf("Syntax error at line %d: unexpected %s '%s' after identifier", tok.Line, tok.Type, tok.Value))
+	panic(p.formatError(tok, fmt.Sprintf("Syntax error: unexpected %s '%s' after identifier", tok.Type, tok.Value)))
 }
 
 // ---
@@ -235,7 +249,7 @@ func (p *Parser) parseExpr() ast.Expr {
 		}
 		return &ast.IdentExpr{Name: tok.Value, At: toPos(tok)}
 	default:
-		panic(fmt.Sprintf("Syntax error at line %d: unexpected %s '%s' in expression", tok.Line, tok.Type, tok.Value))
+		panic(p.formatError(tok, fmt.Sprintf("Syntax error: unexpected %s '%s' in expression", tok.Type, tok.Value)))
 	}
 }
 
@@ -283,8 +297,16 @@ func (p *Parser) parsePropertyAccess(startTok Token) ast.Expr {
 }
 
 func parseNumber(val string) interface{} {
-	// could return float64 or int, depending on format
-	// for now, always return string (parser handles later)
+	if strings.Contains(val, ".") {
+		if f, err := strconv.ParseFloat(val, 64); err == nil {
+			return f
+		}
+	} else {
+		if i, err := strconv.Atoi(val); err == nil {
+			return float64(i) // Convert to float64 for consistency
+		}
+	}
+	// Fallback to string if parsing fails
 	return val
 }
 
