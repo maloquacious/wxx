@@ -1,3 +1,5 @@
+github.com/maloquacious/hexg v0.0.0-20250727064855-ea92a94b638e h1:7OCCbsKPN3ESZaebdV1y2Llz2eYAr+yVHGEdsaLK4MU=
+github.com/maloquacious/hexg v0.0.0-20250727064855-ea92a94b638e/go.mod h1:b1dSnjRi/xFQqsGVSU/pWdqykIILbkJ24a/HFSxcGAQ=
 github.com/maloquacious/semver v0.0.0-20250623020936-48a383c8aa95 h1:7TNGjV+gqVNStC1Mjau7ZNeeDL+dhRXxE4kgkwhi5Cg=
 github.com/maloquacious/semver v0.0.0-20250623020936-48a383c8aa95/go.mod h1:0VQ90ipG1SLXCDcQo1bgYTBIpvXsEiNOnEF5Bs/HRYY=
 golang.org/x/text v0.27.0 h1:4fGWRpyh641NLlecmyl4LOe6yDdfaYNrGb2zdfo4JV4=

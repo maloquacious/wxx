@@ -1,0 +1,51 @@
+// Top-level program: a list of statements
+program         ::= stmt_list.
+
+// A list of zero or more statements
+stmt_list       ::= stmt_list stmt.
+stmt_list       ::= .                    // Empty list
+
+// Statements include assignment, control flow, or function calls
+stmt            ::= assignment_stmt SEMI.
+stmt            ::= if_stmt.
+stmt            ::= for_stmt.
+stmt            ::= call_stmt SEMI.
+
+// Assignment: path := expression;
+assignment_stmt ::= lvalue ASSIGN expr.
+
+// Function call: e.g., save("filename.wxx");
+call_stmt       ::= IDENTIFIER LPAREN arg_list RPAREN.
+
+// if expr then stmt_list [else stmt_list] end
+if_stmt         ::= IF expr THEN stmt_list else_opt END.
+else_opt        ::= ELSE stmt_list.
+else_opt        ::= .                    // Optional else block
+
+// for ident in expr do stmt_list end
+for_stmt        ::= FOR IDENTIFIER IN expr DO stmt_list END.
+
+// A list of arguments in function calls
+arg_list        ::= expr_list.
+arg_list        ::= .                    // No arguments
+
+expr_list       ::= expr_list COMMA expr.
+expr_list       ::= expr.
+
+// Expressions
+expr            ::= literal.
+expr            ::= lvalue.
+expr            ::= LPAREN expr RPAREN.
+expr            ::= expr BINOP expr.     // + - * / etc.
+
+// Path to a value: e.g., map.hexes[0].terrain
+lvalue          ::= IDENTIFIER path_tail.
+path_tail       ::= DOT IDENTIFIER path_tail.
+path_tail       ::= LBRACKET expr RBRACKET path_tail.
+path_tail       ::= .                    // End of chain
+
+// Literals
+literal         ::= STRING.
+literal         ::= NUMBER.
+literal         ::= TRUE.
+literal         ::= FALSE.

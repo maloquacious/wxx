@@ -9,4 +9,7 @@
 .DS_Store
 .idea/
 .vscode/
+
+# ignore Go workspace file (used for local multi-module dev)
 go.work
+go.work.sum
