@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/chzyer/readline"
-	"github.com/maloquacious/semver"
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/dsl"
 	"io"
@@ -19,8 +18,6 @@ import (
 var (
 	// global flag for debugging, set on command line or `$debug` command.
 	debugMode = false
-
-	version = semver.Version{Minor: 1}
 )
 
 func main() {
@@ -123,7 +120,7 @@ func handleReplCommand(vm *dsl.VM, line string) {
 	case "exit":
 		os.Exit(0)
 	case "version":
-		println(fmt.Sprintf("repl %s: wxx %s", version, wxx.Version()))
+		println(fmt.Sprintf("repl %s", wxx.Version()))
 		return
 
 	//case "vars":

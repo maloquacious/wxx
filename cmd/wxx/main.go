@@ -5,7 +5,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/maloquacious/semver"
+	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/dsl"
 	"os"
 	"runtime/debug"
@@ -14,7 +14,6 @@ import (
 
 var (
 	debugMode = false
-	version   = semver.Version{Minor: 2}
 )
 
 func main() {
@@ -24,7 +23,7 @@ func main() {
 	flag.Parse()
 
 	if showVersion {
-		fmt.Printf("wxx %s\n", version)
+		fmt.Printf("wxx %s\n", wxx.Version())
 		os.Exit(0)
 	}
 
