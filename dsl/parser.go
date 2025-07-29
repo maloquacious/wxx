@@ -1,8 +1,27 @@
 // Copyright (c) 2025 Michael D Henderson. All rights reserved.
 
+// Excellent. Let’s now **refactor the parser scaffold** to build and return the typed AST nodes we just defined, with token positions included for error reporting.
+
+// ---
+
+// 🧩 Assumptions
+//
+// * We’ll use the token and AST types from our previous responses.
+// * We’re building a recursive descent parser.
+// * We’ll build an in-memory `*ast.Program` and return it from `ParseProgram`.
+
+// ---
+
+// ✅ Updated Parser Scaffold
+
+// Here’s a refactored and simplified parser that returns a full AST:
+
 package dsl
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/maloquacious/wxx/dsl/ast"
+)
 
 type Parser struct {
 	tokens []Token
@@ -34,85 +53,239 @@ func (p *Parser) match(expected TokenType) Token {
 	return tok
 }
 
-// Entry point
-func (p *Parser) ParseProgram() {
+// ---
+
+// 🎯 ParseProgram
+
+func (p *Parser) ParseProgram() *ast.Program {
+	stmts := []ast.Stmt{}
 	for p.peek().Type != TokenEOF {
-		p.parseStatement()
+		stmt := p.parseStatement()
+		stmts = append(stmts, stmt)
 	}
+	return &ast.Program{Statements: stmts}
 }
 
-func (p *Parser) parseStatement() {
+// ---
+
+// 🎯 parseStatement
+
+func (p *Parser) parseStatement() ast.Stmt {
 	switch tok := p.peek(); tok.Type {
 	case TokenIf:
-		p.parseIf()
+		return p.parseIf()
 	case TokenFor:
-		p.parseFor()
+		return p.parseFor()
 	case TokenIdentifier:
-		p.parseAssignmentOrCall()
+		return p.parseAssignmentOrCall()
 	default:
 		panic(fmt.Sprintf("unexpected token %v at line %d", tok.Type, tok.Line))
 	}
 }
 
-func (p *Parser) parseAssignmentOrCall() {
-	tok := p.match(TokenIdentifier)
-	if p.peek().Type == TokenAssign {
-		p.advance() // :=
-		p.parseExpr()
-		p.match(TokenSemicolon)
-	} else if p.peek().Type == TokenLParen {
-		p.parseCall(tok)
-		p.match(TokenSemicolon)
-	} else {
-		panic(fmt.Sprintf("unexpected token after identifier: %v", p.peek().Type))
-	}
-}
+// ---
 
-func (p *Parser) parseCall(fn Token) {
-	p.match(TokenLParen)
-	if p.peek().Type != TokenRParen {
-		p.parseExpr()
-		for p.peek().Type == TokenComma {
-			p.advance()
-			p.parseExpr()
+// 🟨 Assignment or Function Call
+
+func (p *Parser) parseAssignmentOrCall() ast.Stmt {
+	start := p.peek()
+	lv := p.parseLValue()
+
+	if p.peek().Type == TokenAssign {
+		p.match(TokenAssign)
+		val := p.parseExpr()
+		p.match(TokenSemicolon)
+		return &ast.AssignStmt{
+			Target: *lv,
+			Value:  val,
+			At:     toPos(start),
+		}
+	} else if p.peek().Type == TokenLParen {
+		// Function call treated as a statement
+		call := p.parseCallExpr(lv.Root)
+		p.match(TokenSemicolon)
+		return &ast.CallStmt{
+			Call: call,
+			At:   toPos(start),
 		}
 	}
-	p.match(TokenRParen)
+
+	panic(fmt.Sprintf("unexpected token after identifier: %v", p.peek().Type))
 }
 
-func (p *Parser) parseIf() {
-	p.match(TokenIf)
-	p.parseExpr()
-	p.match(TokenThen)
-	for p.peek().Type != TokenElse && p.peek().Type != TokenEnd {
-		p.parseStatement()
+// ---
+
+// 🟨 LValue Parsing
+
+func (p *Parser) parseLValue() *ast.LValue {
+	start := p.match(TokenIdentifier)
+
+	lv := &ast.LValue{
+		Root:  start.Value,
+		Steps: []ast.LValueStep{},
+		At:    toPos(start),
 	}
+
+	for {
+		switch p.peek().Type {
+		case TokenDot:
+			p.match(TokenDot)
+			prop := p.match(TokenIdentifier)
+			lv.Steps = append(lv.Steps, &ast.PropAccess{
+				Name: prop.Value,
+				At:   toPos(prop),
+			})
+		case TokenLBracket:
+			p.match(TokenLBracket)
+			idx := p.parseExpr()
+			close := p.match(TokenRBracket)
+			lv.Steps = append(lv.Steps, &ast.IndexAccess{
+				Index: idx,
+				At:    toPos(close), // position of `]`
+			})
+		default:
+			return lv
+		}
+	}
+}
+
+// ---
+
+// 🟦 Control Flow
+
+// `if expr then ... [else ...] end`
+
+func (p *Parser) parseIf() ast.Stmt {
+	start := p.match(TokenIf)
+	cond := p.parseExpr()
+	p.match(TokenThen)
+
+	thenBranch := []ast.Stmt{}
+	for p.peek().Type != TokenElse && p.peek().Type != TokenEnd {
+		thenBranch = append(thenBranch, p.parseStatement())
+	}
+
+	var elseBranch []ast.Stmt
 	if p.peek().Type == TokenElse {
 		p.match(TokenElse)
 		for p.peek().Type != TokenEnd {
-			p.parseStatement()
+			elseBranch = append(elseBranch, p.parseStatement())
 		}
 	}
+
 	p.match(TokenEnd)
+	return &ast.IfStmt{
+		Condition: cond,
+		Then:      thenBranch,
+		Else:      elseBranch,
+		At:        toPos(start),
+	}
 }
 
-func (p *Parser) parseFor() {
-	p.match(TokenFor)
-	p.match(TokenIdentifier)
+// `for ident in expr do ... end`
+
+func (p *Parser) parseFor() ast.Stmt {
+	start := p.match(TokenFor)
+	ident := p.match(TokenIdentifier)
 	p.match(TokenIn)
-	p.parseExpr()
+	iter := p.parseExpr()
 	p.match(TokenDo)
+
+	body := []ast.Stmt{}
 	for p.peek().Type != TokenEnd {
-		p.parseStatement()
+		body = append(body, p.parseStatement())
 	}
 	p.match(TokenEnd)
+
+	return &ast.ForStmt{
+		VarName:  ident.Value,
+		Iterator: iter,
+		Body:     body,
+		At:       toPos(start),
+	}
 }
 
-func (p *Parser) parseExpr() {
-	// Placeholder for now — you’ll expand this to handle precedence and nesting.
+// ---
+
+// 🟩 Expressions
+
+// parseExpr (temporary version)
+
+// We’ll replace this with a full precedence parser soon:
+
+func (p *Parser) parseExpr() ast.Expr {
 	tok := p.advance()
-	if tok.Type == TokenNumber || tok.Type == TokenString || tok.Type == TokenTrue || tok.Type == TokenFalse || tok.Type == TokenIdentifier {
-		return
+	switch tok.Type {
+	case TokenNumber:
+		return &ast.LiteralExpr{Value: parseNumber(tok.Value), At: toPos(tok)}
+	case TokenString:
+		return &ast.LiteralExpr{Value: tok.Value, At: toPos(tok)}
+	case TokenTrue:
+		return &ast.LiteralExpr{Value: true, At: toPos(tok)}
+	case TokenFalse:
+		return &ast.LiteralExpr{Value: false, At: toPos(tok)}
+	case TokenIdentifier:
+		if p.peek().Type == TokenLParen {
+			return p.parseCallExpr(tok.Value)
+		}
+		return &ast.IdentExpr{Name: tok.Value, At: toPos(tok)}
+	default:
+		panic(fmt.Sprintf("unexpected token in expression: %v", tok))
 	}
-	panic(fmt.Sprintf("unexpected token in expression: %v", tok.Type))
 }
+
+// Function Call as Expr
+
+func (p *Parser) parseCallExpr(name string) *ast.CallExpr {
+	start := p.match(TokenLParen)
+	args := []ast.Expr{}
+
+	if p.peek().Type != TokenRParen {
+		args = append(args, p.parseExpr())
+		for p.peek().Type == TokenComma {
+			p.match(TokenComma)
+			args = append(args, p.parseExpr())
+		}
+	}
+	p.match(TokenRParen)
+	return &ast.CallExpr{
+		FuncName: name,
+		Args:     args,
+		At:       toPos(start),
+	}
+}
+
+// ---
+
+// 🧩 Utilities
+
+func toPos(tok Token) ast.Pos {
+	return ast.Pos{Line: tok.Line, Column: tok.Column}
+}
+
+func parseNumber(val string) interface{} {
+	// could return float64 or int, depending on format
+	// for now, always return string (parser handles later)
+	return val
+}
+
+// ---
+
+// ✅ What You Now Have
+//
+// * A **recursive descent parser** that builds a well-structured AST with positions.
+// * Full support for:
+//
+// * Assignments
+// * Function calls
+// * `if/then/else/end` and `for/in/do/end`
+// * Nested paths like `a.b[0].c`
+// * Literals and identifiers
+
+// ---
+
+// 🔜 What’s Next?
+//
+// 1. ✅ Implementing **expression parsing with operator precedence**?
+// 2. ✅ Adding **AST validation and semantic checks** (e.g., undefined vars)?
+// 3. 🔄 Building a **VM or interpreter** for this language?
