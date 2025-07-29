@@ -54,7 +54,6 @@ func (vm *VM) newRuntimeError(msg string, pos ast.Pos) RuntimeError {
 type VM struct {
 	vars     map[string]Value           // for loop vars, etc.
 	funcs    map[string]BuiltinFunction // built-in function handlers
-	root     *MapRoot                   // root object (e.g., WXX DOM)
 	filename string                     // current script filename
 }
 
@@ -89,10 +88,9 @@ type Value interface{}
 
 // 🧪 VM Entry Point
 
-func NewVM(root *MapRoot) *VM {
+func NewVM() *VM {
 	vm := &VM{
 		vars: make(map[string]Value),
-		root: root,
 	}
 
 	vm.funcs = map[string]BuiltinFunction{}
@@ -103,8 +101,8 @@ func NewVM(root *MapRoot) *VM {
 	return vm
 }
 
-func NewVMWithFilename(root *MapRoot, filename string) *VM {
-	vm := NewVM(root)
+func NewVMWithFilename(filename string) *VM {
+	vm := NewVM()
 	vm.filename = filename
 	return vm
 }
@@ -168,21 +166,21 @@ func (vm *VM) execStmt(s ast.Stmt) (any, error) {
 		slice, ok := iter.([]Value)
 		if !ok {
 			// special case: hardcoded map.hexes
-			if s.Iterator.(*ast.IdentExpr).Name == "map.hexes" {
-				slice = make([]Value, len(vm.root.Hexes))
-				for i := range vm.root.Hexes {
-					slice[i] = &vm.root.Hexes[i]
-				}
-				//} else if s.Iterator.(*ast.LValue).Root == "map" {
-				//	// impossible type assertion: s.Iterator.(*ast.LValue)
-				//	//	*ast.LValue does not implement ast.Expr (missing method exprNode)
-				//	slice = make([]Value, len(vm.root.Hexes))
-				//	for i := range vm.root.Hexes {
-				//		slice[i] = &vm.root.Hexes[i]
-				//	}
-			} else {
-				return nil, vm.newRuntimeError("cannot iterate over this value - use something like 'map.hexes'", s.At)
-			}
+			//if s.Iterator.(*ast.IdentExpr).Name == "map.hexes" {
+			//	slice = make([]Value, len(vm.root.Hexes))
+			//	for i := range vm.root.Hexes {
+			//		slice[i] = &vm.root.Hexes[i]
+			//	}
+			//	//} else if s.Iterator.(*ast.LValue).Root == "map" {
+			//	//	// impossible type assertion: s.Iterator.(*ast.LValue)
+			//	//	//	*ast.LValue does not implement ast.Expr (missing method exprNode)
+			//	//	slice = make([]Value, len(vm.root.Hexes))
+			//	//	for i := range vm.root.Hexes {
+			//	//		slice[i] = &vm.root.Hexes[i]
+			//	//	}
+			//} else {
+			return nil, vm.newRuntimeError("cannot iterate over this value - use something like 'map.hexes'", s.At)
+			//}
 		}
 		for _, item := range slice {
 			vm.vars[s.VarName] = item
@@ -207,14 +205,14 @@ func (vm *VM) evalExpr(e ast.Expr) (Value, error) {
 	case *ast.LiteralExpr:
 		return e.Value, nil
 	case *ast.IdentExpr:
-		if e.Name == "map.hexes" {
-			// Special case: return the hexes slice
-			slice := make([]Value, len(vm.root.Hexes))
-			for i := range vm.root.Hexes {
-				slice[i] = &vm.root.Hexes[i]
-			}
-			return slice, nil
-		}
+		//if e.Name == "map.hexes" {
+		//	// Special case: return the hexes slice
+		//	slice := make([]Value, len(vm.root.Hexes))
+		//	for i := range vm.root.Hexes {
+		//		slice[i] = &vm.root.Hexes[i]
+		//	}
+		//	return slice, nil
+		//}
 		val, ok := vm.vars[e.Name]
 		if !ok {
 			return nil, vm.newRuntimeError("variable '"+e.Name+"' is not defined", e.At)
@@ -286,35 +284,37 @@ func (vm *VM) assign(lv *ast.LValue, val Value) error {
 		}
 	}
 
-	if lv.Root == "map" && len(lv.Steps) >= 2 {
-		// Handle map.hexes[i].terrain = "swamp"
-		if prop1, ok := lv.Steps[0].(*ast.PropAccess); ok && prop1.Name == "hexes" {
-			if indexStep, ok := lv.Steps[1].(*ast.IndexAccess); ok {
-				idxVal, err := vm.evalExpr(indexStep.Index)
-				if err != nil {
-					return err
-				}
-				idx, ok := idxVal.(float64) // numbers are float64 in literal
-				if !ok {
-					return vm.newRuntimeError("index must be a number", indexStep.Pos())
-				}
-				i := int(idx)
-				if i < 0 || i >= len(vm.root.Hexes) {
-					return vm.newRuntimeError(fmt.Sprintf("index %d is out of range (valid: 0 to %d)", i, len(vm.root.Hexes)-1), indexStep.Pos())
-				}
-				if len(lv.Steps) == 3 {
-					if prop2, ok := lv.Steps[2].(*ast.PropAccess); ok && prop2.Name == "terrain" {
-						s, ok := val.(string)
-						if !ok {
-							return vm.newRuntimeError("terrain must be a text value", prop2.Pos())
-						}
-						vm.root.Hexes[i].Terrain = s
-						return nil
-					}
-				}
-			}
-		}
-	}
+	// commented out hard-coded map.hexes logic
+	//if lv.Root == "map" && len(lv.Steps) >= 2 {
+	//	// Handle map.hexes[i].terrain = "swamp"
+	//	if prop1, ok := lv.Steps[0].(*ast.PropAccess); ok && prop1.Name == "hexes" {
+	//		if indexStep, ok := lv.Steps[1].(*ast.IndexAccess); ok {
+	//			idxVal, err := vm.evalExpr(indexStep.Index)
+	//			if err != nil {
+	//				return err
+	//			}
+	//			idx, ok := idxVal.(float64) // numbers are float64 in literal
+	//			if !ok {
+	//				return vm.newRuntimeError("index must be a number", indexStep.Pos())
+	//			}
+	//			i := int(idx)
+	//			if i < 0 || i >= len(vm.root.Hexes) {
+	//				return vm.newRuntimeError(fmt.Sprintf("index %d is out of range (valid: 0 to %d)", i, len(vm.root.Hexes)-1), indexStep.Pos())
+	//			}
+	//			if len(lv.Steps) == 3 {
+	//				if prop2, ok := lv.Steps[2].(*ast.PropAccess); ok && prop2.Name == "terrain" {
+	//					s, ok := val.(string)
+	//					if !ok {
+	//						return vm.newRuntimeError("terrain must be a text value", prop2.Pos())
+	//					}
+	//					vm.root.Hexes[i].Terrain = s
+	//					return nil
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
+
 	return vm.newRuntimeError("cannot assign to this - try 'map.hexes[index].terrain := \"value\"'", lv.At)
 }
 

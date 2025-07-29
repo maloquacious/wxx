@@ -28,7 +28,7 @@ func main() {
 	}
 
 	args := flag.Args()
-	
+
 	if len(args) == 0 {
 		fmt.Println("Usage: wxx [--debug] [--version] <script.wxxsh>")
 		fmt.Println("   or: wxx [--debug] <DSL statement>")
@@ -41,34 +41,20 @@ func main() {
 	}
 
 	input := args[0]
-	
-	// Check if it looks like a filename (starts with a path or contains a file extension)
-	if strings.Contains(input, "/") || strings.Contains(input, "\\") || 
-	   (strings.Contains(input, ".") && len(strings.Fields(input)) == 1) {
-		// If it looks like a filename, it must be a .wxxsh file
-		if !strings.HasSuffix(input, ".wxxsh") {
-			fmt.Printf("Error: Script files must have .wxxsh extension (got: %s)\n", input)
-			fmt.Println("This is a safety measure to distinguish WXX scripts from Worldographer data files (.wxx)")
-			os.Exit(1)
-		}
-		// Try to read the file
+
+	var filename string // the filename to use for error reporting
+
+	// if the argument looks like a `.wxxsh` script name, then try to load the script
+	if strings.HasSuffix(input, ".wxxsh") {
 		data, err := os.ReadFile(input)
 		if err != nil {
 			fmt.Printf("Error reading file %s: %v\n", input, err)
 			os.Exit(1)
 		}
 		input = string(data)
-	} else {
-		// Treat as direct statement - join all args
-		input = strings.Join(args, " ")
-	}
-
-	// Determine the filename to use for error reporting
-	var filename string
-	if (strings.Contains(args[0], "/") || strings.Contains(args[0], "\\") || 
-	    (strings.Contains(args[0], ".") && len(strings.Fields(args[0])) == 1)) && 
-	   strings.HasSuffix(args[0], ".wxxsh") {
 		filename = args[0]
+	} else { // Treat as direct statement - join all args
+		input = strings.Join(args, " ")
 	}
 
 	if debugMode {
@@ -78,8 +64,6 @@ func main() {
 
 	executeCode(input, filename)
 }
-
-
 
 func executeCode(input, filename string) {
 	defer func() {
@@ -101,7 +85,7 @@ func executeCode(input, filename string) {
 	} else {
 		lexer = dsl.NewLexer(input)
 	}
-	
+
 	for {
 		tok := lexer.NextToken()
 		tokens = append(tokens, tok)
@@ -145,9 +129,9 @@ func executeCode(input, filename string) {
 	// Execute
 	var vm *dsl.VM
 	if filename != "" {
-		vm = dsl.NewVMWithFilename(dsl.NewMockMap(), filename)
+		vm = dsl.NewVMWithFilename(filename)
 	} else {
-		vm = dsl.NewVM(dsl.NewMockMap())
+		vm = dsl.NewVM()
 	}
 	if err := vm.Execute(prog); err != nil {
 		fmt.Println("Error:", err)

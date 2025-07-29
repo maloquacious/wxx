@@ -37,7 +37,7 @@ func main() {
 	rl.CaptureExitSignal()
 	log.SetOutput(rl.Stderr())
 
-	vm := dsl.NewVM(dsl.NewMockMap())
+	vm := dsl.NewVM()
 
 	println("WXX DSL REPL - type `$exit` to quit, `$help` for help\n")
 
