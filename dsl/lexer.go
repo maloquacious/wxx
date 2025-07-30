@@ -34,10 +34,10 @@ func NewLexerWithFilename(input, filename string) *Lexer {
 }
 
 func (lx *Lexer) formatError(msg string) string {
-	if lx.filename != "" {
-		return fmt.Sprintf("%s:%d:%d: %s", lx.filename, lx.line, lx.column, msg)
+	if lx.filename == "" {
+		return fmt.Sprintf("%d:%d: %s", lx.line, lx.column, msg)
 	}
-	return fmt.Sprintf("%d:%d: %s", lx.line, lx.column, msg)
+	return fmt.Sprintf("%s:%d:%d: %s", lx.filename, lx.line, lx.column, msg)
 }
 
 func (lx *Lexer) peek() rune {
@@ -93,7 +93,7 @@ func (lx *Lexer) skipBlockComment() {
 	// Skip /* ... */
 	lx.advance() // consume '/'
 	lx.advance() // consume '*'
-	
+
 	for lx.peek() != 0 {
 		if lx.peek() == '*' {
 			lx.advance()
@@ -112,27 +112,27 @@ func (lx *Lexer) skipLuaBlockComment() {
 	// Skip /*- ... -*/ with balanced dashes
 	lx.advance() // consume '/'
 	lx.advance() // consume '*'
-	
+
 	// Count opening dashes
 	dashCount := 0
 	for lx.peek() == '-' {
 		dashCount++
 		lx.advance()
 	}
-	
+
 	for lx.peek() != 0 {
 		if lx.peek() == '-' {
 			// Check for closing pattern: dashCount dashes followed by */
 			saved_pos := lx.pos
-			saved_line := lx.line  
+			saved_line := lx.line
 			saved_col := lx.column
-			
+
 			closeDashCount := 0
 			for lx.peek() == '-' {
 				closeDashCount++
 				lx.advance()
 			}
-			
+
 			if closeDashCount == dashCount && lx.peek() == '*' {
 				lx.advance()
 				if lx.peek() == '/' {
@@ -140,7 +140,7 @@ func (lx *Lexer) skipLuaBlockComment() {
 					return
 				}
 			}
-			
+
 			// Not a match, restore position
 			lx.pos = saved_pos
 			lx.line = saved_line
@@ -156,7 +156,7 @@ func (lx *Lexer) skipLuaBlockComment() {
 func (lx *Lexer) NextToken() Token {
 	var startLine, startCol int
 	var ch rune
-	
+
 	for {
 		lx.skipWhitespace()
 
@@ -172,9 +172,7 @@ func (lx *Lexer) NextToken() Token {
 		if ch == '#' {
 			lx.skipLineComment()
 			continue // Skip to next token
-		}
-		
-		if ch == '/' {
+		} else if ch == '/' {
 			next := lx.peekNext()
 			if next == '/' {
 				lx.advance() // consume '/'

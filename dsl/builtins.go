@@ -7,6 +7,9 @@ import (
 	"strings"
 )
 
+// return void_t from your functions if they're not returning anything?
+type void_t struct{}
+
 // BuiltinFunction returns a value or an error.
 // The error is set if there are issues with the function (syntax or run-time).
 // If the function wants to return an error to the user (for example we failed
@@ -30,10 +33,10 @@ func biLoad(args []Value) (any, error) {
 	// arguments
 	var fileName string
 	if len(args) != 1 {
-		return nil, fmt.Errorf("load: requires exactly one argument")
+		return void_t{}, fmt.Errorf("load: requires exactly one argument")
 	} else if arg, ok := args[0].(string); !ok {
 		//println(fmt.Sprintf("load: args %T %+v\n", args[0], args[0]))
-		return nil, fmt.Errorf("load: argument must be a string")
+		return void_t{}, fmt.Errorf("load: argument must be a string")
 	} else {
 		fileName = arg
 	}
@@ -50,7 +53,7 @@ func biPrint(args []Value) (any, error) {
 	for _, arg := range args {
 		fmt.Println(arg)
 	}
-	return nil, nil
+	return void_t{}, nil
 }
 
 // biSave tries to write a .wxx file.
@@ -58,7 +61,7 @@ func biSave(args []Value) (any, error) {
 	// arguments
 	var fileName string
 	if len(args) != 1 {
-		return nil, fmt.Errorf("save: requires exactly one argument")
+		return void_t{}, fmt.Errorf("save: requires exactly one argument")
 	} else if arg, ok := args[0].(string); !ok {
 		//println(fmt.Sprintf("load: args %T %+v\n", args[0], args[0]))
 		return nil, fmt.Errorf("save: argument must be a string")
@@ -70,5 +73,5 @@ func biSave(args []Value) (any, error) {
 		return fmt.Errorf("file name must end with .wxx"), nil
 	}
 	fmt.Printf("save: converting... mocking writing to: %q\n", fileName)
-	return nil, nil
+	return true, nil
 }

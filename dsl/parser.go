@@ -152,10 +152,10 @@ func (p *Parser) parseLValue() *ast.LValue {
 		case TokenLBracket:
 			p.match(TokenLBracket)
 			idx := p.parseExpr()
-			close := p.match(TokenRBracket)
+			closeb := p.match(TokenRBracket)
 			lv.Steps = append(lv.Steps, &ast.IndexAccess{
 				Index: idx,
-				At:    toPos(close), // position of `]`
+				At:    toPos(closeb), // position of `]`
 			})
 		default:
 			return lv
