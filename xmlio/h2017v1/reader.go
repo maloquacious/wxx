@@ -15,7 +15,6 @@ import (
 
 // Read unmarshalls XML data using the H2017.V1 schema and returns the internal Map or an error.
 func Read(input []byte) (*models.Map, error) {
-	log.Printf("h2017v1: read %8d bytes\n", len(input))
 	m := &Map{}
 
 	// unmarshal into a structure that's built just for the conversion
@@ -24,7 +23,6 @@ func Read(input []byte) (*models.Map, error) {
 		log.Printf("h2017v1: %v\n", err)
 		return nil, err
 	}
-	log.Printf("h2017v1: unmarshal completed\n")
 
 	// process source into a WXX structure and return it or any errors
 	w := &models.Map{}
@@ -53,7 +51,7 @@ func Read(input []byte) (*models.Map, error) {
 	w.ShowGMOnlyGlow = m.ShowGMOnlyGlow
 	w.ShowGrid = m.ShowGrid
 	if m.ShowGridNumbers == false {
-		log.Printf("todo: showGridNumber overriden to 'true'\n")
+		//log.Printf("todo: showGridNumber overriden to 'true'\n")
 		w.ShowGridNumbers = true
 	} else {
 		w.ShowGridNumbers = m.ShowGridNumbers
@@ -125,7 +123,7 @@ func Read(input []byte) (*models.Map, error) {
 	w.Tiles.ViewLevel = m.Tiles.ViewLevel
 	w.Tiles.TilesWide = m.Tiles.TilesWide
 	w.Tiles.TilesHigh = m.Tiles.TilesHigh
-	log.Printf("hey, tilesHigh is %d tilesWide is %d\n", m.Tiles.TilesHigh, m.Tiles.TilesWide)
+	//log.Printf("hey, tilesHigh is %d tilesWide is %d\n", m.Tiles.TilesHigh, m.Tiles.TilesWide)
 	isFirstTileRow := true
 	for _, tilerow := range m.Tiles.TileRows {
 		x, y := len(w.Tiles.TileRows), 0

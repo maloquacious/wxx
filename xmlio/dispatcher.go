@@ -12,7 +12,6 @@ import (
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/transform"
 	"io"
-	"log"
 	"os"
 	"strings"
 )
@@ -148,12 +147,11 @@ func ReadUTF8XML(r io.Reader) (*models.Map, error) {
 	}
 
 	// use the metadata to call the correct unmarshaler for the XML
-	log.Printf("read: release %q: version %q: schema %q\n", xmlMetaData.Release, xmlMetaData.Version, xmlMetaData.Schema)
 	switch xmlMetaData.Release + "/" + xmlMetaData.Version + "/" + xmlMetaData.Schema {
 	case "/1.73/", "/1.74/", "/1.77/":
 		return h2017v1.Read(data)
 	case "2025/1.10/1.01":
-		panic("!implemented")
+		return nil, fmt.Errorf("2025/1.10/1.01: not yet implemented")
 	}
 	return nil, errors.Join(models.ErrUnsupportedMapMetadata, fmt.Errorf("map: release %q: schema %q: version %q", xmlMetaData.Release, xmlMetaData.Schema, xmlMetaData.Version))
 }

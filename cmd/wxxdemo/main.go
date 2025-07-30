@@ -24,7 +24,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/maloquacious/semver"
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/adapters"
 	"github.com/maloquacious/wxx/readers"
@@ -37,19 +36,10 @@ import (
 	"time"
 )
 
-var (
-	mv = semver.Version{
-		Major: 0,
-		Minor: 3,
-		Patch: 0,
-	}
-)
-
 func main() {
 	log.SetFlags(log.Lshortfile | log.Ltime)
 
 	// when the showVersion flag is true, the program will write the
-	// application version (from the global 'mv' variable) and the
 	// wxx package version and then quit.
 	var showVersion bool
 	flag.BoolVar(&showVersion, "version", showVersion, "show version and quit")
@@ -69,7 +59,7 @@ func main() {
 	}
 
 	if showVersion {
-		fmt.Printf("wxxdemo version %s: wxx package version %s\n", mv.String(), wxx.Version())
+		fmt.Printf("wxxdemo: wxx version %s\n", wxx.Version())
 		os.Exit(0)
 	}
 
