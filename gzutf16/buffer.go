@@ -39,7 +39,7 @@ func (b *Buffer) Bytes() ([]byte, error) {
 	if b == nil {
 		return nil, fmt.Errorf("bytes from nil buffer")
 	}
-	
+
 	// Get the UTF-8 data from the buffer
 	utf8Data := b.buf.Bytes()
 
@@ -53,12 +53,12 @@ func (b *Buffer) Bytes() ([]byte, error) {
 	// Compress with gzip
 	var gzipBuffer bytes.Buffer
 	gzipWriter := gzip.NewWriter(&gzipBuffer)
-	
+
 	_, err = gzipWriter.Write(utf16Data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to write to gzip: %w", err)
 	}
-	
+
 	err = gzipWriter.Close()
 	if err != nil {
 		return nil, fmt.Errorf("failed to close gzip writer: %w", err)

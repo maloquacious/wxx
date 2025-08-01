@@ -18,7 +18,7 @@ At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praese
 
 	t.Run("write_and_bytes", func(t *testing.T) {
 		var buf Buffer
-		
+
 		// Write data to buffer
 		n, err := buf.Write([]byte(originalText))
 		if err != nil {
@@ -59,7 +59,7 @@ At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praese
 
 	t.Run("printf_and_bytes", func(t *testing.T) {
 		var buf Buffer
-		
+
 		// Use Printf to write formatted data
 		n, err := buf.Printf("Hello %s! Number: %d", "World", 42)
 		if err != nil {
@@ -96,18 +96,18 @@ At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praese
 
 	t.Run("mixed_write_and_printf", func(t *testing.T) {
 		var buf Buffer
-		
+
 		// Mix Write and Printf calls
 		_, err := buf.Write([]byte("Start: "))
 		if err != nil {
 			t.Fatalf("Write() error = %v", err)
 		}
-		
+
 		_, err = buf.Printf("Value=%d", 123)
 		if err != nil {
 			t.Fatalf("Printf() error = %v", err)
 		}
-		
+
 		_, err = buf.Write([]byte(" End"))
 		if err != nil {
 			t.Fatalf("Write() error = %v", err)
@@ -141,23 +141,23 @@ At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praese
 
 	t.Run("buffer_methods", func(t *testing.T) {
 		var buf Buffer
-		
+
 		// Test Len
 		if buf.Len() != 0 {
 			t.Errorf("Expected empty buffer length 0, got %d", buf.Len())
 		}
-		
+
 		// Write some data
 		buf.Write([]byte("Hello"))
 		if buf.Len() != 5 {
 			t.Errorf("Expected buffer length 5, got %d", buf.Len())
 		}
-		
+
 		// Test String
 		if buf.String() != "Hello" {
 			t.Errorf("Expected 'Hello', got %q", buf.String())
 		}
-		
+
 		// Test Reset
 		buf.Reset()
 		if buf.Len() != 0 {
@@ -170,19 +170,19 @@ At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praese
 
 	t.Run("nil_buffer_errors", func(t *testing.T) {
 		var buf *Buffer
-		
+
 		// Test Write with nil buffer
 		_, err := buf.Write([]byte("test"))
 		if err == nil {
 			t.Error("Expected error writing to nil buffer")
 		}
-		
+
 		// Test Printf with nil buffer
 		_, err = buf.Printf("test %d", 42)
 		if err == nil {
 			t.Error("Expected error with Printf on nil buffer")
 		}
-		
+
 		// Test Bytes with nil buffer
 		_, err = buf.Bytes()
 		if err == nil {
