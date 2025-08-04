@@ -156,7 +156,8 @@ func ReadUTF8XML(r io.Reader) (*models.Map_t, error) {
 	return nil, errors.Join(models.ErrUnsupportedMapMetadata, fmt.Errorf("map: release %q: schema %q: version %q", xmlMetaData.Release, xmlMetaData.Schema, xmlMetaData.Version))
 }
 
-func Write(version semver.Version, data *models.Map_t) ([]byte, error) {
+func WriteFile(worldographerTargetVersion semver.Version, data *models.Map_t, writeDebugUtf8 bool) error {
+	return fmt.Errorf("not yet implemented")
 	//switch version.Major {
 	//case 1:
 	//	return h2017v1.Write(data)
@@ -165,5 +166,4 @@ func Write(version semver.Version, data *models.Map_t) ([]byte, error) {
 	//default:
 	//	return nil, errors.Join(models.ErrUnsupportedSchemaVersion, fmt.Errorf("schema version: %s", version))
 	//}
-	panic("!implemented")
 }
