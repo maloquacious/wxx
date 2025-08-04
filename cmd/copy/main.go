@@ -68,7 +68,7 @@ func main() {
 	}
 
 	// Write to the output file
-	err = xmlio.WriteFile(data.MetaData.DataVersion, data, writeDebugUtf8)
+	err = xmlio.WriteFile(outputFile, data.MetaData.DataVersion, data, writeDebugUtf8)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error writing %s: %v\n", outputFile, err)
 		os.Exit(1)
