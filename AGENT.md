@@ -2,23 +2,37 @@
 
 This project implements a Go package (github.com/maloquacious/wxx) to read and write Worldographer data files (also called "WXX files").
 
-Worldographer is a map-generator written in Java. It stores data as XML in compressed (with GZip) and UTF-16 encoded (big-endian, I think) files.
+## Worldographer
+Worldographer is a map-generator written in Java.
+It stores data as XML in compressed (with GZip) and UTF-16 encoded (big-endian, I think) files.
 
 There are two programs that create and update the files, both named Worldographer.
 
-1. The original program is called "Worldographer." This program uses XML version 1.0 and doesn't contain an XML schema version in the file.
+1. The original program is called "Worldographer."
+This program uses XML version 1.0 and doesn't contain an XML schema version in the file.
 
-2. The newer program is called "Worldographer 2025." This version uses XML version 1.1 and stores the XML schema version as an attribute of the "map" entity.
+2. The newer program is called "Worldographer 2025."
+This version uses XML version 1.1 and stores the XML schema version as an attribute of the "map" entity.
 
-We are working to implement a Sqlite3 data store. To do that, we need
+We will create readers and writers under the `xmlio/` path to read and write the different versions of Worldographer data files.
 
-1. Routines to detect the XML schema version in the WXX data file
-2. Go structs that we can use to read and write the different versions of WXX files
-3. A database schema
-4. Routines to read and write the database data using Go structs
+### Documentation
+There is not much documentation available for the WXX files.
+We should create it as we go, taking care to track differences between the XML schema versions.
 
-There is not much documentation available for the WXX files. We should create it as we go, taking care to track differences between the XML schema versions.
+## Go data structures
+Map_t is the Go struct that we store the Worldographer data in.
+There are multiple versions of Worldographer data, so our Map_t is a superset of that data.
+
+The xmlio readers target the Map_t structure; the writers use it as their source. 
+
+## Sqlite3
+Implementing a Sqlite3 data store is on the roadmap and will be scheduled after we completed the xmli readers and writers.
+
+For the data store, we will need to create a database schema and routines to load and store Map_t into the data store.
 
 ## Building
-* REPL: `go build -o dist/local/repl ./cmd/repl`
-* WXX runner: `go build -o dist/local/wxx ./cmd/wxx`
+We have tools in the `cmd/` path that we use for testing this package.
+
+* Build a tool: `go build -o dist/local/version ./cmd/version`
+* Run a tool: `dist/local/version`

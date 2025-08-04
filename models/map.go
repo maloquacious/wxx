@@ -2,15 +2,10 @@
 
 package models
 
-import (
-	"github.com/maloquacious/semver"
-	"time"
-)
-
-// Map is the in-memory representation of the map data.
+// Map_t is the in-memory representation of the map data.
 // We have created this to work with the known versions of Worldographer XML data.
 // We are assuming that this will continue to work with future versions of the application.
-type Map struct {
+type_ Map struct {
 	MetaData struct {
 		Version semver.Version `json:"version"` // version of this application
 		// Worldographer defines the metadata for the WXX file
