@@ -163,20 +163,30 @@ func WriteFile(filename string, worldographerTargetVersion semver.Version, w *mo
 		return err
 	}
 	if writeDebugUtf8 {
-		// todo: if we are writing the debug utf-8 xml, we need to figure out the file name and then write it
+		debugFileName := filename + ".xml"
+		if err := os.WriteFile(debugFileName, utf8XmlData, 0600); err != nil {
+			return err
+		}
 	}
-	// encode as UTF-16/BE
-	utf16XmlData, err := EncodeXMLToUTF16(utf8XmlData)
+
+	// encode the data as UTF-16/BE with the appropriate XML header (version 1.0 or 1.1), returning any errors
+	utf16XmlData, err := EncodeXMLToUTF16(utf8XmlData, worldographerTargetVersion)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("debug: utf8XmlData %d bytes\n", len(utf16XmlData))
-	// todo: compress file
-	// todo: write file
 
-	return fmt.Errorf("not yet implemented")
+	// compress the encoded data, returning any errors
+	gzipData, err := CompressUTF16(utf16XmlData)
+	if err != nil {
+		return err
+	}
+
+	// write the compressed data, returning any errors
+	return os.WriteFile(filename, gzipData, 0600)
 }
 
+// WriteMapToXML uses the target version to pick the right XML schema, then converts the Map_t to XML.
+// Returns an error for unsupported versions or if there are errors during the conversion.
 func WriteMapToXML(w *models.Map_t, worldographerTargetVersion semver.Version) ([]byte, error) {
 	switch worldographerTargetVersion.Major {
 	case 2017:
@@ -188,6 +198,20 @@ func WriteMapToXML(w *models.Map_t, worldographerTargetVersion semver.Version) (
 	return nil, errors.Join(models.ErrUnsupportedSchemaVersion, fmt.Errorf("schema version: %s", worldographerTargetVersion.Short()))
 }
 
-func EncodeXMLToUTF16(data []byte) ([]byte, error) {
+// EncodeXMLToUTF16 adds the XML header and returns the data with UTF-16/BE encoding.
+// It uses the target version to determine which XML header version to use.
+func EncodeXMLToUTF16(data []byte, worldographerTargetVersion semver.Version) ([]byte, error) {
 	return nil, fmt.Errorf("dispatcher: encodeXmlToUtf16: not implemented")
+}
+
+// CompressUTF16 compresses the data.
+func CompressUTF16(data []byte) ([]byte, error) {
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(&buf)
+	if _, err := gz.Write(data); err != nil {
+		return nil, err
+	} else if err = gz.Close(); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
