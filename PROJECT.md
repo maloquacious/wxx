@@ -1,7 +1,6 @@
 # Project Structure
 
 wxx/
-├── mapio/                    # packages for reading and writing Map data
 ├── xmlio/                    # packages for reading and writing XML data
 │   ├── maploader/            # translates XML into Map
 │   ├── v1_0/                 # schema-specific readers/writers for version 1.0.*
@@ -12,11 +11,13 @@ wxx/
 │   │   └── writer.go
 │   └── dispatcher.go         # delegates actions to correct version of reader/writer
 └── cmd/
-    ├── wxxdemo/              # command showing package use
+    ├── copy/                 # tool to copy a Worldographer file
     │   └── main.go
-    ├── wxxinfo/              # command showing information on XML data
+    ├── info/                 # tool to show information on XML data
     │   └── main.go
-    ├── wxxschema/            # command to extract schema from XML data
+    ├── schema/               # tool to extract schema from XML data
+    │   └── main.go
+    ├── version/              # tool to show package version
     │   └── main.go
     └── ...                   # commands that operate on Map
 
