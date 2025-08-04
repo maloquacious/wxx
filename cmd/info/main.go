@@ -7,12 +7,10 @@ package main
 import (
 	"fmt"
 	"github.com/maloquacious/wxx/xmlio"
-	"log"
 	"os"
 )
 
 func main() {
-	log.SetFlags(log.LstdFlags)
 	for n, arg := range os.Args {
 		if n == 0 {
 			continue
@@ -24,6 +22,7 @@ func main() {
 			fmt.Printf("\t%v\n", err)
 			continue
 		}
+		fmt.Printf("\t%8s data version\n", w.MetaData.DataVersion.String())
 		fmt.Printf("\t%8d tiles high\n", w.Tiles.TilesHigh)
 		fmt.Printf("\t%8d tiles wide\n", w.Tiles.TilesWide)
 		fmt.Printf("\t%8d terrain tiles defined\n", len(w.TerrainMap.List))

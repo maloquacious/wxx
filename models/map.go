@@ -2,12 +2,18 @@
 
 package models
 
+import (
+	"github.com/maloquacious/semver"
+	"time"
+)
+
 // Map_t is the in-memory representation of the map data.
 // We have created this to work with the known versions of Worldographer XML data.
 // We are assuming that this will continue to work with future versions of the application.
-type_ Map struct {
+type Map_t struct {
 	MetaData struct {
-		Version semver.Version `json:"version"` // version of this application
+		AppVersion  semver.Version `json:"appVersion"`  // version of this application
+		DataVersion semver.Version `json:"dataVersion"` // version of the data in the file
 		// Worldographer defines the metadata for the WXX file
 		Worldographer struct {
 			Name    string    `json:"name"`    // name of input
@@ -83,52 +89,46 @@ type_ Map struct {
 	// The terrain type is used in the TileRow struct.
 	TerrainMap struct {
 		Data map[string]int `json:"data,omitempty"`
-		List []*Terrain     `json:"list,omitempty"`
+		List []*Terrain_t   `json:"list,omitempty"`
 	} `json:"terrainMap,omitempty"`
 
 	// MapLayer assigns a boolean "isVisible" to each layer.
-	MapLayer []MapLayer `json:"mapLayer,omitempty"`
+	MapLayer []MapLayer_t `json:"mapLayer,omitempty"`
 
-	Tiles struct {
-		ViewLevel string `json:"viewLevel,omitempty"`
-		TilesWide int    `json:"tilesWide,omitempty"` // number of columns of tiles
-		TilesHigh int    `json:"tilesHigh,omitempty"` // number of rows of tiles
+	Tiles Tiles_t `json:"tiles,omitempty"`
 
-		TileRows [][]*Tile `json:"tilerow,omitempty"`
-	} `json:"tiles,omitempty"`
+	MapKey MapKey_t `json:"mapKey,omitempty"`
 
-	MapKey MapKey `json:"mapKey,omitempty"`
+	Features []*Feature_t `json:"features,omitempty"`
 
-	Features []*Feature `json:"features,omitempty"`
+	Labels []*Label_t `json:"labels,omitempty"`
 
-	Labels []*Label `json:"labels,omitempty"`
+	Shapes []*Shape_t `json:"shapes,omitempty"`
 
-	Shapes []*Shape `json:"shapes,omitempty"`
-
-	Notes []*Note `json:"notes,omitempty"`
+	Notes []*Note_t `json:"notes,omitempty"`
 
 	Informations struct {
-		Informations []*Information `json:"informations,omitempty"`
-		InnerText    string         `json:"innerText,omitempty"`
+		Informations []*Information_t `json:"informations,omitempty"`
+		InnerText    string           `json:"innerText,omitempty"`
 	} `json:"informations"`
 
 	Configuration struct {
-		TerrainConfig []*TerrainConfig `json:"terrain-config,omitempty"`
-		FeatureConfig []*FeatureConfig `json:"feature-config,omitempty"`
-		TextureConfig []*TextureConfig `json:"texture-config,omitempty"`
+		TerrainConfig []*TerrainConfig_t `json:"terrain-config,omitempty"`
+		FeatureConfig []*FeatureConfig_t `json:"feature-config,omitempty"`
+		TextureConfig []*TextureConfig_t `json:"texture-config,omitempty"`
 		TextConfig    struct {
-			LabelStyles []*LabelStyle `json:"labelStyles,omitempty"`
-			InnerText   string        `json:"innerText,omitempty"`
+			LabelStyles []*LabelStyle_t `json:"labelStyles,omitempty"`
+			InnerText   string          `json:"innerText,omitempty"`
 		} `json:"text-config,omitempty"`
 		ShapeConfig struct {
-			ShapeStyles []*ShapeStyle `json:"shapeStyles,omitempty"`
-			InnerText   string        `json:"innerText,omitempty"`
+			ShapeStyles []*ShapeStyle_t `json:"shapeStyles,omitempty"`
+			InnerText   string          `json:"innerText,omitempty"`
 		} `json:"shape-config"`
 		InnerText string `json:"InnerText,omitempty"`
 	} `json:"configuration"`
 }
 
-type Feature struct {
+type Feature_t struct {
 	Type              string  `json:"type,omitempty"`
 	Rotate            float64 `json:"rotate,omitempty"`
 	Uuid              string  `json:"uuid,omitempty"`
@@ -138,8 +138,8 @@ type Feature struct {
 	Scale             float64 `json:"scale,omitempty"`
 	ScaleHt           float64 `json:"scaleHt,omitempty"`
 	Tags              string  `json:"tags,omitempty"`
-	Color             *RGBA   `json:"color,omitempty"`
-	RingColor         *RGBA   `json:"ringcolor,omitempty"`
+	Color             *RGBA_t `json:"color,omitempty"`
+	RingColor         *RGBA_t `json:"ringcolor,omitempty"`
 	IsGMOnly          bool    `json:"isGMOnly,omitempty"`
 	IsPlaceFreely     bool    `json:"isPlaceFreely,omitempty"`
 	LabelPosition     string  `json:"labelPosition,omitempty"`
@@ -151,21 +151,21 @@ type Feature struct {
 	IsFillHexBottom   bool    `json:"isFillHexBottom,omitempty"`
 	IsHideTerrainIcon bool    `json:"isHideTerrainIcon,omitempty"`
 
-	Location *FeatureLocation `json:"location,omitempty"`
-	Label    *Label           `json:"label,omitempty"`
+	Location *FeatureLocation_t `json:"location,omitempty"`
+	Label    *Label_t           `json:"label,omitempty"`
 }
 
-type FeatureConfig struct {
+type FeatureConfig_t struct {
 	InnerText string `json:"innerText,omitempty"`
 }
 
-type FeatureLocation struct {
+type FeatureLocation_t struct {
 	ViewLevel string  `json:"viewLevel,omitempty"`
 	X         float64 `json:"x,omitempty"`
 	Y         float64 `json:"y,omitempty"`
 }
 
-type Information struct {
+type Information_t struct {
 	Uuid         string `json:"uuid,omitempty"`
 	Type         string `json:"type,omitempty"`
 	Title        string `json:"title,omitempty"`
@@ -178,11 +178,11 @@ type Information struct {
 	HolySymbol   string `json:"holySymbol,omitempty"`
 	Domains      string `json:"domains,omitempty"`
 
-	Details   []*InformationDetail `json:"details,omitempty"`
-	InnerText string               `json:"innerText,omitempty"`
+	Details   []*InformationDetail_t `json:"details,omitempty"`
+	InnerText string                 `json:"innerText,omitempty"`
 }
 
-type InformationDetail struct {
+type InformationDetail_t struct {
 	Uuid         string `json:"uuid,omitempty"`
 	Type         string `json:"type,omitempty"`
 	Title        string `json:"title,omitempty"`
@@ -198,12 +198,12 @@ type InformationDetail struct {
 	InnerText string `json:"innerText,omitempty"`
 }
 
-type Label struct {
+type Label_t struct {
 	MapLayer        string  `json:"mapLayer,omitempty"`
 	Style           string  `json:"style,omitempty"`
 	FontFace        string  `json:"fontFace,omitempty"`
-	Color           *RGBA   `json:"color,omitempty"`
-	OutlineColor    *RGBA   `json:"outlineColor,omitempty"`
+	Color           *RGBA_t `json:"color,omitempty"`
+	OutlineColor    *RGBA_t `json:"outlineColor,omitempty"`
 	OutlineSize     float64 `json:"outlineSize,omitempty"`
 	Rotate          float64 `json:"rotate,omitempty"`
 	IsBold          bool    `json:"isBold,omitempty"`
@@ -214,81 +214,81 @@ type Label struct {
 	IsProvince      bool    `json:"isProvince,omitempty"`
 	IsGMOnly        bool    `json:"isGMOnly,omitempty"`
 	Tags            string  `json:"tags,omitempty"`
-	BackgroundColor *RGBA   `json:"backgroundColor,omitempty"`
+	BackgroundColor *RGBA_t `json:"backgroundColor,omitempty"`
 
-	Location  *LabelLocation `json:"location,omitempty"`
-	InnerText string         `json:"innerText,omitempty"`
+	Location  *LabelLocation_t `json:"location,omitempty"`
+	InnerText string           `json:"innerText,omitempty"`
 }
 
-type LabelLocation struct {
+type LabelLocation_t struct {
 	ViewLevel string  `json:"viewLevel,omitempty"`
 	X         float64 `json:"x,omitempty"`
 	Y         float64 `json:"y,omitempty"`
 	Scale     float64 `json:"scale,omitempty"`
 }
 
-type LabelStyle struct {
+type LabelStyle_t struct {
 	Name            string  `json:"name,omitempty"`
 	FontFace        string  `json:"fontFace,omitempty"`
 	Scale           float64 `json:"scale,omitempty"`
 	IsBold          bool    `json:"isBold,omitempty"`
 	IsItalic        bool    `json:"isItalic,omitempty"`
-	Color           *RGBA   `json:"color,omitempty"`
-	BackgroundColor *RGBA   `json:"backgroundColor,omitempty"`
+	Color           *RGBA_t `json:"color,omitempty"`
+	BackgroundColor *RGBA_t `json:"backgroundColor,omitempty"`
 	OutlineSize     float64 `json:"outlineSize,omitempty"`
-	OutlineColor    *RGBA   `json:"outlineColor,omitempty"`
+	OutlineColor    *RGBA_t `json:"outlineColor,omitempty"`
 }
 
-type MapKey struct {
+type MapKey_t struct {
 	// attributes
 	PositionX         float64 `json:"positionx,omitempty"`
 	PositionY         float64 `json:"positiony,omitempty"`
 	Viewlevel         string  `json:"viewlevel,omitempty"` // "null", "WORLD"
 	Height            float64 `json:"height,omitempty"`
-	BackgroundColor   *RGBA   `json:"backgroundcolor,omitempty"`
+	BackgroundColor   *RGBA_t `json:"backgroundcolor,omitempty"`
 	BackgroundOpacity float64 `json:"backgroundopacity,omitempty"`
 	TitleText         string  `json:"titleText,omitempty"`
 	TitleFontFace     string  `json:"titleFontFace,omitempty"`
-	TitleFontColor    *RGBA   `json:"titleFontColor,omitempty"`
+	TitleFontColor    *RGBA_t `json:"titleFontColor,omitempty"`
 	TitleFontBold     bool    `json:"titleFontBold,omitempty"`
 	TitleFontItalic   bool    `json:"titleFontItalic,omitempty"`
 	TitleScale        float64 `json:"titleScale,omitempty"`
 	ScaleText         string  `json:"scaleText,omitempty"`
 	ScaleFontFace     string  `json:"scaleFontFace,omitempty"`
-	ScaleFontColor    *RGBA   `json:"scaleFontColor,omitempty"`
+	ScaleFontColor    *RGBA_t `json:"scaleFontColor,omitempty"`
 	ScaleFontBold     bool    `json:"scaleFontBold,omitempty"`
 	ScaleFontItalic   bool    `json:"scaleFontItalic,omitempty"`
 	ScaleScale        float64 `json:"scaleScale,omitempty"`
 	EntryFontFace     string  `json:"entryFontFace,omitempty"`
-	EntryFontColor    *RGBA   `json:"entryFontColor,omitempty"`
+	EntryFontColor    *RGBA_t `json:"entryFontColor,omitempty"`
 	EntryFontBold     bool    `json:"entryFontBold,omitempty"`
 	EntryFontItalic   bool    `json:"entryFontItalic,omitempty"`
 	EntryScale        float64 `json:"entryScale,omitempty"`
 }
 
-type MapLayer struct {
+type MapLayer_t struct {
 	Name      string `json:"name"`
 	IsVisible bool   `json:"isVisible"`
 }
 
-type Note struct {
+type Note_t struct {
 	InnerText string `json:"innerText,omitempty"`
 }
 
-type Point struct {
+type Point_t struct {
 	Type string  `json:"type,omitempty"`
 	X    float64 `json:"x,omitempty"`
 	Y    float64 `json:"y,omitempty"`
 }
 
-type RGBA struct {
+type RGBA_t struct {
 	R float64
 	G float64
 	B float64
 	A float64
 }
 
-type Shape struct {
+type Shape_t struct {
 	// attributes0
 	BbHeight              float64 `json:"bbHeight,omitempty"`
 	BbIterations          int     `json:"bbIterations,omitempty"`
@@ -330,15 +330,15 @@ type Shape struct {
 	Tags                  string  `json:"tags,omitempty"`
 	Type                  string  `json:"type,omitempty"`
 
-	Points []*Point `json:"points,omitempty"`
+	Points []*Point_t `json:"points,omitempty"`
 }
 
-type ShapeConfig struct {
-	ShapeStyles []*ShapeStyle `json:"shapeStyles,omitempty"`
-	InnerText   string        `json:"innerText,omitempty"`
+type ShapeConfig_t struct {
+	ShapeStyles []*ShapeStyle_t `json:"shapeStyles,omitempty"`
+	InnerText   string          `json:"innerText,omitempty"`
 }
 
-type ShapeStyle struct {
+type ShapeStyle_t struct {
 	Name          string  `json:"name,omitempty"`
 	StrokeType    string  `json:"strokeType,omitempty"`
 	IsFractal     bool    `json:"isFractal,omitempty"`
@@ -362,31 +362,31 @@ type ShapeStyle struct {
 	BbIterations  int     `json:"bbIterations,omitempty"`
 	FillTexture   string  `json:"fillTexture,omitempty"`
 	StrokeTexture string  `json:"strokeTexture,omitempty"`
-	StrokePaint   *RGBA   `json:"strokePaint,omitempty"`
-	FillPaint     *RGBA   `json:"fillPaint,omitempty"`
-	DsColor       *RGBA   `json:"dscolor,omitempty"`
-	InsColor      *RGBA   `json:"insColor,omitempty"`
+	StrokePaint   *RGBA_t `json:"strokePaint,omitempty"`
+	FillPaint     *RGBA_t `json:"fillPaint,omitempty"`
+	DsColor       *RGBA_t `json:"dscolor,omitempty"`
+	InsColor      *RGBA_t `json:"insColor,omitempty"`
 }
 
-type Terrain struct {
+type Terrain_t struct {
 	Index int    `json:"index"`
 	Label string `json:"label"`
 }
 
-type TerrainConfig struct {
+type TerrainConfig_t struct {
 	InnerText string `json:"innerText,omitempty"`
 }
 
-type TextConfig struct {
-	LabelStyles []*LabelStyle `json:"labelStyles,omitempty"`
-	InnerText   string        `json:"innerText,omitempty"`
+type TextConfig_t struct {
+	LabelStyles []*LabelStyle_t `json:"labelStyles,omitempty"`
+	InnerText   string          `json:"innerText,omitempty"`
 }
 
-type TextureConfig struct {
+type TextureConfig_t struct {
 	InnerText string `json:"innerText,omitempty"`
 }
 
-type Tile struct {
+type Tile_t struct {
 	Row       int
 	Column    int
 	Terrain   int // lookup into TerrainMap
@@ -402,5 +402,13 @@ type Tile struct {
 		Metals int
 		Rock   int
 	}
-	CustomBackgroundColor *RGBA
+	CustomBackgroundColor *RGBA_t
+}
+
+type Tiles_t struct {
+	ViewLevel string `json:"viewLevel,omitempty"`
+	TilesWide int    `json:"tilesWide,omitempty"` // number of columns of tiles
+	TilesHigh int    `json:"tilesHigh,omitempty"` // number of rows of tiles
+
+	TileRows [][]*Tile_t `json:"tilerow,omitempty"`
 }

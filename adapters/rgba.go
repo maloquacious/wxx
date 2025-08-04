@@ -19,7 +19,7 @@ import (
 //
 // Returns:
 // - A XML attribute string representing the rgba. If rgba is nil, returns "0.0,0.0,0.0,1.0"
-func rgbaToXmlAttr(rgba *models.RGBA) string {
+func rgbaToXmlAttr(rgba *models.RGBA_t) string {
 	if rgba == nil {
 		return "0.0,0.0,0.0,1.0"
 	}
@@ -30,7 +30,7 @@ func rgbaToXmlAttr(rgba *models.RGBA) string {
 		FToXF(rgba.A))
 }
 
-func rgbaToNullableXmlAttr(rgba *models.RGBA) string {
+func rgbaToNullableXmlAttr(rgba *models.RGBA_t) string {
 	s := rgbaToXmlAttr(rgba)
 	if s == "0.0,0.0,0.0,1.0" {
 		s = "null"

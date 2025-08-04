@@ -9,11 +9,11 @@ import (
 	"strings"
 )
 
-func decodeRgba(s string) (rgba *models.RGBA, err error) {
+func decodeRgba(s string) (rgba *models.RGBA_t, err error) {
 	if s == "" || s == "null" || s == "0.0,0.0,0.0,1.0" {
 		return nil, nil
 	}
-	rgba = &models.RGBA{}
+	rgba = &models.RGBA_t{}
 	values := strings.Split(s, ",")
 	if len(values) != 4 {
 		return rgba, fmt.Errorf("invalid value")
@@ -32,11 +32,11 @@ func decodeRgba(s string) (rgba *models.RGBA, err error) {
 	return rgba, nil
 }
 
-func decodeZeroableRgba(s string) (rgba *models.RGBA, err error) {
+func decodeZeroableRgba(s string) (rgba *models.RGBA_t, err error) {
 	if s == "" || s == "null" {
 		return nil, nil
 	}
-	rgba = &models.RGBA{}
+	rgba = &models.RGBA_t{}
 	values := strings.Split(s, ",")
 	if len(values) != 4 {
 		return rgba, fmt.Errorf("invalid value")

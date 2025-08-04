@@ -20,7 +20,7 @@ import (
 // which must have an extension of `.wxx`.
 // Returns any errors reading or parsing the file contents.
 // Uses ReadCompressXML to parse the file contents.
-func ReadFile(path string) (*models.Map, error) {
+func ReadFile(path string) (*models.Map_t, error) {
 	// file must have `.wxx` suffix
 	if !strings.HasSuffix(path, ".wxx") {
 		return nil, models.ErrMissingWxxExtension
@@ -50,7 +50,7 @@ func ReadFile(path string) (*models.Map, error) {
 // ReadCompressedXML creates a Map from the input or returns an error.
 // The input must be compressed using GZip.
 // Uses ReadUTF16XML to parse the uncompressed input.
-func ReadCompressedXML(r io.Reader) (*models.Map, error) {
+func ReadCompressedXML(r io.Reader) (*models.Map_t, error) {
 	// create a new gzip reader to process the source
 	gzr, err := gzip.NewReader(r)
 	if err != nil {
@@ -70,7 +70,7 @@ func ReadCompressedXML(r io.Reader) (*models.Map, error) {
 // ReadUTF16XML creates a Map from the input or returns an error.
 // The input must be UTF-16 encoded and will be decoded to UTF-8.
 // Uses ReadUTF8XML to parse the decoded input.
-func ReadUTF16XML(r io.Reader) (*models.Map, error) {
+func ReadUTF16XML(r io.Reader) (*models.Map_t, error) {
 	// decode UTF-8 into UTF-8. we should verify that the input is actually UTF-16/BE,
 	// but this package accepts both BE and LE. c'est la vie.
 	utf16Encoding := unicode.UTF16(unicode.BigEndian, unicode.ExpectBOM)
@@ -89,7 +89,7 @@ func ReadUTF16XML(r io.Reader) (*models.Map, error) {
 // We then extract metadata from the <map> element (the root element of the document).
 // We use that metadata (version, release, and schema) to dispatch to the right XML
 // unmarshaler.
-func ReadUTF8XML(r io.Reader) (*models.Map, error) {
+func ReadUTF8XML(r io.Reader) (*models.Map_t, error) {
 	// there should be a better way to get the header out of the input
 	data, err := io.ReadAll(r)
 	if err != nil {
@@ -156,7 +156,7 @@ func ReadUTF8XML(r io.Reader) (*models.Map, error) {
 	return nil, errors.Join(models.ErrUnsupportedMapMetadata, fmt.Errorf("map: release %q: schema %q: version %q", xmlMetaData.Release, xmlMetaData.Schema, xmlMetaData.Version))
 }
 
-func Write(version semver.Version, data *models.Map) ([]byte, error) {
+func Write(version semver.Version, data *models.Map_t) ([]byte, error) {
 	//switch version.Major {
 	//case 1:
 	//	return h2017v1.Write(data)

@@ -1,10 +1,10 @@
-# wxxinfo
-Wxxinfo is a command line tool to print out information on a `.wxx` file.
+# info
+`info` is a command line tool to print out information on a `.wxx` file.
 
 ## Usage
 
 ```bash
-go run ./cmd/wxxinfo testdata/input/blank-2017-1.77-1.0.wxx testdata/input/blank-2025-1.10-1.01.wxx 
+go run ./cmd/info testdata/input/blank-2017-1.77-1.0.wxx testdata/input/blank-2025-1.10-1.01.wxx 
 
 testdata/input/blank-2017-1.77-1.0.wxx
 	   10017 bytes on disk

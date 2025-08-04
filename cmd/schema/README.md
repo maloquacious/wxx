@@ -1,6 +1,5 @@
-# wxxschema
-
-A command-line tool for analyzing Worldographer data files (WXX files) and generating Go structs that match their XML schema.
+# schema
+`schema` is a command-line tool for analyzing Worldographer data files (WXX files) and generating Go structs that match their XML schema.
 
 ## Overview
 
@@ -26,7 +25,7 @@ The tool currently:
 ## Usage
 
 ```bash
-go run cmd/wxxschema/main.go
+go run cmd/schema/main.go
 ```
 
 Currently reads from `input/blank-2025-1.10-1.01.wxx` and outputs:
