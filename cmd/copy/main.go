@@ -15,15 +15,15 @@ import (
 )
 
 func main() {
-	var showBuildInfo, showVersion, writeDebugUtf8, quiet bool
-	var inputFile, outputFile string
+	var showBuildInfo, showVersion, quiet bool
+	var inputFile, outputFile, debugUtf8XmlFile string
 
 	// TODO: Future sprint - add flag to let user specify the data version in the copied file
 	flag.BoolVar(&showVersion, "version", false, "show version")
 	flag.BoolVar(&showBuildInfo, "build-info", false, "show version with build info")
 	flag.StringVar(&inputFile, "input", "", "input .wxx file (required)")
 	flag.StringVar(&outputFile, "output", "", "output .wxx file (required)")
-	flag.BoolVar(&writeDebugUtf8, "debug-utf8", false, "write debug UTF-8 XML file alongside compressed UTF-16 .wxx file")
+	flag.StringVar(&debugUtf8XmlFile, "debug-utf8", "", "write debug UTF-8 XML file alongside compressed UTF-16 .wxx file")
 	flag.BoolVar(&quiet, "quiet", false, "suppress output messages")
 	flag.Parse()
 
@@ -68,7 +68,7 @@ func main() {
 	}
 
 	// Write to the output file
-	err = xmlio.WriteFile(outputFile, data.MetaData.DataVersion, data, writeDebugUtf8)
+	err = xmlio.WriteFile(outputFile, data.MetaData.DataVersion, data, debugUtf8XmlFile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error writing %s: %v\n", outputFile, err)
 		os.Exit(1)

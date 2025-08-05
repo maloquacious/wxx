@@ -156,15 +156,14 @@ func ReadUTF8XML(r io.Reader) (*models.Map_t, error) {
 	return nil, errors.Join(models.ErrUnsupportedMapMetadata, fmt.Errorf("map: release %q: schema %q: version %q", xmlMetaData.Release, xmlMetaData.Schema, xmlMetaData.Version))
 }
 
-func WriteFile(filename string, worldographerTargetVersion semver.Version, w *models.Map_t, writeDebugUtf8 bool) error {
+func WriteFile(filename string, worldographerTargetVersion semver.Version, w *models.Map_t, utf8Filename string) error {
 	fmt.Printf("debug: target version %s\n", worldographerTargetVersion.String())
 	utf8XmlData, err := WriteMapToXML(w, worldographerTargetVersion)
 	if err != nil {
 		return err
 	}
-	if writeDebugUtf8 {
-		debugFileName := filename + ".xml"
-		if err := os.WriteFile(debugFileName, utf8XmlData, 0600); err != nil {
+	if utf8Filename != "" {
+		if err := os.WriteFile(utf8Filename, utf8XmlData, 0600); err != nil {
 			return err
 		}
 	}
@@ -192,7 +191,8 @@ func WriteMapToXML(w *models.Map_t, worldographerTargetVersion semver.Version) (
 	case 2017:
 		switch worldographerTargetVersion.Minor {
 		case 1:
-			return h2017v1.MarshalXML(w)
+			return h2017v1.Encode(w)
+			//return h2017v1.MarshalXML(w)
 		}
 	}
 	return nil, errors.Join(models.ErrUnsupportedSchemaVersion, fmt.Errorf("schema version: %s", worldographerTargetVersion.Short()))
