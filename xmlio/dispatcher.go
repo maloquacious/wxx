@@ -6,14 +6,15 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"io"
+	"os"
+	"strings"
+
 	"github.com/maloquacious/semver"
 	"github.com/maloquacious/wxx/models"
 	"github.com/maloquacious/wxx/xmlio/h2017v1"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/transform"
-	"io"
-	"os"
-	"strings"
 )
 
 // ReadFile creates a Map from the data in the given file,
@@ -158,21 +159,40 @@ func ReadUTF8XML(r io.Reader) (*models.Map_t, error) {
 
 func WriteFile(filename string, worldographerTargetVersion semver.Version, w *models.Map_t, utf8Filename string) error {
 	fmt.Printf("debug: target version %s\n", worldographerTargetVersion.String())
-	utf8XmlData, err := WriteMapToXML(w, worldographerTargetVersion)
+	utf8XmlData, err := EncodeMapToXML(w, worldographerTargetVersion)
 	if err != nil {
 		return err
 	}
 	if utf8Filename != "" {
-		if err := os.WriteFile(utf8Filename, utf8XmlData, 0600); err != nil {
+		var xmlHeader []byte
+		switch worldographerTargetVersion.Major {
+		case 2017:
+			xmlHeader = []byte("<?xml version='1.0' encoding='utf-8'?>\n")
+		case 2025:
+			xmlHeader = []byte("<?xml version='1.1' encoding='utf-8'?>\n")
+		default:
+			return fmt.Errorf("unsupported worldographer version")
+		}
+		if err := os.WriteFile(utf8Filename, append(xmlHeader, utf8XmlData...), 0600); err != nil {
 			return err
 		}
 	}
 
-	// encode the data as UTF-16/BE with the appropriate XML header (version 1.0 or 1.1), returning any errors
-	utf16XmlData, err := EncodeXMLToUTF16(utf8XmlData, worldographerTargetVersion)
+	// set the xml header and encode as utf-16/be for Worldographer
+	var xmlHeader []byte
+	switch worldographerTargetVersion.Major {
+	case 2017:
+		xmlHeader = []byte("<?xml version='1.0' encoding='utf-16'?>\n")
+	case 2025:
+		xmlHeader = []byte("<?xml version='1.1' encoding='utf-16'?>\n")
+	default:
+		return fmt.Errorf("unsupported worldographer version")
+	}
+	utf16XmlData, err := EncodeXMLToUTF16(append(xmlHeader, utf8XmlData...))
 	if err != nil {
 		return err
 	}
+	fmt.Printf("utf-16/be len %8d\n", len(utf16XmlData))
 
 	// compress the encoded data, returning any errors
 	gzipData, err := CompressUTF16(utf16XmlData)
@@ -184,24 +204,27 @@ func WriteFile(filename string, worldographerTargetVersion semver.Version, w *mo
 	return os.WriteFile(filename, gzipData, 0600)
 }
 
-// WriteMapToXML uses the target version to pick the right XML schema, then converts the Map_t to XML.
+// EncodeMapToXML uses the target version to pick the right XML schema, then converts the Map_t to XML.
 // Returns an error for unsupported versions or if there are errors during the conversion.
-func WriteMapToXML(w *models.Map_t, worldographerTargetVersion semver.Version) ([]byte, error) {
+func EncodeMapToXML(w *models.Map_t, worldographerTargetVersion semver.Version) ([]byte, error) {
 	switch worldographerTargetVersion.Major {
 	case 2017:
 		switch worldographerTargetVersion.Minor {
 		case 1:
 			return h2017v1.Encode(w)
-			//return h2017v1.MarshalXML(w)
 		}
 	}
 	return nil, errors.Join(models.ErrUnsupportedSchemaVersion, fmt.Errorf("schema version: %s", worldographerTargetVersion.Short()))
 }
 
 // EncodeXMLToUTF16 adds the XML header and returns the data with UTF-16/BE encoding.
-// It uses the target version to determine which XML header version to use.
-func EncodeXMLToUTF16(data []byte, worldographerTargetVersion semver.Version) ([]byte, error) {
-	return nil, fmt.Errorf("dispatcher: encodeXmlToUtf16: not implemented")
+func EncodeXMLToUTF16(data []byte) ([]byte, error) {
+	utf16Encoding := unicode.UTF16(unicode.BigEndian, unicode.ExpectBOM)
+	data, err := io.ReadAll(transform.NewReader(bytes.NewReader(data), utf16Encoding.NewEncoder()))
+	if err != nil {
+		return nil, errors.Join(models.ErrInvalidUTF8, err)
+	}
+	return data, nil
 }
 
 // CompressUTF16 compresses the data.

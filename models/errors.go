@@ -19,6 +19,7 @@ const (
 	ErrInvalidHexOrientation       = Error("invalid hex orientation")
 	ErrInvalidTerrainMapFieldCount = Error("invalid terrain map field count")
 	ErrInvalidMapMetadata          = Error("invalid <map> metadata")
+	ErrInvalidUTF8                 = Error("invalid utf-8")
 	ErrInvalidUTF16                = Error("invalid utf-16")
 	ErrInvalidVersion              = Error("invalid version")
 	ErrInvalidXML                  = Error("invalid xml")

@@ -5,10 +5,10 @@ package h2017v1
 import (
 	"bytes"
 	_ "embed"
-
 	"fmt"
-	"github.com/maloquacious/wxx/models"
 	"text/template"
+
+	"github.com/maloquacious/wxx/models"
 )
 
 var (
@@ -22,6 +22,7 @@ func MarshalXML(w *models.Map_t) ([]byte, error) {
 }
 
 // Encode marshals the Map_t to XML using custom templates.
+// It does not add the xml header.
 func Encode(w *models.Map_t) ([]byte, error) {
 	t, err := template.New("h2017v1").Parse(xmlTemplate)
 	if err != nil {
