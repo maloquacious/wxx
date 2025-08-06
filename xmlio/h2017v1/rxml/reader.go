@@ -45,7 +45,14 @@ func Read(input []byte) (*models.Map_t, error) {
 	w.KingdomToProvinceHOffset = m.KingdomToProvinceHOffset
 	w.KingdomToProvinceVOffset = m.KingdomToProvinceVOffset
 	w.LastViewLevel = m.LastViewLevel
-	w.MapProjection = m.MapProjection
+	switch m.MapProjection {
+	case "FLAT":
+		w.MapProjection = models.FLAT
+	case "ICOSAHEDRAL":
+		w.MapProjection = models.ICOSAHEDRAL
+	default:
+		return nil, fmt.Errorf("%q: unknown projection", m.MapProjection)
+	}
 	w.ProvinceFactor = m.ProvinceFactor
 	w.ShowFeatureLabels = m.ShowFeatureLabels
 	w.ShowGMOnly = m.ShowGMOnly

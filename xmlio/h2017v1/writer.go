@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/maloquacious/wxx/models"
 )
@@ -27,27 +28,33 @@ func encodeMap(w *models.Map_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(" type=%q", w.Type))
 	wb.WriteString(fmt.Sprintf(" version=%q", w.Version))
 	wb.WriteString(fmt.Sprintf(" lastViewLevel=%q", w.LastViewLevel))
-	wb.WriteString(fmt.Sprintf(" continentFactor=%q", intf(w.ContinentFactor)))
-	wb.WriteString(fmt.Sprintf(" kingdomFactor=%q", intf(w.KingdomFactor)))
-	wb.WriteString(fmt.Sprintf(" provinceFactor=%q", intf(w.ProvinceFactor)))
-	wb.WriteString(fmt.Sprintf(" worldToContinentHOffset=%q", floatf(w.WorldToContinentHOffset)))
-	wb.WriteString(fmt.Sprintf(" continentToKingdomHOffset=%q", floatf(w.ContinentToKingdomHOffset)))
-	wb.WriteString(fmt.Sprintf(" kingdomToProvinceHOffset=%q", floatf(w.KingdomToProvinceHOffset)))
-	wb.WriteString(fmt.Sprintf(" worldToContinentVOffset=%q", floatf(w.WorldToContinentVOffset)))
-	wb.WriteString(fmt.Sprintf(" continentToKingdomVOffset=%q", floatf(w.ContinentToKingdomVOffset)))
-	wb.WriteString(fmt.Sprintf(" kingdomToProvinceVOffset=%q\n", floatf(w.KingdomToProvinceVOffset)))
-	wb.WriteString(fmt.Sprintf("hexWidth=%q", floatf(w.HexWidth)))
-	wb.WriteString(fmt.Sprintf(" hexHeight=%q", floatf(w.HexHeight)))
+	wb.WriteString(fmt.Sprintf(" continentFactor=%q", ints(w.ContinentFactor)))
+	wb.WriteString(fmt.Sprintf(" kingdomFactor=%q", ints(w.KingdomFactor)))
+	wb.WriteString(fmt.Sprintf(" provinceFactor=%q", ints(w.ProvinceFactor)))
+	wb.WriteString(fmt.Sprintf(" worldToContinentHOffset=%q", floats(w.WorldToContinentHOffset)))
+	wb.WriteString(fmt.Sprintf(" continentToKingdomHOffset=%q", floats(w.ContinentToKingdomHOffset)))
+	wb.WriteString(fmt.Sprintf(" kingdomToProvinceHOffset=%q", floats(w.KingdomToProvinceHOffset)))
+	wb.WriteString(fmt.Sprintf(" worldToContinentVOffset=%q", floats(w.WorldToContinentVOffset)))
+	wb.WriteString(fmt.Sprintf(" continentToKingdomVOffset=%q", floats(w.ContinentToKingdomVOffset)))
+	wb.WriteString(fmt.Sprintf(" kingdomToProvinceVOffset=%q\n", floats(w.KingdomToProvinceVOffset)))
+	wb.WriteString(fmt.Sprintf("hexWidth=%q", floats(w.HexWidth)))
+	wb.WriteString(fmt.Sprintf(" hexHeight=%q", floats(w.HexHeight)))
 	wb.WriteString(fmt.Sprintf(" hexOrientation=%q", w.HexOrientation))
-	wb.WriteString(fmt.Sprintf(" mapProjection=%q", w.MapProjection))
-	wb.WriteString(fmt.Sprintf(" showNotes=%q", boolf(w.ShowNotes)))
-	wb.WriteString(fmt.Sprintf(" showGMOnly=%q", boolf(w.ShowGMOnly)))
-	wb.WriteString(fmt.Sprintf(" showGMOnlyGlow=%q", boolf(w.ShowGMOnlyGlow)))
-	wb.WriteString(fmt.Sprintf(" showFeatureLabels=%q", boolf(w.ShowFeatureLabels)))
-	wb.WriteString(fmt.Sprintf(" showGrid=%q", boolf(w.ShowGrid)))
-	wb.WriteString(fmt.Sprintf(" showGridNumbers=%q", boolf(w.ShowGridNumbers)))
-	wb.WriteString(fmt.Sprintf(" showShadows=%q", boolf(w.ShowShadows)))
-	wb.WriteString(fmt.Sprintf("  triangleSize=%q", intf(w.TriangleSize)))
+	if w.MapProjection == models.FLAT {
+		wb.WriteString(fmt.Sprintf(" mapProjection=%q", "FLAT"))
+	} else if w.MapProjection == models.ICOSAHEDRAL {
+		wb.WriteString(fmt.Sprintf(" mapProjection=%q", "ICOSAHEDRAL"))
+	} else {
+		return fmt.Errorf("assert(map.projection != %q)", w.MapProjection)
+	}
+	wb.WriteString(fmt.Sprintf(" showNotes=%q", bools(w.ShowNotes)))
+	wb.WriteString(fmt.Sprintf(" showGMOnly=%q", bools(w.ShowGMOnly)))
+	wb.WriteString(fmt.Sprintf(" showGMOnlyGlow=%q", bools(w.ShowGMOnlyGlow)))
+	wb.WriteString(fmt.Sprintf(" showFeatureLabels=%q", bools(w.ShowFeatureLabels)))
+	wb.WriteString(fmt.Sprintf(" showGrid=%q", bools(w.ShowGrid)))
+	wb.WriteString(fmt.Sprintf(" showGridNumbers=%q", bools(w.ShowGridNumbers)))
+	wb.WriteString(fmt.Sprintf(" showShadows=%q", bools(w.ShowShadows)))
+	wb.WriteString(fmt.Sprintf("  triangleSize=%q", ints(w.TriangleSize)))
 	wb.WriteString(fmt.Sprintf(">\n"))
 
 	if err := encodeGridAndNumbering(w, wb); err != nil {
@@ -106,32 +113,32 @@ func encodeGridAndNumbering(w *models.Map_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(" color2=%q", w.GridAndNumbering.Color2))
 	wb.WriteString(fmt.Sprintf(" color3=%q", w.GridAndNumbering.Color3))
 	wb.WriteString(fmt.Sprintf(" color4=%q", w.GridAndNumbering.Color4))
-	wb.WriteString(fmt.Sprintf(` width0="1.0"`))
-	wb.WriteString(fmt.Sprintf(` width1="2.0"`))
-	wb.WriteString(fmt.Sprintf(` width2="3.0"`))
-	wb.WriteString(fmt.Sprintf(` width3="4.0"`))
-	wb.WriteString(fmt.Sprintf(` width4="1.0"`))
-	wb.WriteString(fmt.Sprintf(` gridOffsetContinentKingdomX="0.0"`))
-	wb.WriteString(fmt.Sprintf(` gridOffsetContinentKingdomY="0.0"`))
-	wb.WriteString(fmt.Sprintf(` gridOffsetWorldContinentX="0.0"`))
-	wb.WriteString(fmt.Sprintf(` gridOffsetWorldContinentY="0.0"`))
-	wb.WriteString(fmt.Sprintf(` gridOffsetWorldKingdomX="0.0"`))
-	wb.WriteString(fmt.Sprintf(` gridOffsetWorldKingdomY="0.0"`))
-	wb.WriteString(fmt.Sprintf(` gridSquare="0"`))
-	wb.WriteString(fmt.Sprintf(` gridSquareHeight="-1.0"`))
-	wb.WriteString(fmt.Sprintf(` gridSquareWidth="-1.0"`))
-	wb.WriteString(fmt.Sprintf(` gridOffsetX="0.0"`))
-	wb.WriteString(fmt.Sprintf(` gridOffsetY="0.0"`))
-	wb.WriteString(fmt.Sprintf(` numberFont="Arial"`))
-	wb.WriteString(fmt.Sprintf(` numberColor="0x000000ff"`))
-	wb.WriteString(fmt.Sprintf(` numberSize="20"`))
-	wb.WriteString(fmt.Sprintf(` numberStyle="PLAIN"`))
-	wb.WriteString(fmt.Sprintf(` numberFirstCol="0"`))
-	wb.WriteString(fmt.Sprintf(` numberFirstRow="0"`))
-	wb.WriteString(fmt.Sprintf(` numberOrder="COL_ROW"`))
-	wb.WriteString(fmt.Sprintf(` numberPosition="BOTTOM"`))
-	wb.WriteString(fmt.Sprintf(` numberPrePad="DOUBLE_ZERO"`))
-	wb.WriteString(fmt.Sprintf(` numberSeparator="."`))
+	wb.WriteString(fmt.Sprintf(" width0=%q", floats(w.GridAndNumbering.Width0)))
+	wb.WriteString(fmt.Sprintf(" width1=%q", floats(w.GridAndNumbering.Width1)))
+	wb.WriteString(fmt.Sprintf(" width2=%q", floats(w.GridAndNumbering.Width2)))
+	wb.WriteString(fmt.Sprintf(" width3=%q", floats(w.GridAndNumbering.Width3)))
+	wb.WriteString(fmt.Sprintf(" width4=%q", floats(w.GridAndNumbering.Width4)))
+	wb.WriteString(fmt.Sprintf(" gridOffsetContinentKingdomX=%q", floats(w.GridAndNumbering.GridOffsetContinentKingdomX)))
+	wb.WriteString(fmt.Sprintf(" gridOffsetContinentKingdomY=%q", floats(w.GridAndNumbering.GridOffsetContinentKingdomY)))
+	wb.WriteString(fmt.Sprintf(" gridOffsetWorldContinentX=%q", floats(w.GridAndNumbering.GridOffsetWorldContinentX)))
+	wb.WriteString(fmt.Sprintf(" gridOffsetWorldContinentY=%q", floats(w.GridAndNumbering.GridOffsetWorldContinentY)))
+	wb.WriteString(fmt.Sprintf(" gridOffsetWorldKingdomX=%q", floats(w.GridAndNumbering.GridOffsetWorldKingdomX)))
+	wb.WriteString(fmt.Sprintf(" gridOffsetWorldKingdomY=%q", floats(w.GridAndNumbering.GridOffsetWorldKingdomY)))
+	wb.WriteString(fmt.Sprintf(" gridSquare=%q", ints(w.GridAndNumbering.GridSquare)))
+	wb.WriteString(fmt.Sprintf(" gridSquareHeight=%q", floats(w.GridAndNumbering.GridSquareHeight)))
+	wb.WriteString(fmt.Sprintf(" gridSquareWidth=%q", floats(w.GridAndNumbering.GridSquareWidth)))
+	wb.WriteString(fmt.Sprintf(" gridOffsetX=%q", floats(w.GridAndNumbering.GridOffsetX)))
+	wb.WriteString(fmt.Sprintf(" gridOffsetY=%q", floats(w.GridAndNumbering.GridOffsetY)))
+	wb.WriteString(fmt.Sprintf(" numberFont=%q", w.GridAndNumbering.NumberFont))
+	wb.WriteString(fmt.Sprintf(" numberColor=%q", w.GridAndNumbering.NumberColor))
+	wb.WriteString(fmt.Sprintf(" numberSize=%q", ints(w.GridAndNumbering.NumberSize)))
+	wb.WriteString(fmt.Sprintf(" numberStyle=%q", w.GridAndNumbering.NumberStyle))
+	wb.WriteString(fmt.Sprintf(" numberFirstCol=%q", ints(w.GridAndNumbering.NumberFirstCol)))
+	wb.WriteString(fmt.Sprintf(" numberFirstRow=%q", ints(w.GridAndNumbering.NumberFirstRow)))
+	wb.WriteString(fmt.Sprintf(" numberOrder=%q", w.GridAndNumbering.NumberOrder))
+	wb.WriteString(fmt.Sprintf(" numberPosition=%q", w.GridAndNumbering.NumberPosition))
+	wb.WriteString(fmt.Sprintf(" numberPrePad=%q", w.GridAndNumbering.NumberPrePad))
+	wb.WriteString(fmt.Sprintf(" numberSeparator=%q", w.GridAndNumbering.NumberSeparator))
 	wb.WriteString(fmt.Sprintf("/>\n"))
 	return nil
 }
@@ -162,7 +169,7 @@ func encodeMapLayers(w *models.Map_t, wb *bytes.Buffer) error {
 func encodeMapLayer(w *models.Map_t, wb *bytes.Buffer, mapLayer models.MapLayer_t) error {
 	wb.WriteString("<maplayer")
 	wb.WriteString(fmt.Sprintf(" name=%q", mapLayer.Name))
-	wb.WriteString(fmt.Sprintf(" isVisible=%q", boolf(mapLayer.IsVisible)))
+	wb.WriteString(fmt.Sprintf(" isVisible=%q", bools(mapLayer.IsVisible)))
 	wb.WriteString("/>\n")
 	return nil
 }
@@ -171,25 +178,51 @@ func encodeTiles(w *models.Map_t, wb *bytes.Buffer) error {
 	// to: width is the number of columns, height is the number of rows. does that depend on the orientation?
 	wb.WriteString(fmt.Sprintf("<tiles"))
 	wb.WriteString(fmt.Sprintf(" viewLevel=%q", w.Tiles.ViewLevel))
-	wb.WriteString(fmt.Sprintf(" tilesWide=%q", intf(w.Tiles.TilesWide)))
-	wb.WriteString(fmt.Sprintf(" tilesHigh=%q", intf(w.Tiles.TilesHigh)))
+	wb.WriteString(fmt.Sprintf(" tilesWide=%q", ints(w.Tiles.TilesWide)))
+	wb.WriteString(fmt.Sprintf(" tilesHigh=%q", ints(w.Tiles.TilesHigh)))
 	wb.WriteString(fmt.Sprintf(">\n"))
-	// generate the tile-row elements. the order that we render them in depends on the orientation of the map.
+
+	// generate the tile-row elements:
+	// * each tilerow will have a tile.tilesHigh lines of tab delimited data
+	// * each line of data has the following values: Terrain type, elevation, is it icy, is it GM only, and its resources
+	// * terrainType is an index into the terrainmap element
+	// * resources are Animals, Brick, Crops, Gems, Lumber, Metals, and Rock, in that order, but are "compressed"
 	if w.HexOrientation == "COLUMNS" {
-		// we're using COLUMNS orientation so we have to generate all the columns for a single row before we move on to the next row.
-		for gridColumn := 0; gridColumn < w.Tiles.TilesWide; gridColumn++ {
-			wb.WriteString(fmt.Sprintf("<tilerow>\n"))
-			// generate all the tiles in this column, one tile per row
-			for gridRow := 0; gridRow < w.Tiles.TilesHigh; gridRow++ {
-				// todo: implement this
-				wb.WriteString(fmt.Sprintf("0\t1\t0\t0\t0\tZ\n"))
+		for x := 0; x < w.Tiles.TilesWide; x++ {
+			wb.WriteString("<tilerow>\n")
+			for y := 0; y < w.Tiles.TilesHigh; y++ {
+				tile := w.Tiles.TileRows[x][y]
+				if err := encodeTile(w, wb, tile); err != nil {
+					return err
+				}
 			}
 			wb.WriteString(fmt.Sprintf("</tilerow>\n"))
 		}
+	} else if w.HexOrientation == "ROWS" {
 	} else {
 		return fmt.Errorf("assert(orientation != %q)", w.HexOrientation)
 	}
 	wb.WriteString(fmt.Sprintf("</tiles>\n"))
+	return nil
+}
+
+func encodeTile(w *models.Map_t, wb *bytes.Buffer, tile *models.Tile_t) error {
+	// todo: implement this
+	wb.WriteString(fmt.Sprintf("%d", tile.Terrain))
+	wb.WriteString(fmt.Sprintf("\t%d", floatd(tile.Elevation)))
+	wb.WriteString(fmt.Sprintf("\t%d", boold(tile.IsIcy)))
+	wb.WriteString(fmt.Sprintf("\t%d", boold(tile.IsGMOnly)))
+	if err := encodeTileResources(w, wb, tile.Resources); err != nil {
+		return err
+	}
+	wb.WriteString(fmt.Sprintf("\n"))
+	return nil
+}
+
+func encodeTileResources(w *models.Map_t, wb *bytes.Buffer, resources models.Resources_t) error {
+	// todo: implement resources. for now, just output 0<tab>Z.
+	wb.WriteString(fmt.Sprintf("\t%d", 0))
+	wb.WriteString(fmt.Sprintf("\tZ"))
 	return nil
 }
 
@@ -213,13 +246,54 @@ func encodeFeatures(w *models.Map_t, wb *bytes.Buffer) error {
 }
 
 func encodeFeature(w *models.Map_t, wb *bytes.Buffer, feature *models.Feature_t) error {
-	//			printf(`<feature type="Three Dots" rotate="0.0" uuid="%s" mapLayer="Tribenet Origin" isFlipHorizontal="false" isFlipVertical="false" scale="-1.0" scaleHt="-1.0" tags="" color="0.800000011920929,0.800000011920929,0.800000011920929,1.0" ringcolor="null" isGMOnly="false" isPlaceFreely="false" labelPosition="6:00" labelDistance="0" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isFillHexBottom="false" isHideTerrainIcon="false">`, uuid.NewString())
-	//			printf(`<location viewLevel="WORLD" x="%f" y="%f" />`, origin.X, origin.Y)
-	//			printf(`<label  mapLayer="Tribenet Origin" style="null" fontFace="null" color="0.0,0.0,0.0,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`)
-	//			printf(`<location viewLevel="WORLD" x="%f" y="%f" scale="25.0" />`, origin.X, origin.Y)
-	//			printf(`</label>`)
-	//			printf("</feature>\n")
+	wb.WriteString(fmt.Sprintf("<feature"))
+	wb.WriteString(fmt.Sprintf(" type=%q", feature.Type))
+	wb.WriteString(fmt.Sprintf(" rotate=%q", floats(feature.Rotate)))
+	wb.WriteString(fmt.Sprintf(" uuid=%q", feature.Uuid))
+	wb.WriteString(fmt.Sprintf(" mapLayer=%q", feature.MapLayer))
+	wb.WriteString(fmt.Sprintf(" isFlipHorizontal=%q", bools(feature.IsFlipHorizontal)))
+	wb.WriteString(fmt.Sprintf(" isFlipVertical=%q", bools(feature.IsFlipVertical)))
+	wb.WriteString(fmt.Sprintf(" scale=%q", floats(feature.Scale)))
+	wb.WriteString(fmt.Sprintf(" scaleHt=%q", floats(feature.Scale)))
+	wb.WriteString(fmt.Sprintf(" tags=%q", feature.Tags))
+	wb.WriteString(fmt.Sprintf(" color=%q", rgbas(feature.Color)))
+	wb.WriteString(fmt.Sprintf(" ringcolor=%q", rgbas(feature.RingColor)))
+	wb.WriteString(fmt.Sprintf(" isGMOnly=%q", bools(feature.IsGMOnly)))
+	wb.WriteString(fmt.Sprintf(" isPlaceFreely=%q", bools(feature.IsPlaceFreely)))
+	wb.WriteString(fmt.Sprintf(" labelPosition=%q", feature.LabelPosition))
+	wb.WriteString(fmt.Sprintf(" labelDistance=%q", floats(feature.LabelDistance)))
+	wb.WriteString(fmt.Sprintf(" isWorld=%q", bools(feature.IsWorld)))
+	wb.WriteString(fmt.Sprintf(" isContinent=%q", bools(feature.IsContinent)))
+	wb.WriteString(fmt.Sprintf(" isKingdom=%q", bools(feature.IsKingdom)))
+	wb.WriteString(fmt.Sprintf(" isProvince=%q", bools(feature.IsProvince)))
+	wb.WriteString(fmt.Sprintf(" isFillHexBottom=%q", bools(feature.IsFillHexBottom)))
+	wb.WriteString(fmt.Sprintf(" isHideTerrainIcon=%q", bools(feature.IsHideTerrainIcon)))
+	wb.WriteString(">")
+	if feature.Location != nil {
+		if err := encodeFeatureLocation(w, wb, feature.Location); err != nil {
+			return err
+		}
+	}
+	if feature.Label != nil {
+		if err := encodeFeatureLabel(w, wb, feature.Label); err != nil {
+			return err
+		}
+	}
+	wb.WriteString("</feature>\n")
 	return nil
+}
+
+func encodeFeatureLocation(w *models.Map_t, wb *bytes.Buffer, location *models.FeatureLocation_t) error {
+	wb.WriteString("<location")
+	wb.WriteString(fmt.Sprintf(" viewLevel=%q", location.ViewLevel))
+	wb.WriteString(fmt.Sprintf(" x=%q", floats(location.X)))
+	wb.WriteString(fmt.Sprintf(" y=%q", floats(location.Y)))
+	wb.WriteString("/>")
+	return nil
+}
+
+func encodeFeatureLabel(w *models.Map_t, wb *bytes.Buffer, label *models.Label_t) error {
+	return encodeLabel(w, wb, label)
 }
 
 func encodeLabels(w *models.Map_t, wb *bytes.Buffer) error {
@@ -234,10 +308,39 @@ func encodeLabels(w *models.Map_t, wb *bytes.Buffer) error {
 }
 
 func encodeLabel(w *models.Map_t, wb *bytes.Buffer, label *models.Label_t) error {
-	//			printf(`<label  mapLayer="Tribenet Coords" style="null" fontFace="null" color="0.0,0.0,0.0,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`)
-	//			printf(`<location viewLevel="WORLD" x="%g" y="%g" scale="6.25" />`, points[0].X, points[0].Y)
-	//			printf("0")
-	//			printf("</label>\n")
+	wb.WriteString("<label")
+	wb.WriteString(fmt.Sprintf(" mapLayer=%q", label.MapLayer))
+	wb.WriteString(fmt.Sprintf(" style=%q", label.Style))       // can be null!
+	wb.WriteString(fmt.Sprintf(" fontFace=%q", label.FontFace)) // can be null!
+	wb.WriteString(fmt.Sprintf(" color=%q", rgbas(label.Color)))
+	wb.WriteString(fmt.Sprintf(" outlineColor=%q", rgbas(label.OutlineColor)))
+	wb.WriteString(fmt.Sprintf(" outlineSize=%q", floats(label.OutlineSize)))
+	wb.WriteString(fmt.Sprintf(" isBold=%q", bools(label.IsBold)))
+	wb.WriteString(fmt.Sprintf(" isItalic=%q", bools(label.IsItalic)))
+	wb.WriteString(fmt.Sprintf(" isWorld=%q", bools(label.IsWorld)))
+	wb.WriteString(fmt.Sprintf(" isContinent=%q", bools(label.IsContinent)))
+	wb.WriteString(fmt.Sprintf(" isKingdom=%q", bools(label.IsKingdom)))
+	wb.WriteString(fmt.Sprintf(" isProvince=%q", bools(label.IsProvince)))
+	wb.WriteString(fmt.Sprintf(" isGMOnly=%q", bools(label.IsGMOnly)))
+	wb.WriteString(fmt.Sprintf(" tags=%q", label.Tags))
+	wb.WriteString(">")
+	if err := encodeLabelLocation(w, wb, label.Location); err != nil {
+		return err
+	}
+	if label.InnerText != "" {
+		wb.WriteString(label.InnerText)
+	}
+	wb.WriteString("</label>\n")
+	return nil
+}
+
+func encodeLabelLocation(w *models.Map_t, wb *bytes.Buffer, location *models.LabelLocation_t) error {
+	wb.WriteString("<location")
+	wb.WriteString(fmt.Sprintf(" viewLevel=%q", location.ViewLevel))
+	wb.WriteString(fmt.Sprintf(" x=%q", floats(location.X)))
+	wb.WriteString(fmt.Sprintf(" y=%q", floats(location.Y)))
+	wb.WriteString(fmt.Sprintf(" scale=%q", floats(location.Scale)))
+	wb.WriteString("/>")
 	return nil
 }
 
@@ -358,13 +461,27 @@ func encodeShapeConfig(w *models.Map_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-// boolf formats a bool as a string
-func boolf(b bool) string {
+// boold formats a bool as an integer
+func boold(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+// bools formats a bool as a string
+func bools(b bool) string {
 	return fmt.Sprintf("%v", b)
+}
+
+// floatd formats a float as an integer.
+func floatd(f float64) int {
+	return int(f)
 }
 
 // floatf formats a float in the style that Worldographer expects.
 // Zero values are rendered as 0.0.
+// Note: floats is probably the right function to use.
 func floatf(f float64) string {
 	const epsilon = 1e-6
 	if -epsilon < f && f <= epsilon {
@@ -373,14 +490,80 @@ func floatf(f float64) string {
 	return fmt.Sprintf("%g", f)
 }
 
+// floats converts a float64 number to a string representation adhering
+// to certain Worldographer formatting rules.
+//
+// The function tries to represent the float in a manner that avoids scientific notation
+// while preserving the fractional part of the float. It rounds off trailing zeros and
+// ensures that there is always a digit after the decimal point.
+//
+// Parameters:
+// - f: The float64 number to be converted.
+//
+// Returns:
+//   - The string representation of the input float. If `f` is an integer, ".0" is appended to
+//     signify that it is a float. For non-integer floats, trailing zeros after the decimal point are trimmed.
+//
+// Example:
+//
+//	floats(1234567.00) returns "1234567.0"
+//	floats(0.120300) returns "0.1203"
+func floats(f float64) string {
+	s := fmt.Sprintf("%g", f)
+	if strings.IndexByte(s, 'e') != -1 {
+		s = fmt.Sprintf("%f", f)
+	}
+	if strings.IndexByte(s, '.') == -1 {
+		return s + ".0"
+	}
+	s = strings.TrimRight(s, "0")
+	if s[len(s)-1] == '.' {
+		return s + "0"
+	}
+	return s
+}
+
 // floatg formats a float in the style that Worldographer expects.
 func floatg(f float64) string {
 	return fmt.Sprintf("%g", f)
 }
 
-// intf formats an int as a string
-func intf(i int) string {
+// ints formats an int as a string
+func ints(i int) string {
 	return fmt.Sprintf("%d", i)
+}
+
+// rgbans converts an RGBA_t to a nullable string.
+// It uses the rgbas function to format the RGBA_t
+func rgbans(rgba *models.RGBA_t) string {
+	s := rgbas(rgba)
+	if s == "0.0,0.0,0.0,1.0" {
+		s = "null"
+	}
+	return s
+}
+
+// rgbas converts an RGBA_t struct into an XML attribute string.
+// RGBA_t struct contains four fields, each representing Red, Green, Blue and Alpha respectively.
+// Each field is a float. We format the struct as a comma separated string.
+// If the provided rgba pointer is nil, it defaults to "0.0,0.0,0.0,1.0".
+//
+// We use the floats function to format the float values into an XML-friendly format.
+//
+// Parameters:
+// - rgba: a pointer to an RGBA_t struct. Can be nil.
+//
+// Returns:
+// - A XML attribute string representing the rgba. If rgba is nil, returns "0.0,0.0,0.0,1.0"
+func rgbas(rgba *models.RGBA_t) string {
+	if rgba == nil {
+		return "0.0,0.0,0.0,1.0"
+	}
+	return fmt.Sprintf("%s,%s,%s,%s",
+		floats(rgba.R),
+		floats(rgba.G),
+		floats(rgba.B),
+		floats(rgba.A))
 }
 
 // terrainMapToSlice converts a map of terrain names and slot into a list

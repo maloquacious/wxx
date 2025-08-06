@@ -27,30 +27,30 @@ type Map_t struct {
 	} `json:"meta-data"`
 
 	// attributes
-	Type                      string  `json:"type,omitempty"`                      // "WORLD"
-	Version                   string  `json:"version,omitempty"`                   // "1.73"
-	LastViewLevel             string  `json:"lastViewLevel,omitempty"`             // "WORLD"
-	ContinentFactor           int     `json:"continentFactor,omitempty"`           // "-1"
-	KingdomFactor             int     `json:"kingdomFactor,omitempty"`             // "-1"
-	ProvinceFactor            int     `json:"provinceFactor,omitempty"`            // "-1"
-	WorldToContinentHOffset   float64 `json:"worldToContinentHOffset,omitempty"`   // "0.0"
-	ContinentToKingdomHOffset float64 `json:"continentToKingdomHOffset,omitempty"` // "0.0"
-	KingdomToProvinceHOffset  float64 `json:"kingdomToProvinceHOffset,omitempty"`  // "0.0"
-	WorldToContinentVOffset   float64 `json:"worldToContinentVOffset,omitempty"`   // "0.0"
-	ContinentToKingdomVOffset float64 `json:"continentToKingdomVOffset,omitempty"` // "0.0"
-	KingdomToProvinceVOffset  float64 `json:"kingdomToProvinceVOffset,omitempty"`  // "0.0"
-	HexWidth                  float64 `json:"hexWidth,omitempty"`                  // "120.97791408032022"
-	HexHeight                 float64 `json:"hexHeight,omitempty"`                 // "104.78814558711076"
-	HexOrientation            string  `json:"hexOrientation,omitempty"`            // "COLUMNS"
-	MapProjection             string  `json:"mapProjection,omitempty"`             // "FLAT"
-	ShowNotes                 bool    `json:"showNotes,omitempty"`                 // "true"
-	ShowGMOnly                bool    `json:"showGMOnly,omitempty"`                // "false"
-	ShowGMOnlyGlow            bool    `json:"showGMOnlyGlow,omitempty"`            // "false"
-	ShowFeatureLabels         bool    `json:"showFeatureLabels,omitempty"`         // "true"
-	ShowGrid                  bool    `json:"showGrid,omitempty"`                  // "true"
-	ShowGridNumbers           bool    `json:"showGridNumbers,omitempty"`           // "false"
-	ShowShadows               bool    `json:"showShadows,omitempty"`               // "true"
-	TriangleSize              int     `json:"triangleSize,omitempty"`              // "12"
+	Type                      string       `json:"type,omitempty"`                      // "WORLD"
+	Version                   string       `json:"version,omitempty"`                   // "1.73"
+	LastViewLevel             string       `json:"lastViewLevel,omitempty"`             // "WORLD"
+	ContinentFactor           int          `json:"continentFactor,omitempty"`           // "-1"
+	KingdomFactor             int          `json:"kingdomFactor,omitempty"`             // "-1"
+	ProvinceFactor            int          `json:"provinceFactor,omitempty"`            // "-1"
+	WorldToContinentHOffset   float64      `json:"worldToContinentHOffset,omitempty"`   // "0.0"
+	ContinentToKingdomHOffset float64      `json:"continentToKingdomHOffset,omitempty"` // "0.0"
+	KingdomToProvinceHOffset  float64      `json:"kingdomToProvinceHOffset,omitempty"`  // "0.0"
+	WorldToContinentVOffset   float64      `json:"worldToContinentVOffset,omitempty"`   // "0.0"
+	ContinentToKingdomVOffset float64      `json:"continentToKingdomVOffset,omitempty"` // "0.0"
+	KingdomToProvinceVOffset  float64      `json:"kingdomToProvinceVOffset,omitempty"`  // "0.0"
+	HexWidth                  float64      `json:"hexWidth,omitempty"`                  // "120.97791408032022"
+	HexHeight                 float64      `json:"hexHeight,omitempty"`                 // "104.78814558711076"
+	HexOrientation            string       `json:"hexOrientation,omitempty"`            // "COLUMNS"
+	MapProjection             Projection_e `json:"mapProjection,omitempty"`             // "FLAT"
+	ShowNotes                 bool         `json:"showNotes,omitempty"`                 // "true"
+	ShowGMOnly                bool         `json:"showGMOnly,omitempty"`                // "false"
+	ShowGMOnlyGlow            bool         `json:"showGMOnlyGlow,omitempty"`            // "false"
+	ShowFeatureLabels         bool         `json:"showFeatureLabels,omitempty"`         // "true"
+	ShowGrid                  bool         `json:"showGrid,omitempty"`                  // "true"
+	ShowGridNumbers           bool         `json:"showGridNumbers,omitempty"`           // "false"
+	ShowShadows               bool         `json:"showShadows,omitempty"`               // "true"
+	TriangleSize              int          `json:"triangleSize,omitempty"`              // "12"
 
 	// elements
 	GridAndNumbering struct {
@@ -283,6 +283,24 @@ type Point_t struct {
 	Y    float64 `json:"y,omitempty"`
 }
 
+type Projection_e int
+
+const (
+	_ Projection_e = iota
+	FLAT
+	ICOSAHEDRAL
+)
+
+type Resources_t struct {
+	Animal int
+	Brick  int
+	Crops  int
+	Gems   int
+	Lumber int
+	Metals int
+	Rock   int
+}
+
 type RGBA_t struct {
 	R float64
 	G float64
@@ -389,21 +407,13 @@ type TextureConfig_t struct {
 }
 
 type Tile_t struct {
-	Row       int
-	Column    int
-	Terrain   int // lookup into TerrainMap
-	Elevation float64
-	IsIcy     bool
-	IsGMOnly  bool
-	Resources struct {
-		Animal int
-		Brick  int
-		Crops  int
-		Gems   int
-		Lumber int
-		Metals int
-		Rock   int
-	}
+	Row                   int
+	Column                int
+	Terrain               int // lookup into TerrainMap
+	Elevation             float64
+	IsIcy                 bool
+	IsGMOnly              bool
+	Resources             Resources_t
 	CustomBackgroundColor *RGBA_t
 }
 
