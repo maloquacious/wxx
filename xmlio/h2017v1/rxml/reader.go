@@ -159,7 +159,9 @@ func Read(input []byte) (*models.Map_t, error) {
 			} else if t.Resources.Animal > 100 {
 				return w, fmt.Errorf("value: animals: %w", fmt.Errorf("invalid value"))
 			}
-			if len(values) == 6 || len(values) == 7 {
+			compressedResources := len(values) == 6 || len(values) == 7
+			if compressedResources {
+				// a with compressed resources should flag them with a Z
 				if values[5] != "Z" {
 					return w, fmt.Errorf("value: sentinel: %w", fmt.Errorf("invalid value"))
 				}
