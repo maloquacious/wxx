@@ -1,11 +1,11 @@
 // Copyright (c) 2025 Michael D Henderson. All rights reserved.
 
-package h2017v1
+package rxml
 
 import "encoding/xml"
 
-// Map defines the H2017v1 XML Schema
-type Map struct {
+// Schema_t defines the structure for reading a Worldographer file with the H2017v1 XML Schema
+type Schema_t struct {
 	XMLName xml.Name `xml:"map"`
 
 	// attributes
@@ -36,25 +36,25 @@ type Map struct {
 
 	// elements
 	GridAndNumbering GridAndNumbering `xml:"gridandnumbering"`
-	TerrainMap       TerrainMap       `xml:"terrainmap"`
-	MapLayers        []MapLayer       `xml:"maplayer"`
-	Tiles            Tiles            `xml:"tiles"`
-	MapKey           MapKey           `xml:"mapkey"`
+	TerrainMap       TerrainMap_t     `xml:"terrainmap"`
+	MapLayers        []MapLayer_t     `xml:"maplayer"`
+	Tiles            Tiles_t          `xml:"tiles"`
+	MapKey           MapKey_t         `xml:"mapkey"`
 	Features         Features         `xml:"features"`
-	Labels           Labels           `xml:"labels"`
-	Shapes           Shapes           `xml:"shapes"`
-	Notes            Notes            `xml:"notes"`
-	Informations     Informations     `xml:"informations"`
-	Configuration    Configuration    `xml:"configuration"`
+	Labels           Labels_t         `xml:"labels"`
+	Shapes           Shapes_t         `xml:"shapes"`
+	Notes            Notes_t          `xml:"notes"`
+	Informations     Informations_t   `xml:"informations"`
+	Configuration    Configuration_t  `xml:"configuration"`
 }
 
-type Configuration struct {
+type Configuration_t struct {
 	// elements
-	TerrainConfig []TerrainConfig `xml:"terrain-config"`
-	FeatureConfig []FeatureConfig `xml:"feature-config"`
-	TextureConfig []TextureConfig `xml:"texture-config"`
-	TextConfig    []TextConfig    `xml:"text-config"`
-	ShapeConfig   []ShapeConfig   `xml:"shape-config"`
+	TerrainConfig []TerrainConfig_t `xml:"terrain-config"`
+	FeatureConfig []FeatureConfig   `xml:"feature-config"`
+	TextureConfig []TextureConfig_t `xml:"texture-config"`
+	TextConfig    []TextConfig_t    `xml:"text-config"`
+	ShapeConfig   []ShapeConfig_t   `xml:"shape-config"`
 }
 
 type Feature struct {
@@ -88,8 +88,8 @@ type Feature struct {
 		X         float64 `xml:"x,attr"`
 		Y         float64 `xml:"y,attr"`
 	} `xml:"location"`
-	Label     Label  `xml:"label"`
-	InnerText string `xml:",chardata"`
+	Label     Label_t `xml:"label"`
+	InnerText string  `xml:",chardata"`
 }
 
 type FeatureConfig struct {
@@ -137,7 +137,7 @@ type GridAndNumbering struct {
 	NumberSeparator             string  `xml:"numberSeparator,attr"`
 }
 
-type Information struct {
+type Information_t struct {
 	// attributes
 	Uuid       string `xml:"uuid,attr"`
 	Type       string `xml:"type,attr"`
@@ -154,17 +154,17 @@ type Information struct {
 	Domains      string `xml:"domains,attr"`      // ?
 
 	// elements
-	Details   []Information `xml:"information"`
-	InnerText string        `xml:",chardata"`
+	Details   []Information_t `xml:"information"`
+	InnerText string          `xml:",chardata"`
 }
 
-type Informations struct {
+type Informations_t struct {
 	// elements
-	Informations []Information `xml:"information"`
-	InnerText    string        `xml:",chardata"`
+	Informations []Information_t `xml:"information"`
+	InnerText    string          `xml:",chardata"`
 }
 
-type Label struct {
+type Label_t struct {
 	// attributes
 	MapLayer        string  `xml:"mapLayer,attr"`
 	Style           string  `xml:"style,attr"`
@@ -184,22 +184,16 @@ type Label struct {
 	BackgroundColor string  `xml:"backgroundColor,attr"`
 
 	// elements
-	Location struct {
-		// attributes
-		ViewLevel string  `xml:"viewLevel,attr"`
-		X         float64 `xml:"x,attr"`
-		Y         float64 `xml:"y,attr"`
-		Scale     float64 `xml:"scale,attr"`
-	} `xml:"location"`
-	InnerText string `xml:",chardata"`
+	Location  Location_t `xml:"location"`
+	InnerText string     `xml:",chardata"`
 }
 
-type Labels struct {
+type Labels_t struct {
 	// elements
-	Labels []Label `xml:"label"`
+	Labels []Label_t `xml:"label"`
 }
 
-type LabelStyle struct {
+type LabelStyle_t struct {
 	// attributes
 	Name            string  `xml:"name,attr"`
 	FontFace        string  `xml:"fontFace,attr"`
@@ -212,7 +206,15 @@ type LabelStyle struct {
 	OutlineColor    string  `xml:"outlineColor,attr"`
 }
 
-type MapKey struct {
+type Location_t struct {
+	// attributes
+	ViewLevel string  `xml:"viewLevel,attr"`
+	X         float64 `xml:"x,attr"`
+	Y         float64 `xml:"y,attr"`
+	Scale     float64 `xml:"scale,attr"`
+}
+
+type MapKey_t struct {
 	// attributes
 	PositionX         float64 `xml:"positionx,attr"`
 	PositionY         float64 `xml:"positiony,attr"`
@@ -239,29 +241,29 @@ type MapKey struct {
 	EntryScale        float64 `xml:"entryScale,attr"`
 }
 
-type MapLayer struct {
+type MapLayer_t struct {
 	// attributes
 	Name      string `xml:"name,attr"`
 	IsVisible bool   `xml:"isVisible,attr"`
 }
 
-type Note struct {
+type Note_t struct {
 	// elements
 	InnerText string `xml:",chardata"`
 }
 
-type Notes struct {
-	Notes []Note `xml:"note"`
+type Notes_t struct {
+	Notes []Note_t `xml:"note"`
 }
 
-type Point struct {
+type Point_t struct {
 	// attributes
 	Type string  `xml:"type,attr"`
 	X    float64 `xml:"x,attr"`
 	Y    float64 `xml:"y,attr"`
 }
 
-type Shape struct {
+type Shape_t struct {
 	// attributes
 	BbHeight              float64 `xml:"bbHeight,attr"`
 	BbIterations          int     `xml:"bbIterations,attr"`
@@ -304,16 +306,16 @@ type Shape struct {
 	Type                  string  `xml:"type,attr"`
 
 	// elements
-	Points []Point `xml:"p"`
+	Points []Point_t `xml:"p"`
 }
 
-type ShapeConfig struct {
+type ShapeConfig_t struct {
 	// elements
-	ShapeStyles []ShapeStyle `xml:"shapestyle"`
-	InnerText   string       `xml:",chardata"`
+	ShapeStyles []ShapeStyle_t `xml:"shapestyle"`
+	InnerText   string         `xml:",chardata"`
 }
 
-type ShapeStyle struct {
+type ShapeStyle_t struct {
 	// attributes
 	BbHeight      float64 `xml:"bbHeight,attr"`
 	BbIterations  int     `xml:"bbIterations,attr"`
@@ -344,43 +346,43 @@ type ShapeStyle struct {
 	Tags          string  `xml:"tags,attr"`
 }
 
-type Shapes struct {
+type Shapes_t struct {
 	// elements
-	Shapes []Shape `xml:"shape"`
+	Shapes []Shape_t `xml:"shape"`
 }
 
-type TerrainConfig struct {
-	// elements
-	InnerText string `xml:",chardata"`
-}
-
-type TerrainMap struct {
+type TerrainConfig_t struct {
 	// elements
 	InnerText string `xml:",chardata"`
 }
 
-type TextConfig struct {
-	// elements
-	LabelStyles []LabelStyle `xml:"labelstyle"`
-	InnerText   string       `xml:",chardata"`
-}
-
-type TextureConfig struct {
+type TerrainMap_t struct {
 	// elements
 	InnerText string `xml:",chardata"`
 }
 
-type Tiles struct {
+type TextConfig_t struct {
+	// elements
+	LabelStyles []LabelStyle_t `xml:"labelstyle"`
+	InnerText   string         `xml:",chardata"`
+}
+
+type TextureConfig_t struct {
+	// elements
+	InnerText string `xml:",chardata"`
+}
+
+type Tiles_t struct {
 	// attributes
 	ViewLevel string `xml:"viewLevel,attr"`
 	TilesWide int    `xml:"tilesWide,attr"` // number of columns of tiles
 	TilesHigh int    `xml:"tilesHigh,attr"` // number of rows of tiles
 
 	// elements
-	TileRows []TileRow `xml:"tilerow"`
+	TileRows []TileRow_t `xml:"tilerow"`
 }
 
-type TileRow struct {
+type TileRow_t struct {
 	// elements
 	InnerText string `xml:",chardata"`
 }

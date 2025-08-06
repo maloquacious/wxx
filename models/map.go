@@ -3,8 +3,9 @@
 package models
 
 import (
-	"github.com/maloquacious/semver"
 	"time"
+
+	"github.com/maloquacious/semver"
 )
 
 // Map_t is the in-memory representation of the map data.
@@ -51,6 +52,7 @@ type Map_t struct {
 	ShowShadows               bool    `json:"showShadows,omitempty"`               // "true"
 	TriangleSize              int     `json:"triangleSize,omitempty"`              // "12"
 
+	// elements
 	GridAndNumbering struct {
 		Color0                      string  `json:"color0,omitempty"`                      // "0x00000040"
 		Color1                      string  `json:"color1,omitempty"`                      // "0x00000040"

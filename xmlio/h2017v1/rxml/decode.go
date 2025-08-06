@@ -1,6 +1,6 @@
 // Copyright (c) 2025 Michael D Henderson. All rights reserved.
 
-package h2017v1
+package rxml
 
 import (
 	"fmt"
