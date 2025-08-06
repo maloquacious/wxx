@@ -206,6 +206,14 @@ func encodeTiles(w *models.Map_t, wb *bytes.Buffer) error {
 	return nil
 }
 
+// some documentation is only in this discord chat - https://discord.com/channels/535205750532997160/877285895991095369/1187771984768151653
+// summarizing that:
+// * tilerow is tab-delimited data that looks like terrainMapSlot elevation isIcy isGMOnly animals 0 0 0 0 0 0
+// * the web page has isIcy as a float, but it seems to be a boolean
+// * resource.animals is int with range 0...100
+// * field after resource.animal is "Z" if remaining resources are all 0
+// * otherwise we have brick, crops, gems, lumber, metals, rock
+// * customBackgroundColor is an RGBA that is optional
 func encodeTile(w *models.Map_t, wb *bytes.Buffer, tile *models.Tile_t) error {
 	// todo: implement this
 	wb.WriteString(fmt.Sprintf("%d", tile.Terrain))
@@ -215,13 +223,28 @@ func encodeTile(w *models.Map_t, wb *bytes.Buffer, tile *models.Tile_t) error {
 	if err := encodeTileResources(w, wb, tile.Resources); err != nil {
 		return err
 	}
+	if tile.CustomBackgroundColor != nil {
+		wb.WriteString(fmt.Sprintf("\t%s", rgbas(tile.CustomBackgroundColor)))
+	}
 	wb.WriteString(fmt.Sprintf("\n"))
 	return nil
 }
 
+// all resources are supposed to be in the range of 0...100, but we don't enforce
 func encodeTileResources(w *models.Map_t, wb *bytes.Buffer, resources models.Resources_t) error {
-	// todo: implement resources. for now, just output 0<tab>Z.
-	wb.WriteString(fmt.Sprintf("\t%d", 0))
+	// compress if there are no resources
+	if resources.IsZero() {
+		wb.WriteString(fmt.Sprintf("\t%d", 0))
+		wb.WriteString(fmt.Sprintf("\tZ"))
+		return nil
+	}
+	wb.WriteString(fmt.Sprintf("\t%d", resources.Animal))
+	wb.WriteString(fmt.Sprintf("\t%d", resources.Brick))
+	wb.WriteString(fmt.Sprintf("\t%d", resources.Crops))
+	wb.WriteString(fmt.Sprintf("\t%d", resources.Gems))
+	wb.WriteString(fmt.Sprintf("\t%d", resources.Lumber))
+	wb.WriteString(fmt.Sprintf("\t%d", resources.Metals))
+	wb.WriteString(fmt.Sprintf("\t%d", resources.Rock))
 	wb.WriteString(fmt.Sprintf("\tZ"))
 	return nil
 }

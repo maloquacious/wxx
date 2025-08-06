@@ -301,6 +301,11 @@ type Resources_t struct {
 	Rock   int
 }
 
+func (r Resources_t) IsZero() bool {
+	var zeroResources Resources_t
+	return r == zeroResources
+}
+
 type RGBA_t struct {
 	R float64
 	G float64
