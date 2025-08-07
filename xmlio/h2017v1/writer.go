@@ -5,6 +5,7 @@ package h2017v1
 import (
 	"bytes"
 	"fmt"
+	"html"
 	"sort"
 	"strings"
 
@@ -36,7 +37,7 @@ func encodeMap(w *models.Map_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(" kingdomToProvinceHOffset=%q", floats(w.KingdomToProvinceHOffset)))
 	wb.WriteString(fmt.Sprintf(" worldToContinentVOffset=%q", floats(w.WorldToContinentVOffset)))
 	wb.WriteString(fmt.Sprintf(" continentToKingdomVOffset=%q", floats(w.ContinentToKingdomVOffset)))
-	wb.WriteString(fmt.Sprintf(" kingdomToProvinceVOffset=%q\n", floats(w.KingdomToProvinceVOffset)))
+	wb.WriteString(fmt.Sprintf(" kingdomToProvinceVOffset=%q \n", floats(w.KingdomToProvinceVOffset)))
 	wb.WriteString(fmt.Sprintf("hexWidth=%q", floats(w.HexWidth)))
 	wb.WriteString(fmt.Sprintf(" hexHeight=%q", floats(w.HexHeight)))
 	wb.WriteString(fmt.Sprintf(" hexOrientation=%q", w.HexOrientation))
@@ -101,13 +102,13 @@ func encodeMap(w *models.Map_t, wb *bytes.Buffer) error {
 		return err
 	}
 
-	wb.WriteString("</map>\n\n")
+	wb.WriteString("</map>\n")
 
 	return nil
 }
 
 func encodeGridAndNumbering(w *models.Map_t, wb *bytes.Buffer) error {
-	wb.WriteString(fmt.Sprintf(`<gridandnumbering `))
+	wb.WriteString(fmt.Sprintf(`<gridandnumbering`))
 	wb.WriteString(fmt.Sprintf(" color0=%q", w.GridAndNumbering.Color0))
 	wb.WriteString(fmt.Sprintf(" color1=%q", w.GridAndNumbering.Color1))
 	wb.WriteString(fmt.Sprintf(" color2=%q", w.GridAndNumbering.Color2))
@@ -139,7 +140,7 @@ func encodeGridAndNumbering(w *models.Map_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(" numberPosition=%q", w.GridAndNumbering.NumberPosition))
 	wb.WriteString(fmt.Sprintf(" numberPrePad=%q", w.GridAndNumbering.NumberPrePad))
 	wb.WriteString(fmt.Sprintf(" numberSeparator=%q", w.GridAndNumbering.NumberSeparator))
-	wb.WriteString(fmt.Sprintf("/>\n"))
+	wb.WriteString(fmt.Sprintf(" />\n"))
 	return nil
 }
 
@@ -232,9 +233,9 @@ func encodeTile(w *models.Map_t, wb *bytes.Buffer, tile *models.Tile_t) error {
 
 // all resources are supposed to be in the range of 0...100, but we don't enforce
 func encodeTileResources(w *models.Map_t, wb *bytes.Buffer, resources models.Resources_t) error {
-	// compress if there are no resources
-	if resources.IsZero() {
-		wb.WriteString(fmt.Sprintf("\t%d", 0))
+	// compress if there are no resources other than Animal
+	if resources.Brick == 0 && resources.Crops == 0 && resources.Gems == 0 && resources.Lumber == 0 && resources.Metals == 0 && resources.Rock == 0 {
+		wb.WriteString(fmt.Sprintf("\t%d", resources.Animal))
 		wb.WriteString(fmt.Sprintf("\tZ"))
 		return nil
 	}
@@ -245,7 +246,6 @@ func encodeTileResources(w *models.Map_t, wb *bytes.Buffer, resources models.Res
 	wb.WriteString(fmt.Sprintf("\t%d", resources.Lumber))
 	wb.WriteString(fmt.Sprintf("\t%d", resources.Metals))
 	wb.WriteString(fmt.Sprintf("\t%d", resources.Rock))
-	wb.WriteString(fmt.Sprintf("\tZ"))
 	return nil
 }
 
@@ -277,14 +277,14 @@ func encodeFeature(w *models.Map_t, wb *bytes.Buffer, feature *models.Feature_t)
 	wb.WriteString(fmt.Sprintf(" isFlipHorizontal=%q", bools(feature.IsFlipHorizontal)))
 	wb.WriteString(fmt.Sprintf(" isFlipVertical=%q", bools(feature.IsFlipVertical)))
 	wb.WriteString(fmt.Sprintf(" scale=%q", floats(feature.Scale)))
-	wb.WriteString(fmt.Sprintf(" scaleHt=%q", floats(feature.Scale)))
+	wb.WriteString(fmt.Sprintf(" scaleHt=%q", floats(feature.ScaleHt)))
 	wb.WriteString(fmt.Sprintf(" tags=%q", feature.Tags))
-	wb.WriteString(fmt.Sprintf(" color=%q", rgbas(feature.Color)))
-	wb.WriteString(fmt.Sprintf(" ringcolor=%q", rgbas(feature.RingColor)))
+	wb.WriteString(fmt.Sprintf(" color=%q", rgbans(feature.Color))) // nullable
+	wb.WriteString(fmt.Sprintf(" ringcolor=%q", rgbans(feature.RingColor)))
 	wb.WriteString(fmt.Sprintf(" isGMOnly=%q", bools(feature.IsGMOnly)))
 	wb.WriteString(fmt.Sprintf(" isPlaceFreely=%q", bools(feature.IsPlaceFreely)))
 	wb.WriteString(fmt.Sprintf(" labelPosition=%q", feature.LabelPosition))
-	wb.WriteString(fmt.Sprintf(" labelDistance=%q", floats(feature.LabelDistance)))
+	wb.WriteString(fmt.Sprintf(" labelDistance=%q", ints(feature.LabelDistance)))
 	wb.WriteString(fmt.Sprintf(" isWorld=%q", bools(feature.IsWorld)))
 	wb.WriteString(fmt.Sprintf(" isContinent=%q", bools(feature.IsContinent)))
 	wb.WriteString(fmt.Sprintf(" isKingdom=%q", bools(feature.IsKingdom)))
@@ -311,7 +311,7 @@ func encodeFeatureLocation(w *models.Map_t, wb *bytes.Buffer, location *models.F
 	wb.WriteString(fmt.Sprintf(" viewLevel=%q", location.ViewLevel))
 	wb.WriteString(fmt.Sprintf(" x=%q", floats(location.X)))
 	wb.WriteString(fmt.Sprintf(" y=%q", floats(location.Y)))
-	wb.WriteString("/>")
+	wb.WriteString(" />")
 	return nil
 }
 
@@ -332,12 +332,19 @@ func encodeLabels(w *models.Map_t, wb *bytes.Buffer) error {
 
 func encodeLabel(w *models.Map_t, wb *bytes.Buffer, label *models.Label_t) error {
 	wb.WriteString("<label")
-	wb.WriteString(fmt.Sprintf(" mapLayer=%q", label.MapLayer))
+	wb.WriteString(fmt.Sprintf("  mapLayer=%q", label.MapLayer))
 	wb.WriteString(fmt.Sprintf(" style=%q", label.Style))       // can be null!
 	wb.WriteString(fmt.Sprintf(" fontFace=%q", label.FontFace)) // can be null!
 	wb.WriteString(fmt.Sprintf(" color=%q", rgbas(label.Color)))
+	// todo: backgroundColor is sometimes not displayed when its value is "0.0,0.0,0.0,1.0".
+	// I may need to ask on the Inkwell Discord about this; I can't figure out the pattern.
+	// Until then, seems to be no harm in excluding it (other than noise in the diff).
+	if attr := rgbas(label.BackgroundColor); attr != "0.0,0.0,0.0,1.0" { // do not include if null
+		wb.WriteString(fmt.Sprintf(" backgroundColor=%q", attr))
+	}
 	wb.WriteString(fmt.Sprintf(" outlineColor=%q", rgbas(label.OutlineColor)))
 	wb.WriteString(fmt.Sprintf(" outlineSize=%q", floats(label.OutlineSize)))
+	wb.WriteString(fmt.Sprintf(" rotate=%q", floats(label.Rotate)))
 	wb.WriteString(fmt.Sprintf(" isBold=%q", bools(label.IsBold)))
 	wb.WriteString(fmt.Sprintf(" isItalic=%q", bools(label.IsItalic)))
 	wb.WriteString(fmt.Sprintf(" isWorld=%q", bools(label.IsWorld)))
@@ -351,7 +358,7 @@ func encodeLabel(w *models.Map_t, wb *bytes.Buffer, label *models.Label_t) error
 		return err
 	}
 	if label.InnerText != "" {
-		wb.WriteString(label.InnerText)
+		wb.WriteString(encodeInnerText(label.InnerText))
 	}
 	wb.WriteString("</label>\n")
 	return nil
@@ -363,7 +370,7 @@ func encodeLabelLocation(w *models.Map_t, wb *bytes.Buffer, location *models.Lab
 	wb.WriteString(fmt.Sprintf(" x=%q", floats(location.X)))
 	wb.WriteString(fmt.Sprintf(" y=%q", floats(location.Y)))
 	wb.WriteString(fmt.Sprintf(" scale=%q", floats(location.Scale)))
-	wb.WriteString("/>")
+	wb.WriteString(" />")
 	return nil
 }
 
@@ -534,10 +541,10 @@ func encodeShapeStyle(shapeStyle *models.ShapeStyle_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(" bbIterations=%q", ints(shapeStyle.BbIterations)))
 	wb.WriteString(fmt.Sprintf(" fillTexture=%q", shapeStyle.FillTexture))         // nullable
 	wb.WriteString(fmt.Sprintf(" strokeTexture=%q", shapeStyle.StrokeTexture))     // nullable
-	wb.WriteString(fmt.Sprintf(" strokePaint=%q", rgbans(shapeStyle.StrokePaint))) // nullable
-	wb.WriteString(fmt.Sprintf(" fillPaint=%q", rgbans(shapeStyle.FillPaint)))     // nullable
-	wb.WriteString(fmt.Sprintf(" dscolor=%q", rgbans(shapeStyle.DsColor)))         // nullable
-	wb.WriteString(fmt.Sprintf(" insColor=%q", rgbans(shapeStyle.InsColor)))       // nullable
+	wb.WriteString(fmt.Sprintf("  strokePaint=%q", rgbas(shapeStyle.StrokePaint))) // not nullable
+	wb.WriteString(fmt.Sprintf("  fillPaint=%q", rgbans(shapeStyle.FillPaint)))    // nullable
+	wb.WriteString(fmt.Sprintf("  dscolor=%q", rgbans(shapeStyle.DsColor)))        // nullable
+	wb.WriteString(fmt.Sprintf("  insColor=%q", rgbans(shapeStyle.InsColor)))      // nullable
 	wb.WriteString(" />\n")
 	return nil
 }
@@ -670,4 +677,9 @@ func terrainMapToSlice(data map[string]int) []string {
 		s = append(s, v.name)
 	}
 	return s
+}
+
+func encodeInnerText(input string) string {
+	escaped := html.EscapeString(input) // Escapes < > & "
+	return strings.ReplaceAll(escaped, "\n", "&#10;")
 }

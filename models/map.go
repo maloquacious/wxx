@@ -139,7 +139,7 @@ type Feature_t struct {
 	IsGMOnly          bool    `json:"isGMOnly,omitempty"`
 	IsPlaceFreely     bool    `json:"isPlaceFreely,omitempty"`
 	LabelPosition     string  `json:"labelPosition,omitempty"`
-	LabelDistance     float64 `json:"labelDistance,omitempty"`
+	LabelDistance     int     `json:"labelDistance,omitempty"`
 	IsWorld           bool    `json:"isWorld,omitempty"`
 	IsContinent       bool    `json:"isContinent,omitempty"`
 	IsKingdom         bool    `json:"isKingdom,omitempty"`
@@ -293,11 +293,6 @@ type Resources_t struct {
 	Lumber int
 	Metals int
 	Rock   int
-}
-
-func (r Resources_t) IsZero() bool {
-	var zeroResources Resources_t
-	return r == zeroResources
 }
 
 type RGBA_t struct {

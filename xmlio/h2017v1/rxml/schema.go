@@ -73,7 +73,7 @@ type Feature struct {
 	IsGMOnly          bool    `xml:"isGMOnly,attr"`
 	IsPlaceFreely     bool    `xml:"isPlaceFreely,attr"`
 	LabelPosition     string  `xml:"labelPosition,attr"`
-	LabelDistance     float64 `xml:"labelDistance,attr"`
+	LabelDistance     int     `xml:"labelDistance,attr"`
 	IsWorld           bool    `xml:"isWorld,attr"`
 	IsContinent       bool    `xml:"isContinent,attr"`
 	IsKingdom         bool    `xml:"isKingdom,attr"`

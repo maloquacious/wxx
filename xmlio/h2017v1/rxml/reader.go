@@ -297,6 +297,7 @@ func Read(input []byte) (*models.Map_t, error) {
 			IsProvince:  mFeature.Label.IsProvince,
 			IsGMOnly:    mFeature.Label.IsGMOnly,
 			Tags:        mFeature.Label.Tags,
+			InnerText:   mFeature.Label.InnerText,
 		}
 		if f.Label.Color, err = decodeRgba(mFeature.Label.Color); err != nil {
 			return w, fmt.Errorf("feature.label.color: %w", err)
