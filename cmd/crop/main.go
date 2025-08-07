@@ -73,6 +73,7 @@ func main() {
 	}
 
 	fmt.Printf("input: %4d x %4d\n", input.Tiles.TilesWide, input.Tiles.TilesHigh)
+	fmt.Printf("input: %q: %g x %g\n", input.HexOrientation, input.HexWidth, input.HexHeight)
 
 	// crop the map by subtracting 2 from each edge
 	lrow, rrow := 14, input.Tiles.TilesWide-14

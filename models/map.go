@@ -53,53 +53,18 @@ type Map_t struct {
 	TriangleSize              int          `json:"triangleSize,omitempty"`              // "12"
 
 	// elements
-	GridAndNumbering struct {
-		Color0                      string  `json:"color0,omitempty"`                      // "0x00000040"
-		Color1                      string  `json:"color1,omitempty"`                      // "0x00000040"
-		Color2                      string  `json:"color2,omitempty"`                      // "0x00000040"
-		Color3                      string  `json:"color3,omitempty"`                      // "0x00000040"
-		Color4                      string  `json:"color4,omitempty"`                      // "0x00000040"
-		Width0                      float64 `json:"width0,omitempty"`                      // "1.0"
-		Width1                      float64 `json:"width1,omitempty"`                      // "2.0"
-		Width2                      float64 `json:"width2,omitempty"`                      // "3.0"
-		Width3                      float64 `json:"width3,omitempty"`                      // "4.0"
-		Width4                      float64 `json:"width4,omitempty"`                      // "1.0"
-		GridOffsetContinentKingdomX float64 `json:"gridOffsetContinentKingdomX,omitempty"` // "0.0"
-		GridOffsetContinentKingdomY float64 `json:"gridOffsetContinentKingdomY,omitempty"` // "0.0"
-		GridOffsetWorldContinentX   float64 `json:"gridOffsetWorldContinentX,omitempty"`   // "0.0"
-		GridOffsetWorldContinentY   float64 `json:"gridOffsetWorldContinentY,omitempty"`   // "0.0"
-		GridOffsetWorldKingdomX     float64 `json:"gridOffsetWorldKingdomX,omitempty"`     // "0.0"
-		GridOffsetWorldKingdomY     float64 `json:"gridOffsetWorldKingdomY,omitempty"`     // "0.0"
-		GridSquare                  int     `json:"gridSquare,omitempty"`                  // "0"
-		GridSquareHeight            float64 `json:"gridSquareHeight,omitempty"`            // "-1.0"
-		GridSquareWidth             float64 `json:"gridSquareWidth,omitempty"`             // "-1.0"
-		GridOffsetX                 float64 `json:"gridOffsetX,omitempty"`                 // "0.0"
-		GridOffsetY                 float64 `json:"gridOffsetY,omitempty"`                 // "0.0"
-		NumberFont                  string  `json:"numberFont,omitempty"`                  // "Arial"
-		NumberColor                 string  `json:"numberColor,omitempty"`                 // "0x000000ff"
-		NumberSize                  int     `json:"numberSize,omitempty"`                  // "20"
-		NumberStyle                 string  `json:"numberStyle,omitempty"`                 // "PLAIN"
-		NumberFirstCol              int     `json:"numberFirstCol,omitempty"`              // "0"
-		NumberFirstRow              int     `json:"numberFirstRow,omitempty"`              // "0"
-		NumberOrder                 string  `json:"numberOrder,omitempty"`                 // "COL_ROW"
-		NumberPosition              string  `json:"numberPosition,omitempty"`              // "BOTTOM"
-		NumberPrePad                string  `json:"numberPrePad,omitempty"`                // "DOUBLE_ZERO"
-		NumberSeparator             string  `json:"numberSeparator,omitempty"`             // "."
-	} `json:"gridAndNumbering,omitempty"`
+	GridAndNumbering *GridAndNumbering_t `json:"gridAndNumbering,omitempty"`
 
 	// TerrainMap assigns numbers to each terrain type.
 	// The terrain type is used in the TileRow struct.
-	TerrainMap struct {
-		Data map[string]int `json:"data,omitempty"`
-		List []*Terrain_t   `json:"list,omitempty"`
-	} `json:"terrainMap,omitempty"`
+	TerrainMap *TerrainMap_t `json:"terrainMap,omitempty"`
 
-	// MapLayer assigns a boolean "isVisible" to each layer.
-	MapLayer []MapLayer_t `json:"mapLayer,omitempty"`
+	// MapLayers assigns a boolean "isVisible" to each layer.
+	MapLayers []*MapLayer_t `json:"mapLayers,omitempty"`
 
-	Tiles Tiles_t `json:"tiles,omitempty"`
+	Tiles *Tiles_t `json:"tiles,omitempty"`
 
-	MapKey MapKey_t `json:"mapKey,omitempty"`
+	MapKey *MapKey_t `json:"mapKey,omitempty"`
 
 	Features []*Feature_t `json:"features,omitempty"`
 
@@ -109,19 +74,18 @@ type Map_t struct {
 
 	Notes []*Note_t `json:"notes,omitempty"`
 
-	Informations struct {
-		Informations []*Information_t `json:"informations,omitempty"`
-		InnerText    string           `json:"innerText,omitempty"`
-	} `json:"informations"`
+	Informations *Informations_t `json:"informations"`
 
-	Configuration struct {
-		TerrainConfig []*TerrainConfig_t `json:"terrain-config,omitempty"`
-		FeatureConfig []*FeatureConfig_t `json:"feature-config,omitempty"`
-		TextureConfig []*TextureConfig_t `json:"texture-config,omitempty"`
-		TextConfig    *TextConfig_t      `json:"text-config,omitempty"`
-		ShapeConfig   *ShapeConfig_t     `json:"shape-config"`
-		InnerText     string             `json:"InnerText,omitempty"`
-	} `json:"configuration"`
+	Configuration *Configuration_t `json:"configuration"`
+}
+
+type Configuration_t struct {
+	TerrainConfig []*TerrainConfig_t `json:"terrain-config,omitempty"`
+	FeatureConfig []*FeatureConfig_t `json:"feature-config,omitempty"`
+	TextureConfig []*TextureConfig_t `json:"texture-config,omitempty"`
+	TextConfig    *TextConfig_t      `json:"text-config,omitempty"`
+	ShapeConfig   *ShapeConfig_t     `json:"shape-config"`
+	InnerText     string             `json:"InnerText,omitempty"`
 }
 
 type Feature_t struct {
@@ -161,6 +125,40 @@ type FeatureLocation_t struct {
 	Y         float64 `json:"y,omitempty"`
 }
 
+type GridAndNumbering_t struct {
+	Color0                      string  `json:"color0,omitempty"`                      // "0x00000040"
+	Color1                      string  `json:"color1,omitempty"`                      // "0x00000040"
+	Color2                      string  `json:"color2,omitempty"`                      // "0x00000040"
+	Color3                      string  `json:"color3,omitempty"`                      // "0x00000040"
+	Color4                      string  `json:"color4,omitempty"`                      // "0x00000040"
+	Width0                      float64 `json:"width0,omitempty"`                      // "1.0"
+	Width1                      float64 `json:"width1,omitempty"`                      // "2.0"
+	Width2                      float64 `json:"width2,omitempty"`                      // "3.0"
+	Width3                      float64 `json:"width3,omitempty"`                      // "4.0"
+	Width4                      float64 `json:"width4,omitempty"`                      // "1.0"
+	GridOffsetContinentKingdomX float64 `json:"gridOffsetContinentKingdomX,omitempty"` // "0.0"
+	GridOffsetContinentKingdomY float64 `json:"gridOffsetContinentKingdomY,omitempty"` // "0.0"
+	GridOffsetWorldContinentX   float64 `json:"gridOffsetWorldContinentX,omitempty"`   // "0.0"
+	GridOffsetWorldContinentY   float64 `json:"gridOffsetWorldContinentY,omitempty"`   // "0.0"
+	GridOffsetWorldKingdomX     float64 `json:"gridOffsetWorldKingdomX,omitempty"`     // "0.0"
+	GridOffsetWorldKingdomY     float64 `json:"gridOffsetWorldKingdomY,omitempty"`     // "0.0"
+	GridSquare                  int     `json:"gridSquare,omitempty"`                  // "0"
+	GridSquareHeight            float64 `json:"gridSquareHeight,omitempty"`            // "-1.0"
+	GridSquareWidth             float64 `json:"gridSquareWidth,omitempty"`             // "-1.0"
+	GridOffsetX                 float64 `json:"gridOffsetX,omitempty"`                 // "0.0"
+	GridOffsetY                 float64 `json:"gridOffsetY,omitempty"`                 // "0.0"
+	NumberFont                  string  `json:"numberFont,omitempty"`                  // "Arial"
+	NumberColor                 string  `json:"numberColor,omitempty"`                 // "0x000000ff"
+	NumberSize                  int     `json:"numberSize,omitempty"`                  // "20"
+	NumberStyle                 string  `json:"numberStyle,omitempty"`                 // "PLAIN"
+	NumberFirstCol              int     `json:"numberFirstCol,omitempty"`              // "0"
+	NumberFirstRow              int     `json:"numberFirstRow,omitempty"`              // "0"
+	NumberOrder                 string  `json:"numberOrder,omitempty"`                 // "COL_ROW"
+	NumberPosition              string  `json:"numberPosition,omitempty"`              // "BOTTOM"
+	NumberPrePad                string  `json:"numberPrePad,omitempty"`                // "DOUBLE_ZERO"
+	NumberSeparator             string  `json:"numberSeparator,omitempty"`             // "."
+}
+
 type Information_t struct {
 	Uuid         string `json:"uuid,omitempty"`
 	Type         string `json:"type,omitempty"`
@@ -176,6 +174,11 @@ type Information_t struct {
 
 	Details   []*InformationDetail_t `json:"details,omitempty"`
 	InnerText string                 `json:"innerText,omitempty"`
+}
+
+type Informations_t struct {
+	Informations []*Information_t `json:"informations,omitempty"`
+	InnerText    string           `json:"innerText,omitempty"`
 }
 
 type InformationDetail_t struct {
@@ -389,6 +392,11 @@ type Terrain_t struct {
 
 type TerrainConfig_t struct {
 	InnerText string `json:"innerText,omitempty"`
+}
+
+type TerrainMap_t struct {
+	Data map[string]int `json:"data,omitempty"`
+	List []*Terrain_t   `json:"list,omitempty"`
 }
 
 type TextConfig_t struct {

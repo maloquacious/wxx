@@ -58,35 +58,35 @@ func encodeMap(w *models.Map_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf("  triangleSize=%q", ints(w.TriangleSize)))
 	wb.WriteString(fmt.Sprintf(">\n"))
 
-	if err := encodeGridAndNumbering(w, wb); err != nil {
+	if err := encodeGridAndNumbering(w.GridAndNumbering, wb); err != nil {
 		return err
 	}
 
-	if err := encodeTerrainMap(w, wb); err != nil {
+	if err := encodeTerrainMap(w.TerrainMap, wb); err != nil {
 		return err
 	}
 
-	if err := encodeMapLayers(w, wb); err != nil {
+	if err := encodeMapLayers(w.MapLayers, wb); err != nil {
 		return err
 	}
 
-	if err := encodeTiles(w, wb); err != nil {
+	if err := encodeTiles(w.Tiles, w.HexOrientation, wb); err != nil {
 		return err
 	}
 
-	if err := encodeMapKey(w, wb); err != nil {
+	if err := encodeMapKey(w.MapKey, wb); err != nil {
 		return err
 	}
 
-	if err := encodeFeatures(w, wb); err != nil {
+	if err := encodeFeatures(w.Features, wb); err != nil {
 		return err
 	}
 
-	if err := encodeLabels(w, wb); err != nil {
+	if err := encodeLabels(w.Labels, wb); err != nil {
 		return err
 	}
 
-	if err := encodeShapes(w, wb); err != nil {
+	if err := encodeShapes(w.Shapes, wb); err != nil {
 		return err
 	}
 
@@ -94,11 +94,11 @@ func encodeMap(w *models.Map_t, wb *bytes.Buffer) error {
 		return err
 	}
 
-	if err := encodeInformations(w, wb); err != nil {
+	if err := encodeInformations(w.Informations, wb); err != nil {
 		return err
 	}
 
-	if err := encodeConfiguration(w, wb); err != nil {
+	if err := encodeConfiguration(w.Configuration, wb); err != nil {
 		return err
 	}
 
@@ -107,46 +107,46 @@ func encodeMap(w *models.Map_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeGridAndNumbering(w *models.Map_t, wb *bytes.Buffer) error {
+func encodeGridAndNumbering(gridAndNumbering *models.GridAndNumbering_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(`<gridandnumbering`))
-	wb.WriteString(fmt.Sprintf(" color0=%q", w.GridAndNumbering.Color0))
-	wb.WriteString(fmt.Sprintf(" color1=%q", w.GridAndNumbering.Color1))
-	wb.WriteString(fmt.Sprintf(" color2=%q", w.GridAndNumbering.Color2))
-	wb.WriteString(fmt.Sprintf(" color3=%q", w.GridAndNumbering.Color3))
-	wb.WriteString(fmt.Sprintf(" color4=%q", w.GridAndNumbering.Color4))
-	wb.WriteString(fmt.Sprintf(" width0=%q", floats(w.GridAndNumbering.Width0)))
-	wb.WriteString(fmt.Sprintf(" width1=%q", floats(w.GridAndNumbering.Width1)))
-	wb.WriteString(fmt.Sprintf(" width2=%q", floats(w.GridAndNumbering.Width2)))
-	wb.WriteString(fmt.Sprintf(" width3=%q", floats(w.GridAndNumbering.Width3)))
-	wb.WriteString(fmt.Sprintf(" width4=%q", floats(w.GridAndNumbering.Width4)))
-	wb.WriteString(fmt.Sprintf(" gridOffsetContinentKingdomX=%q", floats(w.GridAndNumbering.GridOffsetContinentKingdomX)))
-	wb.WriteString(fmt.Sprintf(" gridOffsetContinentKingdomY=%q", floats(w.GridAndNumbering.GridOffsetContinentKingdomY)))
-	wb.WriteString(fmt.Sprintf(" gridOffsetWorldContinentX=%q", floats(w.GridAndNumbering.GridOffsetWorldContinentX)))
-	wb.WriteString(fmt.Sprintf(" gridOffsetWorldContinentY=%q", floats(w.GridAndNumbering.GridOffsetWorldContinentY)))
-	wb.WriteString(fmt.Sprintf(" gridOffsetWorldKingdomX=%q", floats(w.GridAndNumbering.GridOffsetWorldKingdomX)))
-	wb.WriteString(fmt.Sprintf(" gridOffsetWorldKingdomY=%q", floats(w.GridAndNumbering.GridOffsetWorldKingdomY)))
-	wb.WriteString(fmt.Sprintf(" gridSquare=%q", ints(w.GridAndNumbering.GridSquare)))
-	wb.WriteString(fmt.Sprintf(" gridSquareHeight=%q", floats(w.GridAndNumbering.GridSquareHeight)))
-	wb.WriteString(fmt.Sprintf(" gridSquareWidth=%q", floats(w.GridAndNumbering.GridSquareWidth)))
-	wb.WriteString(fmt.Sprintf(" gridOffsetX=%q", floats(w.GridAndNumbering.GridOffsetX)))
-	wb.WriteString(fmt.Sprintf(" gridOffsetY=%q", floats(w.GridAndNumbering.GridOffsetY)))
-	wb.WriteString(fmt.Sprintf(" numberFont=%q", w.GridAndNumbering.NumberFont))
-	wb.WriteString(fmt.Sprintf(" numberColor=%q", w.GridAndNumbering.NumberColor))
-	wb.WriteString(fmt.Sprintf(" numberSize=%q", ints(w.GridAndNumbering.NumberSize)))
-	wb.WriteString(fmt.Sprintf(" numberStyle=%q", w.GridAndNumbering.NumberStyle))
-	wb.WriteString(fmt.Sprintf(" numberFirstCol=%q", ints(w.GridAndNumbering.NumberFirstCol)))
-	wb.WriteString(fmt.Sprintf(" numberFirstRow=%q", ints(w.GridAndNumbering.NumberFirstRow)))
-	wb.WriteString(fmt.Sprintf(" numberOrder=%q", w.GridAndNumbering.NumberOrder))
-	wb.WriteString(fmt.Sprintf(" numberPosition=%q", w.GridAndNumbering.NumberPosition))
-	wb.WriteString(fmt.Sprintf(" numberPrePad=%q", w.GridAndNumbering.NumberPrePad))
-	wb.WriteString(fmt.Sprintf(" numberSeparator=%q", w.GridAndNumbering.NumberSeparator))
+	wb.WriteString(fmt.Sprintf(" color0=%q", gridAndNumbering.Color0))
+	wb.WriteString(fmt.Sprintf(" color1=%q", gridAndNumbering.Color1))
+	wb.WriteString(fmt.Sprintf(" color2=%q", gridAndNumbering.Color2))
+	wb.WriteString(fmt.Sprintf(" color3=%q", gridAndNumbering.Color3))
+	wb.WriteString(fmt.Sprintf(" color4=%q", gridAndNumbering.Color4))
+	wb.WriteString(fmt.Sprintf(" width0=%q", floats(gridAndNumbering.Width0)))
+	wb.WriteString(fmt.Sprintf(" width1=%q", floats(gridAndNumbering.Width1)))
+	wb.WriteString(fmt.Sprintf(" width2=%q", floats(gridAndNumbering.Width2)))
+	wb.WriteString(fmt.Sprintf(" width3=%q", floats(gridAndNumbering.Width3)))
+	wb.WriteString(fmt.Sprintf(" width4=%q", floats(gridAndNumbering.Width4)))
+	wb.WriteString(fmt.Sprintf(" gridOffsetContinentKingdomX=%q", floats(gridAndNumbering.GridOffsetContinentKingdomX)))
+	wb.WriteString(fmt.Sprintf(" gridOffsetContinentKingdomY=%q", floats(gridAndNumbering.GridOffsetContinentKingdomY)))
+	wb.WriteString(fmt.Sprintf(" gridOffsetWorldContinentX=%q", floats(gridAndNumbering.GridOffsetWorldContinentX)))
+	wb.WriteString(fmt.Sprintf(" gridOffsetWorldContinentY=%q", floats(gridAndNumbering.GridOffsetWorldContinentY)))
+	wb.WriteString(fmt.Sprintf(" gridOffsetWorldKingdomX=%q", floats(gridAndNumbering.GridOffsetWorldKingdomX)))
+	wb.WriteString(fmt.Sprintf(" gridOffsetWorldKingdomY=%q", floats(gridAndNumbering.GridOffsetWorldKingdomY)))
+	wb.WriteString(fmt.Sprintf(" gridSquare=%q", ints(gridAndNumbering.GridSquare)))
+	wb.WriteString(fmt.Sprintf(" gridSquareHeight=%q", floats(gridAndNumbering.GridSquareHeight)))
+	wb.WriteString(fmt.Sprintf(" gridSquareWidth=%q", floats(gridAndNumbering.GridSquareWidth)))
+	wb.WriteString(fmt.Sprintf(" gridOffsetX=%q", floats(gridAndNumbering.GridOffsetX)))
+	wb.WriteString(fmt.Sprintf(" gridOffsetY=%q", floats(gridAndNumbering.GridOffsetY)))
+	wb.WriteString(fmt.Sprintf(" numberFont=%q", gridAndNumbering.NumberFont))
+	wb.WriteString(fmt.Sprintf(" numberColor=%q", gridAndNumbering.NumberColor))
+	wb.WriteString(fmt.Sprintf(" numberSize=%q", ints(gridAndNumbering.NumberSize)))
+	wb.WriteString(fmt.Sprintf(" numberStyle=%q", gridAndNumbering.NumberStyle))
+	wb.WriteString(fmt.Sprintf(" numberFirstCol=%q", ints(gridAndNumbering.NumberFirstCol)))
+	wb.WriteString(fmt.Sprintf(" numberFirstRow=%q", ints(gridAndNumbering.NumberFirstRow)))
+	wb.WriteString(fmt.Sprintf(" numberOrder=%q", gridAndNumbering.NumberOrder))
+	wb.WriteString(fmt.Sprintf(" numberPosition=%q", gridAndNumbering.NumberPosition))
+	wb.WriteString(fmt.Sprintf(" numberPrePad=%q", gridAndNumbering.NumberPrePad))
+	wb.WriteString(fmt.Sprintf(" numberSeparator=%q", gridAndNumbering.NumberSeparator))
 	wb.WriteString(fmt.Sprintf(" />\n"))
 	return nil
 }
 
-func encodeTerrainMap(w *models.Map_t, wb *bytes.Buffer) error {
+func encodeTerrainMap(terrainMap *models.TerrainMap_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf("<terrainmap>"))
-	for k, v := range terrainMapToSlice(w.TerrainMap.Data) {
+	for k, v := range terrainMapToSlice(terrainMap.Data) {
 		if k == 0 {
 			wb.WriteString(fmt.Sprintf("%s\t%d", v, k))
 		} else {
@@ -158,16 +158,16 @@ func encodeTerrainMap(w *models.Map_t, wb *bytes.Buffer) error {
 }
 
 // order of layers is important; worldographer renders them from the bottom up.
-func encodeMapLayers(w *models.Map_t, wb *bytes.Buffer) error {
-	for _, mapLayer := range w.MapLayer {
-		if err := encodeMapLayer(w, wb, mapLayer); err != nil {
+func encodeMapLayers(mapLayers []*models.MapLayer_t, wb *bytes.Buffer) error {
+	for _, mapLayer := range mapLayers {
+		if err := encodeMapLayer(mapLayer, wb); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func encodeMapLayer(w *models.Map_t, wb *bytes.Buffer, mapLayer models.MapLayer_t) error {
+func encodeMapLayer(mapLayer *models.MapLayer_t, wb *bytes.Buffer) error {
 	wb.WriteString("<maplayer")
 	wb.WriteString(fmt.Sprintf(" name=%q", mapLayer.Name))
 	wb.WriteString(fmt.Sprintf(" isVisible=%q", bools(mapLayer.IsVisible)))
@@ -175,12 +175,12 @@ func encodeMapLayer(w *models.Map_t, wb *bytes.Buffer, mapLayer models.MapLayer_
 	return nil
 }
 
-func encodeTiles(w *models.Map_t, wb *bytes.Buffer) error {
+func encodeTiles(tiles *models.Tiles_t, hexOrientation string, wb *bytes.Buffer) error {
 	// to: width is the number of columns, height is the number of rows. does that depend on the orientation?
 	wb.WriteString(fmt.Sprintf("<tiles"))
-	wb.WriteString(fmt.Sprintf(" viewLevel=%q", w.Tiles.ViewLevel))
-	wb.WriteString(fmt.Sprintf(" tilesWide=%q", ints(w.Tiles.TilesWide)))
-	wb.WriteString(fmt.Sprintf(" tilesHigh=%q", ints(w.Tiles.TilesHigh)))
+	wb.WriteString(fmt.Sprintf(" viewLevel=%q", tiles.ViewLevel))
+	wb.WriteString(fmt.Sprintf(" tilesWide=%q", ints(tiles.TilesWide)))
+	wb.WriteString(fmt.Sprintf(" tilesHigh=%q", ints(tiles.TilesHigh)))
 	wb.WriteString(fmt.Sprintf(">\n"))
 
 	// generate the tile-row elements:
@@ -188,20 +188,21 @@ func encodeTiles(w *models.Map_t, wb *bytes.Buffer) error {
 	// * each line of data has the following values: Terrain type, elevation, is it icy, is it GM only, and its resources
 	// * terrainType is an index into the terrainmap element
 	// * resources are Animals, Brick, Crops, Gems, Lumber, Metals, and Rock, in that order, but are "compressed"
-	if w.HexOrientation == "COLUMNS" {
-		for x := 0; x < w.Tiles.TilesWide; x++ {
+	if hexOrientation == "COLUMNS" {
+		for x := 0; x < tiles.TilesWide; x++ {
 			wb.WriteString("<tilerow>\n")
-			for y := 0; y < w.Tiles.TilesHigh; y++ {
-				tile := w.Tiles.TileRows[x][y]
-				if err := encodeTile(w, wb, tile); err != nil {
+			for y := 0; y < tiles.TilesHigh; y++ {
+				tile := tiles.TileRows[x][y]
+				if err := encodeTile(tile, wb); err != nil {
 					return err
 				}
 			}
 			wb.WriteString(fmt.Sprintf("</tilerow>\n"))
 		}
-	} else if w.HexOrientation == "ROWS" {
+	} else if hexOrientation == "ROWS" {
+		return fmt.Errorf("assert(orientation != %q)", hexOrientation)
 	} else {
-		return fmt.Errorf("assert(orientation != %q)", w.HexOrientation)
+		return fmt.Errorf("assert(orientation != %q)", hexOrientation)
 	}
 	wb.WriteString(fmt.Sprintf("</tiles>\n"))
 	return nil
@@ -215,13 +216,13 @@ func encodeTiles(w *models.Map_t, wb *bytes.Buffer) error {
 // * field after resource.animal is "Z" if remaining resources are all 0
 // * otherwise we have brick, crops, gems, lumber, metals, rock
 // * customBackgroundColor is an RGBA that is optional
-func encodeTile(w *models.Map_t, wb *bytes.Buffer, tile *models.Tile_t) error {
+func encodeTile(tile *models.Tile_t, wb *bytes.Buffer) error {
 	// todo: implement this
 	wb.WriteString(fmt.Sprintf("%d", tile.Terrain))
 	wb.WriteString(fmt.Sprintf("\t%d", floatd(tile.Elevation)))
 	wb.WriteString(fmt.Sprintf("\t%d", boold(tile.IsIcy)))
 	wb.WriteString(fmt.Sprintf("\t%d", boold(tile.IsGMOnly)))
-	if err := encodeTileResources(w, wb, tile.Resources); err != nil {
+	if err := encodeTileResources(tile.Resources, wb); err != nil {
 		return err
 	}
 	if tile.CustomBackgroundColor != nil {
@@ -232,7 +233,7 @@ func encodeTile(w *models.Map_t, wb *bytes.Buffer, tile *models.Tile_t) error {
 }
 
 // all resources are supposed to be in the range of 0...100, but we don't enforce
-func encodeTileResources(w *models.Map_t, wb *bytes.Buffer, resources models.Resources_t) error {
+func encodeTileResources(resources models.Resources_t, wb *bytes.Buffer) error {
 	// compress if there are no resources other than Animal
 	if resources.Brick == 0 && resources.Crops == 0 && resources.Gems == 0 && resources.Lumber == 0 && resources.Metals == 0 && resources.Rock == 0 {
 		wb.WriteString(fmt.Sprintf("\t%d", resources.Animal))
@@ -249,7 +250,7 @@ func encodeTileResources(w *models.Map_t, wb *bytes.Buffer, resources models.Res
 	return nil
 }
 
-func encodeMapKey(w *models.Map_t, wb *bytes.Buffer) error {
+func encodeMapKey(mapKey *models.MapKey_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(`<mapkey positionx="0.0" positiony="0.0" viewlevel="WORLD" height="-1" backgroundcolor="0.9803921580314636,0.9215686321258545,0.843137264251709,1.0" backgroundopacity="50" titleText="Map Key" titleFontFace="Arial"  titleFontColor="0.0,0.0,0.0,1.0" titleFontBold="true" titleFontItalic="false" titleScale="80" scaleText="1 Hex = ? units" scaleFontFace="Arial"  scaleFontColor="0.0,0.0,0.0,1.0" scaleFontBold="true" scaleFontItalic="false" scaleScale="65" entryFontFace="Arial"  entryFontColor="0.0,0.0,0.0,1.0" entryFontBold="true" entryFontItalic="false" entryScale="55"  >`))
 	wb.WriteByte('\n')
 	wb.WriteString("</mapkey>\n")
@@ -257,10 +258,10 @@ func encodeMapKey(w *models.Map_t, wb *bytes.Buffer) error {
 }
 
 // add features
-func encodeFeatures(w *models.Map_t, wb *bytes.Buffer) error {
+func encodeFeatures(features []*models.Feature_t, wb *bytes.Buffer) error {
 	wb.WriteString("<features>\n")
-	for _, feature := range w.Features {
-		if err := encodeFeature(w, wb, feature); err != nil {
+	for _, feature := range features {
+		if err := encodeFeature(feature, wb); err != nil {
 			return err
 		}
 	}
@@ -268,7 +269,7 @@ func encodeFeatures(w *models.Map_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeFeature(w *models.Map_t, wb *bytes.Buffer, feature *models.Feature_t) error {
+func encodeFeature(feature *models.Feature_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf("<feature"))
 	wb.WriteString(fmt.Sprintf(" type=%q", feature.Type))
 	wb.WriteString(fmt.Sprintf(" rotate=%q", floats(feature.Rotate)))
@@ -293,12 +294,12 @@ func encodeFeature(w *models.Map_t, wb *bytes.Buffer, feature *models.Feature_t)
 	wb.WriteString(fmt.Sprintf(" isHideTerrainIcon=%q", bools(feature.IsHideTerrainIcon)))
 	wb.WriteString(">")
 	if feature.Location != nil {
-		if err := encodeFeatureLocation(w, wb, feature.Location); err != nil {
+		if err := encodeFeatureLocation(feature.Location, wb); err != nil {
 			return err
 		}
 	}
 	if feature.Label != nil {
-		if err := encodeFeatureLabel(w, wb, feature.Label); err != nil {
+		if err := encodeFeatureLabel(feature.Label, wb); err != nil {
 			return err
 		}
 	}
@@ -306,7 +307,7 @@ func encodeFeature(w *models.Map_t, wb *bytes.Buffer, feature *models.Feature_t)
 	return nil
 }
 
-func encodeFeatureLocation(w *models.Map_t, wb *bytes.Buffer, location *models.FeatureLocation_t) error {
+func encodeFeatureLocation(location *models.FeatureLocation_t, wb *bytes.Buffer) error {
 	wb.WriteString("<location")
 	wb.WriteString(fmt.Sprintf(" viewLevel=%q", location.ViewLevel))
 	wb.WriteString(fmt.Sprintf(" x=%q", floats(location.X)))
@@ -315,14 +316,14 @@ func encodeFeatureLocation(w *models.Map_t, wb *bytes.Buffer, location *models.F
 	return nil
 }
 
-func encodeFeatureLabel(w *models.Map_t, wb *bytes.Buffer, label *models.Label_t) error {
-	return encodeLabel(w, wb, label)
+func encodeFeatureLabel(label *models.Label_t, wb *bytes.Buffer) error {
+	return encodeLabel(label, wb)
 }
 
-func encodeLabels(w *models.Map_t, wb *bytes.Buffer) error {
+func encodeLabels(labels []*models.Label_t, wb *bytes.Buffer) error {
 	wb.WriteString("<labels>\n")
-	for _, label := range w.Labels {
-		if err := encodeLabel(w, wb, label); err != nil {
+	for _, label := range labels {
+		if err := encodeLabel(label, wb); err != nil {
 			return err
 		}
 	}
@@ -330,7 +331,7 @@ func encodeLabels(w *models.Map_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeLabel(w *models.Map_t, wb *bytes.Buffer, label *models.Label_t) error {
+func encodeLabel(label *models.Label_t, wb *bytes.Buffer) error {
 	wb.WriteString("<label")
 	wb.WriteString(fmt.Sprintf("  mapLayer=%q", label.MapLayer))
 	wb.WriteString(fmt.Sprintf(" style=%q", label.Style))       // can be null!
@@ -354,7 +355,7 @@ func encodeLabel(w *models.Map_t, wb *bytes.Buffer, label *models.Label_t) error
 	wb.WriteString(fmt.Sprintf(" isGMOnly=%q", bools(label.IsGMOnly)))
 	wb.WriteString(fmt.Sprintf(" tags=%q", label.Tags))
 	wb.WriteString(">")
-	if err := encodeLabelLocation(w, wb, label.Location); err != nil {
+	if err := encodeLabelLocation(label.Location, wb); err != nil {
 		return err
 	}
 	if label.InnerText != "" {
@@ -364,7 +365,7 @@ func encodeLabel(w *models.Map_t, wb *bytes.Buffer, label *models.Label_t) error
 	return nil
 }
 
-func encodeLabelLocation(w *models.Map_t, wb *bytes.Buffer, location *models.LabelLocation_t) error {
+func encodeLabelLocation(location *models.LabelLocation_t, wb *bytes.Buffer) error {
 	wb.WriteString("<location")
 	wb.WriteString(fmt.Sprintf(" viewLevel=%q", location.ViewLevel))
 	wb.WriteString(fmt.Sprintf(" x=%q", floats(location.X)))
@@ -374,10 +375,10 @@ func encodeLabelLocation(w *models.Map_t, wb *bytes.Buffer, location *models.Lab
 	return nil
 }
 
-func encodeShapes(w *models.Map_t, wb *bytes.Buffer) error {
+func encodeShapes(shapes []*models.Shape_t, wb *bytes.Buffer) error {
 	wb.WriteString("<shapes>\n")
-	for _, shape := range w.Shapes {
-		if err := encodeShape(w, wb, shape); err != nil {
+	for _, shape := range shapes {
+		if err := encodeShape(shape, wb); err != nil {
 			return err
 		}
 	}
@@ -385,7 +386,7 @@ func encodeShapes(w *models.Map_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeShape(w *models.Map_t, wb *bytes.Buffer, shape *models.Shape_t) error {
+func encodeShape(shape *models.Shape_t, wb *bytes.Buffer) error {
 	//<shape
 	//    type="Arc"
 	//    creationType="BASIC"
@@ -434,46 +435,46 @@ func encodeNote(note *models.Note_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeInformations(w *models.Map_t, wb *bytes.Buffer) error {
+func encodeInformations(informations *models.Informations_t, wb *bytes.Buffer) error {
 	wb.WriteString("<informations>\n")
 	wb.WriteString("</informations>\n")
 	return nil
 }
 
-func encodeConfiguration(w *models.Map_t, wb *bytes.Buffer) error {
+func encodeConfiguration(configuration *models.Configuration_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf("<configuration>\n"))
-	if err := encodeTerrainConfig(w, wb); err != nil {
+	if err := encodeTerrainConfig(configuration.TerrainConfig, wb); err != nil {
 		return err
 	}
-	if err := encodeFeatureConfig(w, wb); err != nil {
+	if err := encodeFeatureConfig(configuration.FeatureConfig, wb); err != nil {
 		return err
 	}
-	if err := encodeTextureConfig(w, wb); err != nil {
+	if err := encodeTextureConfig(configuration.TextureConfig, wb); err != nil {
 		return err
 	}
-	if err := encodeTextConfig(w.Configuration.TextConfig, wb); err != nil {
+	if err := encodeTextConfig(configuration.TextConfig, wb); err != nil {
 		return err
 	}
-	if err := encodeShapeConfig(w.Configuration.ShapeConfig, wb); err != nil {
+	if err := encodeShapeConfig(configuration.ShapeConfig, wb); err != nil {
 		return err
 	}
 	wb.WriteString(fmt.Sprintf("  </configuration>\n"))
 	return nil
 }
 
-func encodeTerrainConfig(w *models.Map_t, wb *bytes.Buffer) error {
+func encodeTerrainConfig(terrainConfig []*models.TerrainConfig_t, wb *bytes.Buffer) error {
 	wb.WriteString("  <terrain-config>\n")
 	wb.WriteString("  </terrain-config>\n")
 	return nil
 }
 
-func encodeFeatureConfig(w *models.Map_t, wb *bytes.Buffer) error {
+func encodeFeatureConfig(featureConfig []*models.FeatureConfig_t, wb *bytes.Buffer) error {
 	wb.WriteString("  <feature-config>\n")
 	wb.WriteString("  </feature-config>\n")
 	return nil
 }
 
-func encodeTextureConfig(w *models.Map_t, wb *bytes.Buffer) error {
+func encodeTextureConfig(textureConfig []*models.TextureConfig_t, wb *bytes.Buffer) error {
 	wb.WriteString("  <texture-config>\n")
 	wb.WriteString("  </texture-config>\n")
 	return nil

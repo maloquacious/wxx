@@ -67,6 +67,7 @@ func Read(input []byte) (*models.Map_t, error) {
 	w.WorldToContinentHOffset = m.WorldToContinentHOffset
 	w.WorldToContinentVOffset = m.WorldToContinentVOffset
 
+	w.GridAndNumbering = &models.GridAndNumbering_t{}
 	w.GridAndNumbering.Color0 = m.GridAndNumbering.Color0
 	w.GridAndNumbering.Color1 = m.GridAndNumbering.Color1
 	w.GridAndNumbering.Color2 = m.GridAndNumbering.Color2
@@ -101,7 +102,7 @@ func Read(input []byte) (*models.Map_t, error) {
 
 	// convert terrain map. in the source, the terrain key and values are
 	// stored as tab delimited columns.
-	w.TerrainMap.Data = map[string]int{}
+	w.TerrainMap = &models.TerrainMap_t{Data: map[string]int{}}
 	if fields := strings.Split(m.TerrainMap.InnerText, "\t"); len(fields)%2 != 0 {
 		return w, errors.Join(models.ErrInvalidTerrainMapFieldCount, fmt.Errorf("field count '%d' is not even", len(fields)))
 	} else {
@@ -120,12 +121,14 @@ func Read(input []byte) (*models.Map_t, error) {
 	}
 
 	for _, layer := range m.MapLayers {
-		w.MapLayer = append(w.MapLayer, models.MapLayer_t{Name: layer.Name, IsVisible: layer.IsVisible})
+		w.MapLayers = append(w.MapLayers, &models.MapLayer_t{Name: layer.Name, IsVisible: layer.IsVisible})
 	}
 
-	w.Tiles.ViewLevel = m.Tiles.ViewLevel
-	w.Tiles.TilesWide = m.Tiles.TilesWide
-	w.Tiles.TilesHigh = m.Tiles.TilesHigh
+	w.Tiles = &models.Tiles_t{
+		ViewLevel: m.Tiles.ViewLevel,
+		TilesWide: m.Tiles.TilesWide,
+		TilesHigh: m.Tiles.TilesHigh,
+	}
 	for _, tilerow := range m.Tiles.TileRows {
 		x, y := len(w.Tiles.TileRows), 0
 		w.Tiles.TileRows = append(w.Tiles.TileRows, make([]*models.Tile_t, w.Tiles.TilesHigh))
@@ -217,10 +220,12 @@ func Read(input []byte) (*models.Map_t, error) {
 			}
 		}
 
-		w.MapKey.PositionX = m.MapKey.PositionX
-		w.MapKey.PositionY = m.MapKey.PositionY
-		w.MapKey.Viewlevel = m.MapKey.Viewlevel
-		w.MapKey.Height = m.MapKey.Height
+		w.MapKey = &models.MapKey_t{
+			PositionX: m.MapKey.PositionX,
+			PositionY: m.MapKey.PositionY,
+			Viewlevel: m.MapKey.Viewlevel,
+			Height:    m.MapKey.Height,
+		}
 		if w.MapKey.BackgroundColor, err = decodeRgba(m.MapKey.BackgroundColor); err != nil {
 			return w, fmt.Errorf("mapkey.backgroundcolor: %w", err)
 		}
@@ -416,6 +421,7 @@ func Read(input []byte) (*models.Map_t, error) {
 		w.Notes = append(w.Notes, wNote)
 	}
 
+	w.Informations = &models.Informations_t{}
 	for _, info := range m.Informations.Informations {
 		wInfo := &models.Information_t{
 			Uuid:         info.Uuid,
@@ -455,6 +461,7 @@ func Read(input []byte) (*models.Map_t, error) {
 	w.Informations.InnerText = m.Informations.InnerText
 
 	// convert m.Configuration to w.Configuration
+	w.Configuration = &models.Configuration_t{}
 	for _, mTerrainConfig := range m.Configuration.TerrainConfig {
 		wTerrainConfig := &models.TerrainConfig_t{
 			InnerText: mTerrainConfig.InnerText,
