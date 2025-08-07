@@ -473,6 +473,7 @@ func Read(input []byte) (*models.Map_t, error) {
 		}
 		w.Configuration.TextureConfig = append(w.Configuration.TextureConfig, wTextureConfig)
 	}
+	w.Configuration.TextConfig = &models.TextConfig_t{}
 	for _, mTextConfig := range m.Configuration.TextConfig {
 		for _, mLabelStyle := range mTextConfig.LabelStyles {
 			wLabelStyle := &models.LabelStyle_t{
@@ -497,6 +498,7 @@ func Read(input []byte) (*models.Map_t, error) {
 			w.Configuration.TextConfig.LabelStyles = append(w.Configuration.TextConfig.LabelStyles, wLabelStyle)
 		}
 	}
+	w.Configuration.ShapeConfig = &models.ShapeConfig_t{}
 	for _, mShapeConfig := range m.Configuration.ShapeConfig {
 		for _, mShapeStyle := range mShapeConfig.ShapeStyles {
 			wShapeStyle := &models.ShapeStyle_t{

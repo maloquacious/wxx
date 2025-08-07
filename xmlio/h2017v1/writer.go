@@ -89,7 +89,7 @@ func encodeMap(w *models.Map_t, wb *bytes.Buffer) error {
 		return err
 	}
 
-	if err := encodeNotes(w, wb); err != nil {
+	if err := encodeNotes(w.Notes, wb); err != nil {
 		return err
 	}
 
@@ -402,10 +402,10 @@ func encodeShape(w *models.Map_t, wb *bytes.Buffer, shape *models.Shape_t) error
 	return nil
 }
 
-func encodeNotes(w *models.Map_t, wb *bytes.Buffer) error {
+func encodeNotes(notes []*models.Note_t, wb *bytes.Buffer) error {
 	wb.WriteString("<notes>\n")
-	for _, note := range w.Notes {
-		if err := encodeNote(w, wb, note); err != nil {
+	for _, note := range notes {
+		if err := encodeNote(note, wb); err != nil {
 			return err
 		}
 	}
@@ -413,7 +413,7 @@ func encodeNotes(w *models.Map_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeNote(w *models.Map_t, wb *bytes.Buffer, note *models.Note_t) error {
+func encodeNote(note *models.Note_t, wb *bytes.Buffer) error {
 	///*
 	//	<note key="WORLD,2343.75,3112.5" viewLevel="WORLD" x="2343.75" y="3112.5" filename="" parent="dde12f75-dcc9-4cb7-a96d-f18011601143" color="1.0,1.0,0.0,1.0" title="Units (Notes Title)">
 	//	<notetext><![CDATA[<html dir="ltr"><head></head><body contenteditable="true">Paragraph (Notes Paragraph)</body></html>]]></notetext></note>
@@ -444,10 +444,10 @@ func encodeConfiguration(w *models.Map_t, wb *bytes.Buffer) error {
 	if err := encodeTextureConfig(w, wb); err != nil {
 		return err
 	}
-	if err := encodeTextConfig(w, wb); err != nil {
+	if err := encodeTextConfig(w.Configuration.TextConfig, wb); err != nil {
 		return err
 	}
-	if err := encodeShapeConfig(w, wb); err != nil {
+	if err := encodeShapeConfig(w.Configuration.ShapeConfig, wb); err != nil {
 		return err
 	}
 	wb.WriteString(fmt.Sprintf("  </configuration>\n"))
@@ -472,15 +472,73 @@ func encodeTextureConfig(w *models.Map_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeTextConfig(w *models.Map_t, wb *bytes.Buffer) error {
+func encodeTextConfig(textConfig *models.TextConfig_t, wb *bytes.Buffer) error {
 	wb.WriteString("  <text-config>\n")
+	for _, labelStyle := range textConfig.LabelStyles {
+		if err := encodeLabelStyle(labelStyle, wb); err != nil {
+			return err
+		}
+	}
 	wb.WriteString("  </text-config>\n")
 	return nil
 }
 
-func encodeShapeConfig(w *models.Map_t, wb *bytes.Buffer) error {
+func encodeLabelStyle(labelStyle *models.LabelStyle_t, wb *bytes.Buffer) error {
+	//wb.WriteString("<labelstyle")
+	////name="Building"
+	////fontFace="Arial"
+	////scale="25.0"
+	////isBold="false"
+	////isItalic="false"
+	////color="0.0,0.0,0.0,1.0"
+	////backgroundColor="null"
+	////outlineSize="0.0"
+	////outlineColor="null"
+	//wb.WriteString(" />\n\n")
+	return nil
+}
+
+func encodeShapeConfig(shapeConfig *models.ShapeConfig_t, wb *bytes.Buffer) error {
 	wb.WriteString("  <shape-config>\n")
+	for _, shapeStyle := range shapeConfig.ShapeStyles {
+		if err := encodeShapeStyle(shapeStyle, wb); err != nil {
+			return err
+		}
+	}
 	wb.WriteString("  </shape-config>\n")
+	return nil
+}
+
+func encodeShapeStyle(shapeStyle *models.ShapeStyle_t, wb *bytes.Buffer) error {
+	wb.WriteString("<shapestyle")
+	wb.WriteString(fmt.Sprintf(" name=%q", shapeStyle.Name))
+	wb.WriteString(fmt.Sprintf(" strokeType=%q", shapeStyle.StrokeType))
+	wb.WriteString(fmt.Sprintf(" isFractal=%q", bools(shapeStyle.IsFractal)))
+	wb.WriteString(fmt.Sprintf(" strokeWidth=%q", floats(shapeStyle.StrokeWidth)))
+	wb.WriteString(fmt.Sprintf(" opacity=%q", floats(shapeStyle.Opacity)))
+	wb.WriteString(fmt.Sprintf(" snapVertices=%q", bools(shapeStyle.SnapVertices)))
+	wb.WriteString(fmt.Sprintf(" tags=%q", shapeStyle.Tags))
+	wb.WriteString(fmt.Sprintf(" dropShadow=%q", bools(shapeStyle.DropShadow)))
+	wb.WriteString(fmt.Sprintf(" innerShadow=%q", bools(shapeStyle.InnerShadow)))
+	wb.WriteString(fmt.Sprintf(" boxBlur=%q", bools(shapeStyle.BoxBlur)))
+	wb.WriteString(fmt.Sprintf(" dsSpread=%q", floats(shapeStyle.DsSpread)))
+	wb.WriteString(fmt.Sprintf(" dsRadius=%q", floats(shapeStyle.DsRadius)))
+	wb.WriteString(fmt.Sprintf(" dsOffsetX=%q", floats(shapeStyle.DsOffsetX)))
+	wb.WriteString(fmt.Sprintf(" dsOffsetY=%q", floats(shapeStyle.DsOffsetY)))
+	wb.WriteString(fmt.Sprintf(" insChoke=%q", floats(shapeStyle.InsChoke)))
+	wb.WriteString(fmt.Sprintf(" insRadius=%q", floats(shapeStyle.InsRadius)))
+	wb.WriteString(fmt.Sprintf(" insOffsetX=%q", floats(shapeStyle.InsOffsetX)))
+	wb.WriteString(fmt.Sprintf(" insOffsetY=%q", floats(shapeStyle.InsOffsetY)))
+	wb.WriteString(fmt.Sprintf(" bbWidth=%q", floats(shapeStyle.BbWidth)))
+	wb.WriteString(fmt.Sprintf(" bbHeight=%q", floats(shapeStyle.BbHeight)))
+	wb.WriteString(fmt.Sprintf(" bbIterations=%q", ints(shapeStyle.BbIterations)))
+	wb.WriteString(fmt.Sprintf(" fillTexture=%q", shapeStyle.FillTexture))         // nullable
+	wb.WriteString(fmt.Sprintf(" strokeTexture=%q", shapeStyle.StrokeTexture))     // nullable
+	wb.WriteString(fmt.Sprintf(" strokePaint=%q", rgbans(shapeStyle.StrokePaint))) // nullable
+	wb.WriteString(fmt.Sprintf(" fillPaint=%q", rgbans(shapeStyle.FillPaint)))     // nullable
+	wb.WriteString(fmt.Sprintf(" dscolor=%q", rgbans(shapeStyle.DsColor)))         // nullable
+	wb.WriteString(fmt.Sprintf(" insColor=%q", rgbans(shapeStyle.InsColor)))       // nullable
+	wb.WriteString(" />\n")
 	return nil
 }
 

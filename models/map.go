@@ -118,15 +118,9 @@ type Map_t struct {
 		TerrainConfig []*TerrainConfig_t `json:"terrain-config,omitempty"`
 		FeatureConfig []*FeatureConfig_t `json:"feature-config,omitempty"`
 		TextureConfig []*TextureConfig_t `json:"texture-config,omitempty"`
-		TextConfig    struct {
-			LabelStyles []*LabelStyle_t `json:"labelStyles,omitempty"`
-			InnerText   string          `json:"innerText,omitempty"`
-		} `json:"text-config,omitempty"`
-		ShapeConfig struct {
-			ShapeStyles []*ShapeStyle_t `json:"shapeStyles,omitempty"`
-			InnerText   string          `json:"innerText,omitempty"`
-		} `json:"shape-config"`
-		InnerText string `json:"InnerText,omitempty"`
+		TextConfig    *TextConfig_t      `json:"text-config,omitempty"`
+		ShapeConfig   *ShapeConfig_t     `json:"shape-config"`
+		InnerText     string             `json:"InnerText,omitempty"`
 	} `json:"configuration"`
 }
 
