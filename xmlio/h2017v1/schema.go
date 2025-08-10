@@ -1,11 +1,18 @@
 // Copyright (c) 2025 Michael D Henderson. All rights reserved.
 
-package rxml
+package h2017v1
 
-import "encoding/xml"
+import (
+	"encoding/xml"
+	"fmt"
+	"strconv"
+	"strings"
 
-// Schema_t defines the structure for reading a Worldographer file with the H2017v1 XML Schema
-type Schema_t struct {
+	"github.com/maloquacious/wxx"
+)
+
+// XMLSchema defines the structure for reading a Worldographer file with the H2017v1 XML Schema
+type XMLSchema struct {
 	XMLName xml.Name `xml:"map"`
 
 	// attributes
@@ -385,4 +392,47 @@ type Tiles_t struct {
 type TileRow_t struct {
 	// elements
 	InnerText string `xml:",chardata"`
+}
+
+func decodeRgba(s string) (rgba *wxx.RGBA_t, err error) {
+	if s == "" || s == "null" || s == "0.0,0.0,0.0,1.0" {
+		return nil, nil
+	}
+	rgba = &wxx.RGBA_t{}
+	values := strings.Split(s, ",")
+	if len(values) != 4 {
+		return rgba, fmt.Errorf("invalid value")
+	} else if rgba.R, err = strconv.ParseFloat(values[0], 64); err != nil {
+		return rgba, err
+	} else if rgba.G, err = strconv.ParseFloat(values[1], 64); err != nil {
+		return rgba, err
+	} else if rgba.B, err = strconv.ParseFloat(values[2], 64); err != nil {
+		return rgba, err
+	} else if rgba.A, err = strconv.ParseFloat(values[3], 64); err != nil {
+		return rgba, err
+	}
+	if rgba.R == 0 && rgba.G == 0 && rgba.B == 0 && rgba.A == 1 {
+		return nil, nil
+	}
+	return rgba, nil
+}
+
+func decodeZeroableRgba(s string) (rgba *wxx.RGBA_t, err error) {
+	if s == "" || s == "null" {
+		return nil, nil
+	}
+	rgba = &wxx.RGBA_t{}
+	values := strings.Split(s, ",")
+	if len(values) != 4 {
+		return rgba, fmt.Errorf("invalid value")
+	} else if rgba.R, err = strconv.ParseFloat(values[0], 64); err != nil {
+		return rgba, err
+	} else if rgba.G, err = strconv.ParseFloat(values[1], 64); err != nil {
+		return rgba, err
+	} else if rgba.B, err = strconv.ParseFloat(values[2], 64); err != nil {
+		return rgba, err
+	} else if rgba.A, err = strconv.ParseFloat(values[3], 64); err != nil {
+		return rgba, err
+	}
+	return rgba, nil
 }

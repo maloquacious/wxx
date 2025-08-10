@@ -1,6 +1,6 @@
 // Copyright (c) 2025 Michael D Henderson. All rights reserved.
 
-package rxml
+package h2017v1
 
 import (
 	"encoding/xml"
@@ -15,9 +15,9 @@ import (
 	"github.com/maloquacious/wxx"
 )
 
-// Read unmarshalls XML data using the H2017.V1 schema and returns the internal Map or an error.
-func Read(input []byte) (*wxx.Map_t, error) {
-	m := &Schema_t{}
+// Decode the XML data using the H2017.V1 schema and return a Map_t or an error.
+func Decode(input []byte) (*wxx.Map_t, error) {
+	m := &XMLSchema{}
 
 	// unmarshal into a structure that's built just for the conversion
 	err := xml.Unmarshal(input, &m)

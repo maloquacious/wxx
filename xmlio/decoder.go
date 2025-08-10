@@ -230,18 +230,18 @@ func (d *Decoder) Decode(r io.Reader) (*wxx.Map_t, error) {
 		return nil, errors.Join(wxx.ErrInvalidMapMetadata, err)
 	}
 
-	// use the metadata to call the correct unmarshaler for the XML
+	// use the metadata to call the correct decoder for the XML
 	switch xmlMetaData.Release + "/" + xmlMetaData.Version + "/" + xmlMetaData.Schema {
 	case "/1.73/", "/1.74/", "/1.77/":
 		if d.opts.diagnostics != nil {
 			d.opts.diagnostics.Schema = "h2017v1"
 		}
-		return h2017v1.Read(data)
+		return h2017v1.Decode(data)
 	case "2025/1.10/1.01":
 		if d.opts.diagnostics != nil {
 			d.opts.diagnostics.Schema = "h2025v1"
 		}
-		return h2025v1.Read(data)
+		return h2025v1.Decode(data)
 	}
 
 	return nil, errors.Join(wxx.ErrUnsupportedMapMetadata, fmt.Errorf("map: release %q: schema %q: version %q", xmlMetaData.Release, xmlMetaData.Schema, xmlMetaData.Version))
