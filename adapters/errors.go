@@ -2,14 +2,14 @@
 
 package adapters
 
-// Error implements constant errors
-type Error string
-
-// Error implements the Errors interface
-func (e Error) Error() string {
-	return string(e)
-}
-
-const (
-	ErrUnsupportedWXMLVersion = Error("unsupported wxml version")
-)
+//// Error implements constant errors
+//type Error string
+//
+//// Error implements the Errors interface
+//func (e Error) Error() string {
+//	return string(e)
+//}
+//
+//const (
+//	ErrUnsupportedWXMLVersion = Error("unsupported wxml version")
+//)

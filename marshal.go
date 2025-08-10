@@ -2,17 +2,17 @@
 
 package wxx
 
-////func Marshal(v any) ([]byte, error)
+//////func Marshal(v any) ([]byte, error)
+////
+//////type Marshaler
+////
+////// MarshalJSON implements the json.Marshaler interface.
+////// It returns a slice or an error.
+////func (m *Map) MarshalJSON() ([]byte, error) {
+////	return nil, ErrNotImplemented
+////}
 //
-////type Marshaler
-//
-//// MarshalJSON implements the json.Marshaler interface.
-//// It returns a slice or an error.
-//func (m *Map) MarshalJSON() ([]byte, error) {
+//// Marshal translates the Map into Worldographer data.
+//func Marshal(m *Map) ([]byte, error) {
 //	return nil, ErrNotImplemented
 //}
-
-// Marshal translates the Map into Worldographer data.
-func Marshal(m *Map) ([]byte, error) {
-	return nil, ErrNotImplemented
-}

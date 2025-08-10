@@ -134,10 +134,18 @@ func (d *Decoder) Decode(r io.Reader) (*models.Map_t, error) {
 
 	if d.opts.utf16BeInput {
 		// decode UTF-16/BE into UTF-8
-		// todo: test the input to confirm that is actually UTF-16/BE
-		// we should verify that the input is actually UTF-16/BE, but this package accepts both BE and LE. c'est la vie.
+
+		// verify the BOM for UTF-16/BE
+		if bytes.HasPrefix(data, []byte{0xfe, 0xff}) {
+			// as expected
+		} else if bytes.HasPrefix(data, []byte{0xff, 0xfe}) {
+			return nil, wxx.ErrNotBigEndianUTF16Encoded
+		} else {
+			return nil, wxx.ErrMissingBOM
+		}
+
 		utf16Encoding := unicode.UTF16(unicode.BigEndian, unicode.ExpectBOM)
-		data, err := io.ReadAll(transform.NewReader(bytes.NewReader(data), utf16Encoding.NewDecoder()))
+		data, err = io.ReadAll(transform.NewReader(bytes.NewReader(data), utf16Encoding.NewDecoder()))
 		if err != nil {
 			return nil, errors.Join(wxx.ErrInvalidUTF16, err)
 		}
