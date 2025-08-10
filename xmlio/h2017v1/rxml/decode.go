@@ -4,16 +4,17 @@ package rxml
 
 import (
 	"fmt"
-	"github.com/maloquacious/wxx/models"
 	"strconv"
 	"strings"
+
+	"github.com/maloquacious/wxx"
 )
 
-func decodeRgba(s string) (rgba *models.RGBA_t, err error) {
+func decodeRgba(s string) (rgba *wxx.RGBA_t, err error) {
 	if s == "" || s == "null" || s == "0.0,0.0,0.0,1.0" {
 		return nil, nil
 	}
-	rgba = &models.RGBA_t{}
+	rgba = &wxx.RGBA_t{}
 	values := strings.Split(s, ",")
 	if len(values) != 4 {
 		return rgba, fmt.Errorf("invalid value")
@@ -32,11 +33,11 @@ func decodeRgba(s string) (rgba *models.RGBA_t, err error) {
 	return rgba, nil
 }
 
-func decodeZeroableRgba(s string) (rgba *models.RGBA_t, err error) {
+func decodeZeroableRgba(s string) (rgba *wxx.RGBA_t, err error) {
 	if s == "" || s == "null" {
 		return nil, nil
 	}
-	rgba = &models.RGBA_t{}
+	rgba = &wxx.RGBA_t{}
 	values := strings.Split(s, ",")
 	if len(values) != 4 {
 		return rgba, fmt.Errorf("invalid value")

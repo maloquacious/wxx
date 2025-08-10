@@ -7,10 +7,12 @@
 // to reduce confusion.
 package wxx
 
-/*
-type Encoder
-func NewEncoder(w io.Writer) *Encoder
-func (enc *Encoder) Encode(v any) error
-func (enc *Encoder) SetEscapeHTML(on bool)
-func (enc *Encoder) SetIndent(prefix, indent string)
-*/
+import "io"
+
+type Decoder interface {
+	Decode(io.Reader) (*Map_t, error)
+}
+
+type Encoder interface {
+	Encode(io.Writer, *Map_t) error
+}

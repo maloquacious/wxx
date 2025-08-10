@@ -4,10 +4,10 @@ package sv2_0
 
 import "github.com/maloquacious/wxx/models"
 
-func Read(rawXML []byte) (models.Map, error) {
+func Read(rawXML []byte) (wxx.Map, error) {
 	// load the XML using a 2.0.0 schema
 
 	// convert that XML to a Map
-	var m models.Map
+	var m wxx.Map
 	return m, nil
 }

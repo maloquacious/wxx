@@ -11,7 +11,6 @@ import (
 	"io"
 
 	"github.com/maloquacious/wxx"
-	"github.com/maloquacious/wxx/models"
 	"github.com/maloquacious/wxx/xmlio/h2017v1"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/transform"
@@ -86,7 +85,7 @@ func WithFixXMLHeaderEncoding(enabled bool) DecoderOption {
 }
 
 // Decode creates a Map_t from the input or returns an error.
-func (d *Decoder) Decode(r io.Reader) (*models.Map_t, error) {
+func (d *Decoder) Decode(r io.Reader) (*wxx.Map_t, error) {
 	// internal steps:
 	// * ReadFile
 	// * ReadCompressedXML

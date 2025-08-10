@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/maloquacious/semver"
-	"github.com/maloquacious/wxx/models"
+	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/xmlio/h2017v1"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/transform"
@@ -21,25 +21,25 @@ import (
 // which must have an extension of `.wxx`.
 // Returns any errors reading or parsing the file contents.
 // Uses ReadCompressXML to parse the file contents.
-func ReadFile(path string) (*models.Map_t, error) {
+func ReadFile(path string) (*wxx.Map_t, error) {
 	// file must have `.wxx` suffix
 	if !strings.HasSuffix(path, ".wxx") {
-		return nil, models.ErrMissingWxxExtension
+		return nil, wxx.ErrMissingWxxExtension
 	}
 	// file must exist and be a regular file
 	sb, err := os.Stat(path)
 	if err != nil {
 		if !os.IsNotExist(err) {
-			return nil, errors.Join(models.ErrFSError, err)
+			return nil, errors.Join(wxx.ErrFSError, err)
 		}
-		return nil, models.ErrNotExists
+		return nil, wxx.ErrNotExists
 	} else if sb.IsDir() || !sb.Mode().IsRegular() {
-		return nil, models.ErrNotFile
+		return nil, wxx.ErrNotFile
 	}
 	// open the file for reading, returning any errors
 	fp, err := os.Open(path)
 	if err != nil {
-		return nil, errors.Join(models.ErrFSError, err)
+		return nil, errors.Join(wxx.ErrFSError, err)
 	}
 	defer func(fp *os.File) {
 		_ = fp.Close()
@@ -51,18 +51,18 @@ func ReadFile(path string) (*models.Map_t, error) {
 // ReadCompressedXML creates a Map from the input or returns an error.
 // The input must be compressed using GZip.
 // Uses ReadUTF16XML to parse the uncompressed input.
-func ReadCompressedXML(r io.Reader) (*models.Map_t, error) {
+func ReadCompressedXML(r io.Reader) (*wxx.Map_t, error) {
 	// create a new gzip reader to process the source
 	gzr, err := gzip.NewReader(r)
 	if err != nil {
-		return nil, errors.Join(models.ErrInvalidGZip, err)
+		return nil, errors.Join(wxx.ErrInvalidGZip, err)
 	}
 	defer func(gzr *gzip.Reader) {
 		_ = gzr.Close() // ignore errors
 	}(gzr)
 	data, err := io.ReadAll(gzr)
 	if err != nil {
-		return nil, errors.Join(models.ErrGUnZipFailed, err)
+		return nil, errors.Join(wxx.ErrGUnZipFailed, err)
 	}
 	// read the data and return a Map or an error
 	return ReadUTF16XML(bytes.NewReader(data))
@@ -71,13 +71,13 @@ func ReadCompressedXML(r io.Reader) (*models.Map_t, error) {
 // ReadUTF16XML creates a Map from the input or returns an error.
 // The input must be UTF-16 encoded and will be decoded to UTF-8.
 // Uses ReadUTF8XML to parse the decoded input.
-func ReadUTF16XML(r io.Reader) (*models.Map_t, error) {
+func ReadUTF16XML(r io.Reader) (*wxx.Map_t, error) {
 	// decode UTF-16 into UTF-8. we should verify that the input is actually UTF-16/BE,
 	// but this package accepts both BE and LE. c'est la vie.
 	utf16Encoding := unicode.UTF16(unicode.BigEndian, unicode.ExpectBOM)
 	data, err := io.ReadAll(transform.NewReader(r, utf16Encoding.NewDecoder()))
 	if err != nil {
-		return nil, errors.Join(models.ErrInvalidUTF16, err)
+		return nil, errors.Join(wxx.ErrInvalidUTF16, err)
 	}
 	// read the data and return a Map or an error
 	return ReadUTF8XML(bytes.NewReader(data))
@@ -90,11 +90,11 @@ func ReadUTF16XML(r io.Reader) (*models.Map_t, error) {
 // We then extract metadata from the <map> element (the root element of the document).
 // We use that metadata (version, release, and schema) to dispatch to the right XML
 // unmarshaler.
-func ReadUTF8XML(r io.Reader) (*models.Map_t, error) {
+func ReadUTF8XML(r io.Reader) (*wxx.Map_t, error) {
 	// there should be a better way to get the header out of the input
 	data, err := io.ReadAll(r)
 	if err != nil {
-		return nil, errors.Join(models.ErrInvalidXML, err)
+		return nil, errors.Join(wxx.ErrInvalidXML, err)
 	}
 
 	// verify the xml header. the encoding may be wrong, but we'll accept it.
@@ -115,14 +115,14 @@ func ReadUTF8XML(r io.Reader) (*models.Map_t, error) {
 		}
 	}
 	if xmlHeaderIndex == -1 {
-		return nil, models.ErrMissingXMLHeader
+		return nil, wxx.ErrMissingXMLHeader
 	}
 	// consume past the xml header since our unmarshal code expects only the XML
 	data = data[len(xmlHeaders[xmlHeaderIndex].heading):]
 
 	// quick sanity check on the input
 	if !bytes.HasPrefix(data, []byte("<map ")) {
-		return nil, errors.Join(models.ErrInvalidXML, models.ErrMissingMapElement)
+		return nil, errors.Join(wxx.ErrInvalidXML, wxx.ErrMissingMapElement)
 	}
 
 	// read the map metadata so that we'll know how to dispatch for parsing the data
@@ -136,7 +136,7 @@ func ReadUTF8XML(r io.Reader) (*models.Map_t, error) {
 	// we have to make the map element self-closing for this to work.
 	endOfMap := bytes.IndexByte(data, '>')
 	if endOfMap == -1 {
-		return nil, errors.Join(models.ErrInvalidXML, models.ErrMapNotClosed)
+		return nil, errors.Join(wxx.ErrInvalidXML, wxx.ErrMapNotClosed)
 	}
 	// initialize metadata with a copy of the source up to (but not including) the first closing '>'
 	xmlMetaData.buffer = append(make([]byte, 0, endOfMap+1), data[:endOfMap]...)
@@ -144,7 +144,7 @@ func ReadUTF8XML(r io.Reader) (*models.Map_t, error) {
 	// now we can read the version from our copy of the xml data
 	err = xml.Unmarshal(xmlMetaData.buffer, &xmlMetaData)
 	if err != nil {
-		return nil, errors.Join(models.ErrInvalidMapMetadata, err)
+		return nil, errors.Join(wxx.ErrInvalidMapMetadata, err)
 	}
 
 	// use the metadata to call the correct unmarshaler for the XML
@@ -154,10 +154,10 @@ func ReadUTF8XML(r io.Reader) (*models.Map_t, error) {
 	case "2025/1.10/1.01":
 		return nil, fmt.Errorf("2025/1.10/1.01: not yet implemented")
 	}
-	return nil, errors.Join(models.ErrUnsupportedMapMetadata, fmt.Errorf("map: release %q: schema %q: version %q", xmlMetaData.Release, xmlMetaData.Schema, xmlMetaData.Version))
+	return nil, errors.Join(wxx.ErrUnsupportedMapMetadata, fmt.Errorf("map: release %q: schema %q: version %q", xmlMetaData.Release, xmlMetaData.Schema, xmlMetaData.Version))
 }
 
-func WriteFile(filename string, worldographerTargetVersion semver.Version, w *models.Map_t, utf8Filename string) error {
+func WriteFile(filename string, worldographerTargetVersion semver.Version, w *wxx.Map_t, utf8Filename string) error {
 	fmt.Printf("debug: target version %s\n", worldographerTargetVersion.String())
 	utf8XmlData, err := EncodeMapToXML(w, worldographerTargetVersion)
 	if err != nil {
@@ -206,7 +206,7 @@ func WriteFile(filename string, worldographerTargetVersion semver.Version, w *mo
 
 // EncodeMapToXML uses the target version to pick the right XML schema, then converts the Map_t to XML.
 // Returns an error for unsupported versions or if there are errors during the conversion.
-func EncodeMapToXML(w *models.Map_t, worldographerTargetVersion semver.Version) ([]byte, error) {
+func EncodeMapToXML(w *wxx.Map_t, worldographerTargetVersion semver.Version) ([]byte, error) {
 	switch worldographerTargetVersion.Major {
 	case 2017:
 		switch worldographerTargetVersion.Minor {
@@ -214,7 +214,7 @@ func EncodeMapToXML(w *models.Map_t, worldographerTargetVersion semver.Version) 
 			return h2017v1.Encode(w)
 		}
 	}
-	return nil, errors.Join(models.ErrUnsupportedSchemaVersion, fmt.Errorf("schema version: %s", worldographerTargetVersion.Short()))
+	return nil, errors.Join(wxx.ErrUnsupportedSchemaVersion, fmt.Errorf("schema version: %s", worldographerTargetVersion.Short()))
 }
 
 // EncodeXMLToUTF16 adds the XML header and returns the data with UTF-16/BE encoding.
@@ -222,7 +222,7 @@ func EncodeXMLToUTF16(data []byte) ([]byte, error) {
 	utf16Encoding := unicode.UTF16(unicode.BigEndian, unicode.ExpectBOM)
 	data, err := io.ReadAll(transform.NewReader(bytes.NewReader(data), utf16Encoding.NewEncoder()))
 	if err != nil {
-		return nil, errors.Join(models.ErrInvalidUTF8, err)
+		return nil, errors.Join(wxx.ErrInvalidUTF8, err)
 	}
 	return data, nil
 }

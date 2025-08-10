@@ -160,7 +160,7 @@ func readMapMetadata(input []byte) (mapMetaData, error) {
 	// read the version from the xml data
 	var results mapMetaData
 	if err := xml.Unmarshal(metadata, &results); err != nil {
-		return mapMetaData{}, errors.Join(models.ErrInvalidMapMetadata, err)
+		return mapMetaData{}, errors.Join(wxx.ErrInvalidMapMetadata, err)
 	}
 	return results, nil
 }

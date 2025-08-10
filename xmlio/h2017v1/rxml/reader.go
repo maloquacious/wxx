@@ -13,11 +13,10 @@ import (
 
 	"github.com/maloquacious/semver"
 	"github.com/maloquacious/wxx"
-	"github.com/maloquacious/wxx/models"
 )
 
 // Read unmarshalls XML data using the H2017.V1 schema and returns the internal Map or an error.
-func Read(input []byte) (*models.Map_t, error) {
+func Read(input []byte) (*wxx.Map_t, error) {
 	m := &Schema_t{}
 
 	// unmarshal into a structure that's built just for the conversion
@@ -28,7 +27,7 @@ func Read(input []byte) (*models.Map_t, error) {
 	}
 
 	// process source into a WXX structure and return it or any errors
-	w := &models.Map_t{}
+	w := &wxx.Map_t{}
 	w.MetaData.AppVersion = wxx.Version()
 	w.MetaData.DataVersion = semver.Version{Major: 2017, Minor: 1}
 	w.MetaData.Created = time.Now().UTC().Format(time.RFC3339)
@@ -47,9 +46,9 @@ func Read(input []byte) (*models.Map_t, error) {
 	w.LastViewLevel = m.LastViewLevel
 	switch m.MapProjection {
 	case "FLAT":
-		w.MapProjection = models.FLAT
+		w.MapProjection = wxx.FLAT
 	case "ICOSAHEDRAL":
-		w.MapProjection = models.ICOSAHEDRAL
+		w.MapProjection = wxx.ICOSAHEDRAL
 	default:
 		return nil, fmt.Errorf("%q: unknown projection", m.MapProjection)
 	}
@@ -67,7 +66,7 @@ func Read(input []byte) (*models.Map_t, error) {
 	w.WorldToContinentHOffset = m.WorldToContinentHOffset
 	w.WorldToContinentVOffset = m.WorldToContinentVOffset
 
-	w.GridAndNumbering = &models.GridAndNumbering_t{}
+	w.GridAndNumbering = &wxx.GridAndNumbering_t{}
 	w.GridAndNumbering.Color0 = m.GridAndNumbering.Color0
 	w.GridAndNumbering.Color1 = m.GridAndNumbering.Color1
 	w.GridAndNumbering.Color2 = m.GridAndNumbering.Color2
@@ -102,12 +101,12 @@ func Read(input []byte) (*models.Map_t, error) {
 
 	// convert terrain map. in the source, the terrain key and values are
 	// stored as tab delimited columns.
-	w.TerrainMap = &models.TerrainMap_t{Data: map[string]int{}}
+	w.TerrainMap = &wxx.TerrainMap_t{Data: map[string]int{}}
 	if fields := strings.Split(m.TerrainMap.InnerText, "\t"); len(fields)%2 != 0 {
-		return w, errors.Join(models.ErrInvalidTerrainMapFieldCount, fmt.Errorf("field count '%d' is not even", len(fields)))
+		return w, errors.Join(wxx.ErrInvalidTerrainMapFieldCount, fmt.Errorf("field count '%d' is not even", len(fields)))
 	} else {
 		for len(fields) != 0 {
-			t := &models.Terrain_t{
+			t := &wxx.Terrain_t{
 				Label: fields[0],
 			}
 			t.Index, err = strconv.Atoi(fields[1])
@@ -121,22 +120,22 @@ func Read(input []byte) (*models.Map_t, error) {
 	}
 
 	for _, layer := range m.MapLayers {
-		w.MapLayers = append(w.MapLayers, &models.MapLayer_t{Name: layer.Name, IsVisible: layer.IsVisible})
+		w.MapLayers = append(w.MapLayers, &wxx.MapLayer_t{Name: layer.Name, IsVisible: layer.IsVisible})
 	}
 
-	w.Tiles = &models.Tiles_t{
+	w.Tiles = &wxx.Tiles_t{
 		ViewLevel: m.Tiles.ViewLevel,
 		TilesWide: m.Tiles.TilesWide,
 		TilesHigh: m.Tiles.TilesHigh,
 	}
 	for _, tilerow := range m.Tiles.TileRows {
 		x, y := len(w.Tiles.TileRows), 0
-		w.Tiles.TileRows = append(w.Tiles.TileRows, make([]*models.Tile_t, w.Tiles.TilesHigh))
+		w.Tiles.TileRows = append(w.Tiles.TileRows, make([]*wxx.Tile_t, w.Tiles.TilesHigh))
 		for _, line := range strings.Split(tilerow.InnerText, "\n") {
 			if len(line) == 0 { // ignore blank lines
 				continue
 			}
-			t := &models.Tile_t{Row: x, Column: y}
+			t := &wxx.Tile_t{Row: x, Column: y}
 			w.Tiles.TileRows[x][y] = t
 			y++
 			// values are TerrainMapIndex Elevation IsIcy IsGMOnly Animals (Z|(Brick Crops Gems Lumber Metals Rock)) RGBA?
@@ -220,7 +219,7 @@ func Read(input []byte) (*models.Map_t, error) {
 			}
 		}
 
-		w.MapKey = &models.MapKey_t{
+		w.MapKey = &wxx.MapKey_t{
 			PositionX: m.MapKey.PositionX,
 			PositionY: m.MapKey.PositionY,
 			Viewlevel: m.MapKey.Viewlevel,
@@ -256,7 +255,7 @@ func Read(input []byte) (*models.Map_t, error) {
 	}
 
 	for _, mFeature := range m.Features.Features {
-		f := &models.Feature_t{}
+		f := &wxx.Feature_t{}
 		f.Type = mFeature.Type
 		f.Rotate = mFeature.Rotate
 		f.Uuid = mFeature.Uuid
@@ -282,13 +281,13 @@ func Read(input []byte) (*models.Map_t, error) {
 		f.IsProvince = mFeature.IsProvince
 		f.IsFillHexBottom = mFeature.IsFillHexBottom
 		f.IsHideTerrainIcon = mFeature.IsHideTerrainIcon
-		f.Location = &models.FeatureLocation_t{
+		f.Location = &wxx.FeatureLocation_t{
 			ViewLevel: mFeature.Location.ViewLevel,
 			X:         mFeature.Location.X,
 			Y:         mFeature.Location.Y,
 		}
 
-		f.Label = &models.Label_t{
+		f.Label = &wxx.Label_t{
 			MapLayer:    mFeature.Label.MapLayer,
 			Style:       mFeature.Label.Style,
 			FontFace:    mFeature.Label.FontFace,
@@ -313,7 +312,7 @@ func Read(input []byte) (*models.Map_t, error) {
 		if f.Label.BackgroundColor, err = decodeRgba(mFeature.Label.BackgroundColor); err != nil {
 			return w, fmt.Errorf("feature.label.backgroundColor: %w", err)
 		}
-		f.Label.Location = &models.LabelLocation_t{
+		f.Label.Location = &wxx.LabelLocation_t{
 			ViewLevel: mFeature.Label.Location.ViewLevel,
 			X:         mFeature.Label.Location.X,
 			Y:         mFeature.Label.Location.Y,
@@ -323,7 +322,7 @@ func Read(input []byte) (*models.Map_t, error) {
 	}
 
 	for _, mLabel := range m.Labels.Labels {
-		wLabel := &models.Label_t{
+		wLabel := &wxx.Label_t{
 			MapLayer:    mLabel.MapLayer,
 			Style:       mLabel.Style,
 			FontFace:    mLabel.FontFace,
@@ -349,7 +348,7 @@ func Read(input []byte) (*models.Map_t, error) {
 		} else if wLabel.BackgroundColor, err = decodeZeroableRgba(mLabel.BackgroundColor); err != nil {
 			return w, fmt.Errorf("label.backgroundColor: %w", err)
 		}
-		wLabel.Location = &models.LabelLocation_t{
+		wLabel.Location = &wxx.LabelLocation_t{
 			ViewLevel: mLabel.Location.ViewLevel,
 			X:         mLabel.Location.X,
 			Y:         mLabel.Location.Y,
@@ -360,7 +359,7 @@ func Read(input []byte) (*models.Map_t, error) {
 	}
 
 	for _, shape := range m.Shapes.Shapes {
-		wShape := &models.Shape_t{
+		wShape := &wxx.Shape_t{
 			BbHeight:              shape.BbHeight,
 			BbIterations:          shape.BbIterations,
 			BbWidth:               shape.BbWidth,
@@ -403,7 +402,7 @@ func Read(input []byte) (*models.Map_t, error) {
 		}
 
 		for _, point := range shape.Points {
-			wPoint := &models.Point_t{
+			wPoint := &wxx.Point_t{
 				Type: point.Type,
 				X:    point.X,
 				Y:    point.Y,
@@ -415,15 +414,15 @@ func Read(input []byte) (*models.Map_t, error) {
 	}
 
 	for _, note := range m.Notes.Notes {
-		wNote := &models.Note_t{
+		wNote := &wxx.Note_t{
 			InnerText: note.InnerText,
 		}
 		w.Notes = append(w.Notes, wNote)
 	}
 
-	w.Informations = &models.Informations_t{}
+	w.Informations = &wxx.Informations_t{}
 	for _, info := range m.Informations.Informations {
-		wInfo := &models.Information_t{
+		wInfo := &wxx.Information_t{
 			Uuid:         info.Uuid,
 			Type:         info.Type,
 			Title:        info.Title,
@@ -439,7 +438,7 @@ func Read(input []byte) (*models.Map_t, error) {
 		}
 
 		for _, detail := range info.Details {
-			wDetail := &models.InformationDetail_t{
+			wDetail := &wxx.InformationDetail_t{
 				Uuid:         detail.Uuid,
 				Type:         detail.Type,
 				Title:        detail.Title,
@@ -461,30 +460,30 @@ func Read(input []byte) (*models.Map_t, error) {
 	w.Informations.InnerText = m.Informations.InnerText
 
 	// convert m.Configuration to w.Configuration
-	w.Configuration = &models.Configuration_t{}
+	w.Configuration = &wxx.Configuration_t{}
 	for _, mTerrainConfig := range m.Configuration.TerrainConfig {
-		wTerrainConfig := &models.TerrainConfig_t{
+		wTerrainConfig := &wxx.TerrainConfig_t{
 			InnerText: mTerrainConfig.InnerText,
 		}
 		// append the terrain configuration
 		w.Configuration.TerrainConfig = append(w.Configuration.TerrainConfig, wTerrainConfig)
 	}
 	for _, mFeatureConfig := range m.Configuration.FeatureConfig {
-		wFeatureConfig := &models.FeatureConfig_t{
+		wFeatureConfig := &wxx.FeatureConfig_t{
 			InnerText: mFeatureConfig.InnerText,
 		}
 		w.Configuration.FeatureConfig = append(w.Configuration.FeatureConfig, wFeatureConfig)
 	}
 	for _, mTextureConfig := range m.Configuration.TextureConfig {
-		wTextureConfig := &models.TextureConfig_t{
+		wTextureConfig := &wxx.TextureConfig_t{
 			InnerText: mTextureConfig.InnerText,
 		}
 		w.Configuration.TextureConfig = append(w.Configuration.TextureConfig, wTextureConfig)
 	}
-	w.Configuration.TextConfig = &models.TextConfig_t{}
+	w.Configuration.TextConfig = &wxx.TextConfig_t{}
 	for _, mTextConfig := range m.Configuration.TextConfig {
 		for _, mLabelStyle := range mTextConfig.LabelStyles {
-			wLabelStyle := &models.LabelStyle_t{
+			wLabelStyle := &wxx.LabelStyle_t{
 				Name:        mLabelStyle.Name,
 				FontFace:    mLabelStyle.FontFace,
 				Scale:       mLabelStyle.Scale,
@@ -506,10 +505,10 @@ func Read(input []byte) (*models.Map_t, error) {
 			w.Configuration.TextConfig.LabelStyles = append(w.Configuration.TextConfig.LabelStyles, wLabelStyle)
 		}
 	}
-	w.Configuration.ShapeConfig = &models.ShapeConfig_t{}
+	w.Configuration.ShapeConfig = &wxx.ShapeConfig_t{}
 	for _, mShapeConfig := range m.Configuration.ShapeConfig {
 		for _, mShapeStyle := range mShapeConfig.ShapeStyles {
-			wShapeStyle := &models.ShapeStyle_t{
+			wShapeStyle := &wxx.ShapeStyle_t{
 				Name:          mShapeStyle.Name,
 				StrokeType:    mShapeStyle.StrokeType,
 				IsFractal:     mShapeStyle.IsFractal,

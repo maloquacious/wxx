@@ -9,14 +9,14 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/maloquacious/wxx/models"
+	"github.com/maloquacious/wxx"
 )
 
 // Encode the Map_t into a slice of UTF-8 bytes that matches this version's XML schema.
 //
 // Note: the style of this code is intentionally verbose to make it easier to find changes between
 // versions of the Worldographer files.
-func Encode(w *models.Map_t) ([]byte, error) {
+func Encode(w *wxx.Map_t) ([]byte, error) {
 	wb := &bytes.Buffer{}
 	if err := encodeMap(w, wb); err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func Encode(w *models.Map_t) ([]byte, error) {
 	return wb.Bytes(), nil
 }
 
-func encodeMap(w *models.Map_t, wb *bytes.Buffer) error {
+func encodeMap(w *wxx.Map_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf("<map"))
 	wb.WriteString(fmt.Sprintf(" type=%q", w.Type))
 	wb.WriteString(fmt.Sprintf(" version=%q", w.Version))
@@ -41,9 +41,9 @@ func encodeMap(w *models.Map_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf("hexWidth=%q", floats(w.HexWidth)))
 	wb.WriteString(fmt.Sprintf(" hexHeight=%q", floats(w.HexHeight)))
 	wb.WriteString(fmt.Sprintf(" hexOrientation=%q", w.HexOrientation))
-	if w.MapProjection == models.FLAT {
+	if w.MapProjection == wxx.FLAT {
 		wb.WriteString(fmt.Sprintf(" mapProjection=%q", "FLAT"))
-	} else if w.MapProjection == models.ICOSAHEDRAL {
+	} else if w.MapProjection == wxx.ICOSAHEDRAL {
 		wb.WriteString(fmt.Sprintf(" mapProjection=%q", "ICOSAHEDRAL"))
 	} else {
 		return fmt.Errorf("assert(map.projection != %q)", w.MapProjection)
@@ -107,7 +107,7 @@ func encodeMap(w *models.Map_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeGridAndNumbering(gridAndNumbering *models.GridAndNumbering_t, wb *bytes.Buffer) error {
+func encodeGridAndNumbering(gridAndNumbering *wxx.GridAndNumbering_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(`<gridandnumbering`))
 	wb.WriteString(fmt.Sprintf(" color0=%q", gridAndNumbering.Color0))
 	wb.WriteString(fmt.Sprintf(" color1=%q", gridAndNumbering.Color1))
@@ -144,7 +144,7 @@ func encodeGridAndNumbering(gridAndNumbering *models.GridAndNumbering_t, wb *byt
 	return nil
 }
 
-func encodeTerrainMap(terrainMap *models.TerrainMap_t, wb *bytes.Buffer) error {
+func encodeTerrainMap(terrainMap *wxx.TerrainMap_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf("<terrainmap>"))
 	for k, v := range terrainMapToSlice(terrainMap.Data) {
 		if k == 0 {
@@ -158,7 +158,7 @@ func encodeTerrainMap(terrainMap *models.TerrainMap_t, wb *bytes.Buffer) error {
 }
 
 // order of layers is important; worldographer renders them from the bottom up.
-func encodeMapLayers(mapLayers []*models.MapLayer_t, wb *bytes.Buffer) error {
+func encodeMapLayers(mapLayers []*wxx.MapLayer_t, wb *bytes.Buffer) error {
 	for _, mapLayer := range mapLayers {
 		if err := encodeMapLayer(mapLayer, wb); err != nil {
 			return err
@@ -167,7 +167,7 @@ func encodeMapLayers(mapLayers []*models.MapLayer_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeMapLayer(mapLayer *models.MapLayer_t, wb *bytes.Buffer) error {
+func encodeMapLayer(mapLayer *wxx.MapLayer_t, wb *bytes.Buffer) error {
 	wb.WriteString("<maplayer")
 	wb.WriteString(fmt.Sprintf(" name=%q", mapLayer.Name))
 	wb.WriteString(fmt.Sprintf(" isVisible=%q", bools(mapLayer.IsVisible)))
@@ -175,7 +175,7 @@ func encodeMapLayer(mapLayer *models.MapLayer_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeTiles(tiles *models.Tiles_t, hexOrientation string, wb *bytes.Buffer) error {
+func encodeTiles(tiles *wxx.Tiles_t, hexOrientation string, wb *bytes.Buffer) error {
 	// to: width is the number of columns, height is the number of rows. does that depend on the orientation?
 	wb.WriteString(fmt.Sprintf("<tiles"))
 	wb.WriteString(fmt.Sprintf(" viewLevel=%q", tiles.ViewLevel))
@@ -216,7 +216,7 @@ func encodeTiles(tiles *models.Tiles_t, hexOrientation string, wb *bytes.Buffer)
 // * field after resource.animal is "Z" if remaining resources are all 0
 // * otherwise we have brick, crops, gems, lumber, metals, rock
 // * customBackgroundColor is an RGBA that is optional
-func encodeTile(tile *models.Tile_t, wb *bytes.Buffer) error {
+func encodeTile(tile *wxx.Tile_t, wb *bytes.Buffer) error {
 	// todo: implement this
 	wb.WriteString(fmt.Sprintf("%d", tile.Terrain))
 	wb.WriteString(fmt.Sprintf("\t%d", floatd(tile.Elevation)))
@@ -233,7 +233,7 @@ func encodeTile(tile *models.Tile_t, wb *bytes.Buffer) error {
 }
 
 // all resources are supposed to be in the range of 0...100, but we don't enforce
-func encodeTileResources(resources models.Resources_t, wb *bytes.Buffer) error {
+func encodeTileResources(resources wxx.Resources_t, wb *bytes.Buffer) error {
 	// compress if there are no resources other than Animal
 	if resources.Brick == 0 && resources.Crops == 0 && resources.Gems == 0 && resources.Lumber == 0 && resources.Metals == 0 && resources.Rock == 0 {
 		wb.WriteString(fmt.Sprintf("\t%d", resources.Animal))
@@ -250,7 +250,7 @@ func encodeTileResources(resources models.Resources_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeMapKey(mapKey *models.MapKey_t, wb *bytes.Buffer) error {
+func encodeMapKey(mapKey *wxx.MapKey_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(`<mapkey positionx="0.0" positiony="0.0" viewlevel="WORLD" height="-1" backgroundcolor="0.9803921580314636,0.9215686321258545,0.843137264251709,1.0" backgroundopacity="50" titleText="Map Key" titleFontFace="Arial"  titleFontColor="0.0,0.0,0.0,1.0" titleFontBold="true" titleFontItalic="false" titleScale="80" scaleText="1 Hex = ? units" scaleFontFace="Arial"  scaleFontColor="0.0,0.0,0.0,1.0" scaleFontBold="true" scaleFontItalic="false" scaleScale="65" entryFontFace="Arial"  entryFontColor="0.0,0.0,0.0,1.0" entryFontBold="true" entryFontItalic="false" entryScale="55"  >`))
 	wb.WriteByte('\n')
 	wb.WriteString("</mapkey>\n")
@@ -258,7 +258,7 @@ func encodeMapKey(mapKey *models.MapKey_t, wb *bytes.Buffer) error {
 }
 
 // add features
-func encodeFeatures(features []*models.Feature_t, wb *bytes.Buffer) error {
+func encodeFeatures(features []*wxx.Feature_t, wb *bytes.Buffer) error {
 	wb.WriteString("<features>\n")
 	for _, feature := range features {
 		if err := encodeFeature(feature, wb); err != nil {
@@ -269,7 +269,7 @@ func encodeFeatures(features []*models.Feature_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeFeature(feature *models.Feature_t, wb *bytes.Buffer) error {
+func encodeFeature(feature *wxx.Feature_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf("<feature"))
 	wb.WriteString(fmt.Sprintf(" type=%q", feature.Type))
 	wb.WriteString(fmt.Sprintf(" rotate=%q", floats(feature.Rotate)))
@@ -307,7 +307,7 @@ func encodeFeature(feature *models.Feature_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeFeatureLocation(location *models.FeatureLocation_t, wb *bytes.Buffer) error {
+func encodeFeatureLocation(location *wxx.FeatureLocation_t, wb *bytes.Buffer) error {
 	wb.WriteString("<location")
 	wb.WriteString(fmt.Sprintf(" viewLevel=%q", location.ViewLevel))
 	wb.WriteString(fmt.Sprintf(" x=%q", floats(location.X)))
@@ -316,11 +316,11 @@ func encodeFeatureLocation(location *models.FeatureLocation_t, wb *bytes.Buffer)
 	return nil
 }
 
-func encodeFeatureLabel(label *models.Label_t, wb *bytes.Buffer) error {
+func encodeFeatureLabel(label *wxx.Label_t, wb *bytes.Buffer) error {
 	return encodeLabel(label, wb)
 }
 
-func encodeLabels(labels []*models.Label_t, wb *bytes.Buffer) error {
+func encodeLabels(labels []*wxx.Label_t, wb *bytes.Buffer) error {
 	wb.WriteString("<labels>\n")
 	for _, label := range labels {
 		if err := encodeLabel(label, wb); err != nil {
@@ -331,7 +331,7 @@ func encodeLabels(labels []*models.Label_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeLabel(label *models.Label_t, wb *bytes.Buffer) error {
+func encodeLabel(label *wxx.Label_t, wb *bytes.Buffer) error {
 	wb.WriteString("<label")
 	wb.WriteString(fmt.Sprintf("  mapLayer=%q", label.MapLayer))
 	wb.WriteString(fmt.Sprintf(" style=%q", label.Style))       // can be null!
@@ -365,7 +365,7 @@ func encodeLabel(label *models.Label_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeLabelLocation(location *models.LabelLocation_t, wb *bytes.Buffer) error {
+func encodeLabelLocation(location *wxx.LabelLocation_t, wb *bytes.Buffer) error {
 	wb.WriteString("<location")
 	wb.WriteString(fmt.Sprintf(" viewLevel=%q", location.ViewLevel))
 	wb.WriteString(fmt.Sprintf(" x=%q", floats(location.X)))
@@ -375,7 +375,7 @@ func encodeLabelLocation(location *models.LabelLocation_t, wb *bytes.Buffer) err
 	return nil
 }
 
-func encodeShapes(shapes []*models.Shape_t, wb *bytes.Buffer) error {
+func encodeShapes(shapes []*wxx.Shape_t, wb *bytes.Buffer) error {
 	wb.WriteString("<shapes>\n")
 	for _, shape := range shapes {
 		if err := encodeShape(shape, wb); err != nil {
@@ -386,7 +386,7 @@ func encodeShapes(shapes []*models.Shape_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeShape(shape *models.Shape_t, wb *bytes.Buffer) error {
+func encodeShape(shape *wxx.Shape_t, wb *bytes.Buffer) error {
 	//<shape
 	//    type="Arc"
 	//    creationType="BASIC"
@@ -410,7 +410,7 @@ func encodeShape(shape *models.Shape_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeNotes(notes []*models.Note_t, wb *bytes.Buffer) error {
+func encodeNotes(notes []*wxx.Note_t, wb *bytes.Buffer) error {
 	wb.WriteString("<notes>\n")
 	for _, note := range notes {
 		if err := encodeNote(note, wb); err != nil {
@@ -421,7 +421,7 @@ func encodeNotes(notes []*models.Note_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeNote(note *models.Note_t, wb *bytes.Buffer) error {
+func encodeNote(note *wxx.Note_t, wb *bytes.Buffer) error {
 	///*
 	//	<note key="WORLD,2343.75,3112.5" viewLevel="WORLD" x="2343.75" y="3112.5" filename="" parent="dde12f75-dcc9-4cb7-a96d-f18011601143" color="1.0,1.0,0.0,1.0" title="Units (Notes Title)">
 	//	<notetext><![CDATA[<html dir="ltr"><head></head><body contenteditable="true">Paragraph (Notes Paragraph)</body></html>]]></notetext></note>
@@ -435,13 +435,13 @@ func encodeNote(note *models.Note_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeInformations(informations *models.Informations_t, wb *bytes.Buffer) error {
+func encodeInformations(informations *wxx.Informations_t, wb *bytes.Buffer) error {
 	wb.WriteString("<informations>\n")
 	wb.WriteString("</informations>\n")
 	return nil
 }
 
-func encodeConfiguration(configuration *models.Configuration_t, wb *bytes.Buffer) error {
+func encodeConfiguration(configuration *wxx.Configuration_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf("<configuration>\n"))
 	if err := encodeTerrainConfig(configuration.TerrainConfig, wb); err != nil {
 		return err
@@ -462,25 +462,25 @@ func encodeConfiguration(configuration *models.Configuration_t, wb *bytes.Buffer
 	return nil
 }
 
-func encodeTerrainConfig(terrainConfig []*models.TerrainConfig_t, wb *bytes.Buffer) error {
+func encodeTerrainConfig(terrainConfig []*wxx.TerrainConfig_t, wb *bytes.Buffer) error {
 	wb.WriteString("  <terrain-config>\n")
 	wb.WriteString("  </terrain-config>\n")
 	return nil
 }
 
-func encodeFeatureConfig(featureConfig []*models.FeatureConfig_t, wb *bytes.Buffer) error {
+func encodeFeatureConfig(featureConfig []*wxx.FeatureConfig_t, wb *bytes.Buffer) error {
 	wb.WriteString("  <feature-config>\n")
 	wb.WriteString("  </feature-config>\n")
 	return nil
 }
 
-func encodeTextureConfig(textureConfig []*models.TextureConfig_t, wb *bytes.Buffer) error {
+func encodeTextureConfig(textureConfig []*wxx.TextureConfig_t, wb *bytes.Buffer) error {
 	wb.WriteString("  <texture-config>\n")
 	wb.WriteString("  </texture-config>\n")
 	return nil
 }
 
-func encodeTextConfig(textConfig *models.TextConfig_t, wb *bytes.Buffer) error {
+func encodeTextConfig(textConfig *wxx.TextConfig_t, wb *bytes.Buffer) error {
 	wb.WriteString("  <text-config>\n")
 	for _, labelStyle := range textConfig.LabelStyles {
 		if err := encodeLabelStyle(labelStyle, wb); err != nil {
@@ -491,7 +491,7 @@ func encodeTextConfig(textConfig *models.TextConfig_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeLabelStyle(labelStyle *models.LabelStyle_t, wb *bytes.Buffer) error {
+func encodeLabelStyle(labelStyle *wxx.LabelStyle_t, wb *bytes.Buffer) error {
 	//wb.WriteString("<labelstyle")
 	////name="Building"
 	////fontFace="Arial"
@@ -506,7 +506,7 @@ func encodeLabelStyle(labelStyle *models.LabelStyle_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeShapeConfig(shapeConfig *models.ShapeConfig_t, wb *bytes.Buffer) error {
+func encodeShapeConfig(shapeConfig *wxx.ShapeConfig_t, wb *bytes.Buffer) error {
 	wb.WriteString("  <shape-config>\n")
 	for _, shapeStyle := range shapeConfig.ShapeStyles {
 		if err := encodeShapeStyle(shapeStyle, wb); err != nil {
@@ -517,7 +517,7 @@ func encodeShapeConfig(shapeConfig *models.ShapeConfig_t, wb *bytes.Buffer) erro
 	return nil
 }
 
-func encodeShapeStyle(shapeStyle *models.ShapeStyle_t, wb *bytes.Buffer) error {
+func encodeShapeStyle(shapeStyle *wxx.ShapeStyle_t, wb *bytes.Buffer) error {
 	wb.WriteString("<shapestyle")
 	wb.WriteString(fmt.Sprintf(" name=%q", shapeStyle.Name))
 	wb.WriteString(fmt.Sprintf(" strokeType=%q", shapeStyle.StrokeType))
@@ -624,7 +624,7 @@ func ints(i int) string {
 
 // rgbans converts an RGBA_t to a nullable string.
 // It uses the rgbas function to format the RGBA_t
-func rgbans(rgba *models.RGBA_t) string {
+func rgbans(rgba *wxx.RGBA_t) string {
 	s := rgbas(rgba)
 	if s == "0.0,0.0,0.0,1.0" {
 		s = "null"
@@ -644,7 +644,7 @@ func rgbans(rgba *models.RGBA_t) string {
 //
 // Returns:
 // - A XML attribute string representing the rgba. If rgba is nil, returns "0.0,0.0,0.0,1.0"
-func rgbas(rgba *models.RGBA_t) string {
+func rgbas(rgba *wxx.RGBA_t) string {
 	if rgba == nil {
 		return "0.0,0.0,0.0,1.0"
 	}

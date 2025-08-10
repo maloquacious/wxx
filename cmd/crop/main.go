@@ -87,9 +87,9 @@ func main() {
 	dstWidth, dstHeight := rrow-lrow+1, bcol-tcol+1
 	fmt.Printf(" crop: %4d x %4d\n", dstWidth, dstHeight)
 	// allocate cells for the destination map
-	dst := make([][]*models.Tile_t, dstWidth)
+	dst := make([][]*wxx.Tile_t, dstWidth)
 	for i := range dst {
-		dst[i] = make([]*models.Tile_t, dstHeight)
+		dst[i] = make([]*wxx.Tile_t, dstHeight)
 	}
 	// copy tiles within the crop area
 	for x := lrow; x <= rrow; x++ {
