@@ -1,18 +1,11 @@
 // Copyright (c) 2024 Michael D Henderson. All rights reserved.
 
+// Package wxx defines the major data types for decoding, manipulating,
+// and encoding Worldographer data files. We support two versions,
+// Worldographer and Worldographer 2025. The original Worldographer is
+// sometimes called "Worldographer classic." We call them H2017 and H2025
+// to reduce confusion.
 package wxx
-
-/*
-type Decoder
-func NewDecoder(r io.Reader) *Decoder
-func (dec *Decoder) Buffered() io.Reader
-func (dec *Decoder) Decode(v any) error
-func (dec *Decoder) DisallowUnknownFields()
-func (dec *Decoder) InputOffset() int64
-func (dec *Decoder) More() bool
-func (dec *Decoder) Token() (Token, error)
-func (dec *Decoder) UseNumber()
-*/
 
 /*
 type Encoder

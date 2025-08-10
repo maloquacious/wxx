@@ -11,6 +11,15 @@ func (e Error) Error() string {
 }
 
 const (
+	ErrInvalidUTF16             = Error("invalid utf-16")
+	ErrInvalidXMLHeader         = Error("invalid xml header")
+	ErrUnknownXMLHeader         = Error("unknown xml header")
+	ErrInvalidXML               = Error("invalid xml")
+	ErrMissingMapElement        = Error("missing map element")
+	ErrInvalidMapMetadata       = Error("invalid <map> metadata")
+	ErrMapNotClosed             = Error("<map> not closed")
+	ErrUnsupportedMapMetadata   = Error("unsupported map metadata")
+	ErrGZipNewReaderFailed      = Error("gzip new reader failed")
 	ErrGUnZipFailed             = Error("gunzip failed")
 	ErrGZipFailed               = Error("gzip failed")
 	ErrInvalidEncodingHeader    = Error("invalid encoding header")
@@ -22,6 +31,8 @@ const (
 	ErrNotBigEndianUTF16Encoded = Error("not big-endian utf-16 encoded")
 	ErrNotCompressed            = Error("not compressed")
 	ErrNotImplemented           = Error("not implemented")
+	ErrPipelineHalted           = Error("pipeline halted")
+	ErrRawReadFailed            = Error("raw read failed")
 	ErrUnknownVersion           = Error("unknown version")
 	ErrUnsupportedVersion       = Error("unsupported version")
 	ErrUnsupportedWXMLVersion   = Error("unsupported wxml version")

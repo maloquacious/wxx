@@ -72,7 +72,7 @@ func ReadCompressedXML(r io.Reader) (*models.Map_t, error) {
 // The input must be UTF-16 encoded and will be decoded to UTF-8.
 // Uses ReadUTF8XML to parse the decoded input.
 func ReadUTF16XML(r io.Reader) (*models.Map_t, error) {
-	// decode UTF-8 into UTF-8. we should verify that the input is actually UTF-16/BE,
+	// decode UTF-16 into UTF-8. we should verify that the input is actually UTF-16/BE,
 	// but this package accepts both BE and LE. c'est la vie.
 	utf16Encoding := unicode.UTF16(unicode.BigEndian, unicode.ExpectBOM)
 	data, err := io.ReadAll(transform.NewReader(r, utf16Encoding.NewDecoder()))

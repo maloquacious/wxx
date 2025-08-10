@@ -4,7 +4,7 @@ package wxx
 
 import "github.com/maloquacious/semver"
 
-// Map should be replaced by models.Map!
+// Map should be replaced by Map_t!
 type Map struct {
 	MetaData struct {
 		Version semver.Version `json:"version"` // version of this application
@@ -391,14 +391,4 @@ type Tile struct {
 	IsGMOnly              bool         `json:"isGMOnly,omitempty"`
 	Resources             *Resources_t `json:"resources,omitempty"`
 	CustomBackgroundColor *RGBA        `json:"customBackgroundColor,omitempty"`
-}
-
-type Resources_t struct {
-	Animal int `json:"animal,omitempty"`
-	Brick  int `json:"brick,omitempty"`
-	Crops  int `json:"crops,omitempty"`
-	Gems   int `json:"gems,omitempty"`
-	Lumber int `json:"lumber,omitempty"`
-	Metals int `json:"metals,omitempty"`
-	Rock   int `json:"rock,omitempty"`
 }
