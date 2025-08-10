@@ -6,8 +6,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/maloquacious/wxx/xmlio"
 	"os"
+
+	"github.com/maloquacious/wxx/xmlio"
 )
 
 func main() {
@@ -17,7 +18,16 @@ func main() {
 		}
 		fmt.Printf("bounds:\t%s\n", arg)
 
-		w, err := xmlio.ReadFile(arg)
+		fp, err := os.Open(arg)
+		if err != nil {
+			fmt.Printf("\t%v\n", err)
+			continue
+		}
+		defer fp.Close()
+
+		var bif xmlio.Diagnostics
+		joy := xmlio.NewDecoder(xmlio.WithDiagnostics(&bif))
+		w, err := joy.Decode(fp)
 		if err != nil {
 			fmt.Printf("\t%v\n", err)
 			continue

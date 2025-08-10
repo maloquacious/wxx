@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/maloquacious/wxx"
-	"github.com/maloquacious/wxx/models"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/transform"
 	"io"

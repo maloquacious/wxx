@@ -12,11 +12,12 @@ import (
 
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/xmlio/h2017v1"
+	"github.com/maloquacious/wxx/xmlio/h2025v1"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/transform"
 )
 
-// Decoder implements the wxx MapDecoder interface.
+// Decoder implements the wxx Decoder interface.
 type Decoder struct {
 	opts decoderOpts
 }
@@ -37,9 +38,12 @@ type Diagnostics struct {
 	Converted    []byte // input after converting UTF-16 to UTF-8
 	XMLHeader    []byte // XML header that was removed
 	XMLData      []byte
+	MapElement   []byte
+	Schema       string
 }
 
-// NewDecoder with functional options
+// NewDecoder returns a Decoder that implements the wxx.Decoder interface.
+// Some features of the decoding pipeline can be configured with options.
 func NewDecoder(opts ...DecoderOption) *Decoder {
 	d := &Decoder{
 		opts: decoderOpts{
@@ -110,7 +114,11 @@ func (d *Decoder) Decode(r io.Reader) (*wxx.Map_t, error) {
 
 	if d.opts.compressedInput {
 		// Uncompress the input by running gunzip on it.
-		// Todo: verify that the input is actually gzip data.
+
+		// verify that the input is actually gzip data by looking for the magic number.
+		if !(len(data) >= 2 && data[0] == 0x1F && data[1] == 0x8B) {
+			return nil, wxx.ErrNotCompressed
+		}
 
 		// Create a new gzip reader to process the source.
 		// This will return an error if the input is not gzip data.
@@ -153,35 +161,24 @@ func (d *Decoder) Decode(r io.Reader) (*wxx.Map_t, error) {
 		}
 	}
 
-	// table of XML headers that we can accept
-	xmlHeaderIndex, xmlHeaders := -1, []struct {
-		heading  string
-		version  string
-		encoding string
-	}{
-		{heading: "<?xml version='1.0' encoding='utf-8'?>\n", version: "1.0", encoding: "utf-8"},
-		{heading: "<?xml version='1.0' encoding='utf-16'?>\n", version: "1.0", encoding: "utf-16"},
-		{heading: "<?xml version='1.1' encoding='utf-8'?>\n", version: "1.1", encoding: "utf-8"},
-		{heading: "<?xml version='1.1' encoding='utf-16'?>\n", version: "1.1", encoding: "utf-16"},
-	}
-
 	// extract the XML header
+	xmlHeaderIndex := -1 // sentinel value meaning no header found
 	if d.opts.hasXmlHeader {
 		// verify that we have an XML header before we extract it.
 		// this will fail if the input is not UTF-8 encoded.
 		if !bytes.HasPrefix(data, []byte("<?xml")) {
 			return nil, wxx.ErrMissingXMLHeader
 		}
+		foundValidHeader := false
 		for i, header := range xmlHeaders {
 			if bytes.HasPrefix(data, []byte(header.heading)) {
-				xmlHeaderIndex = i
+				foundValidHeader, xmlHeaderIndex = true, i
 				break
 			}
 		}
-		if xmlHeaderIndex == -1 {
+		if !foundValidHeader {
 			return nil, wxx.ErrInvalidXMLHeader
 		}
-		data = data[len(xmlHeaders[xmlHeaderIndex].heading):]
 		if d.opts.diagnostics != nil {
 			d.opts.diagnostics.XMLHeader = bdup(data[:len(xmlHeaders[xmlHeaderIndex].heading)])
 		}
@@ -212,15 +209,17 @@ func (d *Decoder) Decode(r io.Reader) (*wxx.Map_t, error) {
 	if end == -1 {
 		return nil, errors.Join(wxx.ErrInvalidXML, wxx.ErrMapNotClosed)
 	}
-
 	// If it’s already self-closing (`.../>`), keep it; otherwise append `/>`.
 	if end > 0 && data[end-1] == '/' {
 		xmlMetaData.buffer = append([]byte{}, data[:end+1]...)
 	} else {
 		xmlMetaData.buffer = append(append(make([]byte, 0, end+2), data[:end]...), '/', '>')
 	}
-
-	// Now xmlMetaData.buffer holds a self-contained <map .../> you can unmarshal.
+	// Now xmlMetaData.buffer holds a self-contained <map .../>.
+	if d.opts.diagnostics != nil {
+		d.opts.diagnostics.MapElement = bdup(xmlMetaData.buffer)
+	}
+	// unmarshal that metadata
 	if err := xml.Unmarshal(xmlMetaData.buffer, &xmlMetaData); err != nil {
 		return nil, errors.Join(wxx.ErrInvalidXML, err)
 	}
@@ -234,9 +233,15 @@ func (d *Decoder) Decode(r io.Reader) (*wxx.Map_t, error) {
 	// use the metadata to call the correct unmarshaler for the XML
 	switch xmlMetaData.Release + "/" + xmlMetaData.Version + "/" + xmlMetaData.Schema {
 	case "/1.73/", "/1.74/", "/1.77/":
+		if d.opts.diagnostics != nil {
+			d.opts.diagnostics.Schema = "h2017v1"
+		}
 		return h2017v1.Read(data)
 	case "2025/1.10/1.01":
-		return nil, fmt.Errorf("2025/1.10/1.01: not yet implemented")
+		if d.opts.diagnostics != nil {
+			d.opts.diagnostics.Schema = "h2025v1"
+		}
+		return h2025v1.Read(data)
 	}
 
 	return nil, errors.Join(wxx.ErrUnsupportedMapMetadata, fmt.Errorf("map: release %q: schema %q: version %q", xmlMetaData.Release, xmlMetaData.Schema, xmlMetaData.Version))

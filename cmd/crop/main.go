@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/maloquacious/wxx"
-	"github.com/maloquacious/wxx/models"
 	"github.com/maloquacious/wxx/xmlio"
 )
 
@@ -37,31 +36,39 @@ func main() {
 	}
 
 	if inputFile == "" || outputFile == "" {
-		fmt.Fprintf(os.Stderr, "usage: %s [options]\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  -input file        input .wxx file (required)\n")
-		fmt.Fprintf(os.Stderr, "  -output file       output .wxx file (required)\n")
-		fmt.Fprintf(os.Stderr, "  -debug-utf8        write debug UTF-8 XML file alongside compressed UTF-16 .wxx file\n")
-		fmt.Fprintf(os.Stderr, "  -quiet             suppress output messages\n")
-		fmt.Fprintf(os.Stderr, "  -version           show version\n")
-		fmt.Fprintf(os.Stderr, "  -build-info        show version with build info\n")
+		_, _ = fmt.Fprintf(os.Stderr, "usage: %s [options]\n", os.Args[0])
+		_, _ = fmt.Fprintf(os.Stderr, "  -input file        input .wxx file (required)\n")
+		_, _ = fmt.Fprintf(os.Stderr, "  -output file       output .wxx file (required)\n")
+		_, _ = fmt.Fprintf(os.Stderr, "  -debug-utf8        write debug UTF-8 XML file alongside compressed UTF-16 .wxx file\n")
+		_, _ = fmt.Fprintf(os.Stderr, "  -quiet             suppress output messages\n")
+		_, _ = fmt.Fprintf(os.Stderr, "  -version           show version\n")
+		_, _ = fmt.Fprintf(os.Stderr, "  -build-info        show version with build info\n")
 		os.Exit(2)
 	}
 
 	if !strings.HasSuffix(inputFile, ".wxx") {
-		fmt.Fprintf(os.Stderr, "error: input file must end with .wxx\n")
+		_, _ = fmt.Fprintf(os.Stderr, "error: input file must end with .wxx\n")
 		os.Exit(2)
 	}
 
 	if !strings.HasSuffix(outputFile, ".wxx") {
-		fmt.Fprintf(os.Stderr, "error: output file must end with .wxx\n")
+		_, _ = fmt.Fprintf(os.Stderr, "error: output file must end with .wxx\n")
 		os.Exit(2)
 	}
 
 	// Read the input file
-	input, err := xmlio.ReadFile(inputFile)
+	fp, err := os.Open(inputFile)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error reading %s: %v\n", inputFile, err)
-		os.Exit(1)
+		_, _ = fmt.Fprintf(os.Stderr, "error opening %s: %v\n", inputFile, err)
+		os.Exit(2)
+	}
+	defer fp.Close()
+	var bif xmlio.Diagnostics
+	joy := xmlio.NewDecoder(xmlio.WithDiagnostics(&bif))
+	input, err := joy.Decode(fp)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "error reading %s: %v\n", inputFile, err)
+		os.Exit(2)
 	}
 
 	if !quiet {
