@@ -29,10 +29,10 @@ type decoderOpts struct {
 	utf16BeInput    bool
 	hasXmlHeader    bool
 	fixXmlHeader    bool
-	diagnostics     *Diagnostics
+	diagnostics     *DecoderDiagnostics
 }
 
-type Diagnostics struct {
+type DecoderDiagnostics struct {
 	Raw          []byte // original input
 	Uncompressed []byte // input after running gunzip
 	Converted    []byte // input after converting UTF-16 to UTF-8
@@ -67,8 +67,8 @@ func WithSkipUncompress() DecoderOption { // expect gzip on input
 	}
 }
 
-// WithDiagnostics captures data from each step of the decoding into buffers.
-func WithDiagnostics(buf *Diagnostics) DecoderOption {
+// WithDecoderDiagnostics captures data from each step of the decoding into buffers.
+func WithDecoderDiagnostics(buf *DecoderDiagnostics) DecoderOption {
 	return func(o *decoderOpts) {
 		o.diagnostics = buf
 	}

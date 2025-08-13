@@ -5,6 +5,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"os"
@@ -63,20 +64,28 @@ func main() {
 		os.Exit(2)
 	}
 	defer fp.Close()
-	var bif xmlio.Diagnostics
-	joy := xmlio.NewDecoder(xmlio.WithDiagnostics(&bif))
-	data, err := joy.Decode(fp)
+	var decoderDiagnostics xmlio.DecoderDiagnostics
+	joy := xmlio.NewDecoder(xmlio.WithDecoderDiagnostics(&decoderDiagnostics))
+	inputMap, err := joy.Decode(fp)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "error reading %s: %v\n", inputFile, err)
 		os.Exit(2)
 	}
 
 	if !quiet {
-		fmt.Printf("input: %s (data version %s)\n", inputFile, data.MetaData.DataVersion.String())
+		fmt.Printf("input: %s (data version %s)\n", inputFile, inputMap.MetaData.DataVersion.String())
 	}
 
 	// Write to the output file
-	err = xmlio.WriteFile(outputFile, data.MetaData.DataVersion, data, debugUtf8XmlFile)
+	var encoderDiagnostics xmlio.EncoderDiagnostics
+	bah := xmlio.NewEncoder(xmlio.WithEncoderDiagnostics(&encoderDiagnostics))
+	outputBuffer := &bytes.Buffer{}
+	err = bah.Encode(outputBuffer, inputMap.MetaData.DataVersion, inputMap)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "error encoding %s: %v\n", outputFile, err)
+		os.Exit(1)
+	}
+	err = os.WriteFile(outputFile, outputBuffer.Bytes(), 0644)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "error writing %s: %v\n", outputFile, err)
 		os.Exit(1)

@@ -25,14 +25,14 @@ func main() {
 		}
 		defer fp.Close()
 
-		var bif xmlio.Diagnostics
-		joy := xmlio.NewDecoder(xmlio.WithDiagnostics(&bif))
-		w, err := joy.Decode(fp)
+		var decoderDiagnostics xmlio.DecoderDiagnostics
+		decoder := xmlio.NewDecoder(xmlio.WithDecoderDiagnostics(&decoderDiagnostics))
+		w, err := decoder.Decode(fp)
 		if err != nil {
 			fmt.Printf("\t%v\n", err)
 			continue
 		}
-		fmt.Printf("\t%8s schema version %q\n", bif.Schema, w.MetaData.DataVersion.String())
+		fmt.Printf("\t%8s schema version %q\n", decoderDiagnostics.Schema, w.MetaData.DataVersion.String())
 		fmt.Printf("\t%8d tiles high\n", w.Tiles.TilesHigh)
 		fmt.Printf("\t%8d tiles wide\n", w.Tiles.TilesWide)
 		fmt.Printf("\t%8d terrain tiles defined\n", len(w.TerrainMap.List))

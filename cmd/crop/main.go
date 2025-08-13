@@ -5,6 +5,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"os"
@@ -63,8 +64,7 @@ func main() {
 		os.Exit(2)
 	}
 	defer fp.Close()
-	var bif xmlio.Diagnostics
-	joy := xmlio.NewDecoder(xmlio.WithDiagnostics(&bif))
+	joy := xmlio.NewDecoder()
 	input, err := joy.Decode(fp)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "error reading %s: %v\n", inputFile, err)
@@ -110,10 +110,29 @@ func main() {
 	fmt.Printf("input: %4d x %4d\n", input.Tiles.TilesWide, input.Tiles.TilesHigh)
 
 	// Write to the output file
-	err = xmlio.WriteFile(outputFile, input.MetaData.DataVersion, input, debugUtf8XmlFile)
+	var encoderDiagnostics xmlio.EncoderDiagnostics
+	var encoderOptions []xmlio.EncoderOption
+	if debugUtf8XmlFile != "" {
+		encoderOptions = append(encoderOptions, xmlio.WithEncoderDiagnostics(&encoderDiagnostics))
+	}
+	encoder := xmlio.NewEncoder(encoderOptions...)
+	outputBuffer := &bytes.Buffer{}
+	err = encoder.Encode(outputBuffer, input.MetaData.DataVersion, input)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error writing %s: %v\n", outputFile, err)
+		_, _ = fmt.Fprintf(os.Stderr, "error encoding %s: %v\n", outputFile, err)
 		os.Exit(1)
+	}
+	err = os.WriteFile(outputFile, outputBuffer.Bytes(), 0644)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "error writing %s: %v\n", outputFile, err)
+		os.Exit(1)
+	}
+	if debugUtf8XmlFile != "" {
+		err = os.WriteFile(debugUtf8XmlFile, encoderDiagnostics.Utf8Encoded, 0644)
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "error writing %s: %v\n", debugUtf8XmlFile, err)
+			os.Exit(1)
+		}
 	}
 
 	if !quiet {

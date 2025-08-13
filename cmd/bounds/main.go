@@ -25,9 +25,7 @@ func main() {
 		}
 		defer fp.Close()
 
-		var bif xmlio.Diagnostics
-		joy := xmlio.NewDecoder(xmlio.WithDiagnostics(&bif))
-		w, err := joy.Decode(fp)
+		w, err := xmlio.NewDecoder().Decode(fp)
 		if err != nil {
 			fmt.Printf("\t%v\n", err)
 			continue
