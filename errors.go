@@ -15,6 +15,7 @@ const (
 	ErrGUnZipFailed                = Error("gunzip failed")
 	ErrGZipFailed                  = Error("gzip failed")
 	ErrGZipNewReaderFailed         = Error("gzip new reader failed")
+	ErrInvalidGridCoordinates      = Error("invalid grid coordinates")
 	ErrInvalidEncodingHeader       = Error("invalid encoding header")
 	ErrInvalidGZip                 = Error("invalid gzip")
 	ErrInvalidHexOrientation       = Error("invalid hex orientation")

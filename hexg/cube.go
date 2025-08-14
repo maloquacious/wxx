@@ -2,6 +2,8 @@
 
 package hexg
 
+import "fmt"
+
 type CubeCoord struct {
 	q int
 	r int
@@ -37,7 +39,11 @@ func (a CubeCoord) Subtract(b CubeCoord) CubeCoord {
 }
 
 func (a CubeCoord) Equals(b CubeCoord) bool {
-	return a.q == b.q && a.s == b.s && a.r == b.r
+	return a.q == b.q && a.r == b.r && a.s == b.s
+}
+
+func (a CubeCoord) IsZero() bool {
+	return a.q == 0 && a.r == 0 && a.s == 0
 }
 
 func (a CubeCoord) Scale(k int) CubeCoord {
@@ -53,12 +59,12 @@ func (a CubeCoord) RotateRight() CubeCoord {
 }
 
 var cube_directions = []CubeCoord{
-	CubeCoord{q: 1, r: 0, s: -1},
-	CubeCoord{q: 1, r: -1, s: 0},
-	CubeCoord{q: 0, r: -1, s: 1},
-	CubeCoord{q: -1, r: 0, s: 1},
-	CubeCoord{q: -1, r: 1, s: 0},
-	CubeCoord{q: 0, r: 1, s: -1},
+	{q: 1, r: 0, s: -1},
+	{q: 1, r: -1, s: 0},
+	{q: 0, r: -1, s: 1},
+	{q: -1, r: 0, s: 1},
+	{q: -1, r: 1, s: 0},
+	{q: 0, r: 1, s: -1},
 }
 
 func cube_direction(direction int) CubeCoord {
@@ -70,12 +76,12 @@ func (hex CubeCoord) Neighbor(direction int) CubeCoord {
 }
 
 var cube_diagonals = []CubeCoord{
-	CubeCoord{q: 2, r: -1, s: -1},
-	CubeCoord{q: 1, r: -2, s: 1},
-	CubeCoord{q: -1, r: -1, s: 2},
-	CubeCoord{q: -2, r: 1, s: 1},
-	CubeCoord{q: -1, r: 2, s: -1},
-	CubeCoord{q: 1, r: 1, s: -2},
+	{q: 2, r: -1, s: -1},
+	{q: 1, r: -2, s: 1},
+	{q: -1, r: -1, s: 2},
+	{q: -2, r: 1, s: 1},
+	{q: -1, r: 2, s: -1},
+	{q: 1, r: 1, s: -2},
 }
 
 func (hex CubeCoord) DiagonalNeighbor(direction int) CubeCoord {
@@ -118,3 +124,15 @@ func (a CubeCoord) Linedraw(b CubeCoord) []CubeCoord {
 	}
 	return results
 }
+
+// String returns the coordinates with signs.
+// It returns the coordinates formatted as "+q+r+s".
+func (h CubeCoord) String() string {
+	return fmt.Sprintf("%+d%+d%+d", h.q, h.r, h.s)
+}
+
+//// String implements the Stringer interface.
+//// It returns the coordinates formatted as (q,r,s).
+//func (h CubeCoord) String() string {
+//	return fmt.Sprintf("%d,%d,%d", h.q, h.r, h.s)
+//}

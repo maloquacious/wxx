@@ -19,12 +19,36 @@ func qoffset_from_cube(offset int, h CubeCoord) OffsetCoord {
 	return OffsetCoord{col: col, row: row}
 }
 
+func (h CubeCoord) ToEvenQ() EvenQCoord {
+	parity := h.q & 1
+	col, row := h.q, h.r+((h.q+EVEN*parity)/2)
+	return EvenQCoord{col: col, row: row}
+}
+
+func (h CubeCoord) ToOddQ() EvenQCoord {
+	parity := h.q & 1
+	col, row := h.q, h.r+((h.q+ODD*parity)/2)
+	return EvenQCoord{col: col, row: row}
+}
+
 func qoffset_to_cube(offset int, h OffsetCoord) CubeCoord {
 	if offset != EVEN && offset != ODD {
 		panic("offset must be EVEN (+1) or ODD (-1)")
 	}
 	parity := h.col & 1
-	q, r := h.col, h.row-int((h.col+offset*parity)/2)
+	q, r := h.col, h.row-((h.col+offset*parity)/2)
+	return CubeCoord{q: q, r: r, s: -q - r}
+}
+
+func (h EvenQCoord) ToCube() CubeCoord {
+	parity := h.col & 1
+	q, r := h.col, h.row-((h.col+EVEN*parity)/2)
+	return CubeCoord{q: q, r: r, s: -q - r}
+}
+
+func (h OddQCoord) ToCube() CubeCoord {
+	parity := h.col & 1
+	q, r := h.col, h.row-((h.col+ODD*parity)/2)
 	return CubeCoord{q: q, r: r, s: -q - r}
 }
 
@@ -33,8 +57,20 @@ func roffset_from_cube(offset int, h CubeCoord) OffsetCoord {
 		panic("offset must be EVEN (+1) or ODD (-1)")
 	}
 	parity := h.r & 1
-	col, row := h.q+int((h.r+offset*parity)/2), h.r
+	col, row := h.q+((h.r+offset*parity)/2), h.r
 	return OffsetCoord{col: col, row: row}
+}
+
+func (h CubeCoord) ToEvenR() EvenRCoord {
+	parity := h.r & 1
+	col, row := h.q+((h.r+EVEN*parity)/2), h.r
+	return EvenRCoord{col: col, row: row}
+}
+
+func (h CubeCoord) ToOddR() OddRCoord {
+	parity := h.r & 1
+	col, row := h.q+((h.r+EVEN*parity)/2), h.r
+	return OddRCoord{col: col, row: row}
 }
 
 func roffset_to_cube(offset int, h OffsetCoord) CubeCoord {
@@ -42,46 +78,78 @@ func roffset_to_cube(offset int, h OffsetCoord) CubeCoord {
 		panic("offset must be EVEN (+1) or ODD (-1)")
 	}
 	parity := h.row & 1
-	q, r := h.col-int((h.row+offset*parity)/2), h.row
+	q, r := h.col-((h.row+offset*parity)/2), h.row
 	return CubeCoord{q: q, r: r, s: -q - r}
 }
 
-func qoffset_from_qfloat64d(offset int, h DoubledCoord) OffsetCoord {
+func (h EvenRCoord) ToCube() CubeCoord {
+	parity := h.row & 1
+	q, r := h.col-((h.row+EVEN*parity)/2), h.row
+	return CubeCoord{q: q, r: r, s: -q - r}
+}
+
+func (h OddRCoord) ToCube() CubeCoord {
+	parity := h.row & 1
+	q, r := h.col-((h.row+EVEN*parity)/2), h.row
+	return CubeCoord{q: q, r: r, s: -q - r}
+}
+
+func qoffset_from_qdoubled(offset int, h DoubledCoord) OffsetCoord {
 	parity := h.col & 1
 	return OffsetCoord{col: h.col, row: int((h.row + offset*parity) / 2)}
 }
 
-func qoffset_to_qfloat64d(offset int, h OffsetCoord) DoubledCoord {
+func qoffset_to_qdoubled(offset int, h OffsetCoord) DoubledCoord {
 	parity := h.col & 1
 	return DoubledCoord{col: h.col, row: 2*h.row - offset*parity}
 }
 
-func roffset_from_rfloat64d(offset int, h DoubledCoord) OffsetCoord {
+func roffset_from_rdoubled(offset int, h DoubledCoord) OffsetCoord {
 	parity := h.row & 1
 	return OffsetCoord{col: int((h.col + offset*parity) / 2), row: h.row}
 }
 
-func roffset_to_rfloat64d(offset int, h OffsetCoord) DoubledCoord {
+func roffset_to_rdoubled(offset int, h OffsetCoord) DoubledCoord {
 	parity := h.row & 1
 	return DoubledCoord{col: 2*h.col - offset*parity, row: h.row}
 }
 
-func qfloat64d_from_cube(h CubeCoord) DoubledCoord {
+func qdoubled_from_cube(h CubeCoord) DoubledCoord {
 	col, row := h.q, 2*h.r+h.q
 	return DoubledCoord{col: col, row: row}
 }
 
-func qfloat64d_to_cube(h DoubledCoord) CubeCoord {
+func (h CubeCoord) ToDoubleWidth() DoubleWidthCoord {
+	col, row := h.q, 2*h.r+h.q
+	return DoubleWidthCoord{col: col, row: row}
+}
+
+func qdoubled_to_cube(h DoubledCoord) CubeCoord {
 	q, r := h.col, int((h.row-h.col)/2)
 	return CubeCoord{q: q, r: r, s: -q - r}
 }
 
-func rfloat64d_from_cube(h CubeCoord) DoubledCoord {
+func (h DoubleWidthCoord) ToCube() CubeCoord {
+	q, r := h.col, int((h.row-h.col)/2)
+	return CubeCoord{q: q, r: r, s: -q - r}
+}
+
+func rdoubled_from_cube(h CubeCoord) DoubledCoord {
 	col, row := 2*h.q+h.r, h.r
 	return DoubledCoord{col: col, row: row}
 }
 
-func rfloat64d_to_cube(h DoubledCoord) CubeCoord {
+func (h CubeCoord) ToDoubleHeight() DoubleHeightCoord {
+	col, row := 2*h.q+h.r, h.r
+	return DoubleHeightCoord{col: col, row: row}
+}
+
+func rdoubled_to_cube(h DoubledCoord) CubeCoord {
+	q, r := int((h.col-h.row)/2), h.row
+	return CubeCoord{q: q, r: r, s: -q - r}
+}
+
+func (h DoubleHeightCoord) ToCube() CubeCoord {
 	q, r := int((h.col-h.row)/2), h.row
 	return CubeCoord{q: q, r: r, s: -q - r}
 }
@@ -116,11 +184,9 @@ func polygon_corners(layout Layout, h CubeCoord) []Point {
 // helpers for math
 //
 
-// number is a constraint that permits any integer or floating-point type.
+// number is a constraint that permits any int or float64.
 type number interface {
-	~int | ~int8 | ~int16 | ~int32 | ~int64 |
-		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 |
-		~float32 | ~float64
+	~int | ~float64
 }
 
 // abs returns the absolute value of x.

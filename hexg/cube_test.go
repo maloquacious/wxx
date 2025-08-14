@@ -166,51 +166,51 @@ func Test_offset_to_cube(t *testing.T) {
 	equal_hex("offset_to_cube even-q", CubeCoord{-1, -1, 2}, qoffset_to_cube(EVEN, OffsetCoord{-1, -1}))
 }
 
-func Test_offset_to_float64d(t *testing.T) {
+func Test_offset_to_doubled(t *testing.T) {
 	for col := -2; col < 3; col++ {
 		for row := -2; row < 3; row++ {
 			offset := OffsetCoord{col, row}
-			equal_doubledcoord("offset_to_float64d loop odd-q", qfloat64d_from_cube(qoffset_to_cube(ODD, offset)), qoffset_to_qfloat64d(ODD, offset))
-			equal_doubledcoord("offset_to_float64d loop even-q", qfloat64d_from_cube(qoffset_to_cube(EVEN, offset)), qoffset_to_qfloat64d(EVEN, offset))
-			equal_doubledcoord("offset_to_float64d loop odd-r", rfloat64d_from_cube(roffset_to_cube(ODD, offset)), roffset_to_rfloat64d(ODD, offset))
-			equal_doubledcoord("offset_to_float64d loop even-r", rfloat64d_from_cube(roffset_to_cube(EVEN, offset)), roffset_to_rfloat64d(EVEN, offset))
-			qfloat64d := DoubledCoord{col*2 + (row & 1), row}
-			equal_offsetcoord("offset_from_float64d loop odd-q", qoffset_from_cube(ODD, qfloat64d_to_cube(qfloat64d)), qoffset_from_qfloat64d(ODD, qfloat64d))
-			equal_offsetcoord("offset_from_float64d loop even-q", qoffset_from_cube(EVEN, qfloat64d_to_cube(qfloat64d)), qoffset_from_qfloat64d(EVEN, qfloat64d))
-			rfloat64d := DoubledCoord{col, row*2 + (col & 1)}
-			equal_offsetcoord("offset_from_float64d loop odd-r", roffset_from_cube(ODD, rfloat64d_to_cube(rfloat64d)), roffset_from_rfloat64d(ODD, rfloat64d))
-			equal_offsetcoord("offset_from_float64d loop even-r", roffset_from_cube(EVEN, rfloat64d_to_cube(rfloat64d)), roffset_from_rfloat64d(EVEN, rfloat64d))
+			equal_doubledcoord("offset_to_doubled loop odd-q", qdoubled_from_cube(qoffset_to_cube(ODD, offset)), qoffset_to_qdoubled(ODD, offset))
+			equal_doubledcoord("offset_to_doubled loop even-q", qdoubled_from_cube(qoffset_to_cube(EVEN, offset)), qoffset_to_qdoubled(EVEN, offset))
+			equal_doubledcoord("offset_to_doubled loop odd-r", rdoubled_from_cube(roffset_to_cube(ODD, offset)), roffset_to_rdoubled(ODD, offset))
+			equal_doubledcoord("offset_to_doubled loop even-r", rdoubled_from_cube(roffset_to_cube(EVEN, offset)), roffset_to_rdoubled(EVEN, offset))
+			qdoubled := DoubledCoord{col*2 + (row & 1), row}
+			equal_offsetcoord("offset_from_doubled loop odd-q", qoffset_from_cube(ODD, qdoubled_to_cube(qdoubled)), qoffset_from_qdoubled(ODD, qdoubled))
+			equal_offsetcoord("offset_from_doubled loop even-q", qoffset_from_cube(EVEN, qdoubled_to_cube(qdoubled)), qoffset_from_qdoubled(EVEN, qdoubled))
+			rdoubled := DoubledCoord{col, row*2 + (col & 1)}
+			equal_offsetcoord("offset_from_doubled loop odd-r", roffset_from_cube(ODD, rdoubled_to_cube(rdoubled)), roffset_from_rdoubled(ODD, rdoubled))
+			equal_offsetcoord("offset_from_doubled loop even-r", roffset_from_cube(EVEN, rdoubled_to_cube(rdoubled)), roffset_from_rdoubled(EVEN, rdoubled))
 		}
 	}
 }
 
-func Test_offset_from_float64d(t *testing.T) {
+func Test_offset_from_doubled(t *testing.T) {
 }
 
-func Test_float64d_roundtrip(t *testing.T) {
+func Test_doubled_roundtrip(t *testing.T) {
 	for q := -2; q < 3; q++ {
 		for r := -2; r < 3; r++ {
 			cube := CubeCoord{q, r, -q - r}
-			equal_hex("conversion_roundtrip float64d-q", cube, qfloat64d_to_cube(qfloat64d_from_cube(cube)))
-			equal_hex("conversion_roundtrip float64d-r", cube, rfloat64d_to_cube(rfloat64d_from_cube(cube)))
+			equal_hex("conversion_roundtrip doubled-q", cube, qdoubled_to_cube(qdoubled_from_cube(cube)))
+			equal_hex("conversion_roundtrip doubled-r", cube, rdoubled_to_cube(rdoubled_from_cube(cube)))
 		}
 	}
 	for col := -2; col < 3; col++ {
 		for row := -2; row < 3; row++ {
-			qfloat64d := DoubledCoord{col*2 + (row & 1), row}
-			equal_doubledcoord("conversion_roundtrip float64d-q", qfloat64d, qfloat64d_from_cube(qfloat64d_to_cube(qfloat64d)))
-			rfloat64d := DoubledCoord{col, row*2 + (col & 1)}
-			equal_doubledcoord("conversion_roundtrip float64d-r", rfloat64d, rfloat64d_from_cube(rfloat64d_to_cube(rfloat64d)))
+			qdoubled := DoubledCoord{col*2 + (row & 1), row}
+			equal_doubledcoord("conversion_roundtrip doubled-q", qdoubled, qdoubled_from_cube(qdoubled_to_cube(qdoubled)))
+			rdoubled := DoubledCoord{col, row*2 + (col & 1)}
+			equal_doubledcoord("conversion_roundtrip doubled-r", rdoubled, rdoubled_from_cube(rdoubled_to_cube(rdoubled)))
 		}
 	}
 }
 
-func Test_float64d_from_cube(t *testing.T) {
-	equal_doubledcoord("float64d_from_cube float64d-q", DoubledCoord{1, 5}, qfloat64d_from_cube(CubeCoord{1, 2, -3}))
-	equal_doubledcoord("float64d_from_cube float64d-r", DoubledCoord{4, 2}, rfloat64d_from_cube(CubeCoord{1, 2, -3}))
+func Test_doubled_from_cube(t *testing.T) {
+	equal_doubledcoord("doubled_from_cube doubled-q", DoubledCoord{1, 5}, qdoubled_from_cube(CubeCoord{1, 2, -3}))
+	equal_doubledcoord("doubled_from_cube doubled-r", DoubledCoord{4, 2}, rdoubled_from_cube(CubeCoord{1, 2, -3}))
 }
 
-func Test_float64d_to_cube(t *testing.T) {
-	equal_hex("float64d_to_cube float64d-q", CubeCoord{1, 2, -3}, qfloat64d_to_cube(DoubledCoord{1, 5}))
-	equal_hex("float64d_to_cube float64d-r", CubeCoord{1, 2, -3}, rfloat64d_to_cube(DoubledCoord{4, 2}))
+func Test_doubled_to_cube(t *testing.T) {
+	equal_hex("doubled_to_cube doubled-q", CubeCoord{1, 2, -3}, qdoubled_to_cube(DoubledCoord{1, 5}))
+	equal_hex("doubled_to_cube doubled-r", CubeCoord{1, 2, -3}, rdoubled_to_cube(DoubledCoord{4, 2}))
 }

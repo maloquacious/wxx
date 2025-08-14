@@ -14,3 +14,59 @@ func NewOffsetCoord(col_, row_ int) OffsetCoord {
 func (a OffsetCoord) Equals(b OffsetCoord) bool {
 	return a.col == b.col && a.row == b.row
 }
+
+// EvenQCoord implements "even-q," an offset coordinate with flat top hexes and even columns pushed down.
+type EvenQCoord struct {
+	col int
+	row int
+}
+
+func NewEvenQCoord(col_, row_ int) EvenQCoord {
+	return EvenQCoord{col: col_, row: row_}
+}
+
+func (a EvenQCoord) Equals(b EvenQCoord) bool {
+	return a.col == b.col && a.row == b.row
+}
+
+// EvenRCoord implements "even-r," an offset coordinate with pointy top hexes and even rows pushed right.
+type EvenRCoord struct {
+	col int
+	row int
+}
+
+func NewEvenRCoord(col_, row_ int) EvenRCoord {
+	return EvenRCoord{col: col_, row: row_}
+}
+
+func (a EvenRCoord) Equals(b EvenRCoord) bool {
+	return a.col == b.col && a.row == b.row
+}
+
+// OddQCoord implements "odd-q," an offset coordinate with flat top hexes and odd columns pushed down.
+type OddQCoord struct {
+	col int
+	row int
+}
+
+func NewOddQCoord(col_, row_ int) OddQCoord {
+	return OddQCoord{col: col_, row: row_}
+}
+
+func (a OddQCoord) Equals(b OddQCoord) bool {
+	return a.col == b.col && a.row == b.row
+}
+
+// OddRCoord implements "odd-r," an offset coordinate with pointy top hexes and odd rows pushed right.
+type OddRCoord struct {
+	col int
+	row int
+}
+
+func NewOddRCoord(col_, row_ int) OddRCoord {
+	return OddRCoord{col: col_, row: row_}
+}
+
+func (a OddRCoord) Equals(b OddRCoord) bool {
+	return a.col == b.col && a.row == b.row
+}
