@@ -70,3 +70,14 @@ func NewOddRCoord(col_, row_ int) OddRCoord {
 func (a OddRCoord) Equals(b OddRCoord) bool {
 	return a.col == b.col && a.row == b.row
 }
+
+// Orientation_e is orientation for offset coordinates
+type Orientation_e int
+
+const (
+	UnknownQR Orientation_e = iota
+	EvenQ                   // vertical layout shoves even columns down
+	OddQ                    // vertical layout shoves odd columns down
+	EvenR                   // horizontal layout shoves even rows right
+	OddR                    // horizontal layout shoves odd rows right
+)

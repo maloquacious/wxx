@@ -13,6 +13,7 @@ import (
 
 	"github.com/maloquacious/semver"
 	"github.com/maloquacious/wxx"
+	"github.com/maloquacious/wxx/hexg"
 )
 
 // Decode the XML data using the H2017.V1 schema and return a Map_t or an error.
@@ -39,6 +40,14 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	w.ContinentToKingdomVOffset = m.ContinentToKingdomVOffset
 	w.HexHeight = m.HexHeight
 	w.HexOrientation = m.HexOrientation
+	switch m.HexOrientation {
+	case "COLUMNS":
+		w.GridOrientation = hexg.OddQ
+	case "ROWS":
+		w.GridOrientation = hexg.OddR
+	default:
+		return nil, fmt.Errorf("%q: unknown orientation", m.HexOrientation)
+	}
 	w.HexWidth = m.HexWidth
 	w.KingdomFactor = m.KingdomFactor
 	w.KingdomToProvinceHOffset = m.KingdomToProvinceHOffset
@@ -99,8 +108,7 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	w.GridAndNumbering.NumberPrePad = m.GridAndNumbering.NumberPrePad
 	w.GridAndNumbering.NumberSeparator = m.GridAndNumbering.NumberSeparator
 
-	// convert terrain map. in the source, the terrain key and values are
-	// stored as tab delimited columns.
+	// convert terrain map. in the source, the terrain key and values are stored as tab delimited columns.
 	w.TerrainMap = &wxx.TerrainMap_t{Data: map[string]int{}}
 	if fields := strings.Split(m.TerrainMap.InnerText, "\t"); len(fields)%2 != 0 {
 		return w, errors.Join(wxx.ErrInvalidTerrainMapFieldCount, fmt.Errorf("field count '%d' is not even", len(fields)))
@@ -136,6 +144,11 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 				continue
 			}
 			t := &wxx.Tile_t{Row: x, Column: y}
+			if w.GridOrientation == hexg.OddQ {
+				t.Coords = hexg.NewOddQCoord(y, x).ToCube()
+			} else if w.GridOrientation == hexg.OddR {
+				t.Coords = hexg.NewOddRCoord(y, x).ToCube()
+			}
 			w.Tiles.TileRows[x][y] = t
 			y++
 			// values are TerrainMapIndex Elevation IsIcy IsGMOnly Animals (Z|(Brick Crops Gems Lumber Metals Rock)) RGBA?

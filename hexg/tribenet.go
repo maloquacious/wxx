@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-
-	"github.com/maloquacious/wxx"
 )
 
 // TribeNet uses a map composed of grids.
@@ -42,7 +40,7 @@ func NewTribeNetCoord(id string) (TribeNetCoord, error) {
 	id = strings.ToUpper(id)
 
 	if validGridId := id == "N/A" || (len(id) == 7 && id[2] == ' '); !validGridId {
-		return TribeNetCoord{}, wxx.ErrInvalidGridCoordinates
+		return TribeNetCoord{}, ErrInvalidGridCoordinates
 	}
 
 	if id == "N/A" {
@@ -55,9 +53,9 @@ func NewTribeNetCoord(id string) (TribeNetCoord, error) {
 		// we have to put obscured coordinates somewhere, so we will put them in "QQ"
 		gridRow, gridColumn = 'Q', 'Q'
 	} else if isValidGridRow := 'A' <= gridRow && gridRow <= 'Z'; !isValidGridRow {
-		return TribeNetCoord{}, wxx.ErrInvalidGridCoordinates
+		return TribeNetCoord{}, ErrInvalidGridCoordinates
 	} else if isValidGridColumn := 'A' <= gridColumn && gridColumn <= 'Z'; !isValidGridColumn {
-		return TribeNetCoord{}, wxx.ErrInvalidGridCoordinates
+		return TribeNetCoord{}, ErrInvalidGridCoordinates
 	}
 	// convert from "A" ... "Z" to 0 ... 25
 	gridRow, gridColumn = gridRow-'A', gridColumn-'A'
@@ -65,16 +63,16 @@ func NewTribeNetCoord(id string) (TribeNetCoord, error) {
 	// extract and validate the sub-grid column and row
 	subGridColumn, err := strconv.Atoi(id[3:5])
 	if err != nil {
-		return TribeNetCoord{}, wxx.ErrInvalidGridCoordinates
+		return TribeNetCoord{}, ErrInvalidGridCoordinates
 	}
 	subGridRow, err := strconv.Atoi(id[5:])
 	if err != nil {
-		return TribeNetCoord{}, wxx.ErrInvalidGridCoordinates
+		return TribeNetCoord{}, ErrInvalidGridCoordinates
 	}
 	if isValidSubGridColumn := 1 <= subGridColumn && subGridColumn <= columnsPerGrid; !isValidSubGridColumn {
-		return TribeNetCoord{}, wxx.ErrInvalidGridCoordinates
+		return TribeNetCoord{}, ErrInvalidGridCoordinates
 	} else if isValidSubGridRow := 1 <= subGridRow && subGridRow <= rowsPerGrid; !isValidSubGridRow {
-		return TribeNetCoord{}, wxx.ErrInvalidGridCoordinates
+		return TribeNetCoord{}, ErrInvalidGridCoordinates
 	}
 	// convert from 1 based to 0 based
 	subGridColumn, subGridRow = subGridColumn-1, subGridRow-1
