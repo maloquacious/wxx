@@ -14,7 +14,7 @@ This program uses XML version 1.0 and doesn't contain an XML schema version in t
 2. The newer program is called "Worldographer 2025."
 This version uses XML version 1.1 and stores the XML schema version as an attribute of the "map" entity.
 
-We will create readers and writers under the `xmlio/` path to read and write the different versions of Worldographer data files.
+We will create decoders and encoders under the `xmlio/` path to read and write the different versions of Worldographer data files.
 
 ### Documentation
 There is not much documentation available for the WXX files.
@@ -24,10 +24,10 @@ We should create it as we go, taking care to track differences between the XML s
 Map_t is the Go struct that we store the Worldographer data in.
 There are multiple versions of Worldographer data, so our Map_t is a superset of that data.
 
-The xmlio readers target the Map_t structure; the writers use it as their source. 
+The xmlio decoders target the Map_t structure; the encoders use it as their source. 
 
 ## Sqlite3
-Implementing a Sqlite3 data store is on the roadmap and will be scheduled after we completed the xmli readers and writers.
+Implementing a Sqlite3 data store is on the roadmap and will be scheduled after we complete the xmlio decoders and encoders.
 
 For the data store, we will need to create a database schema and routines to load and store Map_t into the data store.
 

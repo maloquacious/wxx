@@ -1,15 +1,10 @@
 # Project Structure
 
 wxx/
-├── xmlio/                    # packages for reading and writing XML data
-│   ├── maploader/            # translates XML into Map
-│   ├── v1_0/                 # schema-specific readers/writers for version 1.0.*
-│   │   ├── reader.go
-│   │   └── writer.go
-│   ├── v2_0/                 # schema-specific readers/writers for version 2.0.*
-│   │   ├── reader.go
-│   │   └── writer.go
-│   └── dispatcher.go         # delegates actions to correct version of reader/writer
+├── xmlio/                    # packages for decoding and encoding XML data
+│   ├── h2017v1/              # schema-specific decoders and encoders
+│   ├── h2025v1/              # schema-specific decoders and encoders
+│   └── h2025v1/              # schema-specific decoders and encoders
 └── cmd/
     ├── copy/                 # tool to copy a Worldographer file
     │   └── main.go

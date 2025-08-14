@@ -2,6 +2,8 @@
 
 package hexg
 
+import "fmt"
+
 type OffsetCoord struct {
 	col int
 	row int
@@ -81,3 +83,21 @@ const (
 	EvenR                   // horizontal layout shoves even rows right
 	OddR                    // horizontal layout shoves odd rows right
 )
+
+// String implements the fmt.Stringer interface
+func (o Orientation_e) String() string {
+	switch o {
+	case UnknownQR:
+		return "UnknownQR"
+	case EvenQ:
+		return "EvenQ"
+	case OddQ:
+		return "OddQ"
+	case EvenR:
+		return "EvenR"
+	case OddR:
+		return "OddR"
+	default:
+		return fmt.Sprintf("Orientation_e(%d)", int(o))
+	}
+}

@@ -136,6 +136,18 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 		TilesWide: m.Tiles.TilesWide,
 		TilesHigh: m.Tiles.TilesHigh,
 	}
+
+	// Set RowsHigh and ColumnsWide based on GridOrientation
+	switch w.GridOrientation {
+	case hexg.OddQ:
+		// Column orientation: TilesWide = columns, TilesHigh = rows
+		w.RowsHigh = w.Tiles.TilesHigh
+		w.ColumnsWide = w.Tiles.TilesWide
+	case hexg.OddR:
+		// Row orientation: TilesWide = rows, TilesHigh = columns
+		w.RowsHigh = w.Tiles.TilesWide
+		w.ColumnsWide = w.Tiles.TilesHigh
+	}
 	for _, tilerow := range m.Tiles.TileRows {
 		x, y := len(w.Tiles.TileRows), 0
 		w.Tiles.TileRows = append(w.Tiles.TileRows, make([]*wxx.Tile_t, w.Tiles.TilesHigh))
