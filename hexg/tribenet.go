@@ -10,7 +10,10 @@ import (
 	"github.com/maloquacious/wxx"
 )
 
-// TribeNetCoord implements "even-q," an offset coordinate with flat top hexes and even columns pushed down.
+// TribeNet uses a map composed of grids.
+// https://tribenet.wiki/mapping/grid
+
+// TribeNetCoord implements "odd-q," an offset coordinate with flat top hexes and odd columns pushed down.
 // It implements a different Stringer, displaying coordinates as "AB 0102," where:
 //   - "A"  is grid row        with a range of A  ... Z
 //   - "B"  is grid column     with a range of A  ... Z
@@ -51,12 +54,12 @@ func NewTribeNetCoord(id string) (TribeNetCoord, error) {
 	if gridRow == '#' && gridColumn == '#' {
 		// we have to put obscured coordinates somewhere, so we will put them in "QQ"
 		gridRow, gridColumn = 'Q', 'Q'
-	} else if isValidGridRow := 'A' <= gridRow && gridRow < 'Z'; !isValidGridRow {
+	} else if isValidGridRow := 'A' <= gridRow && gridRow <= 'Z'; !isValidGridRow {
 		return TribeNetCoord{}, wxx.ErrInvalidGridCoordinates
-	} else if isValidGridColumn := 'A' <= gridColumn && gridColumn < 'Z'; !isValidGridColumn {
+	} else if isValidGridColumn := 'A' <= gridColumn && gridColumn <= 'Z'; !isValidGridColumn {
 		return TribeNetCoord{}, wxx.ErrInvalidGridCoordinates
 	}
-	// convert from "A" ... "Z" to 0 ... 26
+	// convert from "A" ... "Z" to 0 ... 25
 	gridRow, gridColumn = gridRow-'A', gridColumn-'A'
 
 	// extract and validate the sub-grid column and row
@@ -78,7 +81,7 @@ func NewTribeNetCoord(id string) (TribeNetCoord, error) {
 
 	return TribeNetCoord{
 		id: id,
-		cube: EvenQCoord{
+		cube: OddQCoord{
 			col: gridColumn*columnsPerGrid + subGridColumn,
 			row: gridRow*rowsPerGrid + subGridRow,
 		}.ToCube(),
@@ -95,10 +98,44 @@ func (a TribeNetCoord) Equals(b TribeNetCoord) bool {
 // GridID returns the internal coordinates converted to a grid id.
 // "N/A" and obscured coordinates may cause some surprise.
 func (a TribeNetCoord) GridID() string {
-	evenq := a.cube.ToEvenQ()
-	gridRow, gridColumn := evenq.row/rowsPerGrid, evenq.col/columnsPerGrid
-	subGridColumn, subGridRow := evenq.col-gridColumn*columnsPerGrid, evenq.row-gridRow*rowsPerGrid
-	return fmt.Sprintf("%c%c %02d%02d", 'A'+gridRow, 'A'+gridColumn, subGridColumn, subGridRow)
+	oddq := a.cube.ToOddQ()
+	gridRow, gridColumn := oddq.row/rowsPerGrid, oddq.col/columnsPerGrid
+	subGridColumn, subGridRow := oddq.col-gridColumn*columnsPerGrid+1, oddq.row-gridRow*rowsPerGrid+1
+	var gridRowCode, gridColumnCode byte
+	switch {
+	case gridRow < 0:
+		gridRowCode = '<'
+	case gridRow > 25:
+		gridRowCode = '>'
+	default:
+		gridRowCode = 'A' + byte(gridRow)
+	}
+	switch {
+	case gridColumn < 0:
+		gridColumnCode = '<'
+	case gridColumn > 25:
+		gridColumnCode = '>'
+	default:
+		gridColumnCode = 'A' + byte(gridColumn)
+	}
+	var subGridColumnCode, subGridRowCode string
+	switch {
+	case subGridColumn < 1:
+		subGridColumnCode = "<<"
+	case subGridColumn > columnsPerGrid:
+		subGridColumnCode = ">>"
+	default:
+		subGridColumnCode = fmt.Sprintf("%02d", subGridColumn)
+	}
+	switch {
+	case subGridRow < 1:
+		subGridRowCode = "<<"
+	case subGridRow > rowsPerGrid:
+		subGridRowCode = ">>"
+	default:
+		subGridRowCode = fmt.Sprintf("%02d", subGridRow)
+	}
+	return fmt.Sprintf("%c%c %s%s", gridRowCode, gridColumnCode, subGridColumnCode, subGridRowCode)
 }
 
 // IsNA returns true if the coordinates were "N/A" or empty.
