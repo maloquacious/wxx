@@ -123,7 +123,7 @@ func main() {
 
 	inputMap, err := xmlio.NewDecoder().Decode(fp)
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "error: loading Worldographer file: %v\n", err)
+		log.Fatalf("error: loading Worldographer file: %v\n", err)
 		os.Exit(1)
 	}
 
