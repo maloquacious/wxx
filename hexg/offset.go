@@ -88,16 +88,40 @@ const (
 func (o Orientation_e) String() string {
 	switch o {
 	case UnknownQR:
-		return "UnknownQR"
+		return "unknown-qr"
 	case EvenQ:
-		return "EvenQ"
+		return "even-q"
 	case OddQ:
-		return "OddQ"
+		return "odd-q"
 	case EvenR:
-		return "EvenR"
+		return "even-r"
 	case OddR:
-		return "OddR"
+		return "odd-r"
 	default:
 		return fmt.Sprintf("Orientation_e(%d)", int(o))
 	}
+}
+
+func (o Orientation_e) IsColumns() bool {
+	return o == EvenQ || o == OddQ
+}
+
+func (o Orientation_e) IsHorizontal() bool {
+	return o == EvenR || o == OddR
+}
+
+func (o Orientation_e) IsFlatTop() bool {
+	return o == EvenQ || o == OddQ
+}
+
+func (o Orientation_e) IsPointyTop() bool {
+	return o == EvenR || o == OddR
+}
+
+func (o Orientation_e) IsRows() bool {
+	return o == EvenR || o == OddR
+}
+
+func (o Orientation_e) IsVertical() bool {
+	return o == EvenQ || o == OddQ
 }

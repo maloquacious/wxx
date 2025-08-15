@@ -101,8 +101,8 @@ func main() {
 	flag.Parse()
 
 	if flag.NArg() != 1 {
-		fmt.Fprintf(os.Stderr, "usage: %s [options] <worldographer-file>\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "options:\n")
+		_, _ = fmt.Fprintf(os.Stderr, "usage: %s [options] <worldographer-file>\n", os.Args[0])
+		_, _ = fmt.Fprintf(os.Stderr, "options:\n")
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
@@ -112,16 +112,14 @@ func main() {
 	// Load the Worldographer file
 	fp, err := os.Open(filename)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error opening file: %v\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "error opening file: %v\n", err)
 		os.Exit(1)
 	}
 	defer fp.Close()
 
-	var decoderDiagnostics xmlio.DecoderDiagnostics
-	decoder := xmlio.NewDecoder(xmlio.WithDecoderDiagnostics(&decoderDiagnostics))
-	worldMap, err = decoder.Decode(fp)
+	worldMap, err = xmlio.NewDecoder().Decode(fp)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error loading Worldographer file: %v\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "error loading Worldographer file: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -146,7 +144,7 @@ func main() {
 	}
 
 	if err := http.ListenAndServe(addr, nil); err != nil {
-		fmt.Fprintf(os.Stderr, "error starting web server: %v\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "error starting web server: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -187,12 +185,12 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 func handleHexGridSVG(w http.ResponseWriter, r *http.Request) {
 	svg := generateHexGridSVG(worldMap)
 	w.Header().Set("Content-Type", "image/svg+xml")
-	w.Write([]byte(svg))
+	_, _ = w.Write([]byte(svg))
 }
 
 func handleShutdown(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
-	w.Write([]byte("Server shutting down...\n"))
+	_, _ = w.Write([]byte("Server shutting down...\n"))
 	go func() {
 		os.Exit(0)
 	}()
@@ -200,7 +198,7 @@ func handleShutdown(w http.ResponseWriter, r *http.Request) {
 
 func handlePing(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
-	w.Write([]byte("pong\n"))
+	_, _ = w.Write([]byte("pong\n"))
 }
 
 func generateHexGridSVG(m *wxx.Map_t) string {
