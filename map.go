@@ -428,8 +428,9 @@ type Tile_t struct {
 
 type Tiles_t struct {
 	ViewLevel string `json:"viewLevel,omitempty"`
-	TilesWide int    `json:"tilesWide,omitempty"` // number of columns of tiles
-	TilesHigh int    `json:"tilesHigh,omitempty"` // number of rows of tiles
+	TilesWide int    `json:"tilesWide,omitempty"` // number of columns of tiles (x)
+	TilesHigh int    `json:"tilesHigh,omitempty"` // number of rows of tiles    (y)
 
-	TileRows [][]*Tile_t `json:"tilerow,omitempty"`
+	// Tiles is a two-dimensional array that is indexed by [col][row]
+	Tiles [][]*Tile_t `json:"tiles,omitempty"`
 }

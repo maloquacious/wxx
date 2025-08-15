@@ -44,9 +44,6 @@ type Layout_i interface {
 	// ColRowToHex returns a new hex using offset column and row coordinates.
 	ColRowToHex(col, row int) CubeCoord
 
-	// OffsetCoordToHex returns a new hex from the OffsetCoord.
-	OffsetCoordToHex(oc OffsetCoord) CubeCoord
-
 	// ParallelogramGrid returns a grid originating at (0,0,0).
 	ParallelogramGrid(q1, r1, q2, r2 int) []CubeCoord
 
@@ -56,13 +53,6 @@ type Layout_i interface {
 	// PixelToFractionalHex returns the fractional hex that encloses the pixel.
 	// In theory, the origin of that fractional hex will be the pixel.
 	PixelToFractionalHex(p Point) FractionalCubeCoord
-
-	// PolygonCornerOffset returns the offset from the center of a hex to a corner.
-	// We should define what the parameter "corner" means. Which corner?
-	PolygonCornerOffset(corner int) Point
-
-	// PolygonCornerOffsets returns the offset for every corner of a hex.
-	PolygonCornerOffsets() [6]Point
 
 	// RectangularGrid returns a grid centered about a hex.
 	RectangularGrid(center CubeCoord, left, right, top, bottom int) []CubeCoord
@@ -88,4 +78,79 @@ var layout_flat = Orientation{3.0 / 2.0, 0.0, math.Sqrt(3.0) / 2.0, math.Sqrt(3.
 func hex_corner_offset(layout Layout, corner int) Point {
 	angle := 2.0 * math.Pi * (layout.orientation.start_angle - float64(corner)) / 6.0
 	return Point{x: layout.size.x * math.Cos(angle), y: layout.size.y * math.Sin(angle)}
+}
+
+// OddQLayout implements a vertical layout that shoves odd columns down
+type OddQLayout struct {
+}
+
+func (o OddQLayout) IsHorizontal() bool {
+	return false
+}
+
+func (o OddQLayout) IsVertical() bool {
+	return true
+}
+
+func (o OddQLayout) OffsetType() Orientation_e {
+	return OddQ
+}
+
+func (o OddQLayout) DirectionToBearing(direction int) string {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (o OddQLayout) HexagonalGrid(center CubeCoord, radius int) []CubeCoord {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (o OddQLayout) HexCorner(h CubeCoord, corner int) Point {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (o OddQLayout) HexPoints(h CubeCoord) [7]Point {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (o OddQLayout) HexToOffsetCoord(h CubeCoord) OffsetCoord {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (o OddQLayout) HexToPixel(h CubeCoord) Point {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (o OddQLayout) ColRowToHex(col, row int) CubeCoord {
+	return OddQCoord{col: col, row: row}.ToCube()
+}
+
+func (o OddQLayout) ParallelogramGrid(q1, r1, q2, r2 int) []CubeCoord {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (o OddQLayout) PixelToHexRounded(p Point) CubeCoord {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (o OddQLayout) PixelToFractionalHex(p Point) FractionalCubeCoord {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (o OddQLayout) RectangularGrid(center CubeCoord, left, right, top, bottom int) []CubeCoord {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (o OddQLayout) TriagonalGrid(side_length int) []CubeCoord {
+	//TODO implement me
+	panic("implement me")
 }

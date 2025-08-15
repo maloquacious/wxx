@@ -101,12 +101,12 @@ func main() {
 	// copy tiles within the crop area
 	for x := lrow; x <= rrow; x++ {
 		for y := tcol; y <= bcol; y++ {
-			dst[x-lrow][y-tcol] = input.Tiles.TileRows[x][y]
+			dst[x-lrow][y-tcol] = input.Tiles.Tiles[x][y]
 		}
 	}
 	// update the input
 	input.Tiles.TilesWide, input.Tiles.TilesHigh = dstWidth, dstHeight
-	input.Tiles.TileRows = dst
+	input.Tiles.Tiles = dst
 	fmt.Printf("input: %4d x %4d\n", input.Tiles.TilesWide, input.Tiles.TilesHigh)
 
 	// Write to the output file

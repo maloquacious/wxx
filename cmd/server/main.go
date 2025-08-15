@@ -202,7 +202,7 @@ func handlePing(w http.ResponseWriter, r *http.Request) {
 }
 
 func generateHexGridSVG(m *wxx.Map_t) string {
-	if m.Tiles == nil || len(m.Tiles.TileRows) == 0 {
+	if m.Tiles == nil || len(m.Tiles.Tiles) == 0 {
 		return `<svg><text x="10" y="20">No tiles available</text></svg>`
 	}
 
@@ -236,8 +236,8 @@ func generateHexGridSVG(m *wxx.Map_t) string {
 	isFlat := m.GridOrientation == hexg.EvenQ || m.GridOrientation == hexg.OddQ
 
 	// Draw hexes
-	for row := 0; row < maxRows && row < len(m.Tiles.TileRows); row++ {
-		tileRow := m.Tiles.TileRows[row]
+	for row := 0; row < maxRows && row < len(m.Tiles.Tiles); row++ {
+		tileRow := m.Tiles.Tiles[row]
 		for col := 0; col < maxCols && col < len(tileRow); col++ {
 			if tile := tileRow[col]; tile != nil {
 				hexPoints := generateHexPath(row, col, hexWidth, hexHeight, isFlat, padding)

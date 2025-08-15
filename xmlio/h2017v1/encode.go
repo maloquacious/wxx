@@ -184,7 +184,7 @@ func encodeTiles(tiles *wxx.Tiles_t, hexOrientation string, wb *bytes.Buffer) er
 	wb.WriteString(fmt.Sprintf(">\n"))
 
 	// generate the tile-row elements:
-	// * each tilerow will have a tile.tilesHigh lines of tab delimited data
+	// * each tile-row will have a tile.tilesHigh lines of tab delimited data
 	// * each line of data has the following values: Terrain type, elevation, is it icy, is it GM only, and its resources
 	// * terrainType is an index into the terrainmap element
 	// * resources are Animals, Brick, Crops, Gems, Lumber, Metals, and Rock, in that order, but are "compressed"
@@ -192,7 +192,7 @@ func encodeTiles(tiles *wxx.Tiles_t, hexOrientation string, wb *bytes.Buffer) er
 		for x := 0; x < tiles.TilesWide; x++ {
 			wb.WriteString("<tilerow>\n")
 			for y := 0; y < tiles.TilesHigh; y++ {
-				tile := tiles.TileRows[x][y]
+				tile := tiles.Tiles[x][y]
 				if err := encodeTile(tile, wb); err != nil {
 					return err
 				}

@@ -149,8 +149,8 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 		w.ColumnsWide = w.Tiles.TilesHigh
 	}
 	for _, tilerow := range m.Tiles.TileRows {
-		x, y := len(w.Tiles.TileRows), 0
-		w.Tiles.TileRows = append(w.Tiles.TileRows, make([]*wxx.Tile_t, w.Tiles.TilesHigh))
+		x, y := len(w.Tiles.Tiles), 0
+		w.Tiles.Tiles = append(w.Tiles.Tiles, make([]*wxx.Tile_t, w.Tiles.TilesHigh))
 		for _, line := range strings.Split(tilerow.InnerText, "\n") {
 			if len(line) == 0 { // ignore blank lines
 				continue
@@ -161,7 +161,7 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 			} else if w.GridOrientation == hexg.OddR {
 				t.Coords = hexg.NewOddRCoord(y, x).ToCube()
 			}
-			w.Tiles.TileRows[x][y] = t
+			w.Tiles.Tiles[x][y] = t
 			y++
 			// values are TerrainMapIndex Elevation IsIcy IsGMOnly Animals (Z|(Brick Crops Gems Lumber Metals Rock)) RGBA?
 			values := strings.Split(line, "\t")
