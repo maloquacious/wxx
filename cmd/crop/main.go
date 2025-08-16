@@ -64,8 +64,7 @@ func main() {
 		os.Exit(2)
 	}
 	defer fp.Close()
-	joy := xmlio.NewDecoder()
-	input, err := joy.Decode(fp)
+	input, err := xmlio.NewDecoder().Decode(fp)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "error reading %s: %v\n", inputFile, err)
 		os.Exit(2)
