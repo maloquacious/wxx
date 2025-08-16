@@ -148,7 +148,7 @@ func main() {
 			outputMap = inputMap
 			continue
 		}
-		// merge only non-blank tiles
+		// merge terrain
 		for col := 0; col < inputMap.Tiles.TilesWide; col++ {
 			inputColumn := inputMap.Tiles.Tiles[col]
 			outputColumn := outputMap.Tiles.Tiles[col]
@@ -172,6 +172,14 @@ func main() {
 				outputTile.Resources = inputTile.Resources
 				outputTile.CustomBackgroundColor = inputTile.CustomBackgroundColor
 			}
+		}
+		// merge features
+		for _, feature := range inputMap.Features {
+			outputMap.Features = append(outputMap.Features, feature)
+		}
+		// merge labels
+		for _, label := range inputMap.Labels {
+			outputMap.Labels = append(outputMap.Labels, label)
 		}
 	}
 	if outputMap == nil {
