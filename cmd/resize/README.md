@@ -17,6 +17,7 @@ resize -input file.wxx -output newfile.wxx [options]
 - `-bottom int` - Number of rows to add to bottom (negative to crop)
 - `-left int` - Number of columns to add to left (negative to crop)
 - `-right int` - Number of columns to add to right (negative to crop)
+- `-zoom int` - Zoom level in output file (default 1)
 - `-debug-sizing` - Show sizing and orientation information
 - `-version` - Show version
 - `-build-info` - Show version with build info
