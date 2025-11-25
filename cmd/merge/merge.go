@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael D Henderson. All rights reserved.
 
 // Package main implements a simple merge command.
-// Needs much work to be useable.
+// Needs much work to be usable.
 package main
 
 import (

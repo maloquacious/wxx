@@ -25,10 +25,10 @@ func (h CubeCoord) ToEvenQ() EvenQCoord {
 	return EvenQCoord{col: col, row: row}
 }
 
-func (h CubeCoord) ToOddQ() EvenQCoord {
+func (h CubeCoord) ToOddQ() OddQCoord {
 	parity := h.q & 1
 	col, row := h.q, h.r+((h.q+ODD*parity)/2)
-	return EvenQCoord{col: col, row: row}
+	return OddQCoord{col: col, row: row}
 }
 
 func qoffset_to_cube(offset int, h OffsetCoord) CubeCoord {
