@@ -1,9 +1,9 @@
 # Project Structure
 
+```
 wxx/
 ├── xmlio/                    # packages for decoding and encoding XML data
 │   ├── h2017v1/              # schema-specific decoders and encoders
-│   ├── h2025v1/              # schema-specific decoders and encoders
 │   └── h2025v1/              # schema-specific decoders and encoders
 └── cmd/
     ├── copy/                 # tool to copy a Worldographer file
@@ -15,4 +15,4 @@ wxx/
     ├── version/              # tool to show package version
     │   └── main.go
     └── ...                   # commands that operate on Map
-
+```

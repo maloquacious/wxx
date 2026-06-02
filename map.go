@@ -9,8 +9,6 @@ import (
 	"github.com/maloquacious/wxx/hexg"
 )
 
-// Map_t is the better type
-
 // Map_t is the in-memory representation of the map data.
 // We have created this to work with the known versions of Worldographer XML data.
 // We are assuming that this will continue to work with future versions of the application.
@@ -22,41 +20,43 @@ type Map_t struct {
 		Worldographer struct {
 			Name    string    `json:"name"`    // name of input
 			Created time.Time `json:"created"` // timestamp of input
-			Release string    `json:"release"` // Worldographer release (eg, 2025)
-			Version string    `json:"version"` // Worldographer/Hexographer version (eg 1.73)
-			Schema  string    `json:"schema"`  // Worldographer XML Schema version
+			Release string    `json:"release"` // Worldographer release (e.g., 2025)
+			Version string    `json:"version"` // Worldographer/Hexographer version (e.g. 2.06)
+			Schema  string    `json:"schema"`  // Worldographer XML Schema version (e.g. 1.10)
 		} `json:"worldographer"`
 		Created string `json:"created"` // timestamp of this file
 	} `json:"meta-data"`
 
 	// attributes
-	Type                      string             `json:"type,omitempty"`                      // "WORLD"
-	Version                   string             `json:"version,omitempty"`                   // "1.73"
-	LastViewLevel             string             `json:"lastViewLevel,omitempty"`             // "WORLD"
-	ContinentFactor           int                `json:"continentFactor,omitempty"`           // "-1"
-	KingdomFactor             int                `json:"kingdomFactor,omitempty"`             // "-1"
-	ProvinceFactor            int                `json:"provinceFactor,omitempty"`            // "-1"
-	WorldToContinentHOffset   float64            `json:"worldToContinentHOffset,omitempty"`   // "0.0"
-	ContinentToKingdomHOffset float64            `json:"continentToKingdomHOffset,omitempty"` // "0.0"
-	KingdomToProvinceHOffset  float64            `json:"kingdomToProvinceHOffset,omitempty"`  // "0.0"
-	WorldToContinentVOffset   float64            `json:"worldToContinentVOffset,omitempty"`   // "0.0"
-	ContinentToKingdomVOffset float64            `json:"continentToKingdomVOffset,omitempty"` // "0.0"
-	KingdomToProvinceVOffset  float64            `json:"kingdomToProvinceVOffset,omitempty"`  // "0.0"
-	HexWidth                  float64            `json:"hexWidth,omitempty"`                  // "120.97791408032022"
-	HexHeight                 float64            `json:"hexHeight,omitempty"`                 // "104.78814558711076"
-	GridOrientation           hexg.Orientation_e `json:"gridOrientation,omitempty"`           // orientation for hexg package
-	HexOrientation            string             `json:"hexOrientation,omitempty"`            // "COLUMNS"
-	RowsHigh                  int                `json:"rowsHigh,omitempty"`                  // number of rows (derived from TilesHigh based on orientation)
-	ColumnsWide               int                `json:"columnsWide,omitempty"`               // number of columns (derived from TilesWide based on orientation)
-	MapProjection             Projection_e       `json:"mapProjection,omitempty"`             // "FLAT"
-	ShowNotes                 bool               `json:"showNotes,omitempty"`                 // "true"
-	ShowGMOnly                bool               `json:"showGMOnly,omitempty"`                // "false"
-	ShowGMOnlyGlow            bool               `json:"showGMOnlyGlow,omitempty"`            // "false"
-	ShowFeatureLabels         bool               `json:"showFeatureLabels,omitempty"`         // "true"
-	ShowGrid                  bool               `json:"showGrid,omitempty"`                  // "true"
-	ShowGridNumbers           bool               `json:"showGridNumbers,omitempty"`           // "false"
-	ShowShadows               bool               `json:"showShadows,omitempty"`               // "true"
-	TriangleSize              int                `json:"triangleSize,omitempty"`              // "12"
+	Type                      string             `json:"type,omitempty"`
+	Release                   string             `json:"release,omitempty"`
+	Version                   string             `json:"version,omitempty"`
+	Schema                    string             `json:"schema,omitempty"`
+	LastViewLevel             string             `json:"lastViewLevel,omitempty"`
+	ContinentFactor           int                `json:"continentFactor,omitempty"`
+	KingdomFactor             int                `json:"kingdomFactor,omitempty"`
+	ProvinceFactor            int                `json:"provinceFactor,omitempty"`
+	WorldToContinentHOffset   float64            `json:"worldToContinentHOffset,omitempty"`
+	ContinentToKingdomHOffset float64            `json:"continentToKingdomHOffset,omitempty"`
+	KingdomToProvinceHOffset  float64            `json:"kingdomToProvinceHOffset,omitempty"`
+	WorldToContinentVOffset   float64            `json:"worldToContinentVOffset,omitempty"`
+	ContinentToKingdomVOffset float64            `json:"continentToKingdomVOffset,omitempty"`
+	KingdomToProvinceVOffset  float64            `json:"kingdomToProvinceVOffset,omitempty"`
+	HexWidth                  float64            `json:"hexWidth,omitempty"`
+	HexHeight                 float64            `json:"hexHeight,omitempty"`
+	GridOrientation           hexg.Orientation_e `json:"gridOrientation,omitempty"` // orientation for hexg package
+	HexOrientation            string             `json:"hexOrientation,omitempty"`  // "COLUMNS" or ??
+	RowsHigh                  int                `json:"rowsHigh,omitempty"`        // number of rows (derived from TilesHigh based on orientation)
+	ColumnsWide               int                `json:"columnsWide,omitempty"`     // number of columns (derived from TilesWide based on orientation)
+	MapProjection             Projection_e       `json:"mapProjection,omitempty"`
+	ShowNotes                 bool               `json:"showNotes,omitempty"`
+	ShowGMOnly                bool               `json:"showGMOnly,omitempty"`
+	ShowGMOnlyGlow            bool               `json:"showGMOnlyGlow,omitempty"`
+	ShowFeatureLabels         bool               `json:"showFeatureLabels,omitempty"`
+	ShowGrid                  bool               `json:"showGrid,omitempty"`
+	ShowGridNumbers           bool               `json:"showGridNumbers,omitempty"`
+	ShowShadows               bool               `json:"showShadows,omitempty"`
+	TriangleSize              int                `json:"triangleSize,omitempty"`
 
 	// elements
 	GridAndNumbering *GridAndNumbering_t `json:"gridAndNumbering,omitempty"`
@@ -132,37 +132,37 @@ type FeatureLocation_t struct {
 }
 
 type GridAndNumbering_t struct {
-	Color0                      string  `json:"color0,omitempty"`                      // "0x00000040"
-	Color1                      string  `json:"color1,omitempty"`                      // "0x00000040"
-	Color2                      string  `json:"color2,omitempty"`                      // "0x00000040"
-	Color3                      string  `json:"color3,omitempty"`                      // "0x00000040"
-	Color4                      string  `json:"color4,omitempty"`                      // "0x00000040"
-	Width0                      float64 `json:"width0,omitempty"`                      // "1.0"
-	Width1                      float64 `json:"width1,omitempty"`                      // "2.0"
-	Width2                      float64 `json:"width2,omitempty"`                      // "3.0"
-	Width3                      float64 `json:"width3,omitempty"`                      // "4.0"
-	Width4                      float64 `json:"width4,omitempty"`                      // "1.0"
-	GridOffsetContinentKingdomX float64 `json:"gridOffsetContinentKingdomX,omitempty"` // "0.0"
-	GridOffsetContinentKingdomY float64 `json:"gridOffsetContinentKingdomY,omitempty"` // "0.0"
-	GridOffsetWorldContinentX   float64 `json:"gridOffsetWorldContinentX,omitempty"`   // "0.0"
-	GridOffsetWorldContinentY   float64 `json:"gridOffsetWorldContinentY,omitempty"`   // "0.0"
-	GridOffsetWorldKingdomX     float64 `json:"gridOffsetWorldKingdomX,omitempty"`     // "0.0"
-	GridOffsetWorldKingdomY     float64 `json:"gridOffsetWorldKingdomY,omitempty"`     // "0.0"
-	GridSquare                  int     `json:"gridSquare,omitempty"`                  // "0"
-	GridSquareHeight            float64 `json:"gridSquareHeight,omitempty"`            // "-1.0"
-	GridSquareWidth             float64 `json:"gridSquareWidth,omitempty"`             // "-1.0"
-	GridOffsetX                 float64 `json:"gridOffsetX,omitempty"`                 // "0.0"
-	GridOffsetY                 float64 `json:"gridOffsetY,omitempty"`                 // "0.0"
-	NumberFont                  string  `json:"numberFont,omitempty"`                  // "Arial"
-	NumberColor                 string  `json:"numberColor,omitempty"`                 // "0x000000ff"
-	NumberSize                  int     `json:"numberSize,omitempty"`                  // "20"
-	NumberStyle                 string  `json:"numberStyle,omitempty"`                 // "PLAIN"
-	NumberFirstCol              int     `json:"numberFirstCol,omitempty"`              // "0"
-	NumberFirstRow              int     `json:"numberFirstRow,omitempty"`              // "0"
-	NumberOrder                 string  `json:"numberOrder,omitempty"`                 // "COL_ROW"
-	NumberPosition              string  `json:"numberPosition,omitempty"`              // "BOTTOM"
-	NumberPrePad                string  `json:"numberPrePad,omitempty"`                // "DOUBLE_ZERO"
-	NumberSeparator             string  `json:"numberSeparator,omitempty"`             // "."
+	Color0                      string  `json:"color0,omitempty"` // hex - "0x00000040"
+	Color1                      string  `json:"color1,omitempty"` // hex - "0x00000040"
+	Color2                      string  `json:"color2,omitempty"` // hex - "0x00000040"
+	Color3                      string  `json:"color3,omitempty"` // hex - "0x00000040"
+	Color4                      string  `json:"color4,omitempty"` // hex - "0x00000040"
+	Width0                      float64 `json:"width0,omitempty"`
+	Width1                      float64 `json:"width1,omitempty"`
+	Width2                      float64 `json:"width2,omitempty"`
+	Width3                      float64 `json:"width3,omitempty"`
+	Width4                      float64 `json:"width4,omitempty"`
+	GridOffsetContinentKingdomX float64 `json:"gridOffsetContinentKingdomX,omitempty"`
+	GridOffsetContinentKingdomY float64 `json:"gridOffsetContinentKingdomY,omitempty"`
+	GridOffsetWorldContinentX   float64 `json:"gridOffsetWorldContinentX,omitempty"`
+	GridOffsetWorldContinentY   float64 `json:"gridOffsetWorldContinentY,omitempty"`
+	GridOffsetWorldKingdomX     float64 `json:"gridOffsetWorldKingdomX,omitempty"`
+	GridOffsetWorldKingdomY     float64 `json:"gridOffsetWorldKingdomY,omitempty"`
+	GridSquare                  int     `json:"gridSquare,omitempty"`
+	GridSquareHeight            float64 `json:"gridSquareHeight,omitempty"` // "-1.0" is special?
+	GridSquareWidth             float64 `json:"gridSquareWidth,omitempty"`  // "-1.0" is special?
+	GridOffsetX                 float64 `json:"gridOffsetX,omitempty"`
+	GridOffsetY                 float64 `json:"gridOffsetY,omitempty"`
+	NumberFont                  string  `json:"numberFont,omitempty"`
+	NumberColor                 string  `json:"numberColor,omitempty"` // hex - "0x000000ff"
+	NumberSize                  int     `json:"numberSize,omitempty"`
+	NumberStyle                 string  `json:"numberStyle,omitempty"`     // "PLAIN" or ??
+	NumberFirstCol              int     `json:"numberFirstCol,omitempty"`  // "0"
+	NumberFirstRow              int     `json:"numberFirstRow,omitempty"`  // "0"
+	NumberOrder                 string  `json:"numberOrder,omitempty"`     // "COL_ROW" or ??
+	NumberPosition              string  `json:"numberPosition,omitempty"`  // "BOTTOM" or ??
+	NumberPrePad                string  `json:"numberPrePad,omitempty"`    // "DOUBLE_ZERO" or ??
+	NumberSeparator             string  `json:"numberSeparator,omitempty"` // "." or free text?
 }
 
 type Information_t struct {
