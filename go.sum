@@ -1,5 +1,5 @@
-github.com/maloquacious/semver v0.4.0 h1:TfCwmQ2J56BsWK9a1zoG3RcIiokYPe1J71hu3KcZhUI=
-github.com/maloquacious/semver v0.4.0/go.mod h1:0VQ90ipG1SLXCDcQo1bgYTBIpvXsEiNOnEF5Bs/HRYY=
+github.com/maloquacious/semver v0.4.1 h1:qwMBcA9VfkD1KsPIMcX7KW9/rnBpBQBbTTcZhlgOIgc=
+github.com/maloquacious/semver v0.4.1/go.mod h1:0VQ90ipG1SLXCDcQo1bgYTBIpvXsEiNOnEF5Bs/HRYY=
 github.com/pelletier/go-toml/v2 v2.0.9 h1:uH2qQXheeefCCkuBBSLi7jCiSmj3VRh2+Goq2N7Xxu0=
 github.com/pelletier/go-toml/v2 v2.0.9/go.mod h1:tJU2Z3ZkXwnxa4DPO899bsyIoywizdUvyaeZurnPPDc=
 github.com/peterbourgon/ff/v4 v4.0.0-beta.1 h1:hV8qRu3V7YfiSMsBSfPfdcznAvPQd3jI5zDddSrDoUc=
