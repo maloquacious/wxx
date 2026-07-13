@@ -8,6 +8,7 @@ import (
 	"compress/gzip"
 	"encoding/xml"
 	"errors"
+	"flag"
 	"fmt"
 	"github.com/maloquacious/wxx"
 	"golang.org/x/text/encoding/unicode"
@@ -25,10 +26,10 @@ import (
 func main() {
 	fmt.Printf("wxx: version %q\n", wxx.Version())
 
-	for n, arg := range os.Args {
-		if n == 0 {
-			continue
-		}
+	emitSQL := flag.Bool("sql", false, "emit CREATE TABLE statements for the inferred schema")
+	flag.Parse()
+
+	for _, arg := range flag.Args() {
 		fmt.Printf("%s\n", arg)
 		if !strings.HasSuffix(arg, ".wxx") {
 			fmt.Printf("\tnot a '.wxx' file\n")
@@ -128,7 +129,10 @@ func main() {
 			log.Fatal(err)
 		}
 
-		//generateSQL(root, os.Stdout)
+		if *emitSQL {
+			fmt.Printf("\nSQL Schema\n")
+			generateSQL(root, os.Stdout)
+		}
 
 		fmt.Printf("\nXML Hierarchy\n")
 		generateHierarchy(root, 1, os.Stdout)
@@ -237,7 +241,7 @@ func generateSQL(root *Element, w io.Writer) {
 			_, _ = fmt.Fprintf(w, "  %-42s TEXT,\n", attr)
 		}
 		_, _ = fmt.Fprint(w, "  parent_id INTEGER\n")
-		_, _ = fmt.Fprintln(w, ");\n")
+		_, _ = fmt.Fprintln(w, ");")
 
 		// Recursively process children
 		generateSQL(child, w)

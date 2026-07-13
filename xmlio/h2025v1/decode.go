@@ -33,25 +33,25 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	} else if m.Schema == "" {
 		return nil, fmt.Errorf("missing map.Schema")
 	}
-	knownSchema := false
+	var dataVersion semver.Version
 	switch m.Release {
 	case "2025":
 		switch m.Version {
 		case "2.06":
 			switch m.Schema {
-			case "1.10":
-				knownSchema = true
+			case "1.06":
+				dataVersion = semver.Version{Major: 2025, Minor: 1, Patch: 6}
 			}
 		}
 	}
-	if !knownSchema {
+	if dataVersion.Major == 0 {
 		return nil, fmt.Errorf("%s/%s/%s: unknown schema", m.Release, m.Version, m.Schema)
 	}
 
 	// process source into a WXX structure and return it or any errors
 	w := &wxx.Map_t{}
 	w.MetaData.AppVersion = wxx.Version()
-	w.MetaData.DataVersion = semver.Version{Major: 2025, Minor: 1}
+	w.MetaData.DataVersion = dataVersion
 	w.MetaData.Created = time.Now().UTC().Format(time.RFC3339)
 	w.MetaData.Worldographer.Name = "unknown"
 	w.MetaData.Worldographer.Release = m.Release

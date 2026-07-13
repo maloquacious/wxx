@@ -7,4 +7,4 @@ require (
 	golang.org/x/text v0.27.0
 )
 
-require github.com/peterbourgon/ff/v4 v4.0.0-beta.1 // indirect
+require github.com/peterbourgon/ff/v4 v4.0.0-beta.1

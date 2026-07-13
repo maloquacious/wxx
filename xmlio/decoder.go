@@ -244,7 +244,7 @@ func (d *Decoder) Decode(r io.Reader) (*wxx.Map_t, error) {
 		}
 	}
 
-	return nil, errors.Join(wxx.ErrUnsupportedMapMetadata, fmt.Errorf("map: release %q: schema %q: version %q", xmlMetaData.Release, xmlMetaData.Schema, xmlMetaData.Version))
+	return nil, errors.Join(wxx.ErrUnsupportedMapMetadata, fmt.Errorf("map: release %q: version %q: schema %q", xmlMetaData.Release, xmlMetaData.Version, xmlMetaData.Schema))
 }
 
 // bdup returns a copy of the source
