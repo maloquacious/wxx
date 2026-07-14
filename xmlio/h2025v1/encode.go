@@ -412,26 +412,55 @@ func encodeShapes(shapes []*wxx.Shape_t, wb *bytes.Buffer) error {
 }
 
 func encodeShape(shape *wxx.Shape_t, wb *bytes.Buffer) error {
-	//<shape
-	//    type="Arc"
-	//    creationType="BASIC"
-	//    isWorld="true" isContinent="true" isKingdom="true" isProvince="true"
-	//    dsOffsetX="0.0" dsOffsetY="0.0" dsRadius="50.0" dsSpread="0.2" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0"
-	//    insOffsetX="0.0" insOffsetY="0.0" insRadius="50.0" insChoke="0.2" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0"
-	//    bbWidth="10.0" bbHeight="10.0" bbIterations="3"
-	//    mapLayer="Above Terrain"
-	//    strokeType="SIMPLE"
-	//    highestViewLevel="WORLD"
-	//    currentShapeViewLevel="WORLD"
-	//    lineCap="SQUARE" lineJoin="ROUND"
-	//    opacity="1.0"
-	//    strokeColor="1.0,0.0,0.0,1.0" strokeWidth="0.05"
-	//    length="360.0"
-	//    startAngle="0.0"
-	//    arcType="OPEN" >
-	// <p x="148" y="149"/>
-	// <p x="267" y="286"/>
-	//</shape>
+	wb.WriteString("<shape")
+	wb.WriteString(fmt.Sprintf(" type=%q", shape.Type))
+	wb.WriteString(fmt.Sprintf(" creationType=%q", shape.CreationType))
+	wb.WriteString(fmt.Sprintf(" isWorld=%q", bools(shape.IsWorld)))
+	wb.WriteString(fmt.Sprintf(" isContinent=%q", bools(shape.IsContinent)))
+	wb.WriteString(fmt.Sprintf(" isKingdom=%q", bools(shape.IsKingdom)))
+	wb.WriteString(fmt.Sprintf(" isProvince=%q", bools(shape.IsProvince)))
+	wb.WriteString(fmt.Sprintf(" isGMOnly=%q", bools(shape.IsGMOnly)))
+	wb.WriteString(fmt.Sprintf(" isCurve=%q", bools(shape.IsCurve)))
+	wb.WriteString(fmt.Sprintf(" isSnapVertices=%q", bools(shape.IsSnapVertices)))
+	wb.WriteString(fmt.Sprintf(" isMatchTileBorders=%q", bools(shape.IsMatchTileBorders)))
+	wb.WriteString(fmt.Sprintf(" isBoxBlur=%q", bools(shape.IsBoxBlur)))
+	wb.WriteString(fmt.Sprintf(" isDropShadow=%q", bools(shape.IsDropShadow)))
+	wb.WriteString(fmt.Sprintf(" isInnerShadow=%q", bools(shape.IsInnerShadow)))
+	wb.WriteString(fmt.Sprintf(" dsOffsetX=%q", floats(shape.DsOffsetX)))
+	wb.WriteString(fmt.Sprintf(" dsOffsetY=%q", floats(shape.DsOffsetY)))
+	wb.WriteString(fmt.Sprintf(" dsRadius=%q", floats(shape.DsRadius)))
+	wb.WriteString(fmt.Sprintf(" dsSpread=%q", floats(shape.DsSpread)))
+	wb.WriteString(fmt.Sprintf(" dsColor=%q", shape.DsColor))
+	wb.WriteString(fmt.Sprintf(" insOffsetX=%q", floats(shape.InsOffsetX)))
+	wb.WriteString(fmt.Sprintf(" insOffsetY=%q", floats(shape.InsOffsetY)))
+	wb.WriteString(fmt.Sprintf(" insRadius=%q", floats(shape.InsRadius)))
+	wb.WriteString(fmt.Sprintf(" insChoke=%q", floats(shape.InsChoke)))
+	wb.WriteString(fmt.Sprintf(" insColor=%q", shape.InsColor))
+	wb.WriteString(fmt.Sprintf(" bbWidth=%q", floats(shape.BbWidth)))
+	wb.WriteString(fmt.Sprintf(" bbHeight=%q", floats(shape.BbHeight)))
+	wb.WriteString(fmt.Sprintf(" bbIterations=%q", ints(shape.BbIterations)))
+	wb.WriteString(fmt.Sprintf(" mapLayer=%q", shape.MapLayer))
+	wb.WriteString(fmt.Sprintf(" fillRule=%q", shape.FillRule))
+	wb.WriteString(fmt.Sprintf(" fillTexture=%q", shape.FillTexture))
+	wb.WriteString(fmt.Sprintf(" strokeTexture=%q", shape.StrokeTexture))
+	wb.WriteString(fmt.Sprintf(" strokeType=%q", shape.StrokeType))
+	wb.WriteString(fmt.Sprintf(" highestViewLevel=%q", shape.HighestViewLevel))
+	wb.WriteString(fmt.Sprintf(" currentShapeViewLevel=%q", shape.CurrentShapeViewLevel))
+	wb.WriteString(fmt.Sprintf(" lineCap=%q", shape.LineCap))
+	wb.WriteString(fmt.Sprintf(" lineJoin=%q", shape.LineJoin))
+	wb.WriteString(fmt.Sprintf(" opacity=%q", floats(shape.Opacity)))
+	wb.WriteString(fmt.Sprintf(" strokeColor=%q", shape.StrokeColor))
+	wb.WriteString(fmt.Sprintf(" strokeWidth=%q", floats(shape.StrokeWidth)))
+	wb.WriteString(fmt.Sprintf(" tags=%q", shape.Tags))
+	wb.WriteString(">\n")
+	for _, p := range shape.Points {
+		wb.WriteString("<p")
+		wb.WriteString(fmt.Sprintf(" type=%q", p.Type))
+		wb.WriteString(fmt.Sprintf(" x=%q", floats(p.X)))
+		wb.WriteString(fmt.Sprintf(" y=%q", floats(p.Y)))
+		wb.WriteString("/>\n")
+	}
+	wb.WriteString("</shape>\n")
 	return nil
 }
 
@@ -447,16 +476,22 @@ func encodeNotes(notes []*wxx.Note_t, wb *bytes.Buffer) error {
 }
 
 func encodeNote(note *wxx.Note_t, wb *bytes.Buffer) error {
-	///*
-	//	<note key="WORLD,2343.75,3112.5" viewLevel="WORLD" x="2343.75" y="3112.5" filename="" parent="dde12f75-dcc9-4cb7-a96d-f18011601143" color="1.0,1.0,0.0,1.0" title="Units (Notes Title)">
-	//	<notetext><![CDATA[<html dir="ltr"><head></head><body contenteditable="true">Paragraph (Notes Paragraph)</body></html>]]></notetext></note>
-	//*/
-	//	printf(`<note key="WORLD,%f,%f" viewLevel="WORLD" x="%f" y="%f" filename="" parent=%q color="1.0,1.0,0.0,1.0" title=%q>`, note.Origin.X, note.Origin.Y, note.Origin.X, note.Origin.Y, note.Id, note.Title)
-	//	printf(`<notetext><![CDATA[<html dir="ltr"><head></head><body contenteditable="true">`)
-	//	for _, line := range note.Text {
-	//		printf(`%s<br/>`, line)
-	//	}
-	//	printfnl(`</body></html>]]></notetext></note>`)
+	wb.WriteString("<note")
+	wb.WriteString(fmt.Sprintf(" key=%q", note.Key))
+	wb.WriteString(fmt.Sprintf(" viewLevel=%q", note.ViewLevel))
+	wb.WriteString(fmt.Sprintf(" x=%q", floats(note.X)))
+	wb.WriteString(fmt.Sprintf(" y=%q", floats(note.Y)))
+	wb.WriteString(fmt.Sprintf(" filename=%q", note.Filename))
+	wb.WriteString(fmt.Sprintf(" parent=%q", note.Parent))
+	wb.WriteString(fmt.Sprintf(" color=%q", rgbans(note.Color))) // decodeRgba
+	wb.WriteString(fmt.Sprintf(" title=%q", note.Title))
+	wb.WriteString(fmt.Sprintf(" isGMOnly=%q", bools(note.IsGMOnly)))
+	wb.WriteString(">")
+	// notetext is CDATA HTML; emit it verbatim so the round-trip preserves it.
+	wb.WriteString("<notetext><![CDATA[")
+	wb.WriteString(note.NoteText)
+	wb.WriteString("]]></notetext>")
+	wb.WriteString("</note>\n")
 	return nil
 }
 
@@ -543,18 +578,42 @@ func encodeConfiguration(configuration *wxx.Configuration_t, wb *bytes.Buffer) e
 	return nil
 }
 
+// encodeTerrainConfig intentionally emits an empty <terrain-config> wrapper and
+// ignores its argument. Real Worldographer 2025 samples leave <terrain-config>
+// empty: the element carries only whitespace chardata and no child elements
+// (verified in issue #4, guarded by TestW2025ConfigSectionsEmpty). Dropping the
+// (empty) decoded content here is therefore lossless. If a future sample ever
+// populates this section, the fix is to switch the corresponding schema.go field
+// from `xml:",chardata"` to `xml:",innerxml"` and implement this encoder to emit
+// the preserved inner XML.
 func encodeTerrainConfig(terrainConfig []*wxx.TerrainConfig_t, wb *bytes.Buffer) error {
 	wb.WriteString("  <terrain-config>\n")
 	wb.WriteString("  </terrain-config>\n")
 	return nil
 }
 
+// encodeFeatureConfig intentionally emits an empty <feature-config> wrapper and
+// ignores its argument. Real Worldographer 2025 samples leave <feature-config>
+// empty: the element carries only whitespace chardata and no child elements
+// (verified in issue #4, guarded by TestW2025ConfigSectionsEmpty). Dropping the
+// (empty) decoded content here is therefore lossless. If a future sample ever
+// populates this section, the fix is to switch the corresponding schema.go field
+// from `xml:",chardata"` to `xml:",innerxml"` and implement this encoder to emit
+// the preserved inner XML.
 func encodeFeatureConfig(featureConfig []*wxx.FeatureConfig_t, wb *bytes.Buffer) error {
 	wb.WriteString("  <feature-config>\n")
 	wb.WriteString("  </feature-config>\n")
 	return nil
 }
 
+// encodeTextureConfig intentionally emits an empty <texture-config> wrapper and
+// ignores its argument. Real Worldographer 2025 samples leave <texture-config>
+// empty: the element carries only whitespace chardata and no child elements
+// (verified in issue #4, guarded by TestW2025ConfigSectionsEmpty). Dropping the
+// (empty) decoded content here is therefore lossless. If a future sample ever
+// populates this section, the fix is to switch the corresponding schema.go field
+// from `xml:",chardata"` to `xml:",innerxml"` and implement this encoder to emit
+// the preserved inner XML.
 func encodeTextureConfig(textureConfig []*wxx.TextureConfig_t, wb *bytes.Buffer) error {
 	wb.WriteString("  <texture-config>\n")
 	wb.WriteString("  </texture-config>\n")
