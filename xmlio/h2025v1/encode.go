@@ -447,16 +447,22 @@ func encodeNotes(notes []*wxx.Note_t, wb *bytes.Buffer) error {
 }
 
 func encodeNote(note *wxx.Note_t, wb *bytes.Buffer) error {
-	///*
-	//	<note key="WORLD,2343.75,3112.5" viewLevel="WORLD" x="2343.75" y="3112.5" filename="" parent="dde12f75-dcc9-4cb7-a96d-f18011601143" color="1.0,1.0,0.0,1.0" title="Units (Notes Title)">
-	//	<notetext><![CDATA[<html dir="ltr"><head></head><body contenteditable="true">Paragraph (Notes Paragraph)</body></html>]]></notetext></note>
-	//*/
-	//	printf(`<note key="WORLD,%f,%f" viewLevel="WORLD" x="%f" y="%f" filename="" parent=%q color="1.0,1.0,0.0,1.0" title=%q>`, note.Origin.X, note.Origin.Y, note.Origin.X, note.Origin.Y, note.Id, note.Title)
-	//	printf(`<notetext><![CDATA[<html dir="ltr"><head></head><body contenteditable="true">`)
-	//	for _, line := range note.Text {
-	//		printf(`%s<br/>`, line)
-	//	}
-	//	printfnl(`</body></html>]]></notetext></note>`)
+	wb.WriteString("<note")
+	wb.WriteString(fmt.Sprintf(" key=%q", note.Key))
+	wb.WriteString(fmt.Sprintf(" viewLevel=%q", note.ViewLevel))
+	wb.WriteString(fmt.Sprintf(" x=%q", floats(note.X)))
+	wb.WriteString(fmt.Sprintf(" y=%q", floats(note.Y)))
+	wb.WriteString(fmt.Sprintf(" filename=%q", note.Filename))
+	wb.WriteString(fmt.Sprintf(" parent=%q", note.Parent))
+	wb.WriteString(fmt.Sprintf(" color=%q", rgbans(note.Color))) // decodeRgba
+	wb.WriteString(fmt.Sprintf(" title=%q", note.Title))
+	wb.WriteString(fmt.Sprintf(" isGMOnly=%q", bools(note.IsGMOnly)))
+	wb.WriteString(">")
+	// notetext is CDATA HTML; emit it verbatim so the round-trip preserves it.
+	wb.WriteString("<notetext><![CDATA[")
+	wb.WriteString(note.NoteText)
+	wb.WriteString("]]></notetext>")
+	wb.WriteString("</note>\n")
 	return nil
 }
 

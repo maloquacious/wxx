@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/maloquacious/wxx"
@@ -142,9 +143,30 @@ func TestW2025DecodePopulated(t *testing.T) {
 		t.Errorf("Shapes[0].Points[0] = (%v,%v), want (148,149)", got.X, got.Y)
 	}
 
-	// Notes: model has no fields yet (T3), so only the count is assertable.
+	// Notes: both fixture notes and their attributes/content must survive decode.
 	if got, want := len(m.Notes), 2; got != want {
-		t.Errorf("len(Notes) = %d, want %d", got, want)
+		t.Fatalf("len(Notes) = %d, want %d", got, want)
+	}
+	if got, want := m.Notes[0].Key, "WORLD,2343.75,3112.5"; got != want {
+		t.Errorf("Notes[0].Key = %q, want %q", got, want)
+	}
+	if got, want := m.Notes[0].Title, "Units"; got != want {
+		t.Errorf("Notes[0].Title = %q, want %q", got, want)
+	}
+	if got, want := "First note paragraph.", m.Notes[0].NoteText; !strings.Contains(m.Notes[0].NoteText, got) {
+		t.Errorf("Notes[0].NoteText = %q, want it to contain %q", want, got)
+	}
+	if got, want := m.Notes[1].Key, "WORLD,100.0,200.0"; got != want {
+		t.Errorf("Notes[1].Key = %q, want %q", got, want)
+	}
+	if got, want := m.Notes[1].Title, "Landmark"; got != want {
+		t.Errorf("Notes[1].Title = %q, want %q", got, want)
+	}
+	if !m.Notes[1].IsGMOnly {
+		t.Errorf("Notes[1].IsGMOnly = false, want true")
+	}
+	if !strings.Contains(m.Notes[1].NoteText, "Second note paragraph.") {
+		t.Errorf("Notes[1].NoteText = %q, want it to contain %q", m.Notes[1].NoteText, "Second note paragraph.")
 	}
 
 	// Features: fixture has exactly two, [0] labeled, [1] labelless.

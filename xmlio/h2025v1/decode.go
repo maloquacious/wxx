@@ -469,7 +469,18 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 
 	for _, note := range m.Notes.Notes {
 		wNote := &wxx.Note_t{
-			InnerText: note.InnerText,
+			Key:       note.Key,
+			ViewLevel: note.ViewLevel,
+			X:         note.X,
+			Y:         note.Y,
+			Filename:  note.Filename,
+			Parent:    note.Parent,
+			Title:     note.Title,
+			IsGMOnly:  note.IsGMOnly,
+			NoteText:  note.NoteText,
+		}
+		if wNote.Color, err = decodeRgba(note.Color); err != nil {
+			return w, fmt.Errorf("note.color: %w", err)
 		}
 		w.Notes = append(w.Notes, wNote)
 	}

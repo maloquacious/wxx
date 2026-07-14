@@ -257,8 +257,19 @@ type MapLayer_t struct {
 }
 
 type Note_t struct {
+	// attributes
+	Key       string  `xml:"key,attr"`
+	ViewLevel string  `xml:"viewLevel,attr"`
+	X         float64 `xml:"x,attr"`
+	Y         float64 `xml:"y,attr"`
+	Filename  string  `xml:"filename,attr"`
+	Parent    string  `xml:"parent,attr"`
+	Color     string  `xml:"color,attr"`
+	Title     string  `xml:"title,attr"`
+	IsGMOnly  bool    `xml:"isGMOnly,attr"`
+
 	// elements
-	InnerText string `xml:",chardata"`
+	NoteText string `xml:"notetext"`
 }
 
 type Notes_t struct {
