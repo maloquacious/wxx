@@ -578,18 +578,42 @@ func encodeConfiguration(configuration *wxx.Configuration_t, wb *bytes.Buffer) e
 	return nil
 }
 
+// encodeTerrainConfig intentionally emits an empty <terrain-config> wrapper and
+// ignores its argument. Real Worldographer 2025 samples leave <terrain-config>
+// empty: the element carries only whitespace chardata and no child elements
+// (verified in issue #4, guarded by TestW2025ConfigSectionsEmpty). Dropping the
+// (empty) decoded content here is therefore lossless. If a future sample ever
+// populates this section, the fix is to switch the corresponding schema.go field
+// from `xml:",chardata"` to `xml:",innerxml"` and implement this encoder to emit
+// the preserved inner XML.
 func encodeTerrainConfig(terrainConfig []*wxx.TerrainConfig_t, wb *bytes.Buffer) error {
 	wb.WriteString("  <terrain-config>\n")
 	wb.WriteString("  </terrain-config>\n")
 	return nil
 }
 
+// encodeFeatureConfig intentionally emits an empty <feature-config> wrapper and
+// ignores its argument. Real Worldographer 2025 samples leave <feature-config>
+// empty: the element carries only whitespace chardata and no child elements
+// (verified in issue #4, guarded by TestW2025ConfigSectionsEmpty). Dropping the
+// (empty) decoded content here is therefore lossless. If a future sample ever
+// populates this section, the fix is to switch the corresponding schema.go field
+// from `xml:",chardata"` to `xml:",innerxml"` and implement this encoder to emit
+// the preserved inner XML.
 func encodeFeatureConfig(featureConfig []*wxx.FeatureConfig_t, wb *bytes.Buffer) error {
 	wb.WriteString("  <feature-config>\n")
 	wb.WriteString("  </feature-config>\n")
 	return nil
 }
 
+// encodeTextureConfig intentionally emits an empty <texture-config> wrapper and
+// ignores its argument. Real Worldographer 2025 samples leave <texture-config>
+// empty: the element carries only whitespace chardata and no child elements
+// (verified in issue #4, guarded by TestW2025ConfigSectionsEmpty). Dropping the
+// (empty) decoded content here is therefore lossless. If a future sample ever
+// populates this section, the fix is to switch the corresponding schema.go field
+// from `xml:",chardata"` to `xml:",innerxml"` and implement this encoder to emit
+// the preserved inner XML.
 func encodeTextureConfig(textureConfig []*wxx.TextureConfig_t, wb *bytes.Buffer) error {
 	wb.WriteString("  <texture-config>\n")
 	wb.WriteString("  </texture-config>\n")
