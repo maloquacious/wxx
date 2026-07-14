@@ -102,7 +102,7 @@ func TestClassicEncodeDispatch(t *testing.T) {
 				t.Fatalf("DataVersion = %v, want %v", m.MetaData.DataVersion, tc.wantDV)
 			}
 			var buf bytes.Buffer
-			if err := xmlio.NewEncoder().Encode(&buf, m.MetaData.DataVersion, m); err != nil {
+			if err := xmlio.NewEncoder().Encode(&buf, m); err != nil {
 				t.Fatalf("public encode %s (DataVersion %v): %v", tc.path, m.MetaData.DataVersion, err)
 			}
 			if buf.Len() == 0 {

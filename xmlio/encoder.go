@@ -27,6 +27,7 @@ type encoderOpts struct {
 	compressedOutput bool
 	utf16BeOutput    bool
 	xmlHeader        bool
+	targetVersion    *semver.Version
 	diagnostics      *EncoderDiagnostics
 }
 
@@ -80,11 +81,27 @@ func WithXMLHeader(enabled bool) EncoderOption {
 	}
 }
 
-func (e *Encoder) Encode(w io.Writer, worldographerTargetVersion semver.Version, m *wxx.Map_t) error {
+// WithTargetVersion overrides the default target Worldographer version.
+// By default the encoder targets m.MetaData.DataVersion; use this option
+// to re-target/convert the map to a different Worldographer version.
+func WithTargetVersion(v semver.Version) EncoderOption {
+	return func(o *encoderOpts) {
+		o.targetVersion = &v
+	}
+}
+
+func (e *Encoder) Encode(w io.Writer, m *wxx.Map_t) error {
 	var err error
 
+	// default the target version to the map's DataVersion; callers may
+	// override it with WithTargetVersion to re-target/convert the map.
+	target := m.MetaData.DataVersion
+	if e.opts.targetVersion != nil {
+		target = *e.opts.targetVersion
+	}
+
 	// marshal the Map_t to UTF‑8 XML
-	data, err := MarshalXML(m, worldographerTargetVersion)
+	data, err := MarshalXML(m, target)
 	if err != nil {
 		return err
 	}
@@ -94,7 +111,7 @@ func (e *Encoder) Encode(w io.Writer, worldographerTargetVersion semver.Version,
 
 	if e.opts.xmlHeader {
 		var xmlHeader []byte
-		switch worldographerTargetVersion.Major {
+		switch target.Major {
 		case 2017:
 			xmlHeader = []byte("<?xml version='1.0' encoding='utf-16'?>\n")
 		case 2025:

@@ -89,7 +89,7 @@ func TestW2025PublicRoundTrip(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	if err := xmlio.NewEncoder().Encode(&buf, m1.MetaData.DataVersion, m1); err != nil {
+	if err := xmlio.NewEncoder().Encode(&buf, m1); err != nil {
 		t.Fatalf("public Encode: %v", err)
 	}
 
@@ -224,7 +224,7 @@ func TestW2025PopulatedPublicRoundTrip(t *testing.T) {
 	m1 := decodeFixture(t, populatedFixture)
 
 	var buf bytes.Buffer
-	if err := xmlio.NewEncoder().Encode(&buf, m1.MetaData.DataVersion, m1); err != nil {
+	if err := xmlio.NewEncoder().Encode(&buf, m1); err != nil {
 		t.Fatalf("public Encode: %v", err)
 	}
 

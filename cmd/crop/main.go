@@ -116,7 +116,7 @@ func main() {
 	}
 	encoder := xmlio.NewEncoder(encoderOptions...)
 	outputBuffer := &bytes.Buffer{}
-	err = encoder.Encode(outputBuffer, input.MetaData.DataVersion, input)
+	err = encoder.Encode(outputBuffer, input)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "error encoding %s: %v\n", outputFile, err)
 		os.Exit(1)
