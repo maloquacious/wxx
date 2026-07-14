@@ -186,6 +186,3 @@ func MarshalXML(m *wxx.Map_t, worldographerTargetVersion semver.Version) ([]byte
 	return nil, errors.Join(wxx.ErrUnsupportedSchemaVersion, fmt.Errorf("schema version: %s", worldographerTargetVersion.Short()))
 }
 
-func MarshalXMLBytes(m *wxx.Map_t) ([]byte, error) { // handy for tests
-	panic("example only")
-}
