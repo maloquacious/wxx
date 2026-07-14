@@ -47,6 +47,10 @@ follow-up (ADR 0002 supersedes the interim `{2017,1}` handling B4 introduced).
 
 The `wxx` package can be imported into other Go applications that need to work with Worldographer files.
 
+The root `wxx` package holds the data types (`wxx.Map_t` and friends); the
+file-level read/write helpers live in the `xmlio` package (`xmlio` imports
+`wxx`, so the helpers cannot live in `wxx` without an import cycle).
+
 ```go
 package main
 
@@ -54,16 +58,21 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/maloquacious/wxx"
+	"github.com/maloquacious/wxx/xmlio"
 )
 
 func main() {
-	world, err := wxx.ReadFile("world.wxx")
+	world, err := xmlio.ReadFile("world.wxx")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Println(world)
+
+	// Write it back out (defaults to the map's own DataVersion):
+	if err := xmlio.WriteFile("world.wxx", world); err != nil {
+		log.Fatal(err)
+	}
 }
 ```
 
