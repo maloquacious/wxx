@@ -42,19 +42,41 @@ type XMLSchema struct {
 	ShowGridNumbers           bool    `xml:"showGridNumbers,attr"`
 	ShowShadows               bool    `xml:"showShadows,attr"`
 	TriangleSize              int     `xml:"triangleSize,attr"`
+	HScrollbarPos             float64 `xml:"hScrollbarPos,attr"`
+	VScrollbarPos             float64 `xml:"vScrollbarPos,attr"`
 
 	// elements
 	GridAndNumbering GridAndNumbering `xml:"gridandnumbering"`
-	TerrainMap       TerrainMap_t     `xml:"terrainmap"`
-	MapLayers        []MapLayer_t     `xml:"maplayer"`
-	Tiles            Tiles_t          `xml:"tiles"`
-	MapKey           MapKey_t         `xml:"mapkey"`
-	Features         Features         `xml:"features"`
-	Labels           Labels_t         `xml:"labels"`
-	Shapes           Shapes_t         `xml:"shapes"`
-	Notes            Notes_t          `xml:"notes"`
-	Informations     Informations_t   `xml:"informations"`
-	Configuration    Configuration_t  `xml:"configuration"`
+	// BlurTerrainBG / ExtraTerrain are optional top-level elements; a pointer
+	// leaves them nil when the element is absent from the file.
+	BlurTerrainBG *BlurTerrainBG_t `xml:"blurTerrainBG"`
+	TerrainMap    TerrainMap_t     `xml:"terrainmap"`
+	MapLayers     []MapLayer_t     `xml:"maplayer"`
+	Tiles         Tiles_t          `xml:"tiles"`
+	MapKey        MapKey_t         `xml:"mapkey"`
+	Features      Features         `xml:"features"`
+	ExtraTerrain  *ExtraTerrain_t  `xml:"extraTerrain"`
+	Labels        Labels_t         `xml:"labels"`
+	Shapes        Shapes_t         `xml:"shapes"`
+	Notes         Notes_t          `xml:"notes"`
+	Informations  Informations_t   `xml:"informations"`
+	Configuration Configuration_t  `xml:"configuration"`
+}
+
+// BlurTerrainBG_t is the on-disk <blurTerrainBG> element (W2025-native).
+type BlurTerrainBG_t struct {
+	Blur        bool    `xml:"blur,attr"`
+	TopBleed    float64 `xml:"topBleed,attr"`
+	BottomBleed float64 `xml:"bottomBleed,attr"`
+	Randomness  float64 `xml:"randomness,attr"`
+	BlurStart   float64 `xml:"blurStart,attr"`
+	BlurEnd     float64 `xml:"blurEnd,attr"`
+}
+
+// ExtraTerrain_t is the on-disk <extraTerrain> element (W2025-native). It is an
+// empty container in observed samples; InnerXML preserves any inner content.
+type ExtraTerrain_t struct {
+	InnerXML string `xml:",innerxml"`
 }
 
 type Configuration_t struct {
@@ -213,6 +235,11 @@ type LabelStyle_t struct {
 	BackgroundColor string  `xml:"backgroundColor,attr"`
 	OutlineSize     float64 `xml:"outlineSize,attr"`
 	OutlineColor    string  `xml:"outlineColor,attr"`
+
+	// W2025 drop-shadow attributes. dropShadowColor can be the literal "null".
+	DropShadowColor  string  `xml:"dropShadowColor,attr"`
+	DropShadowRadius float64 `xml:"dropShadowRadius,attr"`
+	DropShadowSpread float64 `xml:"dropShadowSpread,attr"`
 }
 
 type Location_t struct {
@@ -252,8 +279,9 @@ type MapKey_t struct {
 
 type MapLayer_t struct {
 	// attributes
-	Name      string `xml:"name,attr"`
-	IsVisible bool   `xml:"isVisible,attr"`
+	Name      string  `xml:"name,attr"`
+	IsVisible bool    `xml:"isVisible,attr"`
+	Opacity   float64 `xml:"opacity,attr"`
 }
 
 type Note_t struct {
@@ -364,6 +392,10 @@ type ShapeStyle_t struct {
 	StrokeType    string  `xml:"strokeType,attr"`
 	StrokeWidth   float64 `xml:"strokeWidth,attr"`
 	Tags          string  `xml:"tags,attr"`
+
+	// W2025 line rendering attributes (already modeled on <shape>).
+	LineCap  string `xml:"lineCap,attr"`
+	LineJoin string `xml:"lineJoin,attr"`
 }
 
 type Shapes_t struct {

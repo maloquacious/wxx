@@ -3,6 +3,7 @@
 package xmlio_test
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 
@@ -33,11 +34,10 @@ func w2025Recode(t *testing.T, m1 *wxx.Map_t) *wxx.Map_t {
 // survive a decode -> encode -> decode round-trip. Any future drift (a stubbed
 // encoder half, a dropped field, a changed count) trips one of these assertions.
 //
-// This test intentionally does NOT assert on the six "Known un-modeled fields"
-// (maplayer/@opacity, dropShadow*, lineCap/lineJoin on shapestyle,
-// hScrollbarPos/vScrollbarPos, blurTerrainBG, extraTerrain): those are symmetric
-// drops by design and are covered by COVERAGE.md's prose, not by round-trip
-// equality.
+// As of #11 the six formerly "un-modeled" W2025-native fields (maplayer/@opacity,
+// labelstyle dropShadow*, shapestyle lineCap/lineJoin, map hScrollbarPos/
+// vScrollbarPos, blurTerrainBG, extraTerrain) are modeled and wired through both
+// decode and encode; this test now asserts each survives the 2025 round trip.
 func TestW2025CoverageMatrix(t *testing.T) {
 	// ---- Populated fixture: exercises features/labels/shapes/notes ----
 	p1 := decodeFixture(t, populatedFixture)
@@ -123,6 +123,78 @@ func TestW2025CoverageMatrix(t *testing.T) {
 	}
 	if !strings.Contains(p2.Notes[1].NoteText, "Second note paragraph.") {
 		t.Errorf("populated: Notes[1].NoteText = %q, want it to contain %q", p2.Notes[1].NoteText, "Second note paragraph.")
+	}
+
+	// ---- #11: the six formerly un-modeled W2025-native fields ----
+
+	// maplayer/@opacity (now modeled): the first layer ("Labels") is opacity 1.0.
+	if len(p2.MapLayers) == 0 {
+		t.Fatalf("populated: len(MapLayers) = 0, want non-empty")
+	}
+	if got, want := len(p1.MapLayers), len(p2.MapLayers); got != want {
+		t.Errorf("populated: MapLayers count drifted across round-trip: %d -> %d", got, want)
+	}
+	if got, want := p2.MapLayers[0].Opacity, 1.0; got != want {
+		t.Errorf("populated: MapLayers[0].Opacity = %v, want %v", got, want)
+	}
+
+	// labelstyle dropShadow* (now modeled): Nation carries dropShadowColor="null"
+	// (nullable string spelled "null") plus zero radius/spread.
+	if p2.Configuration == nil || p2.Configuration.TextConfig == nil || len(p2.Configuration.TextConfig.LabelStyles) == 0 {
+		t.Fatalf("populated: TextConfig.LabelStyles empty, want non-empty")
+	}
+	ls0 := p2.Configuration.TextConfig.LabelStyles[0]
+	if got, want := ls0.DropShadowColor, "null"; got != want {
+		t.Errorf("populated: LabelStyles[0].DropShadowColor = %q, want %q", got, want)
+	}
+	if got, want := ls0.DropShadowRadius, 0.0; got != want {
+		t.Errorf("populated: LabelStyles[0].DropShadowRadius = %v, want %v", got, want)
+	}
+	if got, want := ls0.DropShadowSpread, 0.0; got != want {
+		t.Errorf("populated: LabelStyles[0].DropShadowSpread = %v, want %v", got, want)
+	}
+
+	// shapestyle lineCap/lineJoin (now modeled): Trail is lineCap="SQUARE"
+	// lineJoin="ROUND".
+	if p2.Configuration.ShapeConfig == nil || len(p2.Configuration.ShapeConfig.ShapeStyles) == 0 {
+		t.Fatalf("populated: ShapeConfig.ShapeStyles empty, want non-empty")
+	}
+	ss0 := p2.Configuration.ShapeConfig.ShapeStyles[0]
+	if got, want := ss0.LineCap, "SQUARE"; got != want {
+		t.Errorf("populated: ShapeStyles[0].LineCap = %q, want %q", got, want)
+	}
+	if got, want := ss0.LineJoin, "ROUND"; got != want {
+		t.Errorf("populated: ShapeStyles[0].LineJoin = %q, want %q", got, want)
+	}
+
+	// map hScrollbarPos/vScrollbarPos (now modeled): 0.0 in the fixture, and must
+	// not drift across the round-trip.
+	if got, want := p2.HScrollbarPos, 0.0; got != want {
+		t.Errorf("populated: HScrollbarPos = %v, want %v", got, want)
+	}
+	if got, want := p2.VScrollbarPos, 0.0; got != want {
+		t.Errorf("populated: VScrollbarPos = %v, want %v", got, want)
+	}
+	if p1.HScrollbarPos != p2.HScrollbarPos || p1.VScrollbarPos != p2.VScrollbarPos {
+		t.Errorf("populated: scrollbar positions drifted across round-trip: (%v,%v) -> (%v,%v)",
+			p1.HScrollbarPos, p1.VScrollbarPos, p2.HScrollbarPos, p2.VScrollbarPos)
+	}
+
+	// blurTerrainBG (now modeled): present in the fixture, must be non-nil after
+	// round-trip with its attributes preserved.
+	if p2.BlurTerrainBG == nil {
+		t.Fatalf("populated: BlurTerrainBG = nil, want non-nil (present in fixture)")
+	}
+	if got := p2.BlurTerrainBG; got.Blur != false ||
+		got.TopBleed != 0.33 || got.BottomBleed != 0.65 || got.Randomness != 0.1 ||
+		got.BlurStart != 0.4 || got.BlurEnd != 0.95 {
+		t.Errorf("populated: BlurTerrainBG = %+v, want {Blur:false TopBleed:0.33 BottomBleed:0.65 Randomness:0.1 BlurStart:0.4 BlurEnd:0.95}", got)
+	}
+
+	// extraTerrain (now modeled): present-but-empty in the fixture, must be
+	// non-nil after round-trip.
+	if p2.ExtraTerrain == nil {
+		t.Fatalf("populated: ExtraTerrain = nil, want non-nil (present in fixture)")
 	}
 
 	// config no-op(intentional) sub-sections must stay empty after round-trip.
@@ -224,6 +296,37 @@ func TestW2025CoverageMatrix(t *testing.T) {
 
 	// config no-op(intentional) sub-sections must stay empty after round-trip.
 	assertConfigSectionsEmpty(t, "sample", s2)
+}
+
+// TestW2025LabelStyleDropShadowGate guards the presence-gated emission of the
+// W2025 <labelstyle> drop-shadow trio at the XML byte level (which the Map_t
+// round-trip cannot catch, since absent decodes to the same zero values a
+// symmetric drop would produce). The older schema=1.01 blank fixture carries NO
+// dropShadow* attributes, so re-encoding it must not add them; the populated
+// fixture DOES carry them, so re-encoding it must preserve them.
+func TestW2025LabelStyleDropShadowGate(t *testing.T) {
+	// Blank 1.01 fixture: source has no dropShadowColor -> output must have none.
+	b1, err := decodeFile(t, sample2025_110)
+	if err != nil {
+		t.Fatalf("decode %s: %v", sample2025_110, err)
+	}
+	blankBytes, err := h2025v1.Encode(b1)
+	if err != nil {
+		t.Fatalf("h2025v1.Encode(blank 1.01): %v", err)
+	}
+	if bytes.Contains(blankBytes, []byte("dropShadowColor")) {
+		t.Errorf("blank 1.01 re-encode spuriously added dropShadowColor (source had none)")
+	}
+
+	// Populated fixture: source has dropShadowColor -> output must preserve it.
+	p1 := decodeFixture(t, populatedFixture)
+	popBytes, err := h2025v1.Encode(p1)
+	if err != nil {
+		t.Fatalf("h2025v1.Encode(populated): %v", err)
+	}
+	if !bytes.Contains(popBytes, []byte("dropShadowColor")) {
+		t.Errorf("populated re-encode dropped dropShadowColor (source had it); gate over-corrected")
+	}
 }
 
 // assertConfigSectionsEmpty mirrors TestW2025ConfigSectionsEmpty's intent: the

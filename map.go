@@ -57,9 +57,18 @@ type Map_t struct {
 	ShowGridNumbers           bool               `json:"showGridNumbers,omitempty"`
 	ShowShadows               bool               `json:"showShadows,omitempty"`
 	TriangleSize              int                `json:"triangleSize,omitempty"`
+	HScrollbarPos             float64            `json:"hScrollbarPos,omitempty"` // W2025 UI scroll position
+	VScrollbarPos             float64            `json:"vScrollbarPos,omitempty"` // W2025 UI scroll position
 
 	// elements
 	GridAndNumbering *GridAndNumbering_t `json:"gridAndNumbering,omitempty"`
+
+	// BlurTerrainBG is a W2025 top-level element; nil means absent from the file.
+	BlurTerrainBG *BlurTerrainBG_t `json:"blurTerrainBG,omitempty"`
+
+	// ExtraTerrain is a W2025 top-level element (an empty container in observed
+	// samples); nil means absent from the file.
+	ExtraTerrain *ExtraTerrain_t `json:"extraTerrain,omitempty"`
 
 	// TerrainMap assigns numbers to each terrain type.
 	// The terrain type is used in the TileRow struct.
@@ -83,6 +92,18 @@ type Map_t struct {
 	Informations *Informations_t `json:"informations"`
 
 	Configuration *Configuration_t `json:"configuration"`
+}
+
+// BlurTerrainBG models the W2025 top-level <blurTerrainBG> element. It is
+// referenced as a pointer on Map_t so that nil distinguishes "absent from the
+// file" from "present with zero-valued attributes".
+type BlurTerrainBG_t struct {
+	Blur        bool    `json:"blur,omitempty"`
+	TopBleed    float64 `json:"topBleed,omitempty"`
+	BottomBleed float64 `json:"bottomBleed,omitempty"`
+	Randomness  float64 `json:"randomness,omitempty"`
+	BlurStart   float64 `json:"blurStart,omitempty"`
+	BlurEnd     float64 `json:"blurEnd,omitempty"`
 }
 
 type Configuration_t struct {
@@ -129,6 +150,15 @@ type FeatureLocation_t struct {
 	ViewLevel string  `json:"viewLevel,omitempty"`
 	X         float64 `json:"x,omitempty"`
 	Y         float64 `json:"y,omitempty"`
+}
+
+// ExtraTerrain models the W2025 top-level <extraTerrain> element. It appears as
+// an empty container in observed samples; InnerXML captures any inner content
+// verbatim so a present-but-empty element round-trips and any unseen children
+// are preserved. It is a pointer on Map_t so nil distinguishes absent from
+// present-but-empty.
+type ExtraTerrain_t struct {
+	InnerXML string `json:"innerXML,omitempty"`
 }
 
 type GridAndNumbering_t struct {
@@ -242,6 +272,12 @@ type LabelStyle_t struct {
 	BackgroundColor *RGBA_t `json:"backgroundColor,omitempty"`
 	OutlineSize     float64 `json:"outlineSize,omitempty"`
 	OutlineColor    *RGBA_t `json:"outlineColor,omitempty"`
+
+	// W2025 drop-shadow attributes. DropShadowColor is a nullable string that
+	// preserves the literal "null" spelling (mirrors Shape_t.DsColor).
+	DropShadowColor  string  `json:"dropShadowColor,omitempty"`
+	DropShadowRadius float64 `json:"dropShadowRadius,omitempty"`
+	DropShadowSpread float64 `json:"dropShadowSpread,omitempty"`
 }
 
 type MapKey_t struct {
@@ -272,8 +308,9 @@ type MapKey_t struct {
 }
 
 type MapLayer_t struct {
-	Name      string `json:"name"`
-	IsVisible bool   `json:"isVisible"`
+	Name      string  `json:"name"`
+	IsVisible bool    `json:"isVisible"`
+	Opacity   float64 `json:"opacity,omitempty"`
 }
 
 type Note_t struct {
@@ -403,6 +440,10 @@ type ShapeStyle_t struct {
 	FillPaint     *RGBA_t `json:"fillPaint,omitempty"`
 	DsColor       *RGBA_t `json:"dscolor,omitempty"`
 	InsColor      *RGBA_t `json:"insColor,omitempty"`
+
+	// W2025 line rendering attributes (mirrors Shape_t.LineCap/LineJoin).
+	LineCap  string `json:"lineCap,omitempty"`
+	LineJoin string `json:"lineJoin,omitempty"`
 }
 
 type Terrain_t struct {
