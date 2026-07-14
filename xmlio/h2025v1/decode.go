@@ -33,19 +33,22 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	} else if m.Schema == "" {
 		return nil, fmt.Errorf("missing map.Schema")
 	}
-	var dataVersion semver.Version
-	switch m.Release {
-	case "2025":
-		switch m.Version {
-		case "2.06":
-			switch m.Schema {
-			case "1.06":
-				dataVersion = semver.Version{Major: 2025, Minor: 1, Patch: 6}
-			}
-		}
+	if m.Release != "2025" {
+		return nil, fmt.Errorf("%s/%s/%s: unsupported release", m.Release, m.Version, m.Schema)
 	}
-	if dataVersion.Major == 0 {
-		return nil, fmt.Errorf("%s/%s/%s: unknown schema", m.Release, m.Version, m.Schema)
+	// derive the data version from the schema attribute: Major is the release
+	// year (2025) and Minor/Patch are the dotted components of the schema.
+	// e.g. schema "1.06" -> {2025,1,6}; schema "1.01" -> {2025,1,1}.
+	dataVersion := semver.Version{Major: 2025}
+	schemaParts := strings.Split(m.Schema, ".")
+	if len(schemaParts) != 2 {
+		return nil, fmt.Errorf("%s/%s/%s: malformed schema", m.Release, m.Version, m.Schema)
+	}
+	if dataVersion.Minor, err = strconv.Atoi(schemaParts[0]); err != nil {
+		return nil, fmt.Errorf("%s/%s/%s: schema minor: %w", m.Release, m.Version, m.Schema, err)
+	}
+	if dataVersion.Patch, err = strconv.Atoi(schemaParts[1]); err != nil {
+		return nil, fmt.Errorf("%s/%s/%s: schema patch: %w", m.Release, m.Version, m.Schema, err)
 	}
 
 	// process source into a WXX structure and return it or any errors

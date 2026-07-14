@@ -232,16 +232,12 @@ func (d *Decoder) Decode(r io.Reader) (*wxx.Map_t, error) {
 	// use the metadata to call the correct decoder for the XML
 	switch xmlMetaData.Release {
 	case "2025":
-		switch xmlMetaData.Version {
-		case "2.06":
-			switch xmlMetaData.Schema {
-			case "1.06":
-				if d.opts.diagnostics != nil {
-					d.opts.diagnostics.Schema = "h2025v1"
-				}
-				return h2025v1.Decode(data)
-			}
+		// any W2025 build (release=2025) routes to the h2025v1 decoder;
+		// version/schema no longer gate the dispatch.
+		if d.opts.diagnostics != nil {
+			d.opts.diagnostics.Schema = "h2025v1"
 		}
+		return h2025v1.Decode(data)
 	}
 
 	return nil, errors.Join(wxx.ErrUnsupportedMapMetadata, fmt.Errorf("map: release %q: version %q: schema %q", xmlMetaData.Release, xmlMetaData.Version, xmlMetaData.Schema))
