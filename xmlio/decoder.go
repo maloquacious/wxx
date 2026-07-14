@@ -18,6 +18,9 @@ import (
 	"golang.org/x/text/transform"
 )
 
+// Ensure *Decoder satisfies the wxx.Decoder interface contract at compile time.
+var _ wxx.Decoder = (*Decoder)(nil)
+
 // Decoder implements the wxx Decoder interface.
 type Decoder struct {
 	opts decoderOpts

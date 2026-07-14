@@ -17,6 +17,9 @@ import (
 	"golang.org/x/text/transform"
 )
 
+// Ensure *Encoder satisfies the wxx.Encoder interface contract at compile time.
+var _ wxx.Encoder = (*Encoder)(nil)
+
 type Encoder struct {
 	opts encoderOpts
 }
