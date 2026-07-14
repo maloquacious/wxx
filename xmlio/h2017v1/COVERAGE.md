@@ -53,7 +53,7 @@ inspected by decompressing the gzip/UTF-16BE container to UTF-8 XML.
 
 | `<map>` child element | Decode | Encode | Evidence | Notes |
 |---|---|---|---|---|
-| `<map>` root + scalar attributes (24) | implemented | implemented | `decode.go:38-81`, `encode.go:27-59` | All 24 modeled attrs round-trip. `version` attr (`1.73`/`1.74`/`1.77`) is preserved in `Map_t.Version`, re-emitted, and now **also** copied into `MetaData.Worldographer.Version` (`decode.go:41`); `MetaData.DataVersion` stays `{2017,1}` as the encode dispatch key — see "Version identity" below. |
+| `<map>` root + scalar attributes (24) | implemented | implemented | `decode.go:38-81`, `encode.go:27-59` | All 24 modeled attrs round-trip. `version` attr (`1.73`/`1.74`/`1.77`) is preserved verbatim in `Map_t.Version` (re-emitted) and `MetaData.Worldographer.Version`, and parsed into `MetaData.DataVersion` as `{2017,1,7x}` (ADR 0002); the encoder dispatches on `DataVersion.Major` (family) — see "Version identity" below. |
 | `<gridandnumbering>` (30 attrs) | implemented | implemented | `decode.go:78-109`, `encode.go:110-145` | All 30 attributes modeled and re-emitted. |
 | `<terrainmap>` | implemented | implemented | `decode.go:111-128`, `encode.go:147-158` | Tab-delimited name/slot table parsed into `TerrainMap_t`; re-emitted sorted by slot. |
 | `<maplayer>` (`name`, `isVisible`) | implemented | implemented | `decode.go:130-132`, `encode.go:161-176` | Classic `<maplayer>` has no `opacity` attr (confirmed by RelaxNG + samples), so nothing is dropped. |
@@ -72,38 +72,40 @@ inspected by decompressing the gzip/UTF-16BE container to UTF-8 XML.
 | configuration `<text-config>`/`<labelstyle>` | implemented | **unimplemented(dropped)** | decode `decode.go:508-532`; encode `encode.go:483-507` | Decode builds structured `LabelStyle_t` (samples have 10 labelstyles). **`encodeLabelStyle` is a commented-out no-op** — `<text-config></text-config>` emitted with **no `<labelstyle>` children**. Labelstyles are lost on write. |
 | configuration `<shape-config>`/`<shapestyle>` | implemented | implemented | decode `decode.go:533-575`; encode `encode.go:509-551` | Decode builds structured `ShapeStyle_t` (samples have 9–10 shapestyles); **`encodeShapeStyle` writes all attributes**. Note the asymmetry: shapestyle encodes, labelstyle (a peer sub-config) does not. |
 
-## Version identity — sub-revision preserved in `Worldographer.Version`
+## Version identity — sub-revision in `DataVersion` and `Worldographer.Version`
 
-`decode.go` sets `w.MetaData.DataVersion = semver.Version{Major: 2017, Minor: 1}`
-**unconditionally**. This is **intentional and load-bearing**: `DataVersion` is
-the key the public encoder dispatches on (`xmlio/encoder.go:154-159`,
-`2017.1 → h2017v1.Encode`), so it must stay `{2017,1}` for every classic
-sub-revision or the encode dispatch (and every CLI tool that passes
-`m.MetaData.DataVersion` as the target version) breaks.
+**Implemented (ADR 0002, issue #12).** `decode.go` parses the on-disk `version`
+attribute into `DataVersion` via `classicDataVersion(m.Version)`: `Major = 2017`
+(schema family / dispatch key), `Minor.Patch` = the dotted on-disk revision, so
+`1.73`/`1.74`/`1.77` → `{2017,1,73}`/`{2017,1,74}`/`{2017,1,77}`. This mirrors how
+h2025 parses its `schema` attribute (`xmlio/h2025v1/map.go:43-56`). The classic
+XML schema did **not** change across `1.73`→`1.77` (these are application version
+bumps), so `Patch` distinguishes the *file*, not the schema; all sub-revisions
+share the one `h2017v1` codec.
 
-The real on-disk sub-revision is instead preserved **additively** (issue B4):
+Because the leading component is `1` for every known classic file, `Minor` stays
+`1`, and the public encoder now dispatches on `Major` (family) **only**
+(`xmlio/encoder.go` `MarshalXML`, `2017.x → h2017v1.Encode`) — so the enriched
+`{2017,1,7x}` DataVersion routes correctly and every `cmd/*` caller that passes
+`m.MetaData.DataVersion` is unaffected. The relaxation also drops the earlier
+`Minor == 1` gate that would have mis-rejected the parsed value.
 
-- The on-disk `version` **attribute string** is copied to `Map_t.Version`
-  (`decode.go:77`) and re-emitted verbatim by the encoder (`encode.go:30`), so a
-  1.73 file re-encodes with `version="1.73"`.
-- It is **also** copied into `MetaData.Worldographer.Version` (`decode.go:41`),
-  so a caller can read the true 1.73 / 1.74 / 1.77 revision from the metadata
-  without consulting the `<map>` attribute. Classic files carry no `release` or
-  `schema` attribute, so `MetaData.Worldographer.Release` / `.Schema` stay empty
-  (correct). Guarded by `TestClassicVersionFidelity` (`xmlio/classic_dispatch_test.go`),
-  which also asserts `DataVersion` remains `{2017,1}`.
-
-So the codec now distinguishes classic sub-revisions at the metadata level via
-`Worldographer.Version`, while keeping a single classic encoder selected by the
-stable `DataVersion` dispatch key.
+The on-disk revision is preserved in two forms: the **parsed, comparable** semver
+in `DataVersion`, and the **verbatim** string in `Map_t.Version` /
+`MetaData.Worldographer.Version` (re-emitted byte-for-byte by the encoder).
+Classic files carry no `release`/`schema` attributes, so
+`Worldographer.Release`/`.Schema` stay empty. Guarded by
+`TestClassicVersionFidelity` and `TestClassicEncodeDispatch`
+(`xmlio/classic_dispatch_test.go`).
 
 ## Dispatch symmetry — public decoder reads classic (backfilled)
 
 The public `xmlio` pipeline now **round-trips classic end to end** (issue B4
 backfill); it was previously write-only:
 
-- **Encode**: `xmlio/encoder.go:154-159` dispatches `DataVersion.Major == 2017,
-  Minor == 1 → h2017v1.Encode`. The public encoder can emit classic XML.
+- **Encode**: `xmlio/encoder.go` `MarshalXML` dispatches `DataVersion.Major ==
+  2017 → h2017v1.Encode` (family-only, ADR 0002). The public encoder can emit
+  classic XML.
 - **Decode**: `xmlio/decoder.go` now has a classic dispatch case alongside the
   `release="2025"` case. Classic files carry **no `release` attribute at all**
   (confirmed by every sample and by the RelaxNG schema, which defines no
