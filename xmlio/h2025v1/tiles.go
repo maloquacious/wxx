@@ -151,7 +151,16 @@ func encodeTiles(tiles *wxx.Tiles_t, hexOrientation string, wb *bytes.Buffer) er
 	// * each line of data has the following values: Terrain type, elevation, is it icy, is it GM only, and its resources
 	// * terrainType is an index into the terrainmap element
 	// * resources are Animals, Brick, Crops, Gems, Lumber, Metals, and Rock, in that order, but are "compressed"
-	if hexOrientation == "COLUMNS" {
+	//
+	// The physical <tilerow> emission is IDENTICAL for COLUMNS and ROWS: the file
+	// is always tilesWide <tilerow> elements, each holding tilesHigh tab-delimited
+	// lines, and decodeTiles stores tiles in file-physical Tiles[x][y] order (x in
+	// 0..tilesWide, y in 0..tilesHigh) for BOTH orientations. Orientation only
+	// affects (i) the OddQ vs OddR coordinate interpretation and (ii) the
+	// RowsHigh/ColumnsWide labels — neither of which changes the bytes written
+	// here. (Cross-check: ROWS == pointy-top hexes per tcfna's vertex-geometry
+	// notes; that is a client rendering concern and does not alter this data grid.)
+	if hexOrientation == "COLUMNS" || hexOrientation == "ROWS" {
 		for x := 0; x < tiles.TilesWide; x++ {
 			wb.WriteString("<tilerow>\n")
 			for y := 0; y < tiles.TilesHigh; y++ {
@@ -162,8 +171,6 @@ func encodeTiles(tiles *wxx.Tiles_t, hexOrientation string, wb *bytes.Buffer) er
 			}
 			wb.WriteString(fmt.Sprintf("</tilerow>\n"))
 		}
-	} else if hexOrientation == "ROWS" {
-		return fmt.Errorf("assert(orientation != %q)", hexOrientation)
 	} else {
 		return fmt.Errorf("assert(orientation != %q)", hexOrientation)
 	}

@@ -30,7 +30,8 @@ constant-block lossy vs. symmetric drop), which is exactly the distinction that
 lets stub-drift hide. The classic matrix (`xmlio/h2017v1/COVERAGE.md`) uses this
 same vocabulary.
 
-Tests referenced (all in `xmlio/roundtrip_2025_test.go`, package `xmlio_test`):
+Tests referenced (in `xmlio/roundtrip_2025_test.go` unless noted, package
+`xmlio_test`):
 
 - **RoundTrip** = `TestW2025RoundTrip` (in-memory codec over the real
   `data/2025-2.05.wxx` sample)
@@ -46,6 +47,9 @@ Tests referenced (all in `xmlio/roundtrip_2025_test.go`, package `xmlio_test`):
   gzip/UTF-16/header pipeline over the populated fixture, proving the transport
   layers round-trip populated shapes/notes/features/labels too)
 - **ConfigEmpty** = `TestW2025ConfigSectionsEmpty`
+- **RowsRoundTrip** = `TestW2025RowsRoundTrip` (in
+  `xmlio/rows_encode_2025_test.go`; in-memory encode->decode over an asymmetric
+  2x3 ROWS grid, asserting orientation and per-cell position fidelity)
 
 | `<map>` child element | Decode | Encode | Test(s) | Notes |
 |---|---|---|---|---|
@@ -53,7 +57,7 @@ Tests referenced (all in `xmlio/roundtrip_2025_test.go`, package `xmlio_test`):
 | `<gridandnumbering>` (30 attrs) | implemented | implemented | RoundTrip, PublicRoundTrip | All 30 attributes modeled and re-emitted. |
 | `<terrainmap>` | implemented | implemented | RoundTrip, DecodeBoth | Tab-delimited name/slot table parsed into `TerrainMap_t`. |
 | `<maplayer>` | implemented | lossy | RoundTrip, PublicRoundTrip | `opacity` attr un-modeled -> dropped (see below). Only `name` + `isVisible` round-trip. |
-| `<tiles>` / `<tilerow>` | implemented | implemented | RoundTrip, PublicRoundTrip, DecodeBoth | Decode handles COLUMNS and ROWS; **encoder supports COLUMNS only -- ROWS returns an error** (`encode.go` `encodeTiles`). Sample is COLUMNS. |
+| `<tiles>` / `<tilerow>` | implemented | implemented | RoundTrip, PublicRoundTrip, DecodeBoth, RowsRoundTrip | Decode handles COLUMNS and ROWS; **encoder now supports COLUMNS and ROWS** (`tiles.go` `encodeTiles`). The physical `<tilerow>` emission is orientation-independent — decode stores tiles in file-physical `Tiles[x][y]` order (`tilesWide` rows of `tilesHigh` lines) for both orientations, so ROWS emits the identical structure; orientation only affects the OddQ/OddR coordinate interpretation and the RowsHigh/ColumnsWide labels. The on-disk `.wxx` sample is COLUMNS; ROWS is covered by `TestW2025RowsRoundTrip`, which builds an asymmetric 2x3 ROWS grid in memory and asserts every cell round-trips to the same position (catching any transpose). |
 | tile data (terrain, elevation, isIcy, isGMOnly, resources, customBackgroundColor) | implemented | implemented | RoundTrip, PublicRoundTrip | 6/7/11/12-column forms + `Z`-compressed resources; opaque-black `customBackgroundColor` folds to nil per `decodeRgba`. |
 | `<mapkey>` | implemented | implemented | RoundTrip, PublicRoundTrip | All attributes modeled. (Decode is nested inside the tilerow loop but runs given >=1 tilerow.) |
 | `<features>` / `<feature>` | implemented | implemented | DecodePopulated, PopulatedRoundTrip | Real blank sample has no features; populated fixture exercises them. |

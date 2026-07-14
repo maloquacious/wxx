@@ -53,12 +53,12 @@ inspected by decompressing the gzip/UTF-16BE container to UTF-8 XML.
 
 | `<map>` child element | Decode | Encode | Evidence | Notes |
 |---|---|---|---|---|
-| `<map>` root + scalar attributes (24) | implemented | implemented | `decode.go:38-76`, `encode.go:27-59` | All 24 modeled attrs round-trip. `version` attr (`1.73`/`1.74`/`1.77`) is preserved in `Map_t.Version` and re-emitted, but `MetaData.DataVersion` is **hardcoded** — see "Version identity" below. |
+| `<map>` root + scalar attributes (24) | implemented | implemented | `decode.go:38-81`, `encode.go:27-59` | All 24 modeled attrs round-trip. `version` attr (`1.73`/`1.74`/`1.77`) is preserved in `Map_t.Version`, re-emitted, and now **also** copied into `MetaData.Worldographer.Version` (`decode.go:41`); `MetaData.DataVersion` stays `{2017,1}` as the encode dispatch key — see "Version identity" below. |
 | `<gridandnumbering>` (30 attrs) | implemented | implemented | `decode.go:78-109`, `encode.go:110-145` | All 30 attributes modeled and re-emitted. |
 | `<terrainmap>` | implemented | implemented | `decode.go:111-128`, `encode.go:147-158` | Tab-delimited name/slot table parsed into `TerrainMap_t`; re-emitted sorted by slot. |
 | `<maplayer>` (`name`, `isVisible`) | implemented | implemented | `decode.go:130-132`, `encode.go:161-176` | Classic `<maplayer>` has no `opacity` attr (confirmed by RelaxNG + samples), so nothing is dropped. |
 | `<tiles>`/`<tilerow>` — COLUMNS | implemented | implemented | `decode.go:151-245`, `encode.go:191-201` | COLUMNS (`OddQ`) grid fully round-trips. |
-| `<tiles>`/`<tilerow>` — ROWS | implemented | **unimplemented(dropped)** | decode `decode.go:146-163`; encode `encode.go:202-203` | **ROWS decode works** (`OddR` branch); **ROWS encode returns a hard error** `assert(orientation != "ROWS")`. `2017-1.77-1.0-rows-blank.wxx` decodes but cannot be re-encoded. Same gap exists in h2025. |
+| `<tiles>`/`<tilerow>` — ROWS | implemented | **unimplemented(dropped)** | decode `decode.go:146-163`; encode `encode.go:202-203` | **ROWS decode works** (`OddR` branch); **ROWS encode returns a hard error** `assert(orientation != "ROWS")`. `2017-1.77-1.0-rows-blank.wxx` decodes but cannot be re-encoded. This remains a **documented classic gap by decision** (issue B4): the corresponding gap in h2025 has been closed (h2025 ROWS encode is now implemented, guarded by `TestW2025RowsRoundTrip`), but classic ROWS encode is intentionally left unimplemented since classic is frozen. |
 | tile data (`terrain`, `elevation`, `isIcy`, `isGMOnly`, resources 6/7/11/12-col, `customBackgroundColor`) | implemented | implemented | `decode.go:166-244`, `encode.go:219-251` | `Z`-compressed and full 6-resource forms; optional trailing RGBA. Encoder auto-compresses when non-Animal resources are all zero. |
 | `<mapkey>` | implemented | **lossy (constant block)** | decode `decode.go:247-279`; encode `encode.go:253-258` | Decode reads every `mapkey` attribute into `Map_t.MapKey`. **Encode ignores `Map_t.MapKey` entirely and writes a hardcoded default `<mapkey ...>` string.** A decoded-then-encoded map key is not preserved. |
 | `<features>`/`<feature>` (+ `<location>`, inline `<label>`) | implemented | implemented | `decode.go:282-347`, `encode.go:261-321` | All feature attributes + nested location + inline label round-trip. Exercised by e.g. `2017-1.77-1.0-columns-blank.wxx` (4 features). |
@@ -72,39 +72,51 @@ inspected by decompressing the gzip/UTF-16BE container to UTF-8 XML.
 | configuration `<text-config>`/`<labelstyle>` | implemented | **unimplemented(dropped)** | decode `decode.go:508-532`; encode `encode.go:483-507` | Decode builds structured `LabelStyle_t` (samples have 10 labelstyles). **`encodeLabelStyle` is a commented-out no-op** — `<text-config></text-config>` emitted with **no `<labelstyle>` children**. Labelstyles are lost on write. |
 | configuration `<shape-config>`/`<shapestyle>` | implemented | implemented | decode `decode.go:533-575`; encode `encode.go:509-551` | Decode builds structured `ShapeStyle_t` (samples have 9–10 shapestyles); **`encodeShapeStyle` writes all attributes**. Note the asymmetry: shapestyle encodes, labelstyle (a peer sub-config) does not. |
 
-## Version identity — `DataVersion` hardcoded
+## Version identity — sub-revision preserved in `Worldographer.Version`
 
-`decode.go:33` sets `w.MetaData.DataVersion = semver.Version{Major: 2017, Minor: 1}`
-**unconditionally**, discarding whether the on-disk file was `version="1.73"`,
-`"1.74"`, or `"1.77"`. The consequences:
+`decode.go` sets `w.MetaData.DataVersion = semver.Version{Major: 2017, Minor: 1}`
+**unconditionally**. This is **intentional and load-bearing**: `DataVersion` is
+the key the public encoder dispatches on (`xmlio/encoder.go:154-159`,
+`2017.1 → h2017v1.Encode`), so it must stay `{2017,1}` for every classic
+sub-revision or the encode dispatch (and every CLI tool that passes
+`m.MetaData.DataVersion` as the target version) breaks.
 
-- The on-disk `version` **attribute string** *is* preserved: it is copied to
-  `Map_t.Version` (`decode.go:74`) and re-emitted verbatim by the encoder
-  (`encode.go:30`). So a 1.73 file re-encodes with `version="1.73"`.
-- But `MetaData.DataVersion` — the semver the public encoder dispatches on
-  (`xmlio/encoder.go:154-159`, `2017.1 → h2017v1.Encode`) — collapses all three
-  classic revisions to `2017.1`. The codec cannot tell 1.73 / 1.74 / 1.77 apart
-  at the metadata level, and there is a single classic encoder for all three.
+The real on-disk sub-revision is instead preserved **additively** (issue B4):
 
-This is a fidelity gap only if a caller relies on `MetaData.DataVersion` to
-distinguish classic sub-revisions; the round-tripped file itself keeps its
-`version` attribute.
+- The on-disk `version` **attribute string** is copied to `Map_t.Version`
+  (`decode.go:77`) and re-emitted verbatim by the encoder (`encode.go:30`), so a
+  1.73 file re-encodes with `version="1.73"`.
+- It is **also** copied into `MetaData.Worldographer.Version` (`decode.go:41`),
+  so a caller can read the true 1.73 / 1.74 / 1.77 revision from the metadata
+  without consulting the `<map>` attribute. Classic files carry no `release` or
+  `schema` attribute, so `MetaData.Worldographer.Release` / `.Schema` stay empty
+  (correct). Guarded by `TestClassicVersionFidelity` (`xmlio/classic_dispatch_test.go`),
+  which also asserts `DataVersion` remains `{2017,1}`.
 
-## Dispatch asymmetry — public decoder cannot read classic
+So the codec now distinguishes classic sub-revisions at the metadata level via
+`Worldographer.Version`, while keeping a single classic encoder selected by the
+stable `DataVersion` dispatch key.
 
-The public `xmlio` pipeline is **write-only for classic**:
+## Dispatch symmetry — public decoder reads classic (backfilled)
+
+The public `xmlio` pipeline now **round-trips classic end to end** (issue B4
+backfill); it was previously write-only:
 
 - **Encode**: `xmlio/encoder.go:154-159` dispatches `DataVersion.Major == 2017,
   Minor == 1 → h2017v1.Encode`. The public encoder can emit classic XML.
-- **Decode**: `xmlio/decoder.go:233-243` routes **only** `release="2025"` to
-  `h2025v1`. Classic files carry **no `release` attribute at all** (confirmed by
-  every sample and by the RelaxNG schema, which defines no `release`), so a
-  classic file falls through to `ErrUnsupportedMapMetadata` (`decoder.go:243`).
+- **Decode**: `xmlio/decoder.go` now has a classic dispatch case alongside the
+  `release="2025"` case. Classic files carry **no `release` attribute at all**
+  (confirmed by every sample and by the RelaxNG schema, which defines no
+  `release`), so the dispatcher routes them by the classic version shape:
+  `Release == "" && strings.HasPrefix(Version, "1.") → h2017v1.Decode`. The
+  predicate is deliberately conservative — anything that is neither `release=2025`
+  nor a `1.x` classic version still falls through to `ErrUnsupportedMapMetadata`,
+  so unknown/future formats are not silently swallowed.
 
-So `xmlio.NewDecoder().Decode(classicFile)` fails even though `h2017v1.Decode`
-exists and works — the classic decoder is reachable **only** by calling the
-package function `h2017v1.Decode` directly. Issue B4 decides the fix; this matrix
-records the current state.
+So `xmlio.NewDecoder().Decode(classicFile)` now succeeds. Guarded by
+`TestClassicDispatch_Decode` (`xmlio/classic_dispatch_test.go`), which decodes the
+1.73 / 1.74 / 1.77 fixtures through the full public gzip/UTF-16BE/XML pipeline.
+The dispatch asymmetry recorded in earlier revisions of this matrix is resolved.
 
 ## Known un-modeled fields
 
