@@ -278,6 +278,20 @@ type MapLayer_t struct {
 
 type Note_t struct {
 	InnerText string `json:"innerText,omitempty"`
+
+	// attributes
+	Key       string  `json:"key,omitempty"`
+	ViewLevel string  `json:"viewLevel,omitempty"`
+	X         float64 `json:"x,omitempty"`
+	Y         float64 `json:"y,omitempty"`
+	Filename  string  `json:"filename,omitempty"`
+	Parent    string  `json:"parent,omitempty"`
+	Color     *RGBA_t `json:"color,omitempty"`
+	Title     string  `json:"title,omitempty"`
+	IsGMOnly  bool    `json:"isGMOnly,omitempty"`
+
+	// notetext CDATA body
+	NoteText string `json:"notetext,omitempty"`
 }
 
 type Point_t struct {
