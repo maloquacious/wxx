@@ -1,0 +1,19 @@
+# Architecture Decision Records
+
+This directory holds Architecture Decision Records (ADRs) for the WXX package —
+short documents capturing a significant architectural choice, the context that
+forced it, the options weighed, and the consequences.
+
+## Conventions
+
+- Files are numbered and kebab-cased: `NNNN-short-title.md`.
+- Each ADR carries a **Status**: `Proposed` → `Accepted` / `Rejected` (and later
+  `Superseded by NNNN` if replaced).
+- An ADR is a record, not a task. Where an ADR's decision authorizes code
+  changes, the changes land as a separate, explicitly gated task.
+
+## Index
+
+| ADR | Title | Status |
+|---|---|---|
+| [0001](0001-codec-file-organization.md) | Codec file organization: co-located per-element encode/decode | Proposed — gates task B3b |

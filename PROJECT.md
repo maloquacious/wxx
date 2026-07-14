@@ -2,6 +2,7 @@
 
 ```
 wxx/
+├── schema/                   # RelaxNG schema (reference only, v1.73/classic; not enforced)
 ├── xmlio/                    # packages for decoding and encoding XML data
 │   ├── h2017v1/              # schema-specific decoders and encoders
 │   └── h2025v1/              # schema-specific decoders and encoders

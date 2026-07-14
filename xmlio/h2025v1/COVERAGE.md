@@ -19,7 +19,19 @@ model but only as raw chardata, not structured) / **no-op(intentional)** (encode
 deliberately emits an empty wrapper and drops decoded content, documented +
 guarded by a test) / **lossy** (some on-disk detail is not preserved).
 
-Tests referenced (all in `xmlio/roundtrip_2025_test.go`, package `xmlio_test`):
+### Relationship to `wog/FEATURES.md` legend
+
+The sibling ottomap repo's `wog/FEATURES.md` uses `✅ implemented / ⚠️ partial /
+❌ not implemented`. The mapping is: **implemented** → ✅; **stub / lossy /
+no-op(intentional)** → ⚠️ (partial, with documented caveats); **not modeled /
+not emitted** → ❌ (for the affected direction). The richer vocabulary is kept
+here because it distinguishes *how* a field is partial (raw-chardata stub vs.
+constant-block lossy vs. symmetric drop), which is exactly the distinction that
+lets stub-drift hide. The classic matrix (`xmlio/h2017v1/COVERAGE.md`) uses this
+same vocabulary.
+
+Tests referenced (in `xmlio/roundtrip_2025_test.go` unless noted, package
+`xmlio_test`):
 
 - **RoundTrip** = `TestW2025RoundTrip` (in-memory codec over the real
   `data/2025-2.05.wxx` sample)
@@ -35,6 +47,9 @@ Tests referenced (all in `xmlio/roundtrip_2025_test.go`, package `xmlio_test`):
   gzip/UTF-16/header pipeline over the populated fixture, proving the transport
   layers round-trip populated shapes/notes/features/labels too)
 - **ConfigEmpty** = `TestW2025ConfigSectionsEmpty`
+- **RowsRoundTrip** = `TestW2025RowsRoundTrip` (in
+  `xmlio/rows_encode_2025_test.go`; in-memory encode->decode over an asymmetric
+  2x3 ROWS grid, asserting orientation and per-cell position fidelity)
 
 | `<map>` child element | Decode | Encode | Test(s) | Notes |
 |---|---|---|---|---|
@@ -42,7 +57,7 @@ Tests referenced (all in `xmlio/roundtrip_2025_test.go`, package `xmlio_test`):
 | `<gridandnumbering>` (30 attrs) | implemented | implemented | RoundTrip, PublicRoundTrip | All 30 attributes modeled and re-emitted. |
 | `<terrainmap>` | implemented | implemented | RoundTrip, DecodeBoth | Tab-delimited name/slot table parsed into `TerrainMap_t`. |
 | `<maplayer>` | implemented | lossy | RoundTrip, PublicRoundTrip | `opacity` attr un-modeled -> dropped (see below). Only `name` + `isVisible` round-trip. |
-| `<tiles>` / `<tilerow>` | implemented | implemented | RoundTrip, PublicRoundTrip, DecodeBoth | Decode handles COLUMNS and ROWS; **encoder supports COLUMNS only -- ROWS returns an error** (`encode.go` `encodeTiles`). Sample is COLUMNS. |
+| `<tiles>` / `<tilerow>` | implemented | implemented | RoundTrip, PublicRoundTrip, DecodeBoth, RowsRoundTrip | Decode handles COLUMNS and ROWS; **encoder now supports COLUMNS and ROWS** (`tiles.go` `encodeTiles`). The physical `<tilerow>` emission is orientation-independent — decode stores tiles in file-physical `Tiles[x][y]` order (`tilesWide` rows of `tilesHigh` lines) for both orientations, so ROWS emits the identical structure; orientation only affects the OddQ/OddR coordinate interpretation and the RowsHigh/ColumnsWide labels. The on-disk `.wxx` sample is COLUMNS; ROWS is covered by `TestW2025RowsRoundTrip`, which builds an asymmetric 2x3 ROWS grid in memory and asserts every cell round-trips to the same position (catching any transpose). |
 | tile data (terrain, elevation, isIcy, isGMOnly, resources, customBackgroundColor) | implemented | implemented | RoundTrip, PublicRoundTrip | 6/7/11/12-column forms + `Z`-compressed resources; opaque-black `customBackgroundColor` folds to nil per `decodeRgba`. |
 | `<mapkey>` | implemented | implemented | RoundTrip, PublicRoundTrip | All attributes modeled. (Decode is nested inside the tilerow loop but runs given >=1 tilerow.) |
 | `<features>` / `<feature>` | implemented | implemented | DecodePopulated, PopulatedRoundTrip | Real blank sample has no features; populated fixture exercises them. |
@@ -82,3 +97,35 @@ Each item below was verified by grepping the sample and reading `schema.go`:
 All six were confirmed absent from `schema.go` (grep for `hScrollbarPos`,
 `vScrollbarPos`, `dropShadow*`, `blurTerrainBG`, `extraTerrain`, and inspection
 of `MapLayer_t` / `ShapeStyle_t` returned no match).
+
+## RelaxNG cross-check
+
+The formal RelaxNG schema in `schema/utf-8-xml.rnc` (imported in B1) is **classic
+`version="1.73"` scope only** — it predates the W2025 format (see
+`schema/README.md`). It is therefore a **partial** checklist for h2025: only the
+elements W2025 *shares* with classic are cross-checkable; the schema says nothing
+about W2025 additions.
+
+- **Shared elements are all modeled by h2025.** Every element the RelaxNG schema
+  defines — `map`, `gridandnumbering`, `terrainmap`, `maplayer`, `tiles`/`tilerow`,
+  `mapkey`, `features`/`feature`, `location`, `labels`/`label`, `shapes`/`shape`/`p`,
+  `notes`, `informations`/`information`, `configuration` + its five sub-configs,
+  `labelstyle`, `shapestyle` — has a corresponding type in `xmlio/h2025v1/schema.go`
+  and appears as **implemented** in the table above. No RelaxNG element is
+  unmodeled by the h2025 decoder.
+- **The RelaxNG schema cannot catch the six known un-modeled fields**, because
+  every one of them is a **W2025 addition outside the schema's scope**: the
+  schema defines `<maplayer>` with only `isVisible`/`name` (no `opacity`), and
+  defines no `blurTerrainBG`, no `extraTerrain`, no `dropShadow*` on
+  `<labelstyle>`, no `lineCap`/`lineJoin` on `<shapestyle>`, and no
+  `hScrollbarPos`/`vScrollbarPos` on `<map>`. `schema/README.md` independently
+  flags `maplayer/@opacity`, `blurTerrainBG`, and `extraTerrain` as verified
+  W2025 deltas absent from the schema — corroborating that these gaps are real
+  format additions, not modeling oversights the classic schema could have warned
+  about.
+
+**Conclusion:** the classic-scoped RelaxNG schema confirms h2025 models 100% of
+the *shared* format, and confirms the six un-modeled fields are genuine W2025
+extensions the schema does not (and cannot) describe. A W2025-scoped formal
+schema would be needed to mechanically check the additions; until then this
+matrix's "Known un-modeled fields" section is the checklist for them.

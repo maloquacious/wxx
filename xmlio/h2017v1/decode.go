@@ -33,6 +33,11 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	w.MetaData.DataVersion = semver.Version{Major: 2017, Minor: 1}
 	w.MetaData.Created = time.Now().UTC().Format(time.RFC3339)
 	w.MetaData.Worldographer.Name = "unknown"
+	// Preserve the real classic sub-revision (1.73/1.74/1.77) additively in the
+	// Worldographer metadata. DataVersion stays {2017,1} above because it is the
+	// encode dispatch key; the on-disk version lives here instead. Classic files
+	// carry no release/schema attributes, so those fields remain empty.
+	w.MetaData.Worldographer.Version = m.Version
 	// w.MetaData.Worldographer.Created = time.Time{}
 
 	w.ContinentFactor = m.ContinentFactor

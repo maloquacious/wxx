@@ -9,8 +9,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/maloquacious/wxx"
+	"github.com/maloquacious/wxx/xmlio/h2017v1"
 	"github.com/maloquacious/wxx/xmlio/h2025v1"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/transform"
@@ -238,6 +240,17 @@ func (d *Decoder) Decode(r io.Reader) (*wxx.Map_t, error) {
 			d.opts.diagnostics.Schema = "h2025v1"
 		}
 		return h2025v1.Decode(data)
+	case "":
+		// H2017 ("classic") files carry no release or schema attribute; they
+		// are identified solely by a "1.x" version (e.g. 1.73/1.74/1.77).
+		// Be conservative: only classic-shaped versions route here so we do
+		// not accidentally swallow unknown or future formats.
+		if strings.HasPrefix(xmlMetaData.Version, "1.") {
+			if d.opts.diagnostics != nil {
+				d.opts.diagnostics.Schema = "h2017v1"
+			}
+			return h2017v1.Decode(data)
+		}
 	}
 
 	return nil, errors.Join(wxx.ErrUnsupportedMapMetadata, fmt.Errorf("map: release %q: version %q: schema %q", xmlMetaData.Release, xmlMetaData.Version, xmlMetaData.Schema))

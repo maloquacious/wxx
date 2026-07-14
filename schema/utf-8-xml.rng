@@ -1,0 +1,687 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- twnxx - a TribeNet mapping tool -->
+<!-- Copyright (c) 2024 Michael D Henderson. All rights reserved. -->
+
+<grammar ns="" xmlns="http://relaxng.org/ns/structure/1.0" datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+    <start>
+        <element name="map">
+            <attribute name="continentFactor">
+                <data type="integer"/>
+            </attribute>
+            <attribute name="continentToKingdomHOffset">
+                <data type="decimal"/>
+            </attribute>
+            <attribute name="continentToKingdomVOffset">
+                <data type="decimal"/>
+            </attribute>
+            <attribute name="hexHeight">
+                <data type="decimal"/>
+            </attribute>
+            <attribute name="hexOrientation">
+                <data type="NCName"/>
+            </attribute>
+            <attribute name="hexWidth">
+                <data type="decimal"/>
+            </attribute>
+            <attribute name="kingdomFactor">
+                <data type="integer"/>
+            </attribute>
+            <attribute name="kingdomToProvinceHOffset">
+                <data type="decimal"/>
+            </attribute>
+            <attribute name="kingdomToProvinceVOffset">
+                <data type="decimal"/>
+            </attribute>
+            <attribute name="lastViewLevel">
+                <data type="NCName"/>
+            </attribute>
+            <attribute name="mapProjection">
+                <data type="NCName"/>
+            </attribute>
+            <attribute name="provinceFactor">
+                <data type="integer"/>
+            </attribute>
+            <attribute name="showFeatureLabels">
+                <data type="boolean"/>
+            </attribute>
+            <attribute name="showGMOnly">
+                <data type="boolean"/>
+            </attribute>
+            <attribute name="showGMOnlyGlow">
+                <data type="boolean"/>
+            </attribute>
+            <attribute name="showGrid">
+                <data type="boolean"/>
+            </attribute>
+            <attribute name="showGridNumbers">
+                <data type="boolean"/>
+            </attribute>
+            <attribute name="showNotes">
+                <data type="boolean"/>
+            </attribute>
+            <attribute name="showShadows">
+                <data type="boolean"/>
+            </attribute>
+            <attribute name="triangleSize">
+                <data type="integer"/>
+            </attribute>
+            <attribute name="type">
+                <data type="NCName"/>
+            </attribute>
+            <attribute name="version">
+                <data type="decimal"/>
+            </attribute>
+            <attribute name="worldToContinentHOffset">
+                <data type="decimal"/>
+            </attribute>
+            <attribute name="worldToContinentVOffset">
+                <data type="decimal"/>
+            </attribute>
+            <element name="gridandnumbering">
+                <attribute name="color0">
+                    <data type="NMTOKEN"/>
+                </attribute>
+                <attribute name="color1">
+                    <data type="NMTOKEN"/>
+                </attribute>
+                <attribute name="color2">
+                    <data type="NMTOKEN"/>
+                </attribute>
+                <attribute name="color3">
+                    <data type="NMTOKEN"/>
+                </attribute>
+                <attribute name="color4">
+                    <data type="NMTOKEN"/>
+                </attribute>
+                <attribute name="gridOffsetContinentKingdomX">
+                    <data type="decimal"/>
+                </attribute>
+                <attribute name="gridOffsetContinentKingdomY">
+                    <data type="decimal"/>
+                </attribute>
+                <attribute name="gridOffsetWorldContinentX">
+                    <data type="decimal"/>
+                </attribute>
+                <attribute name="gridOffsetWorldContinentY">
+                    <data type="decimal"/>
+                </attribute>
+                <attribute name="gridOffsetWorldKingdomX">
+                    <data type="decimal"/>
+                </attribute>
+                <attribute name="gridOffsetWorldKingdomY">
+                    <data type="decimal"/>
+                </attribute>
+                <attribute name="gridOffsetX">
+                    <data type="decimal"/>
+                </attribute>
+                <attribute name="gridOffsetY">
+                    <data type="decimal"/>
+                </attribute>
+                <attribute name="gridSquare">
+                    <data type="integer"/>
+                </attribute>
+                <attribute name="gridSquareHeight">
+                    <data type="decimal"/>
+                </attribute>
+                <attribute name="gridSquareWidth">
+                    <data type="decimal"/>
+                </attribute>
+                <attribute name="numberColor">
+                    <data type="NMTOKEN"/>
+                </attribute>
+                <attribute name="numberFirstCol">
+                    <data type="integer"/>
+                </attribute>
+                <attribute name="numberFirstRow">
+                    <data type="integer"/>
+                </attribute>
+                <attribute name="numberFont">
+                    <data type="NCName"/>
+                </attribute>
+                <attribute name="numberOrder">
+                    <data type="NCName"/>
+                </attribute>
+                <attribute name="numberPosition">
+                    <data type="NCName"/>
+                </attribute>
+                <attribute name="numberPrePad">
+                    <data type="NCName"/>
+                </attribute>
+                <attribute name="numberSeparator">
+                    <data type="NMTOKEN"/>
+                </attribute>
+                <attribute name="numberSize">
+                    <data type="integer"/>
+                </attribute>
+                <attribute name="numberStyle">
+                    <data type="NCName"/>
+                </attribute>
+                <attribute name="width0">
+                    <data type="decimal"/>
+                </attribute>
+                <attribute name="width1">
+                    <data type="decimal"/>
+                </attribute>
+                <attribute name="width2">
+                    <data type="decimal"/>
+                </attribute>
+                <attribute name="width3">
+                    <data type="decimal"/>
+                </attribute>
+                <attribute name="width4">
+                    <data type="decimal"/>
+                </attribute>
+            </element>
+            <element name="terrainmap">
+                <text/>
+            </element>
+            <oneOrMore>
+                <element name="maplayer">
+                    <attribute name="isVisible">
+                        <data type="boolean"/>
+                    </attribute>
+                    <attribute name="name"/>
+                </element>
+            </oneOrMore>
+            <element name="tiles">
+                <attribute name="tilesHigh">
+                    <data type="integer"/>
+                </attribute>
+                <attribute name="tilesWide">
+                    <data type="integer"/>
+                </attribute>
+                <attribute name="viewLevel">
+                    <data type="NCName"/>
+                </attribute>
+                <oneOrMore>
+                    <element name="tilerow">
+                        <text/>
+                    </element>
+                </oneOrMore>
+            </element>
+            <element name="mapkey">
+                <attribute name="backgroundcolor"/>
+                <attribute name="backgroundopacity">
+                    <data type="integer"/>
+                </attribute>
+                <attribute name="entryFontBold">
+                    <data type="boolean"/>
+                </attribute>
+                <attribute name="entryFontColor"/>
+                <attribute name="entryFontFace">
+                    <data type="NCName"/>
+                </attribute>
+                <attribute name="entryFontItalic">
+                    <data type="boolean"/>
+                </attribute>
+                <attribute name="entryScale">
+                    <data type="integer"/>
+                </attribute>
+                <attribute name="height">
+                    <data type="integer"/>
+                </attribute>
+                <attribute name="positionx">
+                    <data type="decimal"/>
+                </attribute>
+                <attribute name="positiony">
+                    <data type="decimal"/>
+                </attribute>
+                <attribute name="scaleFontBold">
+                    <data type="boolean"/>
+                </attribute>
+                <attribute name="scaleFontColor"/>
+                <attribute name="scaleFontFace">
+                    <data type="NCName"/>
+                </attribute>
+                <attribute name="scaleFontItalic">
+                    <data type="boolean"/>
+                </attribute>
+                <attribute name="scaleScale">
+                    <data type="integer"/>
+                </attribute>
+                <attribute name="scaleText"/>
+                <attribute name="titleFontBold">
+                    <data type="boolean"/>
+                </attribute>
+                <attribute name="titleFontColor"/>
+                <attribute name="titleFontFace">
+                    <data type="NCName"/>
+                </attribute>
+                <attribute name="titleFontItalic">
+                    <data type="boolean"/>
+                </attribute>
+                <attribute name="titleScale">
+                    <data type="integer"/>
+                </attribute>
+                <attribute name="titleText"/>
+                <attribute name="viewlevel">
+                    <data type="NCName"/>
+                </attribute>
+            </element>
+            <element name="features">
+                <oneOrMore>
+                    <element name="feature">
+                        <attribute name="color"/>
+                        <attribute name="isContinent">
+                            <data type="boolean"/>
+                        </attribute>
+                        <attribute name="isFillHexBottom">
+                            <data type="boolean"/>
+                        </attribute>
+                        <attribute name="isFlipHorizontal">
+                            <data type="boolean"/>
+                        </attribute>
+                        <attribute name="isFlipVertical">
+                            <data type="boolean"/>
+                        </attribute>
+                        <attribute name="isGMOnly">
+                            <data type="boolean"/>
+                        </attribute>
+                        <attribute name="isHideTerrainIcon">
+                            <data type="boolean"/>
+                        </attribute>
+                        <attribute name="isKingdom">
+                            <data type="boolean"/>
+                        </attribute>
+                        <attribute name="isPlaceFreely">
+                            <data type="boolean"/>
+                        </attribute>
+                        <attribute name="isProvince">
+                            <data type="boolean"/>
+                        </attribute>
+                        <attribute name="isWorld">
+                            <data type="boolean"/>
+                        </attribute>
+                        <attribute name="labelDistance">
+                            <data type="integer"/>
+                        </attribute>
+                        <attribute name="labelPosition">
+                            <data type="NMTOKEN"/>
+                        </attribute>
+                        <attribute name="mapLayer">
+                            <data type="NCName"/>
+                        </attribute>
+                        <attribute name="ringcolor">
+                            <data type="NCName"/>
+                        </attribute>
+                        <attribute name="rotate">
+                            <data type="decimal"/>
+                        </attribute>
+                        <attribute name="scale">
+                            <data type="decimal"/>
+                        </attribute>
+                        <attribute name="scaleHt">
+                            <data type="decimal"/>
+                        </attribute>
+                        <attribute name="tags"/>
+                        <attribute name="type"/>
+                        <attribute name="uuid"/>
+                        <ref name="location"/>
+                        <ref name="label"/>
+                    </element>
+                </oneOrMore>
+            </element>
+            <element name="labels">
+                <oneOrMore>
+                    <ref name="label"/>
+                </oneOrMore>
+            </element>
+            <element name="shapes">
+                <oneOrMore>
+                    <element name="shape">
+                        <attribute name="bbHeight">
+                            <data type="decimal"/>
+                        </attribute>
+                        <attribute name="bbIterations">
+                            <data type="integer"/>
+                        </attribute>
+                        <attribute name="bbWidth">
+                            <data type="decimal"/>
+                        </attribute>
+                        <attribute name="creationType">
+                            <data type="NCName"/>
+                        </attribute>
+                        <attribute name="currentShapeViewLevel">
+                            <data type="NCName"/>
+                        </attribute>
+                        <attribute name="dsColor"/>
+                        <attribute name="dsOffsetX">
+                            <data type="decimal"/>
+                        </attribute>
+                        <attribute name="dsOffsetY">
+                            <data type="decimal"/>
+                        </attribute>
+                        <attribute name="dsRadius">
+                            <data type="decimal"/>
+                        </attribute>
+                        <attribute name="dsSpread">
+                            <data type="decimal"/>
+                        </attribute>
+                        <attribute name="fillRule">
+                            <data type="NCName"/>
+                        </attribute>
+                        <attribute name="fillTexture"/>
+                        <attribute name="highestViewLevel">
+                            <data type="NCName"/>
+                        </attribute>
+                        <attribute name="insChoke">
+                            <data type="decimal"/>
+                        </attribute>
+                        <attribute name="insColor"/>
+                        <attribute name="insOffsetX">
+                            <data type="decimal"/>
+                        </attribute>
+                        <attribute name="insOffsetY">
+                            <data type="decimal"/>
+                        </attribute>
+                        <attribute name="insRadius">
+                            <data type="decimal"/>
+                        </attribute>
+                        <attribute name="isBoxBlur">
+                            <data type="boolean"/>
+                        </attribute>
+                        <attribute name="isContinent">
+                            <data type="boolean"/>
+                        </attribute>
+                        <attribute name="isCurve">
+                            <data type="boolean"/>
+                        </attribute>
+                        <attribute name="isDropShadow">
+                            <data type="boolean"/>
+                        </attribute>
+                        <attribute name="isGMOnly">
+                            <data type="boolean"/>
+                        </attribute>
+                        <attribute name="isInnerShadow">
+                            <data type="boolean"/>
+                        </attribute>
+                        <attribute name="isKingdom">
+                            <data type="boolean"/>
+                        </attribute>
+                        <attribute name="isMatchTileBorders">
+                            <data type="boolean"/>
+                        </attribute>
+                        <attribute name="isProvince">
+                            <data type="boolean"/>
+                        </attribute>
+                        <attribute name="isSnapVertices">
+                            <data type="boolean"/>
+                        </attribute>
+                        <attribute name="isWorld">
+                            <data type="boolean"/>
+                        </attribute>
+                        <attribute name="lineCap">
+                            <data type="NCName"/>
+                        </attribute>
+                        <attribute name="lineJoin">
+                            <data type="NCName"/>
+                        </attribute>
+                        <attribute name="mapLayer"/>
+                        <attribute name="opacity">
+                            <data type="decimal"/>
+                        </attribute>
+                        <attribute name="strokeColor"/>
+                        <attribute name="strokeTexture"/>
+                        <attribute name="strokeType">
+                            <data type="NCName"/>
+                        </attribute>
+                        <attribute name="strokeWidth">
+                            <data type="decimal"/>
+                        </attribute>
+                        <attribute name="tags"/>
+                        <attribute name="type">
+                            <data type="NCName"/>
+                        </attribute>
+                        <oneOrMore>
+                            <element name="p">
+                                <optional>
+                                    <attribute name="type">
+                                        <data type="NCName"/>
+                                    </attribute>
+                                </optional>
+                                <attribute name="x">
+                                    <data type="decimal"/>
+                                </attribute>
+                                <attribute name="y">
+                                    <data type="decimal"/>
+                                </attribute>
+                            </element>
+                        </oneOrMore>
+                    </element>
+                </oneOrMore>
+            </element>
+            <element name="notes">
+                <empty/>
+            </element>
+            <element name="informations">
+                <oneOrMore>
+                    <ref name="information"/>
+                </oneOrMore>
+            </element>
+            <element name="configuration">
+                <element name="terrain-config">
+                    <empty/>
+                </element>
+                <element name="feature-config">
+                    <empty/>
+                </element>
+                <element name="texture-config">
+                    <empty/>
+                </element>
+                <element name="text-config">
+                    <oneOrMore>
+                        <element name="labelstyle">
+                            <attribute name="backgroundColor">
+                                <data type="NCName"/>
+                            </attribute>
+                            <attribute name="color"/>
+                            <attribute name="fontFace"/>
+                            <attribute name="isBold">
+                                <data type="boolean"/>
+                            </attribute>
+                            <attribute name="isItalic">
+                                <data type="boolean"/>
+                            </attribute>
+                            <attribute name="name"/>
+                            <attribute name="outlineColor"/>
+                            <attribute name="outlineSize">
+                                <data type="decimal"/>
+                            </attribute>
+                            <attribute name="scale">
+                                <data type="decimal"/>
+                            </attribute>
+                        </element>
+                    </oneOrMore>
+                </element>
+                <element name="shape-config">
+                    <oneOrMore>
+                        <element name="shapestyle">
+                            <attribute name="bbHeight">
+                                <data type="decimal"/>
+                            </attribute>
+                            <attribute name="bbIterations">
+                                <data type="integer"/>
+                            </attribute>
+                            <attribute name="bbWidth">
+                                <data type="decimal"/>
+                            </attribute>
+                            <attribute name="boxBlur">
+                                <data type="boolean"/>
+                            </attribute>
+                            <attribute name="dropShadow">
+                                <data type="boolean"/>
+                            </attribute>
+                            <attribute name="dsOffsetX">
+                                <data type="decimal"/>
+                            </attribute>
+                            <attribute name="dsOffsetY">
+                                <data type="decimal"/>
+                            </attribute>
+                            <attribute name="dsRadius">
+                                <data type="decimal"/>
+                            </attribute>
+                            <attribute name="dsSpread">
+                                <data type="decimal"/>
+                            </attribute>
+                            <attribute name="dscolor"/>
+                            <attribute name="fillPaint">
+                                <data type="NCName"/>
+                            </attribute>
+                            <attribute name="fillTexture"/>
+                            <attribute name="innerShadow">
+                                <data type="boolean"/>
+                            </attribute>
+                            <attribute name="insChoke">
+                                <data type="decimal"/>
+                            </attribute>
+                            <attribute name="insColor">
+                                <data type="NCName"/>
+                            </attribute>
+                            <attribute name="insOffsetX">
+                                <data type="decimal"/>
+                            </attribute>
+                            <attribute name="insOffsetY">
+                                <data type="decimal"/>
+                            </attribute>
+                            <attribute name="insRadius">
+                                <data type="decimal"/>
+                            </attribute>
+                            <attribute name="isFractal">
+                                <data type="boolean"/>
+                            </attribute>
+                            <attribute name="name"/>
+                            <attribute name="opacity">
+                                <data type="decimal"/>
+                            </attribute>
+                            <attribute name="snapVertices">
+                                <data type="boolean"/>
+                            </attribute>
+                            <attribute name="strokePaint"/>
+                            <attribute name="strokeTexture"/>
+                            <attribute name="strokeType">
+                                <data type="NCName"/>
+                            </attribute>
+                            <attribute name="strokeWidth">
+                                <data type="decimal"/>
+                            </attribute>
+                            <attribute name="tags">
+                                <data type="NCName"/>
+                            </attribute>
+                        </element>
+                    </oneOrMore>
+                </element>
+            </element>
+        </element>
+    </start>
+    <define name="location">
+        <element name="location">
+            <optional>
+                <attribute name="scale">
+                    <data type="decimal"/>
+                </attribute>
+            </optional>
+            <attribute name="viewLevel">
+                <data type="NCName"/>
+            </attribute>
+            <attribute name="x">
+                <data type="decimal"/>
+            </attribute>
+            <attribute name="y">
+                <data type="decimal"/>
+            </attribute>
+        </element>
+    </define>
+    <define name="label">
+        <element name="label">
+            <optional>
+                <attribute name="backgroundColor"/>
+            </optional>
+            <attribute name="color"/>
+            <attribute name="fontFace">
+                <data type="NMTOKEN"/>
+            </attribute>
+            <attribute name="isBold">
+                <data type="boolean"/>
+            </attribute>
+            <attribute name="isContinent">
+                <data type="boolean"/>
+            </attribute>
+            <attribute name="isGMOnly">
+                <data type="boolean"/>
+            </attribute>
+            <attribute name="isItalic">
+                <data type="boolean"/>
+            </attribute>
+            <attribute name="isKingdom">
+                <data type="boolean"/>
+            </attribute>
+            <attribute name="isProvince">
+                <data type="boolean"/>
+            </attribute>
+            <attribute name="isWorld">
+                <data type="boolean"/>
+            </attribute>
+            <attribute name="mapLayer">
+                <data type="NCName"/>
+            </attribute>
+            <attribute name="outlineColor"/>
+            <attribute name="outlineSize">
+                <data type="decimal"/>
+            </attribute>
+            <attribute name="rotate">
+                <data type="decimal"/>
+            </attribute>
+            <attribute name="style">
+                <data type="NCName"/>
+            </attribute>
+            <attribute name="tags"/>
+            <oneOrMore>
+                <choice>
+                    <text/>
+                    <ref name="location"/>
+                </choice>
+            </oneOrMore>
+        </element>
+    </define>
+    <define name="information">
+        <element name="information">
+            <optional>
+                <attribute name="culture"/>
+            </optional>
+            <optional>
+                <attribute name="cultures"/>
+            </optional>
+            <optional>
+                <attribute name="domains"/>
+            </optional>
+            <optional>
+                <attribute name="government"/>
+            </optional>
+            <optional>
+                <attribute name="holySymbol"/>
+            </optional>
+            <optional>
+                <attribute name="language">
+                    <data type="NCName"/>
+                </attribute>
+            </optional>
+            <optional>
+                <attribute name="religionType"/>
+            </optional>
+            <optional>
+                <attribute name="rulers"/>
+            </optional>
+            <attribute name="title"/>
+            <attribute name="type">
+                <data type="NCName"/>
+            </attribute>
+            <attribute name="uuid"/>
+            <oneOrMore>
+                <choice>
+                    <text/>
+                    <ref name="information"/>
+                </choice>
+            </oneOrMore>
+        </element>
+    </define>
+</grammar>

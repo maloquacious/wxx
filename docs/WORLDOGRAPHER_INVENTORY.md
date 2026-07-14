@@ -121,6 +121,57 @@ These delegate all encoding to `github.com/mdhender/ottomap/wog`. Value is in th
    references — carry them over as documentation even if the code isn't reused.
 4. **`tcfna`** independently confirms the format and uniquely covers **1.76 / ROWS (pointy-top)** —
    valuable for schema coverage breadth (the codec projects are mostly COLUMNS/flat-top).
-5. **`gemgem`** has the deepest feature/resource/settlement/edge modeling (schema 1.74).
+5. **`gemgem`** has the deepest feature/resource/settlement/edge modeling (schema 1.74) — but see the
+   Track B B5 finding below: that depth is render-side, not carried by the WXX file.
 6. **playbymail/ottomap** holds the TribeNet **blank-map template** and rendering conventions `wog` omits.
 7. Coordinate/parity gotchas are best documented in **tpty**, **yage-maps**, and **opyl** notes.
+
+---
+
+## Track B (issue #8) consolidation outcomes
+
+What actually landed when consolidating the reusable knowledge into this package (branch
+`track-b-consolidation`):
+
+- **B1 — `tnwxx` RelaxNG schema imported** to `schema/` (`utf-8-xml.rnc`/`.rng` + README), as
+  reference/validation material only (v1.73/classic scope; not build-time enforced; no new dep).
+- **B2 — per-version coverage matrices**: `xmlio/h2017v1/COVERAGE.md` (new) + aligned
+  `xmlio/h2025v1/COVERAGE.md`, cross-checked against the RelaxNG schema, indexed by
+  `docs/CODEC_COVERAGE.md`.
+- **B3 — architecture ADR** (`docs/adr/0001-codec-file-organization.md`, Accepted): co-locate
+  each element's decode+encode in the active `h2025v1` package (leaving frozen `h2017v1` alone),
+  executed in **B3b** as pure code motion plus a coverage-assertion test.
+- **B4 — `tcfna` cross-check**: backfilled classic dispatch through the public `Decode`; preserved
+  the real classic sub-revision additively in `MetaData.Worldographer.Version`; implemented
+  **h2025 ROWS-write** (classic ROWS-write intentionally left a documented gap — frozen).
+
+### B5 — `gemgem` modeling: gap-analysis finding (no fold-ins)
+
+Diffing `gemgem`'s renderer model
+(`~/Software/mdhender/gemgem/apps/api/internal/render/ottomap/wxx/{types.go,writer.go,...}`)
+against `Map_t` produced **zero additive fold candidates**. `gemgem`'s depth is entirely
+**render-side computation**, not structured data carried by the WXX file:
+
+- **Edge features** (`TileFeatures.Edges.{Canal,Ford,Pass,River,StoneRoad} []Direction`) are
+  emitted as generic `<shape type="Path">` elements at draw time, with colors/widths as code
+  literals (`writer.go`) and geometry from hex-vertex math. Worldographer's format has **no
+  structured hex-edge concept** — grepping the W2025 samples finds `river`/`road` only as
+  `<shapestyle>`/`<labelstyle>` names and lore CDATA, never a tile-carried edge attribute.
+- **Settlements / specials / encounters / explored-scouted marks** all flatten to generic
+  `<feature>` / `<label>` / `<note>` (already fully modeled by `Feature_t` / `Label_t` /
+  `Note_t`) plus TribeNet turn state that never reaches disk.
+- **Tile resources**: `Map_t.Resources_t` (7 counts, round-tripped) is **richer** than `gemgem`,
+  which drops them (`writer.go`: "todo: implement resources … 0 Z").
+- `gemgem`'s non-standard `<shape fillColor>` is **not** a real WXX attribute (absent from the
+  RelaxNG `<shape>` definition and both W2025 samples); `Shape_t` matches the RelaxNG attribute
+  set 1:1. Not folded.
+
+Consistent with issue #8's explicitly-deferred render/TribeNet items, none of this enters the
+package. `Map_t` is unchanged and remains a superset.
+
+**Not gemgem-driven, deferred to a separate ticket:** the six genuine W2025-native fields still
+dropped on disk — `maplayer/@opacity`, `labelstyle/@dropShadow{Color,Radius,Spread}`,
+`shapestyle/@lineCap`+`@lineJoin`, `map/@hScrollbarPos`+`@vScrollbarPos`, `<blurTerrainBG>`,
+`<extraTerrain>` (tracked in `xmlio/h2025v1/COVERAGE.md` "Known un-modeled fields"). These are
+legitimate additive folds on their own merits but are W2025-native gaps, not part of consolidating
+`gemgem`'s modeling, so they are left for a follow-up.
