@@ -40,13 +40,14 @@ that lets stub-drift hide.
 
 ## Tests
 
-There is **no automated h2017 codec test** in the tree (verified:
-`find . -name '*_test.go'` yields only `hexg/*_test.go` and
-`xmlio/roundtrip_2025_test.go`; `xmlio/h2017v1/` has no `_test.go`). This absence
-is itself a coverage gap — the classic codec is exercised only indirectly through
-CLI tools, not asserted. Every status below is therefore cited to a **source
-line** (`decode.go` / `encode.go`) rather than to a test, and to a decoded
-classic sample where a fixture proves the shape. Decoded samples referenced are
+The classic codec's first automated test is the round-trip loss harness
+`xmlio/roundtrip_2017_test.go` (issue #25), covered in "Round-trip loss inventory
+(executable)" below. It is an **on-disk audit** — it asserts *what the classic
+codec drops/alters* on a decode → encode round trip per fixture — not a
+per-field fidelity check, and the `xmlio/h2017v1/` package itself still has no
+`_test.go`. So the per-element statuses in the matrix below remain cited to a
+**source line** (`decode.go` / `encode.go`) rather than to a test, and to a
+decoded classic sample where a fixture proves the shape. Decoded samples referenced are
 the classic fixtures under `testdata/input/` (`blank-2017-1.73/1.74/1.77-1.0.wxx`,
 `2017-1.77-1.0-{columns,rows}-blank.wxx`, `2017-1.77-1.0-{import,merge-01}.wxx`),
 inspected by decompressing the gzip/UTF-16BE container to UTF-8 XML.
@@ -71,6 +72,84 @@ inspected by decompressing the gzip/UTF-16BE container to UTF-8 XML.
 | configuration `<texture-config>` | stub | no-op(intentional) | decode `decode.go:502-507`; encode `encode.go:477-481` | Same as terrain-config. |
 | configuration `<text-config>`/`<labelstyle>` | implemented | **unimplemented(dropped)** | decode `decode.go:508-532`; encode `encode.go:483-507` | Decode builds structured `LabelStyle_t` (samples have 10 labelstyles). **`encodeLabelStyle` is a commented-out no-op** — `<text-config></text-config>` emitted with **no `<labelstyle>` children**. Labelstyles are lost on write. |
 | configuration `<shape-config>`/`<shapestyle>` | implemented | implemented | decode `decode.go:533-575`; encode `encode.go:509-551` | Decode builds structured `ShapeStyle_t` (samples have 9–10 shapestyles); **`encodeShapeStyle` writes all attributes**. Note the asymmetry: shapestyle encodes, labelstyle (a peer sub-config) does not. |
+
+## Round-trip loss inventory (executable)
+
+This section is the **on-disk round-trip loss** view that complements the
+per-element matrix above. The matrix records the encode gap for each element in
+isolation; this section records what those gaps actually cost on a full
+**decode → encode** round trip, measured at the XML level (original UTF-8 XML
+vs. re-encoded UTF-8 XML), because a `Map_t`-level comparison is structurally
+blind to symmetric decode/encode drops.
+
+It is **guarded by `xmlio/roundtrip_2017_test.go`** — the first automated h2017
+codec test. That harness decodes each classic fixture, re-encodes it, and diffs
+the two documents at the element/attribute-set level (normalizing away attribute
+order, whitespace, self-closing form, and numeric formatting). The per-fixture
+loss set below is asserted in `classicRoundTripExpect`; any drift (a newly
+dropped/altered field, or a previously dropped field that starts surviving)
+fails the test so this inventory must be updated deliberately. Run
+`go test ./xmlio/ -run RoundTrip2017 -v` to regenerate the raw per-fixture loss
+dump.
+
+**Loss vocabulary:** `dropped` (element present in input, absent/emptied in
+output) · `altered` (attribute present in both, value changed) · `text-dropped`
+(element text present in input, not output) · `encode-hard-error` (re-encode
+returns an error; round trip impossible).
+
+### Observed-in-fixture (harness-proven on the samples)
+
+| Path | Classification | Fixtures | Encode citation |
+|---|---|---|---|
+| `map/informations/information` (+ nested `/information` to depth 2–3) | dropped | all 7 encodable fixtures | `encode.go:438-442` (`encodeInformations` emits only an empty `<informations>` wrapper) |
+| `map/configuration/text-config/labelstyle` | dropped | all 7 encodable fixtures | `encode.go:483-507` (`encodeLabelStyle` is a commented-out no-op; `<text-config>` wrapper still emitted, empty) |
+| `map/mapkey` `@viewlevel` (`"null"` → `"WORLD"`) | altered | `blank-1.73`, `blank-1.77`, `import`, `merge-01`, `merge-02` | `encode.go:253-258` (`encodeMapKey` writes a hardcoded constant `<mapkey>` block) |
+| `<tiles>`/`<tilerow>` (ROWS) | encode-hard-error | `2017-1.77-1.0-rows-blank.wxx` | `encode.go:202-203` (`assert(orientation != "ROWS")`) |
+
+Notes on the observed set:
+
+- **`<informations>` nesting depth is fixture-specific.** `blank-1.74` and
+  `2017-1.77-1.0-columns-blank` carry the lore tree only two `<information>`
+  levels deep; the other five encodable fixtures reach three levels. The harness
+  records the exact deepest chain per fixture, so the expectation for the two
+  shallower fixtures omits the depth-3 entry. Only the `<information>` children
+  are lost — the `<informations>` wrapper itself survives (emitted empty).
+- **`@viewlevel` is the *only* observed `<mapkey>` alteration.** The encoder
+  discards `Map_t.MapKey` entirely and writes a constant block, but the blank
+  samples' map keys coincide with that block on all 22 other attributes, so only
+  `viewlevel` (input `"null"`, constant `"WORLD"`) shows as altered.
+  `blank-1.74` and `columns-blank` already carry `viewlevel="WORLD"` on disk, so
+  they show **no `<mapkey>` drift at all**. The full constant-block override of
+  the remaining attributes is real but **latent** (below).
+- **ROWS is a round-trip *failure*, not a silent drop.** The fixture decodes
+  successfully (asserted by `TestRoundTrip2017RowsHardError`), but re-encode
+  returns `assert(orientation != "ROWS")`, so no diff is possible. Classic ROWS
+  encode is intentionally left unimplemented (classic is frozen; issue B4).
+
+### Latent-by-code (encode gap is real, but no classic fixture exercises it)
+
+These drops are proven by the encoder source, not by the samples — every
+classic fixture leaves the relevant element empty or matches the constant block,
+so the harness cannot observe them. They are recorded from the encode-side
+citation and would surface the moment a populated map is round-tripped.
+
+| Path | Classification | Why latent | Encode citation |
+|---|---|---|---|
+| `map/mapkey` (22 non-`viewlevel` attributes) | altered (constant-block override) | sample map keys equal the hardcoded constants | `encode.go:253-258` |
+| `map/shapes/shape` (+ `<p>` points) | dropped | no classic fixture contains a populated `<shape>` | `encode.go:389-411` (`encodeShape` is a no-op) |
+| `map/notes/note` (+ text) | dropped | every classic fixture has an empty `<notes>` element | `encode.go:424-436` (`encodeNote` is a no-op) |
+| `map/configuration/terrain-config`, `feature-config`, `texture-config` inner content | dropped (no-op wrapper) | samples leave these three sub-configs empty | `encode.go:465-481` |
+| `map/labels/label` / `map/features/feature/label` `@backgroundColor` (`0.0,0.0,0.0,1.0` sentinel) | dropped (by design) | no sampled label carries the sentinel background | `encode.go:343-345` (omitted intentionally; see the code comment) |
+
+### What round-trips cleanly (harness confirms *no* loss)
+
+The harness reports **zero** losses for these, across all seven encodable
+fixtures, corroborating the "implemented/implemented" rows of the matrix at the
+on-disk level: `map` root + its 24 scalar attributes, `<gridandnumbering>`,
+`<terrainmap>`, `<maplayer>`, `<tiles>`/`<tilerow>` + tile data (COLUMNS),
+`<features>`/`<feature>` (+ `<location>`, inline `<label>`), standalone
+`<labels>`/`<label>`, and `<configuration>`'s `<shape-config>`/`<shapestyle>`.
+None of these appear in any fixture's loss set.
 
 ## Version identity — sub-revision in `DataVersion` and `Worldographer.Version`
 
