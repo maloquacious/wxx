@@ -213,6 +213,32 @@ func TestW2025PopulatedRoundTrip(t *testing.T) {
 	compareGroups(t, m1, m2)
 }
 
+// TestW2025PopulatedPublicRoundTrip drives the ENTIRE public pipeline over the
+// populated fixture's content: decode the fixture, then encode through
+// xmlio.NewEncoder().Encode (XML + header + UTF-16BE + gzip) and decode those
+// bytes back with xmlio.NewDecoder().Decode. Unlike TestW2025PopulatedRoundTrip
+// (which drives only the in-memory XML codec), this proves the gzip/UTF-16/header
+// transport layers round-trip populated shapes/notes/features/labels too -- the
+// "full public pipeline" half of the issue's definition of done.
+func TestW2025PopulatedPublicRoundTrip(t *testing.T) {
+	m1 := decodeFixture(t, populatedFixture)
+
+	var buf bytes.Buffer
+	if err := xmlio.NewEncoder().Encode(&buf, m1.MetaData.DataVersion, m1); err != nil {
+		t.Fatalf("public Encode: %v", err)
+	}
+
+	m2, err := xmlio.NewDecoder().Decode(&buf)
+	if err != nil {
+		t.Fatalf("public Decode(re-encoded): %v", err)
+	}
+
+	normalizeVolatile(m1)
+	normalizeVolatile(m2)
+
+	compareGroups(t, m1, m2)
+}
+
 // TestW2025ConfigSectionsEmpty guards the intentional no-op encoders for the
 // <terrain-config>, <feature-config>, and <texture-config> sections
 // (encodeTerrainConfig / encodeFeatureConfig / encodeTextureConfig in

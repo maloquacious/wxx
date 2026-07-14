@@ -31,6 +31,9 @@ Tests referenced (all in `xmlio/roundtrip_2025_test.go`, package `xmlio_test`):
 - **PopulatedRoundTrip** = `TestW2025PopulatedRoundTrip` (in-memory codec over
   the populated fixture, which fills features/labels/shapes/notes the blank
   sample leaves empty)
+- **PopulatedPublicRoundTrip** = `TestW2025PopulatedPublicRoundTrip` (full
+  gzip/UTF-16/header pipeline over the populated fixture, proving the transport
+  layers round-trip populated shapes/notes/features/labels too)
 - **ConfigEmpty** = `TestW2025ConfigSectionsEmpty`
 
 | `<map>` child element | Decode | Encode | Test(s) | Notes |
