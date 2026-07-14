@@ -12,6 +12,7 @@ import (
 	"github.com/maloquacious/semver"
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/xmlio/h2017v1"
+	"github.com/maloquacious/wxx/xmlio/h2025v1"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/transform"
 )
@@ -155,6 +156,11 @@ func MarshalXML(m *wxx.Map_t, worldographerTargetVersion semver.Version) ([]byte
 		switch worldographerTargetVersion.Minor {
 		case 1:
 			return h2017v1.Encode(m)
+		}
+	case 2025:
+		switch worldographerTargetVersion.Minor {
+		case 1:
+			return h2025v1.Encode(m)
 		}
 	}
 	return nil, errors.Join(wxx.ErrUnsupportedSchemaVersion, fmt.Errorf("schema version: %s", worldographerTargetVersion.Short()))

@@ -3,6 +3,7 @@
 package xmlio_test
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"reflect"
@@ -66,6 +67,34 @@ func TestW2025RoundTrip(t *testing.T) {
 	m2, err := h2025v1.Decode(xmlBytes)
 	if err != nil {
 		t.Fatalf("h2025v1.Decode(re-encoded): %v\n---encoded xml (first 800 bytes)---\n%s", err, head(xmlBytes, 800))
+	}
+
+	normalizeVolatile(m1)
+	normalizeVolatile(m2)
+
+	compareGroups(t, m1, m2)
+}
+
+// TestW2025PublicRoundTrip exercises the entire public pipeline end to end:
+// decode a real .wxx file, encode it back through xmlio.NewEncoder().Encode
+// (XML + header + UTF-16BE + gzip), then decode those bytes with
+// xmlio.NewDecoder().Decode and assert semantic equality. Unlike
+// TestW2025RoundTrip (which drives only the in-memory XML codec), this proves
+// the gzip/UTF-16/header transport layers round-trip too.
+func TestW2025PublicRoundTrip(t *testing.T) {
+	m1, err := decodeFile(t, sample2025_206)
+	if err != nil {
+		t.Fatalf("initial decode: %v", err)
+	}
+
+	var buf bytes.Buffer
+	if err := xmlio.NewEncoder().Encode(&buf, m1.MetaData.DataVersion, m1); err != nil {
+		t.Fatalf("public Encode: %v", err)
+	}
+
+	m2, err := xmlio.NewDecoder().Decode(&buf)
+	if err != nil {
+		t.Fatalf("public Decode(re-encoded): %v", err)
 	}
 
 	normalizeVolatile(m1)
