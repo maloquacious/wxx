@@ -21,7 +21,27 @@ Worldographer has two file-format families, and `wxx` reads and writes both:
 * **Classic** — the original Worldographer / Hexographer 2 format (XML 1.0, no schema version in the file).
 * **2025** — the newer Worldographer 2025 format (XML 1.1, with a schema version in the `map` element).
 
-**Classic support is frozen.** It will continue to read and write existing files and will receive **security bug fixes only** — no new features. **Future development focuses on the 2025 version.**
+**Classic support is frozen.** It will continue to read and write existing files and will receive **security bug fixes only** — no new features. **Future development focuses on the 2025 version.** (One narrow exception is in progress: reconciling classic version *identity* metadata — see the note below and `docs/adr/0002-version-identity.md`.)
+
+### Version identity
+
+Every decoded map carries a parsed, comparable `MetaData.DataVersion`
+(`semver`) whose `Major` is the **schema family** and whose `Minor.Patch` is the
+**on-disk dotted revision**. The verbatim on-disk string is also kept in
+`MetaData.Worldographer.Version`.
+
+| family (`DataVersion.Major`) | on-disk identifier | values seen | `DataVersion` |
+|---|---|---|---|
+| `2017` — classic (Hexographer 2) | `map/@version` (no `release`/`schema`) | `1.73`, `1.74`, `1.77` | `{2017, 1, nn}` |
+| `2025` — Worldographer 2025 | `map/@schema` (`release="2025"`) | `1.01`, `1.06` | `{2025, 1, n}` |
+
+The encoder selects a codec by **family** (`DataVersion.Major`). These on-disk
+values are **not** semantic versions: classic `1.73`–`1.77` share one schema, and
+the 2025 numbers are known to be buggy (`1.x` where `2.x` was intended), so `wxx`
+re-emits whatever it read **verbatim**. Reconciling the buggy 2025 values to the
+true release version is tracked in #13. See
+`docs/adr/0002-version-identity.md` for the rationale and the classic-side
+follow-up (ADR 0002 supersedes the interim `{2017,1}` handling B4 introduced).
 
 ## Go package
 

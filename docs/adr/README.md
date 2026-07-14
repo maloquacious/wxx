@@ -17,3 +17,4 @@ forced it, the options weighed, and the consequences.
 | ADR | Title | Status |
 |---|---|---|
 | [0001](0001-codec-file-organization.md) | Codec file organization: co-located per-element encode/decode | Proposed — gates task B3b |
+| [0002](0002-version-identity.md) | Version identity: `DataVersion` = `{familyYear, on-disk dotted revision}` | Accepted (2026-07-14) — #12 implemented |

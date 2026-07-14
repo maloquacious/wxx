@@ -16,6 +16,31 @@ import (
 	"github.com/maloquacious/wxx/hexg"
 )
 
+// classicDataVersion parses a classic on-disk <map version> string ("1.73",
+// "1.74", "1.77") into a semver whose Major is the 2017 schema family and whose
+// Minor.Patch is the dotted on-disk revision (ADR 0002). It is best-effort: an
+// empty or malformed version falls back to {2017,1} so decode never regresses to
+// an error on an odd file — the public dispatcher already gates classic on a
+// "1." version prefix. The verbatim string is preserved separately in
+// Map_t.Version and MetaData.Worldographer.Version.
+func classicDataVersion(version string) semver.Version {
+	dv := semver.Version{Major: 2017, Minor: 1}
+	parts := strings.Split(version, ".")
+	if len(parts) != 2 {
+		return dv
+	}
+	minor, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return dv
+	}
+	patch, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return dv
+	}
+	dv.Minor, dv.Patch = minor, patch
+	return dv
+}
+
 // Decode the XML data using the H2017.V1 schema and return a Map_t or an error.
 func Decode(input []byte) (*wxx.Map_t, error) {
 	m := &XMLSchema{}
@@ -30,13 +55,19 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	// process source into a WXX structure and return it or any errors
 	w := &wxx.Map_t{}
 	w.MetaData.AppVersion = wxx.Version()
-	w.MetaData.DataVersion = semver.Version{Major: 2017, Minor: 1}
+	// DataVersion transcribes the on-disk identity (ADR 0002): Major=2017 is the
+	// schema family / encode-dispatch key; Minor.Patch is the dotted on-disk
+	// revision parsed from the <map version> attribute ("1.77" -> {2017,1,77}).
+	// The leading component is 1 for every known classic file, so Minor stays 1
+	// and the family-based encode dispatch is unaffected. Note the classic schema
+	// itself did not change across 1.73/1.74/1.77 — these are application version
+	// bumps, so Patch distinguishes the file, not the schema.
+	w.MetaData.DataVersion = classicDataVersion(m.Version)
 	w.MetaData.Created = time.Now().UTC().Format(time.RFC3339)
 	w.MetaData.Worldographer.Name = "unknown"
-	// Preserve the real classic sub-revision (1.73/1.74/1.77) additively in the
-	// Worldographer metadata. DataVersion stays {2017,1} above because it is the
-	// encode dispatch key; the on-disk version lives here instead. Classic files
-	// carry no release/schema attributes, so those fields remain empty.
+	// Also preserve the on-disk sub-revision verbatim in the Worldographer
+	// metadata (the fidelity form; DataVersion is the parsed, comparable form).
+	// Classic files carry no release/schema attributes, so those fields stay empty.
 	w.MetaData.Worldographer.Version = m.Version
 	// w.MetaData.Worldographer.Created = time.Time{}
 

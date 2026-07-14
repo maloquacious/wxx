@@ -151,17 +151,17 @@ func (e *Encoder) Encode(w io.Writer, worldographerTargetVersion semver.Version,
 // MarshalXML uses the target version to pick the right XML schema, then converts the Map_t to XML.
 // Returns an error for unsupported versions or if there are errors during the conversion.
 func MarshalXML(m *wxx.Map_t, worldographerTargetVersion semver.Version) ([]byte, error) {
+	// Dispatch on the schema family (Major) only (ADR 0002). Minor.Patch carries
+	// the on-disk sub-revision (classic 1.7x, 2025 schema 1.x) and is
+	// informational for codec selection, so any 2017.x routes to h2017v1 and any
+	// 2025.x to h2025v1. This removes the earlier Minor==1 gate, which would have
+	// mis-rejected a parsed classic DataVersion ({2017,1,77}) and any future 2025
+	// schema whose leading component is not 1.
 	switch worldographerTargetVersion.Major {
 	case 2017:
-		switch worldographerTargetVersion.Minor {
-		case 1:
-			return h2017v1.Encode(m)
-		}
+		return h2017v1.Encode(m)
 	case 2025:
-		switch worldographerTargetVersion.Minor {
-		case 1:
-			return h2025v1.Encode(m)
-		}
+		return h2025v1.Encode(m)
 	}
 	return nil, errors.Join(wxx.ErrUnsupportedSchemaVersion, fmt.Errorf("schema version: %s", worldographerTargetVersion.Short()))
 }
