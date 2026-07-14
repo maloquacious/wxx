@@ -39,12 +39,15 @@ func decodeConfiguration(src Configuration_t, w *wxx.Map_t) error {
 	for _, mTextConfig := range src.TextConfig {
 		for _, mLabelStyle := range mTextConfig.LabelStyles {
 			wLabelStyle := &wxx.LabelStyle_t{
-				Name:        mLabelStyle.Name,
-				FontFace:    mLabelStyle.FontFace,
-				Scale:       mLabelStyle.Scale,
-				IsBold:      mLabelStyle.IsBold,
-				IsItalic:    mLabelStyle.IsItalic,
-				OutlineSize: mLabelStyle.OutlineSize,
+				Name:             mLabelStyle.Name,
+				FontFace:         mLabelStyle.FontFace,
+				Scale:            mLabelStyle.Scale,
+				IsBold:           mLabelStyle.IsBold,
+				IsItalic:         mLabelStyle.IsItalic,
+				OutlineSize:      mLabelStyle.OutlineSize,
+				DropShadowColor:  mLabelStyle.DropShadowColor,
+				DropShadowRadius: mLabelStyle.DropShadowRadius,
+				DropShadowSpread: mLabelStyle.DropShadowSpread,
 			}
 			if wLabelStyle.Color, err = decodeRgba(mLabelStyle.Color); err != nil {
 				return fmt.Errorf("labelStyle.color: %w", err)
@@ -87,6 +90,8 @@ func decodeConfiguration(src Configuration_t, w *wxx.Map_t) error {
 				BbIterations:  mShapeStyle.BbIterations,
 				FillTexture:   mShapeStyle.FillTexture,
 				StrokeTexture: mShapeStyle.StrokeTexture,
+				LineCap:       mShapeStyle.LineCap,
+				LineJoin:      mShapeStyle.LineJoin,
 			}
 			if wShapeStyle.StrokePaint, err = decodeRgba(mShapeStyle.StrokePaint); err != nil {
 				return fmt.Errorf("shapeStyle.strokePaint: %w", err)
@@ -191,6 +196,17 @@ func encodeLabelStyle(labelStyle *wxx.LabelStyle_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(" backgroundColor=%q", rgbas(labelStyle.BackgroundColor))) // decodeRgba
 	wb.WriteString(fmt.Sprintf(" outlineSize=%q", floats(labelStyle.OutlineSize)))
 	wb.WriteString(fmt.Sprintf(" outlineColor=%q", rgbans(labelStyle.OutlineColor))) // "null" or decodeZeroableRgba
+	// The W2025 drop-shadow trio is present all-or-none in real data;
+	// dropShadowColor is "null" or an RGBA string when present, never empty, so an
+	// empty DropShadowColor reliably means "absent from the source". Older schemas
+	// (e.g. 1.01) omit the trio entirely -- gate the whole group on the color
+	// sentinel so a round-trip does not spuriously add the attributes. Do not gate
+	// on the numeric fields: 0 is a legal radius/spread value.
+	if labelStyle.DropShadowColor != "" {
+		wb.WriteString(fmt.Sprintf(" dropShadowColor=%q", labelStyle.DropShadowColor)) // nullable string ("null")
+		wb.WriteString(fmt.Sprintf(" dropShadowRadius=%q", floats(labelStyle.DropShadowRadius)))
+		wb.WriteString(fmt.Sprintf(" dropShadowSpread=%q", floats(labelStyle.DropShadowSpread)))
+	}
 	wb.WriteString(" />\n")
 	return nil
 }
@@ -235,6 +251,8 @@ func encodeShapeStyle(shapeStyle *wxx.ShapeStyle_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf("  fillPaint=%q", rgbans(shapeStyle.FillPaint)))    // nullable
 	wb.WriteString(fmt.Sprintf("  dscolor=%q", rgbans(shapeStyle.DsColor)))        // nullable
 	wb.WriteString(fmt.Sprintf("  insColor=%q", rgbans(shapeStyle.InsColor)))      // nullable
+	wb.WriteString(fmt.Sprintf(" lineCap=%q", shapeStyle.LineCap))
+	wb.WriteString(fmt.Sprintf(" lineJoin=%q", shapeStyle.LineJoin))
 	wb.WriteString(" />\n")
 	return nil
 }

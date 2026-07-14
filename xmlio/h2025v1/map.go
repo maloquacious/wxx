@@ -107,8 +107,12 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	w.Version = m.Version
 	w.WorldToContinentHOffset = m.WorldToContinentHOffset
 	w.WorldToContinentVOffset = m.WorldToContinentVOffset
+	w.HScrollbarPos = m.HScrollbarPos
+	w.VScrollbarPos = m.VScrollbarPos
 
 	decodeGridAndNumbering(m.GridAndNumbering, w)
+
+	decodeBlurTerrainBG(m.BlurTerrainBG, w)
 
 	if err := decodeTerrainMap(m.TerrainMap, w); err != nil {
 		return w, err
@@ -123,6 +127,8 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	if err := decodeFeatures(m.Features, w); err != nil {
 		return w, err
 	}
+
+	decodeExtraTerrain(m.ExtraTerrain, w)
 
 	if err := decodeLabels(m.Labels, w); err != nil {
 		return w, err
@@ -171,6 +177,7 @@ func encodeMap(w *wxx.Map_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(" worldToContinentVOffset=%q", floats(w.WorldToContinentVOffset)))
 	wb.WriteString(fmt.Sprintf(" continentToKingdomVOffset=%q", floats(w.ContinentToKingdomVOffset)))
 	wb.WriteString(fmt.Sprintf(" kingdomToProvinceVOffset=%q \n", floats(w.KingdomToProvinceVOffset)))
+	wb.WriteString(fmt.Sprintf("hScrollbarPos=%q vScrollbarPos=%q \n", floats(w.HScrollbarPos), floats(w.VScrollbarPos)))
 	wb.WriteString(fmt.Sprintf("hexWidth=%q", floats(w.HexWidth)))
 	wb.WriteString(fmt.Sprintf(" hexHeight=%q", floats(w.HexHeight)))
 	wb.WriteString(fmt.Sprintf(" hexOrientation=%q", w.HexOrientation))
@@ -195,6 +202,10 @@ func encodeMap(w *wxx.Map_t, wb *bytes.Buffer) error {
 		return err
 	}
 
+	if err := encodeBlurTerrainBG(w.BlurTerrainBG, wb); err != nil {
+		return err
+	}
+
 	if err := encodeTerrainMap(w.TerrainMap, wb); err != nil {
 		return err
 	}
@@ -212,6 +223,10 @@ func encodeMap(w *wxx.Map_t, wb *bytes.Buffer) error {
 	}
 
 	if err := encodeFeatures(w.Features, wb); err != nil {
+		return err
+	}
+
+	if err := encodeExtraTerrain(w.ExtraTerrain, wb); err != nil {
 		return err
 	}
 

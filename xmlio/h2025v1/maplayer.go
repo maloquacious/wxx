@@ -9,11 +9,11 @@ import (
 	"github.com/maloquacious/wxx"
 )
 
-// decodeMapLayers copies each <maplayer> into the domain map. Only Name and
-// IsVisible are modeled (the opacity attribute is un-modeled and dropped).
+// decodeMapLayers copies each <maplayer> (name, isVisible, opacity) into the
+// domain map.
 func decodeMapLayers(src []MapLayer_t, w *wxx.Map_t) {
 	for _, layer := range src {
-		w.MapLayers = append(w.MapLayers, &wxx.MapLayer_t{Name: layer.Name, IsVisible: layer.IsVisible})
+		w.MapLayers = append(w.MapLayers, &wxx.MapLayer_t{Name: layer.Name, IsVisible: layer.IsVisible, Opacity: layer.Opacity})
 	}
 }
 
@@ -31,6 +31,7 @@ func encodeMapLayer(mapLayer *wxx.MapLayer_t, wb *bytes.Buffer) error {
 	wb.WriteString("<maplayer")
 	wb.WriteString(fmt.Sprintf(" name=%q", mapLayer.Name))
 	wb.WriteString(fmt.Sprintf(" isVisible=%q", bools(mapLayer.IsVisible)))
+	wb.WriteString(fmt.Sprintf(" opacity=%q", floats(mapLayer.Opacity)))
 	wb.WriteString("/>\n")
 	return nil
 }

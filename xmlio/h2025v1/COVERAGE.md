@@ -8,11 +8,17 @@ stub encoder hid behind a passing round-trip test.
 "**implemented**" here means the round-trip **at the `Map_t` level** is proven
 by the named test: decode -> encode -> decode reproduces the same in-memory
 model. It does **not** promise byte-for-byte on-disk fidelity. Fields that are
-present in real Worldographer output but have no field in `schema.go` are
+present in real Worldographer output but have no field in `schema.go` would be
 silently dropped on decode; because encode never re-emits them either, the
-`Map_t` round-trip still passes while the on-disk data is lost. Those are listed
-under "Known un-modeled fields" below -- that gap is exactly what this matrix
-exists to surface.
+`Map_t` round-trip still passes while the on-disk data is lost -- that class of
+gap is exactly what this matrix exists to surface.
+
+The six W2025-native fields that were formerly dropped (`maplayer/@opacity`,
+`labelstyle/@dropShadow*`, `shapestyle/@lineCap`+`@lineJoin`,
+`map/@hScrollbarPos`+`@vScrollbarPos`, `<blurTerrainBG>`, `<extraTerrain>`) are
+now modeled additively and wired through decode+encode; **issue #11 closed the
+"Known un-modeled fields" section** and each of the six is exercised by
+`TestW2025CoverageMatrix` (see the **CoverageMatrix** test below).
 
 Statuses: **implemented** (full `Map_t` round-trip) / **stub** (parsed into the
 model but only as raw chardata, not structured) / **no-op(intentional)** (encoder
@@ -50,13 +56,17 @@ Tests referenced (in `xmlio/roundtrip_2025_test.go` unless noted, package
 - **RowsRoundTrip** = `TestW2025RowsRoundTrip` (in
   `xmlio/rows_encode_2025_test.go`; in-memory encode->decode over an asymmetric
   2x3 ROWS grid, asserting orientation and per-cell position fidelity)
+- **CoverageMatrix** = `TestW2025CoverageMatrix` (in `xmlio/coverage_2025_test.go`;
+  decode->encode->decode over both the populated fixture and the real sample,
+  asserting per-element counts and key field values -- including the six
+  W2025-native fields modeled in #11)
 
 | `<map>` child element | Decode | Encode | Test(s) | Notes |
 |---|---|---|---|---|
-| `<map>` root + scalar attributes | implemented | implemented | RoundTrip, PublicRoundTrip, DecodeBoth | `hScrollbarPos` / `vScrollbarPos` un-modeled (see below). |
+| `<map>` root + scalar attributes | implemented | implemented | RoundTrip, PublicRoundTrip, DecodeBoth, CoverageMatrix | `hScrollbarPos` / `vScrollbarPos` now modeled (#11). |
 | `<gridandnumbering>` (30 attrs) | implemented | implemented | RoundTrip, PublicRoundTrip | All 30 attributes modeled and re-emitted. |
 | `<terrainmap>` | implemented | implemented | RoundTrip, DecodeBoth | Tab-delimited name/slot table parsed into `TerrainMap_t`. |
-| `<maplayer>` | implemented | lossy | RoundTrip, PublicRoundTrip | `opacity` attr un-modeled -> dropped (see below). Only `name` + `isVisible` round-trip. |
+| `<maplayer>` | implemented | implemented | RoundTrip, PublicRoundTrip, CoverageMatrix | `opacity` now modeled (#11); `name` + `isVisible` + `opacity` round-trip. |
 | `<tiles>` / `<tilerow>` | implemented | implemented | RoundTrip, PublicRoundTrip, DecodeBoth, RowsRoundTrip | Decode handles COLUMNS and ROWS; **encoder now supports COLUMNS and ROWS** (`tiles.go` `encodeTiles`). The physical `<tilerow>` emission is orientation-independent — decode stores tiles in file-physical `Tiles[x][y]` order (`tilesWide` rows of `tilesHigh` lines) for both orientations, so ROWS emits the identical structure; orientation only affects the OddQ/OddR coordinate interpretation and the RowsHigh/ColumnsWide labels. The on-disk `.wxx` sample is COLUMNS; ROWS is covered by `TestW2025RowsRoundTrip`, which builds an asymmetric 2x3 ROWS grid in memory and asserts every cell round-trips to the same position (catching any transpose). |
 | tile data (terrain, elevation, isIcy, isGMOnly, resources, customBackgroundColor) | implemented | implemented | RoundTrip, PublicRoundTrip | 6/7/11/12-column forms + `Z`-compressed resources; opaque-black `customBackgroundColor` folds to nil per `decodeRgba`. |
 | `<mapkey>` | implemented | implemented | RoundTrip, PublicRoundTrip | All attributes modeled. (Decode is nested inside the tilerow loop but runs given >=1 tilerow.) |
@@ -71,32 +81,25 @@ Tests referenced (in `xmlio/roundtrip_2025_test.go` unless noted, package
 | configuration `<terrain-config>` | stub | no-op(intentional) | ConfigEmpty | Parsed as raw chardata only; encoder emits empty wrapper. Lossless only because real samples leave it empty (guarded by ConfigEmpty). |
 | configuration `<feature-config>` | stub | no-op(intentional) | ConfigEmpty | Same as terrain-config. |
 | configuration `<texture-config>` | stub | no-op(intentional) | ConfigEmpty | Same as terrain-config. |
-| configuration `<text-config>` / `<labelstyle>` | implemented | lossy | RoundTrip, PublicRoundTrip | 7 labelstyles in sample fully round-trip at `Map_t` level; but `dropShadowColor` / `dropShadowRadius` / `dropShadowSpread` un-modeled -> dropped (see below). |
-| configuration `<shape-config>` / `<shapestyle>` | implemented | lossy | RoundTrip, PublicRoundTrip | 7 shapestyles in sample round-trip at `Map_t` level; but `lineCap` / `lineJoin` un-modeled -> dropped (see below). |
-| `<blurTerrainBG>` | not modeled | not emitted | -- | No field in `XMLSchema`; present in sample, dropped (see below). |
-| `<extraTerrain>` | not modeled | not emitted | -- | No field in `XMLSchema`; present in sample, dropped (see below). |
+| configuration `<text-config>` / `<labelstyle>` | implemented | implemented | RoundTrip, PublicRoundTrip, CoverageMatrix | 7 labelstyles in sample round-trip; `dropShadowColor` (nullable string) / `dropShadowRadius` / `dropShadowSpread` now modeled (#11). |
+| configuration `<shape-config>` / `<shapestyle>` | implemented | implemented | RoundTrip, PublicRoundTrip, CoverageMatrix | 7 shapestyles in sample round-trip; `lineCap` / `lineJoin` now modeled (#11). |
+| `<blurTerrainBG>` | implemented | implemented | CoverageMatrix | Optional top-level element modeled as `*BlurTerrainBG_t` (nil = absent); 6 attrs round-trip (#11). |
+| `<extraTerrain>` | implemented | implemented | CoverageMatrix | Optional top-level element modeled as `*ExtraTerrain_t` (nil = absent); present-but-empty container preserved via raw innerxml (#11). |
 
 ## Known un-modeled fields
 
-These attributes/elements appear in the real `data/2025-2.05.utf8` sample (and in
-Worldographer output generally) but have **no corresponding field in
-`xmlio/h2025v1/schema.go`**. They are therefore silently discarded on decode and
-never written on encode. Because decode and encode ignore them **symmetrically**,
-the `Map_t`-level round-trip tests still pass -- but the data is **not preserved
-to disk**. This is precisely the kind of drift this matrix is meant to catch.
+**None.** Issue #11 closed this section: the six W2025-native fields that were
+formerly listed here are now modeled additively in `schema.go` + `Map_t`, wired
+through h2025 decode and encode, and each is exercised by a green 2025 round trip
+(`TestW2025CoverageMatrix`). For the record, the six -- and where they now live --
+were:
 
-Each item below was verified by grepping the sample and reading `schema.go`:
-
-- **`<maplayer opacity>`** -- sample: `<maplayer name="Labels" isVisible="true" opacity="1.0"/>`. `MapLayer_t` models only `Name` and `IsVisible`; no `Opacity` field. Dropped.
-- **`<labelstyle dropShadowColor / dropShadowRadius / dropShadowSpread>`** -- sample: `<labelstyle name="Nation" ... dropShadowColor="null" dropShadowRadius="0" dropShadowSpread="0" />`. `LabelStyle_t` has no `dropShadow*` fields. Dropped.
-- **`<shapestyle lineCap / lineJoin>`** -- sample: `<shapestyle name="Trail" ... lineCap="SQUARE" lineJoin="ROUND" />`. `ShapeStyle_t` has no `LineCap`/`LineJoin` fields. Dropped. (Note: the `<shape>` element -- a different type, `Shape_t` -- *does* model `lineCap`/`lineJoin`; only `<shapestyle>` drops them.)
-- **`<map hScrollbarPos / vScrollbarPos>`** -- sample: `hScrollbarPos="0.0"` and `vScrollbarPos="0.0"` on the root `<map>` element. `XMLSchema` models neither. Dropped (these are UI scroll positions, so the loss is cosmetic).
-- **`<blurTerrainBG>`** -- top-level element in the sample: `<blurTerrainBG blur="false" topBleed="0.33" bottomBleed="0.65" randomness="0.1" blurStart="0.4" blurEnd="0.95"/>`. No field in `XMLSchema`; dropped on decode and omitted on encode.
-- **`<extraTerrain>`** -- top-level element in the sample (`<extraTerrain>`). No field in `XMLSchema`; dropped on decode and omitted on encode.
-
-All six were confirmed absent from `schema.go` (grep for `hScrollbarPos`,
-`vScrollbarPos`, `dropShadow*`, `blurTerrainBG`, `extraTerrain`, and inspection
-of `MapLayer_t` / `ShapeStyle_t` returned no match).
+- **`<maplayer opacity>`** -- `MapLayer_t.Opacity` (float) / schema `MapLayer_t.Opacity`. Round-trips via CoverageMatrix (`MapLayers[0].Opacity == 1.0`).
+- **`<labelstyle dropShadowColor / dropShadowRadius / dropShadowSpread>`** -- `LabelStyle_t.DropShadowColor` (nullable string, preserves `"null"`), `.DropShadowRadius`, `.DropShadowSpread` (floats). CoverageMatrix asserts `DropShadowColor == "null"` and zero radius/spread.
+- **`<shapestyle lineCap / lineJoin>`** -- `ShapeStyle_t.LineCap` / `.LineJoin` (strings), mirroring `Shape_t`. CoverageMatrix asserts `SQUARE` / `ROUND`.
+- **`<map hScrollbarPos / vScrollbarPos>`** -- `Map_t.HScrollbarPos` / `.VScrollbarPos` (floats) / schema root attrs. CoverageMatrix asserts they do not drift.
+- **`<blurTerrainBG>`** -- `Map_t.BlurTerrainBG *BlurTerrainBG_t` (nil = absent); 6 attrs modeled. CoverageMatrix asserts non-nil with attrs preserved.
+- **`<extraTerrain>`** -- `Map_t.ExtraTerrain *ExtraTerrain_t` (nil = absent); present-but-empty container preserved via raw innerxml. CoverageMatrix asserts non-nil.
 
 ## RelaxNG cross-check
 
@@ -113,19 +116,19 @@ about W2025 additions.
   `labelstyle`, `shapestyle` — has a corresponding type in `xmlio/h2025v1/schema.go`
   and appears as **implemented** in the table above. No RelaxNG element is
   unmodeled by the h2025 decoder.
-- **The RelaxNG schema cannot catch the six known un-modeled fields**, because
-  every one of them is a **W2025 addition outside the schema's scope**: the
-  schema defines `<maplayer>` with only `isVisible`/`name` (no `opacity`), and
-  defines no `blurTerrainBG`, no `extraTerrain`, no `dropShadow*` on
-  `<labelstyle>`, no `lineCap`/`lineJoin` on `<shapestyle>`, and no
-  `hScrollbarPos`/`vScrollbarPos` on `<map>`. `schema/README.md` independently
+- **The six W2025-native fields modeled in #11 lie outside the schema's scope.**
+  Each is a **W2025 addition** the classic RelaxNG schema neither describes nor
+  could have flagged: the schema defines `<maplayer>` with only `isVisible`/`name`
+  (no `opacity`), and defines no `blurTerrainBG`, no `extraTerrain`, no
+  `dropShadow*` on `<labelstyle>`, no `lineCap`/`lineJoin` on `<shapestyle>`, and
+  no `hScrollbarPos`/`vScrollbarPos` on `<map>`. `schema/README.md` independently
   flags `maplayer/@opacity`, `blurTerrainBG`, and `extraTerrain` as verified
-  W2025 deltas absent from the schema — corroborating that these gaps are real
-  format additions, not modeling oversights the classic schema could have warned
-  about.
+  W2025 deltas absent from the schema — corroborating that these were real format
+  additions, not modeling oversights the classic schema could have warned about.
+  They are now modeled additively and proven by `TestW2025CoverageMatrix`.
 
 **Conclusion:** the classic-scoped RelaxNG schema confirms h2025 models 100% of
-the *shared* format, and confirms the six un-modeled fields are genuine W2025
-extensions the schema does not (and cannot) describe. A W2025-scoped formal
-schema would be needed to mechanically check the additions; until then this
-matrix's "Known un-modeled fields" section is the checklist for them.
+the *shared* format, and confirms the six #11 fields are genuine W2025 extensions
+the schema does not (and cannot) describe. A W2025-scoped formal schema would be
+needed to mechanically check the additions; until then `TestW2025CoverageMatrix`
+is the executable checklist for them.
