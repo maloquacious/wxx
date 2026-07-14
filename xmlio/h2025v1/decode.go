@@ -341,36 +341,40 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 			Y:         mFeature.Location.Y,
 		}
 
-		f.Label = &wxx.Label_t{
-			MapLayer:    mFeature.Label.MapLayer,
-			Style:       mFeature.Label.Style,
-			FontFace:    mFeature.Label.FontFace,
-			OutlineSize: mFeature.Label.OutlineSize,
-			Rotate:      mFeature.Label.Rotate,
-			IsBold:      mFeature.Label.IsBold,
-			IsItalic:    mFeature.Label.IsItalic,
-			IsWorld:     mFeature.Label.IsWorld,
-			IsContinent: mFeature.Label.IsContinent,
-			IsKingdom:   mFeature.Label.IsKingdom,
-			IsProvince:  mFeature.Label.IsProvince,
-			IsGMOnly:    mFeature.Label.IsGMOnly,
-			Tags:        mFeature.Label.Tags,
-			InnerText:   mFeature.Label.InnerText,
-		}
-		if f.Label.Color, err = decodeRgba(mFeature.Label.Color); err != nil {
-			return w, fmt.Errorf("feature.label.color: %w", err)
-		}
-		if f.Label.OutlineColor, err = decodeRgba(mFeature.Label.OutlineColor); err != nil {
-			return w, fmt.Errorf("feature.label.outlineColor: %w", err)
-		}
-		if f.Label.BackgroundColor, err = decodeRgba(mFeature.Label.BackgroundColor); err != nil {
-			return w, fmt.Errorf("feature.label.backgroundColor: %w", err)
-		}
-		f.Label.Location = &wxx.LabelLocation_t{
-			ViewLevel: mFeature.Label.Location.ViewLevel,
-			X:         mFeature.Label.Location.X,
-			Y:         mFeature.Label.Location.Y,
-			Scale:     mFeature.Label.Location.Scale,
+		// only build f.Label when the source feature actually had a <label> child;
+		// a labelless feature must leave f.Label nil so the encoder omits <label>.
+		if mFeature.Label != nil {
+			f.Label = &wxx.Label_t{
+				MapLayer:    mFeature.Label.MapLayer,
+				Style:       mFeature.Label.Style,
+				FontFace:    mFeature.Label.FontFace,
+				OutlineSize: mFeature.Label.OutlineSize,
+				Rotate:      mFeature.Label.Rotate,
+				IsBold:      mFeature.Label.IsBold,
+				IsItalic:    mFeature.Label.IsItalic,
+				IsWorld:     mFeature.Label.IsWorld,
+				IsContinent: mFeature.Label.IsContinent,
+				IsKingdom:   mFeature.Label.IsKingdom,
+				IsProvince:  mFeature.Label.IsProvince,
+				IsGMOnly:    mFeature.Label.IsGMOnly,
+				Tags:        mFeature.Label.Tags,
+				InnerText:   mFeature.Label.InnerText,
+			}
+			if f.Label.Color, err = decodeRgba(mFeature.Label.Color); err != nil {
+				return w, fmt.Errorf("feature.label.color: %w", err)
+			}
+			if f.Label.OutlineColor, err = decodeRgba(mFeature.Label.OutlineColor); err != nil {
+				return w, fmt.Errorf("feature.label.outlineColor: %w", err)
+			}
+			if f.Label.BackgroundColor, err = decodeRgba(mFeature.Label.BackgroundColor); err != nil {
+				return w, fmt.Errorf("feature.label.backgroundColor: %w", err)
+			}
+			f.Label.Location = &wxx.LabelLocation_t{
+				ViewLevel: mFeature.Label.Location.ViewLevel,
+				X:         mFeature.Label.Location.X,
+				Y:         mFeature.Label.Location.Y,
+				Scale:     mFeature.Label.Location.Scale,
+			}
 		}
 		w.Features = append(w.Features, f)
 	}

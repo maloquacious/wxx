@@ -97,8 +97,8 @@ type Feature struct {
 		X         float64 `xml:"x,attr"`
 		Y         float64 `xml:"y,attr"`
 	} `xml:"location"`
-	Label     Label_t `xml:"label"`
-	InnerText string  `xml:",chardata"`
+	Label     *Label_t `xml:"label,omitempty"`
+	InnerText string   `xml:",chardata"`
 }
 
 type FeatureConfig struct {
@@ -415,10 +415,16 @@ type TileRow_t struct {
 // (which writes nil back as "0.0,0.0,0.0,1.0"). For fields that instead OMIT
 // when nil (tile CustomBackgroundColor) or emit "null" via rgbans (feature
 // Color/RingColor, some shapeStyle colors), a genuinely opaque-black on-disk
-// value would be lost. No known sample exercises this, and Worldographer's own
-// "0.0,0.0,0.0,1.0" vs "null" semantics are ambiguous (see encode.go), so the
-// fold is left as-is; revisit if a real map is found that depends on the
-// distinction.
+// value changes byte form across a round-trip.
+//
+// This IS now exercised by testdata/input/w2025-populated.xml: Features[0].Color
+// = "0.0,0.0,0.0,1.0" decodes here to nil, and encodeFeature re-emits it via
+// rgbans as "null"; re-decoding "null" also yields nil. So at the Map_t level it
+// round-trips losslessly (nil both passes), and only the on-disk byte form shifts
+// "0.0,0.0,0.0,1.0" -> "null" — lossless under Worldographer's semantics where
+// both spellings mean "no color". The remaining on-disk ambiguity (a map that
+// truly needs opaque-black distinct from "null") is still unresolved, so the fold
+// is left as-is.
 func decodeRgba(s string) (rgba *wxx.RGBA_t, err error) {
 	if s == "" || s == "null" || s == "0.0,0.0,0.0,1.0" {
 		return nil, nil
