@@ -14,6 +14,15 @@ The project provides:
 * Running embedded Lua scripts with [GopherLua](https://github.com/yuin/gopher-lua)
 * Interactively scripting against loaded maps
 
+## Worldographer versions
+
+Worldographer has two file-format families, and `wxx` reads and writes both:
+
+* **Classic** — the original Worldographer / Hexographer 2 format (XML 1.0, no schema version in the file).
+* **2025** — the newer Worldographer 2025 format (XML 1.1, with a schema version in the `map` element).
+
+**Classic support is frozen.** It will continue to read and write existing files and will receive **security bug fixes only** — no new features. **Future development focuses on the 2025 version.**
+
 ## Go package
 
 The `wxx` package can be imported into other Go applications that need to work with Worldographer files.

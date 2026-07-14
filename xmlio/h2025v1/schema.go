@@ -396,6 +396,18 @@ type TileRow_t struct {
 	InnerText string `xml:",chardata"`
 }
 
+// decodeRgba parses a Worldographer float-RGBA attribute ("r,g,b,a"). It folds
+// "", "null", and the literal opaque black "0.0,0.0,0.0,1.0" all to nil.
+//
+// Latent fidelity risk: this fold assumes opaque black always means "absent".
+// That round-trips losslessly only for fields the encoder re-emits with rgbas
+// (which writes nil back as "0.0,0.0,0.0,1.0"). For fields that instead OMIT
+// when nil (tile CustomBackgroundColor) or emit "null" via rgbans (feature
+// Color/RingColor, some shapeStyle colors), a genuinely opaque-black on-disk
+// value would be lost. No known sample exercises this, and Worldographer's own
+// "0.0,0.0,0.0,1.0" vs "null" semantics are ambiguous (see encode.go), so the
+// fold is left as-is; revisit if a real map is found that depends on the
+// distinction.
 func decodeRgba(s string) (rgba *wxx.RGBA_t, err error) {
 	if s == "" || s == "null" || s == "0.0,0.0,0.0,1.0" {
 		return nil, nil

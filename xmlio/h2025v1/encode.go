@@ -253,8 +253,31 @@ func encodeTileResources(resources wxx.Resources_t, wb *bytes.Buffer) error {
 }
 
 func encodeMapKey(mapKey *wxx.MapKey_t, wb *bytes.Buffer) error {
-	wb.WriteString(fmt.Sprintf(`<mapkey positionx="0.0" positiony="0.0" viewlevel="WORLD" height="-1" backgroundcolor="0.9803921580314636,0.9215686321258545,0.843137264251709,1.0" backgroundopacity="50" titleText="Map Key" titleFontFace="Arial"  titleFontColor="0.0,0.0,0.0,1.0" titleFontBold="true" titleFontItalic="false" titleScale="80" scaleText="1 Hex = ? units" scaleFontFace="Arial"  scaleFontColor="0.0,0.0,0.0,1.0" scaleFontBold="true" scaleFontItalic="false" scaleScale="65" entryFontFace="Arial"  entryFontColor="0.0,0.0,0.0,1.0" entryFontBold="true" entryFontItalic="false" entryScale="55"  >`))
-	wb.WriteByte('\n')
+	wb.WriteString("<mapkey")
+	wb.WriteString(fmt.Sprintf(" positionx=%q", floats(mapKey.PositionX)))
+	wb.WriteString(fmt.Sprintf(" positiony=%q", floats(mapKey.PositionY)))
+	wb.WriteString(fmt.Sprintf(" viewlevel=%q", mapKey.Viewlevel))
+	wb.WriteString(fmt.Sprintf(" height=%q", floats(mapKey.Height)))
+	wb.WriteString(fmt.Sprintf(" backgroundcolor=%q", rgbas(mapKey.BackgroundColor))) // decodeRgba
+	wb.WriteString(fmt.Sprintf(" backgroundopacity=%q", floats(mapKey.BackgroundOpacity)))
+	wb.WriteString(fmt.Sprintf(" titleText=%q", mapKey.TitleText))
+	wb.WriteString(fmt.Sprintf(" titleFontFace=%q", mapKey.TitleFontFace))
+	wb.WriteString(fmt.Sprintf(" titleFontColor=%q", rgbas(mapKey.TitleFontColor))) // decodeRgba
+	wb.WriteString(fmt.Sprintf(" titleFontBold=%q", bools(mapKey.TitleFontBold)))
+	wb.WriteString(fmt.Sprintf(" titleFontItalic=%q", bools(mapKey.TitleFontItalic)))
+	wb.WriteString(fmt.Sprintf(" titleScale=%q", floats(mapKey.TitleScale)))
+	wb.WriteString(fmt.Sprintf(" scaleText=%q", mapKey.ScaleText))
+	wb.WriteString(fmt.Sprintf(" scaleFontFace=%q", mapKey.ScaleFontFace))
+	wb.WriteString(fmt.Sprintf(" scaleFontColor=%q", rgbas(mapKey.ScaleFontColor))) // decodeRgba
+	wb.WriteString(fmt.Sprintf(" scaleFontBold=%q", bools(mapKey.ScaleFontBold)))
+	wb.WriteString(fmt.Sprintf(" scaleFontItalic=%q", bools(mapKey.ScaleFontItalic)))
+	wb.WriteString(fmt.Sprintf(" scaleScale=%q", floats(mapKey.ScaleScale)))
+	wb.WriteString(fmt.Sprintf(" entryFontFace=%q", mapKey.EntryFontFace))
+	wb.WriteString(fmt.Sprintf(" entryFontColor=%q", rgbas(mapKey.EntryFontColor))) // decodeRgba
+	wb.WriteString(fmt.Sprintf(" entryFontBold=%q", bools(mapKey.EntryFontBold)))
+	wb.WriteString(fmt.Sprintf(" entryFontItalic=%q", bools(mapKey.EntryFontItalic)))
+	wb.WriteString(fmt.Sprintf(" entryScale=%q", floats(mapKey.EntryScale)))
+	wb.WriteString(">\n")
 	wb.WriteString("</mapkey>\n")
 	return nil
 }
@@ -438,8 +461,64 @@ func encodeNote(note *wxx.Note_t, wb *bytes.Buffer) error {
 }
 
 func encodeInformations(informations *wxx.Informations_t, wb *bytes.Buffer) error {
-	wb.WriteString("<informations>\n")
+	wb.WriteString("<informations>")
+	// The wrapper's chardata (whitespace between <information> children) is
+	// emitted here as escaped text. The <information> children below are emitted
+	// back-to-back with no surrounding whitespace, so on re-decode the wrapper's
+	// chardata is exactly informations.InnerText.
+	wb.WriteString(encodeInnerText(informations.InnerText))
+	for _, information := range informations.Informations {
+		if err := encodeInformation(information, wb); err != nil {
+			return err
+		}
+	}
 	wb.WriteString("</informations>\n")
+	return nil
+}
+
+func encodeInformation(information *wxx.Information_t, wb *bytes.Buffer) error {
+	wb.WriteString("<information")
+	wb.WriteString(fmt.Sprintf(" uuid=%q", information.Uuid))
+	wb.WriteString(fmt.Sprintf(" type=%q", information.Type))
+	wb.WriteString(fmt.Sprintf(" title=%q", information.Title))
+	wb.WriteString(fmt.Sprintf(" rulers=%q", information.Rulers))
+	wb.WriteString(fmt.Sprintf(" government=%q", information.Government))
+	wb.WriteString(fmt.Sprintf(" cultures=%q", information.Cultures))
+	wb.WriteString(fmt.Sprintf(" language=%q", information.Language))
+	wb.WriteString(fmt.Sprintf(" religionType=%q", information.ReligionType))
+	wb.WriteString(fmt.Sprintf(" culture=%q", information.Culture))
+	wb.WriteString(fmt.Sprintf(" holySymbol=%q", information.HolySymbol))
+	wb.WriteString(fmt.Sprintf(" domains=%q", information.Domains))
+	wb.WriteString(">")
+	// Emit this element's chardata first, then its <information> detail children
+	// back-to-back with no surrounding whitespace, so on re-decode this element's
+	// chardata is exactly information.InnerText.
+	wb.WriteString(encodeInnerText(information.InnerText))
+	for _, detail := range information.Details {
+		if err := encodeInformationDetail(detail, wb); err != nil {
+			return err
+		}
+	}
+	wb.WriteString("</information>")
+	return nil
+}
+
+func encodeInformationDetail(detail *wxx.InformationDetail_t, wb *bytes.Buffer) error {
+	wb.WriteString("<information")
+	wb.WriteString(fmt.Sprintf(" uuid=%q", detail.Uuid))
+	wb.WriteString(fmt.Sprintf(" type=%q", detail.Type))
+	wb.WriteString(fmt.Sprintf(" title=%q", detail.Title))
+	wb.WriteString(fmt.Sprintf(" rulers=%q", detail.Rulers))
+	wb.WriteString(fmt.Sprintf(" government=%q", detail.Government))
+	wb.WriteString(fmt.Sprintf(" cultures=%q", detail.Cultures))
+	wb.WriteString(fmt.Sprintf(" language=%q", detail.Language))
+	wb.WriteString(fmt.Sprintf(" religionType=%q", detail.ReligionType))
+	wb.WriteString(fmt.Sprintf(" culture=%q", detail.Culture))
+	wb.WriteString(fmt.Sprintf(" holySymbol=%q", detail.HolySymbol))
+	wb.WriteString(fmt.Sprintf(" domains=%q", detail.Domains))
+	wb.WriteString(">")
+	wb.WriteString(encodeInnerText(detail.InnerText))
+	wb.WriteString("</information>")
 	return nil
 }
 
@@ -494,17 +573,17 @@ func encodeTextConfig(textConfig *wxx.TextConfig_t, wb *bytes.Buffer) error {
 }
 
 func encodeLabelStyle(labelStyle *wxx.LabelStyle_t, wb *bytes.Buffer) error {
-	//wb.WriteString("<labelstyle")
-	////name="Building"
-	////fontFace="Arial"
-	////scale="25.0"
-	////isBold="false"
-	////isItalic="false"
-	////color="0.0,0.0,0.0,1.0"
-	////backgroundColor="null"
-	////outlineSize="0.0"
-	////outlineColor="null"
-	//wb.WriteString(" />\n\n")
+	wb.WriteString("<labelstyle")
+	wb.WriteString(fmt.Sprintf(" name=%q", labelStyle.Name))
+	wb.WriteString(fmt.Sprintf(" fontFace=%q", labelStyle.FontFace))
+	wb.WriteString(fmt.Sprintf(" scale=%q", floats(labelStyle.Scale)))
+	wb.WriteString(fmt.Sprintf(" isBold=%q", bools(labelStyle.IsBold)))
+	wb.WriteString(fmt.Sprintf(" isItalic=%q", bools(labelStyle.IsItalic)))
+	wb.WriteString(fmt.Sprintf(" color=%q", rgbas(labelStyle.Color)))                     // decodeRgba
+	wb.WriteString(fmt.Sprintf(" backgroundColor=%q", rgbas(labelStyle.BackgroundColor))) // decodeRgba
+	wb.WriteString(fmt.Sprintf(" outlineSize=%q", floats(labelStyle.OutlineSize)))
+	wb.WriteString(fmt.Sprintf(" outlineColor=%q", rgbans(labelStyle.OutlineColor))) // "null" or decodeZeroableRgba
+	wb.WriteString(" />\n")
 	return nil
 }
 
