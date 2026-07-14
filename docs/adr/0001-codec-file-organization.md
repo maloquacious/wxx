@@ -1,9 +1,9 @@
 # ADR 0001 — Codec file organization: co-located per-element encode/decode
 
-- **Status:** Proposed (awaiting maintainer decision — Accepted / Rejected)
+- **Status:** Accepted (2026-07-13) — outcome: **adopt Option (b) for `h2025v1` only, plus the coverage-assertion test** (Decision option 2 below). Frozen `h2017v1` is not refactored.
 - **Date:** 2026-07-13
 - **Context tickets:** #8 (this task, B3), #7 (Track A drift), B2 (classic stub audit)
-- **Gates:** B3b (the actual refactor) runs **only** if this ADR is Accepted with an "adopt" outcome.
+- **Gates:** B3b (the actual refactor) is **unblocked** by this acceptance and runs the mechanical, test-guarded per-element move on `h2025v1` only, alongside the coverage-assertion test.
 
 ---
 

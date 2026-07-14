@@ -1,0 +1,36 @@
+// Copyright (c) 2026 Michael D Henderson. All rights reserved.
+
+package h2025v1
+
+import (
+	"bytes"
+	"fmt"
+
+	"github.com/maloquacious/wxx"
+)
+
+// decodeMapLayers copies each <maplayer> into the domain map. Only Name and
+// IsVisible are modeled (the opacity attribute is un-modeled and dropped).
+func decodeMapLayers(src []MapLayer_t, w *wxx.Map_t) {
+	for _, layer := range src {
+		w.MapLayers = append(w.MapLayers, &wxx.MapLayer_t{Name: layer.Name, IsVisible: layer.IsVisible})
+	}
+}
+
+// order of layers is important; worldographer renders them from the bottom up.
+func encodeMapLayers(mapLayers []*wxx.MapLayer_t, wb *bytes.Buffer) error {
+	for _, mapLayer := range mapLayers {
+		if err := encodeMapLayer(mapLayer, wb); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func encodeMapLayer(mapLayer *wxx.MapLayer_t, wb *bytes.Buffer) error {
+	wb.WriteString("<maplayer")
+	wb.WriteString(fmt.Sprintf(" name=%q", mapLayer.Name))
+	wb.WriteString(fmt.Sprintf(" isVisible=%q", bools(mapLayer.IsVisible)))
+	wb.WriteString("/>\n")
+	return nil
+}
