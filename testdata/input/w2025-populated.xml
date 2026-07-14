@@ -1,0 +1,504 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map type="WORLD" release="2025" version="2.06" schema="1.06" lastViewLevel="WORLD" continentFactor="0" kingdomFactor="0" provinceFactor="0" worldToContinentHOffset="0.0" continentToKingdomHOffset="0.0" kingdomToProvinceHOffset="0.0" worldToContinentVOffset="0.0" continentToKingdomVOffset="0.0" kingdomToProvinceVOffset="0.0" 
+hScrollbarPos="0.0" vScrollbarPos="0.0" 
+hexWidth="46.18" hexHeight="40.0" hexOrientation="COLUMNS" mapProjection="FLAT" showNotes="false" showGMOnly="true" showGMOnlyGlow="false" showFeatureLabels="true" showGrid="true" showGridNumbers="true" showShadows="true"  triangleSize="12">
+<gridandnumbering color0="0x00000040" color1="0x00000040" color2="0x00000040" color3="0x00000040" color4="0x00000040" width0="1.0" width1="2.0" width2="3.0" width3="4.0" width4="1.0" gridOffsetContinentKingdomX="0.0" gridOffsetContinentKingdomY="0.0" gridOffsetWorldContinentX="0.0" gridOffsetWorldContinentY="0.0" gridOffsetWorldKingdomX="0.0" gridOffsetWorldKingdomY="0.0" gridSquare="0" gridSquareHeight="-1.0" gridSquareWidth="-1.0" gridOffsetX="0.0" gridOffsetY="0.0" numberFont="Arial" numberColor="0x000000ff" numberSize="20" numberStyle="PLAIN" numberFirstCol="0" numberFirstRow="0" numberOrder="COL_ROW" numberPosition="BOTTOM" numberPrePad="DOUBLE_ZERO" numberSeparator="." />
+<blurTerrainBG blur="false" topBleed="0.33" bottomBleed="0.65" randomness="0.1" blurStart="0.4" blurEnd="0.95"/>
+<terrainmap>Blank	0</terrainmap>
+<maplayer name="Labels" isVisible="true" opacity="1.0"/>
+<maplayer name="Grid" isVisible="true" opacity="1.0"/>
+<maplayer name="Features" isVisible="true" opacity="1.0"/>
+<maplayer name="Above Terrain" isVisible="true" opacity="1.0"/>
+<maplayer name="Terrain Land" isVisible="true" opacity="1.0"/>
+<maplayer name="Above Water" isVisible="true" opacity="1.0"/>
+<maplayer name="Terrain Water" isVisible="true" opacity="1.0"/>
+<maplayer name="Below All" isVisible="true" opacity="1.0"/>
+<tiles viewLevel="WORLD" tilesWide="13" tilesHigh="11">
+<tilerow>
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+</tilerow>
+<tilerow>
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+</tilerow>
+<tilerow>
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+</tilerow>
+<tilerow>
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+</tilerow>
+<tilerow>
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+</tilerow>
+<tilerow>
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+</tilerow>
+<tilerow>
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+</tilerow>
+<tilerow>
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+</tilerow>
+<tilerow>
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+</tilerow>
+<tilerow>
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+</tilerow>
+<tilerow>
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+</tilerow>
+<tilerow>
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+</tilerow>
+<tilerow>
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+0	1	0	0	0	Z
+</tilerow>
+</tiles>
+<mapkey positionx="0.0" positiony="0.0" viewlevel="null" height="-1" backgroundcolor="0.9803921580314636,0.9215686321258545,0.843137264251709,1.0" backgroundopacity="50" titleText="Map Key" titleFontFace="Arial"  titleFontColor="0.0,0.0,0.0,1.0" titleFontBold="true" titleFontItalic="false" titleScale="80" scaleText="1 Hex = ? units" scaleFontFace="Arial"  scaleFontColor="0.0,0.0,0.0,1.0" scaleFontBold="true" scaleFontItalic="false" scaleScale="65" entryFontFace="Arial"  entryFontColor="0.0,0.0,0.0,1.0" entryFontBold="true" entryFontItalic="false" entryScale="55"  >
+</mapkey>
+<features>
+<feature type="City" rotate="0.0" uuid="11111111-1111-1111-1111-111111111111" mapLayer="Features" isFlipHorizontal="false" isFlipVertical="false" scale="25.0" scaleHt="-1.0" tags="" color="0.0,0.0,0.0,1.0" ringcolor="null" isGMOnly="false" isPlaceFreely="false" labelPosition="BOTTOM" labelDistance="0" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isFillHexBottom="false" isHideTerrainIcon="false">
+<location viewLevel="WORLD" x="100.0" y="200.0" />
+<label mapLayer="Labels" style="City" fontFace="Times" color="0.0,0.0,0.0,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags=""><location viewLevel="WORLD" x="100.0" y="220.0" scale="33.0" />Rivertown</label>
+</feature>
+<feature type="Forest" rotate="0.0" uuid="22222222-2222-2222-2222-222222222222" mapLayer="Features" isFlipHorizontal="false" isFlipVertical="false" scale="50.0" scaleHt="-1.0" tags="" color="0.13,0.55,0.13,1.0" ringcolor="null" isGMOnly="false" isPlaceFreely="false" labelPosition="BOTTOM" labelDistance="0" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isFillHexBottom="false" isHideTerrainIcon="false">
+<location viewLevel="WORLD" x="300.0" y="400.0" />
+</feature>
+</features>
+<extraTerrain>
+</extraTerrain>
+<labels>
+</labels>
+<shapes>
+<shape type="Polygon" creationType="BASIC" isWorld="true" isContinent="true" isKingdom="true" isProvince="false" bbHeight="10.0" bbIterations="3" bbWidth="10.0" currentShapeViewLevel="WORLD" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" dsOffsetX="0.0" dsOffsetY="0.0" dsRadius="50.0" dsSpread="0.2" fillRule="EVEN_ODD" fillTexture="" highestViewLevel="WORLD" insChoke="0.2" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insOffsetX="0.0" insOffsetY="0.0" insRadius="50.0" isBoxBlur="false" isCurve="false" isDropShadow="false" isGMOnly="false" isInnerShadow="false" isMatchTileBorders="false" isSnapVertices="false" lineCap="SQUARE" lineJoin="ROUND" mapLayer="Above Terrain" opacity="1.0" strokeColor="1.0,0.0,0.0,1.0" strokeTexture="" strokeType="SIMPLE" strokeWidth="0.05" tags="border">
+<p type="" x="148.0" y="149.0"/>
+<p type="" x="267.0" y="286.0"/>
+<p type="" x="310.0" y="120.0"/>
+</shape>
+<shape type="Path" creationType="FREEHAND" isWorld="true" isContinent="false" isKingdom="false" isProvince="false" bbHeight="0.0" bbIterations="0" bbWidth="0.0" currentShapeViewLevel="WORLD" dsColor="null" dsOffsetX="0.0" dsOffsetY="0.0" dsRadius="0.0" dsSpread="0.0" fillRule="NON_ZERO" fillTexture="" highestViewLevel="WORLD" insChoke="0.0" insColor="null" insOffsetX="0.0" insOffsetY="0.0" insRadius="0.0" isBoxBlur="false" isCurve="true" isDropShadow="false" isGMOnly="true" isInnerShadow="false" isMatchTileBorders="false" isSnapVertices="true" lineCap="ROUND" lineJoin="ROUND" mapLayer="Above Terrain" opacity="0.75" strokeColor="0.31,0.57,0.68,1.0" strokeTexture="" strokeType="SIMPLE" strokeWidth="3.0" tags="river">
+<p type="" x="10.0" y="20.0"/>
+<p type="" x="30.5" y="45.25"/>
+</shape>
+</shapes>
+<notes>
+<note key="WORLD,2343.75,3112.5" viewLevel="WORLD" x="2343.75" y="3112.5" filename="" parent="dde12f75-dcc9-4cb7-a96d-f18011601143" color="1.0,1.0,0.0,1.0" title="Units" isGMOnly="false"><notetext><![CDATA[<html dir="ltr"><head></head><body contenteditable="true">First note paragraph.</body></html>]]></notetext></note>
+<note key="WORLD,100.0,200.0" viewLevel="WORLD" x="100.0" y="200.0" filename="" parent="aa11bb22-cc33-dd44-ee55-ff6600112233" color="0.0,1.0,1.0,1.0" title="Landmark" isGMOnly="true"><notetext><![CDATA[<html dir="ltr"><head></head><body contenteditable="true">Second note paragraph.</body></html>]]></notetext></note>
+</notes>
+<informations>
+<information uuid="25752b75-6e5b-4f2c-a66b-49919dbc8ca9" type="Information" title="Intro"><![CDATA[<h1>Intro</h1>]]>
+
+</information>
+<information uuid="1cebf0f6-3fec-45e2-a88d-fc53950e2511" type="Information" title="Nations"><![CDATA[<h1>Nations</h1>]]>
+<information uuid="4325f2bc-18a8-4fb7-b2b8-9f946e7b103c" type="Nation" title="Frankholt" rulers="Adolfina, Coen, Alarica" government="Oligarchy (military)" cultures="bd92f7f6-8f72-4093-8b10-eb8f448a2460" ><![CDATA[<h2>Frankholt</h2>
+<ul>
+<li>Government: Oligarchy (military)</li><li>Cultures: Vanda</li>
+<li>Rulers: Adolfina, Coen, and Alarica</li>
+</ul>]]>
+
+</information>
+
+</information>
+<information uuid="9e05e0cb-7caa-4289-a0e8-71a555e6882f" type="Information" title="Cultures"><![CDATA[<h1>Cultures</h1>]]>
+<information uuid="bd92f7f6-8f72-4093-8b10-eb8f448a2460" type="Culture" title="Vanda" language="German" ><![CDATA[<h2>Vanda</h2>
+<ul>
+<li>Language is based on German</li>
+<li>1st Values: Diversity</li>
+<li>2nd Values: Compassion</li>
+<li>3rd Values: Reliable</li>
+<li>Demeanor To Outsiders: Friendly</li>
+<li>Entertainment: Gladiator Fights</li>
+<li>Other Common Races: Human (dark skin)</li>
+<li>Primary Race: Half-Orc</li>
+
+</ul>]]>
+
+</information>
+
+</information>
+<information uuid="d90eb43e-0c68-4f34-91f8-f8c8f03b1ebe" type="Information" title="Religions"><![CDATA[<h1>Religions</h1>
+This world has 8 popular or noteworthy religions.]]>
+<information uuid="152c2826-1aa1-4c25-a2ac-af15d994c22c" type="Religion" title="Pantheon w/17 gods" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="null" domains="" ><![CDATA[<h2>Pantheon w/17 gods (Pantheon)</h2>
+<ul>
+<li>From the Vanda culture.</li>
+</ul>]]>
+<information uuid="e4982350-cf03-4036-9552-afcc07c329e0" type="Religion" title="Egon" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Bison" domains="Animal,Madness,Law" ><![CDATA[<h2>Egon</h2><ul><li>Domains: Animal, Madness, Law</li><li>Holy Symbol: Bison</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="5a4deac2-2661-42e4-b059-b9c63290bac0" type="Religion" title="Wilbur" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Open Lock" domains="Liberation,Fire,Death" ><![CDATA[<h2>Wilbur</h2><ul><li>Domains: Liberation, Fire, Death</li><li>Holy Symbol: Open Lock</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="3327a598-d1b1-407d-8e97-215fd95bbbdb" type="Religion" title="Henrik" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Volcano" domains="Destruction,Good,Trickery" ><![CDATA[<h2>Henrik</h2><ul><li>Domains: Destruction, Good, Trickery</li><li>Holy Symbol: Volcano</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="5f52c3dd-c6b7-4340-bc9a-228a66a17310" type="Religion" title="Meinke" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Dragon Head" domains="Scalykind,Destruction,Chaos" ><![CDATA[<h2>Meinke</h2><ul><li>Domains: Scalykind, Destruction, Chaos</li><li>Holy Symbol: Dragon Head</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="a2c783b7-3c9c-43dd-8d59-986033c552e3" type="Religion" title="Adolfa" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Yellow Circle with White Crescent Moon in Rightmost Part" domains="Sun,Liberation,Fire" ><![CDATA[<h2>Adolfa</h2><ul><li>Domains: Sun, Liberation, Fire</li><li>Holy Symbol: Yellow Circle with White Crescent Moon in Rightmost Part</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="faa2c544-509f-4bc6-b333-25fda46d3fdd" type="Religion" title="Cheryl" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Jester's Hat" domains="Trickery,Charm,Artifice" ><![CDATA[<h2>Cheryl</h2><ul><li>Domains: Trickery, Charm, Artifice</li><li>Holy Symbol: Jester's Hat</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="985e10ce-fc13-4ab3-8442-d99dee5abc6e" type="Religion" title="Arleigh" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="Crossed Swords" domains="War,Death,Community" ><![CDATA[<h2>Arleigh</h2><ul><li>Domains: War, Death, Community</li><li>Holy Symbol:Crossed Swords</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="9b75973f-8531-439b-b61c-efd746a4cc02" type="Religion" title="Jarvis" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="Fountain" domains="Water,Death,Healing" ><![CDATA[<h2>Jarvis</h2><ul><li>Domains: Water, Death, Healing</li><li>Holy Symbol:Fountain</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="9cd3db3c-2ad4-4d12-8711-df31d41273fb" type="Religion" title="Alvara" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Coffin" domains="Repose,Community,Sun" ><![CDATA[<h2>Alvara</h2><ul><li>Domains: Repose, Community, Sun</li><li>Holy Symbol: Coffin</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="fcdbbab7-45ce-450c-af34-97e4abf83a98" type="Religion" title="Zelma" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Deck of Cards" domains="Luck,Air,Repose" ><![CDATA[<h2>Zelma</h2><ul><li>Domains: Luck, Air, Repose</li><li>Holy Symbol: Deck of Cards</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="2b59e40a-f714-498d-b32e-591e732cf012" type="Religion" title="Dirk" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="Starfield" domains="Void,Destruction,War" ><![CDATA[<h2>Dirk</h2><ul><li>Domains: Void, Destruction, War</li><li>Holy Symbol:Starfield</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="290b8b68-fb6d-4bba-aa39-b07abfc1aeae" type="Religion" title="Aldona" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Chisel" domains="Rune,War,Healing" ><![CDATA[<h2>Aldona</h2><ul><li>Domains: Rune, War, Healing</li><li>Holy Symbol: Chisel</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="5ae8be25-0b68-46fc-ab22-596015d07e7a" type="Religion" title="Rutger" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="Tear Drops" domains="Good,Darkness,Evil" ><![CDATA[<h2>Rutger</h2><ul><li>Domains: Good, Darkness, Evil</li><li>Holy Symbol:Tear Drops</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="222776ce-af9e-434d-b1af-3b10cc22309c" type="Religion" title="Hariman" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="Eagle" domains="Air,Artifice,Nobility" ><![CDATA[<h2>Hariman</h2><ul><li>Domains: Air, Artifice, Nobility</li><li>Holy Symbol:Eagle</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="7311a644-e3ad-4e06-b58a-acd4c4401d64" type="Religion" title="Della" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Hammer Smashing Glass" domains="Chaos,Artifice,Healing" ><![CDATA[<h2>Della</h2><ul><li>Domains: Chaos, Artifice, Healing</li><li>Holy Symbol: Hammer Smashing Glass</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="fce4bcfb-1568-4ee2-b82f-e534857d83ae" type="Religion" title="Alexis" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="Crossed Swords" domains="War,Darkness,Plant" ><![CDATA[<h2>Alexis</h2><ul><li>Domains: War, Darkness, Plant</li><li>Holy Symbol:Crossed Swords</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="96149f44-dd0b-4e83-91bd-b5f4ce1bad8d" type="Religion" title="Hulbert" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Unlit Candle" domains="Darkness,Water,Trickery" ><![CDATA[<h2>Hulbert</h2><ul><li>Domains: Darkness, Water, Trickery</li><li>Holy Symbol: Unlit Candle</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+
+</information>
+<information uuid="fe76d787-b071-4df4-b42e-2cf011838625" type="Religion" title="Helmut" religionType="Monotheistic" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Fist Enclosed by Palm" domains="Strength,Luck,Fire" ><![CDATA[<h2>Helmut (Monotheistic)</h2>
+<ul>
+<li>Domains: Strength, Luck, and Fire</li>
+<li>Holy Symbol:  Fist Enclosed by Palm</li>
+<li>From the Vanda culture.</li>
+</ul>]]>
+
+</information>
+<information uuid="870b9685-e58b-41ea-9e56-14b6c8a0268b" type="Religion" title=" Heinrich" religionType="Demon Sect" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="Castle" domains="Nobility,Plant,Water" ><![CDATA[<h2> Heinrich (Demon Sect)</h2>
+<ul>
+<li>Domains: Nobility, Plant, and Water</li>
+<li>Holy Symbol: Castle</li>
+<li>From the Vanda culture.</li>
+</ul>]]>
+
+</information>
+<information uuid="516be5ca-6775-4304-8b3d-ff9f3fcb46f0" type="Religion" title="Adelgiese" religionType="Demon Sect" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Flame" domains="Chaos,Law,Liberation" ><![CDATA[<h2>Adelgiese (Demon Sect)</h2>
+<ul>
+<li>Domains: Chaos, Law, and Liberation</li>
+<li>Holy Symbol:  Flame</li>
+<li>From the Vanda culture.</li>
+</ul>]]>
+
+</information>
+<information uuid="33cd2360-328c-45ba-8bdb-ebe16878b2c4" type="Religion" title="Pantheon w/13 gods" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="null" domains="" ><![CDATA[<h2>Pantheon w/13 gods (Pantheon)</h2>
+<ul>
+<li>From the Vanda culture.</li>
+</ul>]]>
+<information uuid="7541054e-1f8f-45be-8771-5f2a8ccfa9ea" type="Religion" title="Allaryce" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Fist with Thumb Raised" domains="Good,Repose,Earth" ><![CDATA[<h2>Allaryce</h2><ul><li>Domains: Good, Repose, Earth</li><li>Holy Symbol: Fist with Thumb Raised</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="872a972b-b7d6-4811-bff5-de0ab4b36087" type="Religion" title="Wilbart" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Crown" domains="Nobility,Artifice,War" ><![CDATA[<h2>Wilbart</h2><ul><li>Domains: Nobility, Artifice, War</li><li>Holy Symbol: Crown</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="a24df6ed-0f04-493e-b3a3-32a0235850cc" type="Religion" title="Adette" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="Yellow Rose" domains="Plant,Darkness,Trickery" ><![CDATA[<h2>Adette</h2><ul><li>Domains: Plant, Darkness, Trickery</li><li>Holy Symbol:Yellow Rose</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="7cd01a1d-c5ff-4558-9e77-ba5354a1e307" type="Religion" title="Alissa" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="Hurricane" domains="Destruction,Rune,Knowledge" ><![CDATA[<h2>Alissa</h2><ul><li>Domains: Destruction, Rune, Knowledge</li><li>Holy Symbol:Hurricane</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="ed9d0bdc-50d0-49df-b18c-1081f885e10e" type="Religion" title="Allie" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" White Cloud" domains="Air,Community,Glory" ><![CDATA[<h2>Allie</h2><ul><li>Domains: Air, Community, Glory</li><li>Holy Symbol: White Cloud</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="6e74a0ee-f93e-47a6-bd36-cbb348d5a657" type="Religion" title="Adele" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Oak Tree" domains="Plant,Travel,Void" ><![CDATA[<h2>Adele</h2><ul><li>Domains: Plant, Travel, Void</li><li>Holy Symbol: Oak Tree</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="8d0bacab-a6b6-4968-a6aa-160b3c8f9aab" type="Religion" title="Weber" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Red Cross" domains="Healing,Evil,Darkness" ><![CDATA[<h2>Weber</h2><ul><li>Domains: Healing, Evil, Darkness</li><li>Holy Symbol: Red Cross</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="c1739989-3ac7-4467-96e0-a2c041d6e8b4" type="Religion" title="Abe" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Small House" domains="Community,Trickery,Strength" ><![CDATA[<h2>Abe</h2><ul><li>Domains: Community, Trickery, Strength</li><li>Holy Symbol: Small House</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="956265a8-8739-45b4-8d0c-1d6987177076" type="Religion" title="Adelgiese" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="Eagle" domains="Artifice,Nobility,Magic" ><![CDATA[<h2>Adelgiese</h2><ul><li>Domains: Artifice, Nobility, Magic</li><li>Holy Symbol:Eagle</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="6b16db07-18ce-4aa6-ab4b-bbd1d61bc90c" type="Religion" title="Walden" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="Castle" domains="Nobility,Trickery,Good" ><![CDATA[<h2>Walden</h2><ul><li>Domains: Nobility, Trickery, Good</li><li>Holy Symbol:Castle</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="4c7ff7d0-807a-4326-bf06-2f004d046c3b" type="Religion" title="Merrill" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="Starfield" domains="Void,Travel,Rune" ><![CDATA[<h2>Merrill</h2><ul><li>Domains: Void, Travel, Rune</li><li>Holy Symbol:Starfield</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="6da71954-65bb-43c4-8941-335406b46796" type="Religion" title="Aleric" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Cloud" domains="Weather,Protection,Darkness" ><![CDATA[<h2>Aleric</h2><ul><li>Domains: Weather, Protection, Darkness</li><li>Holy Symbol: Cloud</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="f3a74335-674a-49f3-8ee2-3ae0814a472d" type="Religion" title="Berit" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Blue Circle with White Dot in Center" domains="Protection,Healing,Charm" ><![CDATA[<h2>Berit</h2><ul><li>Domains: Protection, Healing, Charm</li><li>Holy Symbol: Blue Circle with White Dot in Center</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+
+</information>
+<information uuid="3e6eca4c-5a85-48e9-9cc8-a8edea1f6e13" type="Religion" title="Pantheon w/11 gods" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="null" domains="" ><![CDATA[<h2>Pantheon w/11 gods (Pantheon)</h2>
+<ul>
+<li>From the Vanda culture.</li>
+</ul>]]>
+<information uuid="43b4d5cf-0b7d-4edf-9f76-97551fff4158" type="Religion" title="Hildbrand" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="Snowy Mountain Peak" domains="Earth,Repose,Sun" ><![CDATA[<h2>Hildbrand</h2><ul><li>Domains: Earth, Repose, Sun</li><li>Holy Symbol:Snowy Mountain Peak</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="7be67424-6351-445f-b846-3074579f0c17" type="Religion" title="Frederick" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Chariot" domains="Travel,Charm,Chaos" ><![CDATA[<h2>Frederick</h2><ul><li>Domains: Travel, Charm, Chaos</li><li>Holy Symbol: Chariot</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="cc6846ac-ae18-4d28-a74a-a1cbed6aa98a" type="Religion" title="Aleric" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Pile of Dirt" domains="Earth,Fire,Luck" ><![CDATA[<h2>Aleric</h2><ul><li>Domains: Earth, Fire, Luck</li><li>Holy Symbol: Pile of Dirt</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="94e686d9-0898-4316-9629-7447ed6756b4" type="Religion" title="Allison" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="Clarion" domains="Glory,Law,Repose" ><![CDATA[<h2>Allison</h2><ul><li>Domains: Glory, Law, Repose</li><li>Holy Symbol:Clarion</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="42aac65e-0d4c-4adb-ae21-7a5c1f9c7cc1" type="Religion" title="Carleigh" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="Eagle" domains="Air,Luck,Protection" ><![CDATA[<h2>Carleigh</h2><ul><li>Domains: Air, Luck, Protection</li><li>Holy Symbol:Eagle</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="19663136-63f6-423f-8f78-5b6d7e9cf0d6" type="Religion" title="Alice" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="Fountain" domains="Water,Liberation,Magic" ><![CDATA[<h2>Alice</h2><ul><li>Domains: Water, Liberation, Magic</li><li>Holy Symbol:Fountain</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="f367406e-cef7-471b-a1ff-3653e7e07c7e" type="Religion" title="Howe" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="Skull and Crossbones" domains="Death,Strength,Law" ><![CDATA[<h2>Howe</h2><ul><li>Domains: Death, Strength, Law</li><li>Holy Symbol:Skull and Crossbones</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="ae269b20-430c-426d-a86e-79885cc40012" type="Religion" title="Aldona" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Chisel" domains="Rune,Plant,Strength" ><![CDATA[<h2>Aldona</h2><ul><li>Domains: Rune, Plant, Strength</li><li>Holy Symbol: Chisel</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="081c5d5c-149e-4df8-9c93-469a5c94d127" type="Religion" title="Adolfa" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Unlit Torch" domains="Darkness,Animal,Law" ><![CDATA[<h2>Adolfa</h2><ul><li>Domains: Darkness, Animal, Law</li><li>Holy Symbol: Unlit Torch</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="54122ea9-6f15-47b0-aae3-3790e649cb74" type="Religion" title="Volker" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="Red Skull" domains="Evil,Earth,Death" ><![CDATA[<h2>Volker</h2><ul><li>Domains: Evil, Earth, Death</li><li>Holy Symbol:Red Skull</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="a8a1d387-cae5-4945-a80b-d26c1244a394" type="Religion" title="Hestangs" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Flaming Skull" domains="Death,Good,Liberation" ><![CDATA[<h2>Hestangs</h2><ul><li>Domains: Death, Good, Liberation</li><li>Holy Symbol: Flaming Skull</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+
+</information>
+<information uuid="cd6fc325-1130-4b51-8365-759049123bb2" type="Religion" title="Arleigh" religionType="Demon Sect" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Hammer Smashing Glass" domains="Chaos,Healing,Glory" ><![CDATA[<h2>Arleigh (Demon Sect)</h2>
+<ul>
+<li>Domains: Chaos, Healing, and Glory</li>
+<li>Holy Symbol:  Hammer Smashing Glass</li>
+<li>From the Vanda culture.</li>
+</ul>]]>
+
+</information>
+<information uuid="91b3a90a-e83b-4024-87f1-5351bcd01561" type="Religion" title="Pantheon w/12 gods" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="null" domains="" ><![CDATA[<h2>Pantheon w/12 gods (Pantheon)</h2>
+<ul>
+<li>From the Vanda culture.</li>
+</ul>]]>
+<information uuid="f0c35b2d-47e6-4a2a-a80b-110e2b5f442d" type="Religion" title="Cloris" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="Heart" domains="Charm,Evil,Protection" ><![CDATA[<h2>Cloris</h2><ul><li>Domains: Charm, Evil, Protection</li><li>Holy Symbol:Heart</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="cb3e321f-49df-4058-8ff8-2a58382ce676" type="Religion" title="Lothar" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Hands with Palms Touching" domains="Repose,Darkness,Glory" ><![CDATA[<h2>Lothar</h2><ul><li>Domains: Repose, Darkness, Glory</li><li>Holy Symbol: Hands with Palms Touching</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="fb14eadc-81f3-48cd-b7ff-a974ac117878" type="Religion" title="Maynard" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Blue Lily" domains="Plant,Trickery,Chaos" ><![CDATA[<h2>Maynard</h2><ul><li>Domains: Plant, Trickery, Chaos</li><li>Holy Symbol: Blue Lily</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="56b7c73f-4bbf-4042-a1b0-75d212c07c25" type="Religion" title="Clayborne" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Horse Running" domains="Travel,War,Glory" ><![CDATA[<h2>Clayborne</h2><ul><li>Domains: Travel, War, Glory</li><li>Holy Symbol: Horse Running</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="155adcd6-d102-4f9f-948d-fdf9b4479158" type="Religion" title="Redmond" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Blue Lily" domains="Plant,Death,Animal" ><![CDATA[<h2>Redmond</h2><ul><li>Domains: Plant, Death, Animal</li><li>Holy Symbol: Blue Lily</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="9767837e-1c82-4595-a5ba-abdd8ed2dd38" type="Religion" title="Reynald" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="Red Skull" domains="Evil,Good,Weather" ><![CDATA[<h2>Reynald</h2><ul><li>Domains: Evil, Good, Weather</li><li>Holy Symbol:Red Skull</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="abf8723d-fc0a-49c1-9d5b-44103db1f828" type="Religion" title="Berinhard" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Red Cross" domains="Healing,Protection,Nobility" ><![CDATA[<h2>Berinhard</h2><ul><li>Domains: Healing, Protection, Nobility</li><li>Holy Symbol: Red Cross</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="e4e16025-70d2-4fdd-a112-df1923f9eef7" type="Religion" title="Hedda" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Stone Tablet" domains="Rune,Death,Nobility" ><![CDATA[<h2>Hedda</h2><ul><li>Domains: Rune, Death, Nobility</li><li>Holy Symbol: Stone Tablet</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="ec667353-8234-4e24-bc9c-128964e4f8e5" type="Religion" title="Aleric" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Hand with Fingers Cut Off" domains="Madness,Destruction,Healing" ><![CDATA[<h2>Aleric</h2><ul><li>Domains: Madness, Destruction, Healing</li><li>Holy Symbol: Hand with Fingers Cut Off</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="8f33f74a-6d85-46ba-b82f-e9d4bdb5315a" type="Religion" title="Berit" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="Tear Drops" domains="Good,Destruction,Travel" ><![CDATA[<h2>Berit</h2><ul><li>Domains: Good, Destruction, Travel</li><li>Holy Symbol:Tear Drops</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="2a8a8c0a-aa86-42cb-9b24-7e890f40aa48" type="Religion" title="Rodney" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol="Mask with Laughing Smile" domains="Madness,War,Trickery" ><![CDATA[<h2>Rodney</h2><ul><li>Domains: Madness, War, Trickery</li><li>Holy Symbol:Mask with Laughing Smile</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+<information uuid="5594f5be-d182-4285-bc0f-84db9caf1da9" type="Religion" title="Erma" religionType="Pantheon" culture="bd92f7f6-8f72-4093-8b10-eb8f448a2460" holySymbol=" Oak Tree" domains="Plant,Rune,Luck" ><![CDATA[<h2>Erma</h2><ul><li>Domains: Plant, Rune, Luck</li><li>Holy Symbol: Oak Tree</li><li>God's Physical Description</li><li>God's Personality</li><li>Common Followers</li><li>Origin/mini-story</li><li>Holidays</li><li>Goals/current event</li></ul>]]>
+
+</information>
+
+</information>
+
+</information>
+<information uuid="6c36f657-5c05-4656-b0ce-70652839366e" type="Information" title="Timelines"><![CDATA[<h1>Timelines</h1>]]>
+
+</information>
+</informations>
+<configuration>
+  <terrain-config>
+  </terrain-config>
+  <feature-config>
+  </feature-config>
+  <texture-config>
+  </texture-config>
+  <text-config>
+<labelstyle name="Nation" fontFace="Times" scale="80.0" isBold="true" isItalic="false"  color="0.0,0.0,0.0,1.0"  backgroundColor="null"  outlineSize="2.0" outlineColor="1.0,1.0,1.0,1.0"  dropShadowColor="null" dropShadowRadius="0" dropShadowSpread="0"  />
+
+<labelstyle name="Geography" fontFace="Arial" scale="70.0" isBold="false" isItalic="false"  color="0.545098066329956,0.0,0.0,1.0"  backgroundColor="null"  outlineSize="2.0" outlineColor="1.0,1.0,1.0,1.0"  dropShadowColor="null" dropShadowRadius="0" dropShadowSpread="0"  />
+
+<labelstyle name="Village" fontFace="Times" scale="28.0" isBold="false" isItalic="false"  color="0.0,0.0,0.0,1.0"  backgroundColor="null"  outlineSize="0.0" outlineColor="null"  dropShadowColor="null" dropShadowRadius="0" dropShadowSpread="0"  />
+
+<labelstyle name="Geography Minor" fontFace="Arial" scale="50.0" isBold="false" isItalic="false"  color="0.545098066329956,0.0,0.0,1.0"  backgroundColor="null"  outlineSize="1.0" outlineColor="1.0,1.0,1.0,1.0"  dropShadowColor="null" dropShadowRadius="0" dropShadowSpread="0"  />
+
+<labelstyle name="Geography Major" fontFace="Arial" scale="80.0" isBold="false" isItalic="false"  color="0.545098066329956,0.0,0.0,1.0"  backgroundColor="null"  outlineSize="2.0" outlineColor="1.0,1.0,1.0,1.0"  dropShadowColor="null" dropShadowRadius="0" dropShadowSpread="0"  />
+
+<labelstyle name="City" fontFace="Times" scale="33.0" isBold="false" isItalic="false"  color="0.0,0.0,0.0,1.0"  backgroundColor="null"  outlineSize="0.0" outlineColor="null"  dropShadowColor="null" dropShadowRadius="0" dropShadowSpread="0"  />
+
+<labelstyle name="Province" fontFace="Times" scale="70.0" isBold="false" isItalic="false"  color="0.0,0.0,0.0,1.0"  backgroundColor="null"  outlineSize="1.0" outlineColor="1.0,1.0,1.0,1.0"  dropShadowColor="null" dropShadowRadius="0" dropShadowSpread="0"  />
+
+  </text-config>
+  <shape-config>
+<shapestyle name="Trail" strokeType="SIMPLE" isFractal="false" strokeWidth="10.0" opacity="100.0" snapVertices="false" tags="trail" dropShadow="false" innerShadow="false" boxBlur="false" dsSpread="0.0" dsRadius="0.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.0" insRadius="0.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="0.0" bbHeight="0.0" bbIterations="0" fillTexture="null" strokeTexture="null"  strokePaint="0.8100000023841858,0.7099999785423279,0.30000001192092896,1.0"  fillPaint="null"  dscolor="null"  insColor="null"  lineCap="SQUARE"  lineJoin="ROUND"  />
+<shapestyle name="River Isometric" strokeType="SIMPLE" isFractal="false" strokeWidth="3.0" opacity="100.0" snapVertices="false" tags="river" dropShadow="true" innerShadow="false" boxBlur="true" dsSpread="0.7" dsRadius="14.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.0" insRadius="0.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="2.0" bbHeight="2.0" bbIterations="3" fillTexture="null" strokeTexture="null"  strokePaint="0.3100000023841858,0.5699999928474426,0.6800000071525574,1.0"  fillPaint="null"  dscolor="0.800000011920929,0.8100000023841858,0.7599999904632568,1.0"  insColor="null"  lineCap="ROUND"  lineJoin="ROUND"  />
+<shapestyle name="Coast Isometric" strokeType="COAST" isFractal="false" strokeWidth="0.5" opacity="100.0" snapVertices="false" tags="coast" dropShadow="true" innerShadow="false" boxBlur="true" dsSpread="0.85" dsRadius="10.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.0" insRadius="0.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="3.0" bbHeight="3.0" bbIterations="3" fillTexture="Sea" strokeTexture="null"  strokePaint="0.9200000166893005,0.9200000166893005,0.9200000166893005,1.0"  fillPaint="null"  dscolor="0.800000011920929,0.8100000023841858,0.7599999904632568,1.0"  insColor="null"  lineCap="ROUND"  lineJoin="ROUND"  />
+<shapestyle name="Road" strokeType="SIMPLE" isFractal="false" strokeWidth="10.0" opacity="100.0" snapVertices="false" tags="road" dropShadow="false" innerShadow="false" boxBlur="false" dsSpread="0.0" dsRadius="0.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.0" insRadius="0.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="0.0" bbHeight="0.0" bbIterations="0" fillTexture="null" strokeTexture="null"  strokePaint="0.0,0.0,0.0,1.0"  fillPaint="null"  dscolor="null"  insColor="null"  lineCap="SQUARE"  lineJoin="ROUND"  />
+<shapestyle name="River" strokeType="SIMPLE" isFractal="false" strokeWidth="10.0" opacity="100.0" snapVertices="false" tags="river" dropShadow="false" innerShadow="false" boxBlur="false" dsSpread="0.0" dsRadius="0.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.0" insRadius="0.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="0.0" bbHeight="0.0" bbIterations="0" fillTexture="null" strokeTexture="null"  strokePaint="0.550000011920929,0.699999988079071,0.8500000238418579,1.0"  fillPaint="null"  dscolor="null"  insColor="null"  lineCap="SQUARE"  lineJoin="ROUND"  />
+<shapestyle name="Shipping" strokeType="DOTTED" isFractal="false" strokeWidth="10.0" opacity="100.0" snapVertices="false" tags="shipping" dropShadow="false" innerShadow="false" boxBlur="false" dsSpread="0.0" dsRadius="0.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.0" insRadius="0.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="0.0" bbHeight="0.0" bbIterations="0" fillTexture="null" strokeTexture="null"  strokePaint="1.0,1.0,1.0,1.0"  fillPaint="null"  dscolor="null"  insColor="null"  lineCap="ROUND"  lineJoin="ROUND"  />
+<shapestyle name="Border" strokeType="SIMPLE" isFractal="false" strokeWidth="10.0" opacity="100.0" snapVertices="true" tags="border" dropShadow="false" innerShadow="false" boxBlur="false" dsSpread="0.0" dsRadius="0.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.0" insRadius="0.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="0.0" bbHeight="0.0" bbIterations="0" fillTexture="null" strokeTexture="null"  strokePaint="0.8100000023841858,0.0,0.0,1.0"  fillPaint="null"  dscolor="null"  insColor="null"  lineCap="SQUARE"  lineJoin="ROUND"  />
+  </shape-config>
+  </configuration>
+</map>

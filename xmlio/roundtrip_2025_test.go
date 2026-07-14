@@ -103,6 +103,94 @@ func TestW2025PublicRoundTrip(t *testing.T) {
 	compareGroups(t, m1, m2)
 }
 
+// populatedFixture is a UTF-8 W2025 map that fills the elements the blank
+// sample leaves empty (features with and without labels, shapes with points,
+// and notes). It is a raw .xml file, so it is decoded with h2025v1.Decode
+// directly rather than through the full gunzip/UTF-16 public pipeline.
+const populatedFixture = "../testdata/input/w2025-populated.xml"
+
+// decodeFixture reads a raw UTF-8 XML W2025 map and decodes it with the
+// schema-specific decoder (h2025v1.Decode), bypassing the gunzip/UTF-16
+// transport that decodeFile applies to .wxx files.
+func decodeFixture(t *testing.T, path string) *wxx.Map_t {
+	t.Helper()
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read %s: %v", path, err)
+	}
+	m, err := h2025v1.Decode(raw)
+	if err != nil {
+		t.Fatalf("h2025v1.Decode(%s): %v", path, err)
+	}
+	return m
+}
+
+// TestW2025DecodePopulated asserts that the decoder materializes the populated
+// fixture's content into Map_t using only fields that exist today. It guards
+// against decode-side loss that a symmetric round-trip cannot catch.
+func TestW2025DecodePopulated(t *testing.T) {
+	m := decodeFixture(t, populatedFixture)
+
+	// Shapes: both fixture shapes and their points must survive decode.
+	if got, want := len(m.Shapes), 2; got != want {
+		t.Fatalf("len(Shapes) = %d, want %d", got, want)
+	}
+	if len(m.Shapes[0].Points) == 0 {
+		t.Fatalf("Shapes[0].Points is empty, want non-empty")
+	}
+	if got := m.Shapes[0].Points[0]; got.X != 148.0 || got.Y != 149.0 {
+		t.Errorf("Shapes[0].Points[0] = (%v,%v), want (148,149)", got.X, got.Y)
+	}
+
+	// Notes: model has no fields yet (T3), so only the count is assertable.
+	if got, want := len(m.Notes), 2; got != want {
+		t.Errorf("len(Notes) = %d, want %d", got, want)
+	}
+
+	// Features: fixture has exactly two, [0] labeled, [1] labelless.
+	if got, want := len(m.Features), 2; got != want {
+		t.Fatalf("len(Features) = %d, want %d", got, want)
+	}
+	// The opaque-black feature color folds to nil (decodeRgba contract).
+	if m.Features[0].Color != nil {
+		t.Errorf("Features[0].Color = %+v, want nil (opaque black folds to nil)", m.Features[0].Color)
+	}
+	// The labelless feature must decode with a nil Label.
+	if m.Features[1].Label != nil {
+		t.Errorf("Features[1].Label = %+v, want nil (feature has no <label> child)", m.Features[1].Label)
+	}
+}
+
+// TestW2025PopulatedRoundTrip drives the in-memory XML codec over the populated
+// fixture: decode -> encode -> decode, then compares the two Map_t values group
+// by group. Any encoder that drops content (shapes, notes) surfaces as a
+// per-group mismatch naming the exact field.
+func TestW2025PopulatedRoundTrip(t *testing.T) {
+	raw, err := os.ReadFile(populatedFixture)
+	if err != nil {
+		t.Fatalf("read %s: %v", populatedFixture, err)
+	}
+	m1, err := h2025v1.Decode(raw)
+	if err != nil {
+		t.Fatalf("initial decode: %v", err)
+	}
+
+	xmlBytes, err := h2025v1.Encode(m1)
+	if err != nil {
+		t.Fatalf("h2025v1.Encode: %v", err)
+	}
+
+	m2, err := h2025v1.Decode(xmlBytes)
+	if err != nil {
+		t.Fatalf("h2025v1.Decode(re-encoded): %v\n---encoded xml (first 800 bytes)---\n%s", err, head(xmlBytes, 800))
+	}
+
+	normalizeVolatile(m1)
+	normalizeVolatile(m2)
+
+	compareGroups(t, m1, m2)
+}
+
 // decodeFile runs the full public decode pipeline (gunzip -> UTF-16BE -> XML)
 // on a .wxx file.
 func decodeFile(t *testing.T, path string) (*wxx.Map_t, error) {
