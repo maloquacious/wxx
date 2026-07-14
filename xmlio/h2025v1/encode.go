@@ -412,26 +412,55 @@ func encodeShapes(shapes []*wxx.Shape_t, wb *bytes.Buffer) error {
 }
 
 func encodeShape(shape *wxx.Shape_t, wb *bytes.Buffer) error {
-	//<shape
-	//    type="Arc"
-	//    creationType="BASIC"
-	//    isWorld="true" isContinent="true" isKingdom="true" isProvince="true"
-	//    dsOffsetX="0.0" dsOffsetY="0.0" dsRadius="50.0" dsSpread="0.2" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0"
-	//    insOffsetX="0.0" insOffsetY="0.0" insRadius="50.0" insChoke="0.2" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0"
-	//    bbWidth="10.0" bbHeight="10.0" bbIterations="3"
-	//    mapLayer="Above Terrain"
-	//    strokeType="SIMPLE"
-	//    highestViewLevel="WORLD"
-	//    currentShapeViewLevel="WORLD"
-	//    lineCap="SQUARE" lineJoin="ROUND"
-	//    opacity="1.0"
-	//    strokeColor="1.0,0.0,0.0,1.0" strokeWidth="0.05"
-	//    length="360.0"
-	//    startAngle="0.0"
-	//    arcType="OPEN" >
-	// <p x="148" y="149"/>
-	// <p x="267" y="286"/>
-	//</shape>
+	wb.WriteString("<shape")
+	wb.WriteString(fmt.Sprintf(" type=%q", shape.Type))
+	wb.WriteString(fmt.Sprintf(" creationType=%q", shape.CreationType))
+	wb.WriteString(fmt.Sprintf(" isWorld=%q", bools(shape.IsWorld)))
+	wb.WriteString(fmt.Sprintf(" isContinent=%q", bools(shape.IsContinent)))
+	wb.WriteString(fmt.Sprintf(" isKingdom=%q", bools(shape.IsKingdom)))
+	wb.WriteString(fmt.Sprintf(" isProvince=%q", bools(shape.IsProvince)))
+	wb.WriteString(fmt.Sprintf(" isGMOnly=%q", bools(shape.IsGMOnly)))
+	wb.WriteString(fmt.Sprintf(" isCurve=%q", bools(shape.IsCurve)))
+	wb.WriteString(fmt.Sprintf(" isSnapVertices=%q", bools(shape.IsSnapVertices)))
+	wb.WriteString(fmt.Sprintf(" isMatchTileBorders=%q", bools(shape.IsMatchTileBorders)))
+	wb.WriteString(fmt.Sprintf(" isBoxBlur=%q", bools(shape.IsBoxBlur)))
+	wb.WriteString(fmt.Sprintf(" isDropShadow=%q", bools(shape.IsDropShadow)))
+	wb.WriteString(fmt.Sprintf(" isInnerShadow=%q", bools(shape.IsInnerShadow)))
+	wb.WriteString(fmt.Sprintf(" dsOffsetX=%q", floats(shape.DsOffsetX)))
+	wb.WriteString(fmt.Sprintf(" dsOffsetY=%q", floats(shape.DsOffsetY)))
+	wb.WriteString(fmt.Sprintf(" dsRadius=%q", floats(shape.DsRadius)))
+	wb.WriteString(fmt.Sprintf(" dsSpread=%q", floats(shape.DsSpread)))
+	wb.WriteString(fmt.Sprintf(" dsColor=%q", shape.DsColor))
+	wb.WriteString(fmt.Sprintf(" insOffsetX=%q", floats(shape.InsOffsetX)))
+	wb.WriteString(fmt.Sprintf(" insOffsetY=%q", floats(shape.InsOffsetY)))
+	wb.WriteString(fmt.Sprintf(" insRadius=%q", floats(shape.InsRadius)))
+	wb.WriteString(fmt.Sprintf(" insChoke=%q", floats(shape.InsChoke)))
+	wb.WriteString(fmt.Sprintf(" insColor=%q", shape.InsColor))
+	wb.WriteString(fmt.Sprintf(" bbWidth=%q", floats(shape.BbWidth)))
+	wb.WriteString(fmt.Sprintf(" bbHeight=%q", floats(shape.BbHeight)))
+	wb.WriteString(fmt.Sprintf(" bbIterations=%q", ints(shape.BbIterations)))
+	wb.WriteString(fmt.Sprintf(" mapLayer=%q", shape.MapLayer))
+	wb.WriteString(fmt.Sprintf(" fillRule=%q", shape.FillRule))
+	wb.WriteString(fmt.Sprintf(" fillTexture=%q", shape.FillTexture))
+	wb.WriteString(fmt.Sprintf(" strokeTexture=%q", shape.StrokeTexture))
+	wb.WriteString(fmt.Sprintf(" strokeType=%q", shape.StrokeType))
+	wb.WriteString(fmt.Sprintf(" highestViewLevel=%q", shape.HighestViewLevel))
+	wb.WriteString(fmt.Sprintf(" currentShapeViewLevel=%q", shape.CurrentShapeViewLevel))
+	wb.WriteString(fmt.Sprintf(" lineCap=%q", shape.LineCap))
+	wb.WriteString(fmt.Sprintf(" lineJoin=%q", shape.LineJoin))
+	wb.WriteString(fmt.Sprintf(" opacity=%q", floats(shape.Opacity)))
+	wb.WriteString(fmt.Sprintf(" strokeColor=%q", shape.StrokeColor))
+	wb.WriteString(fmt.Sprintf(" strokeWidth=%q", floats(shape.StrokeWidth)))
+	wb.WriteString(fmt.Sprintf(" tags=%q", shape.Tags))
+	wb.WriteString(">\n")
+	for _, p := range shape.Points {
+		wb.WriteString("<p")
+		wb.WriteString(fmt.Sprintf(" type=%q", p.Type))
+		wb.WriteString(fmt.Sprintf(" x=%q", floats(p.X)))
+		wb.WriteString(fmt.Sprintf(" y=%q", floats(p.Y)))
+		wb.WriteString("/>\n")
+	}
+	wb.WriteString("</shape>\n")
 	return nil
 }
 
