@@ -102,7 +102,7 @@ func main() {
 	var encoderDiagnostics xmlio.EncoderDiagnostics
 	encoder := xmlio.NewEncoder(xmlio.WithEncoderDiagnostics(&encoderDiagnostics))
 	outputBuffer := &bytes.Buffer{}
-	err = encoder.Encode(outputBuffer, outputMap.MetaData.DataVersion, outputMap)
+	err = encoder.Encode(outputBuffer, outputMap)
 	if err != nil {
 		log.Fatalf("error: encoding %s: %v\n", outputFile, err)
 	}

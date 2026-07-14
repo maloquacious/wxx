@@ -80,7 +80,7 @@ func main() {
 	var encoderDiagnostics xmlio.EncoderDiagnostics
 	bah := xmlio.NewEncoder(xmlio.WithEncoderDiagnostics(&encoderDiagnostics))
 	outputBuffer := &bytes.Buffer{}
-	err = bah.Encode(outputBuffer, inputMap.MetaData.DataVersion, inputMap)
+	err = bah.Encode(outputBuffer, inputMap)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "error encoding %s: %v\n", outputFile, err)
 		os.Exit(1)
