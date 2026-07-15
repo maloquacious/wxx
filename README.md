@@ -33,7 +33,7 @@ Every decoded map carries a parsed, comparable `MetaData.DataVersion`
 | family (`DataVersion.Major`) | on-disk identifier | values seen | `DataVersion` |
 |---|---|---|---|
 | `2017` — classic (Hexographer 2) | `map/@version` (no `release`/`schema`) | `1.73`, `1.74`, `1.77` | `{2017, 1, nn}` |
-| `2025` — Worldographer 2025 | `map/@schema` (`release="2025"`) | `1.01`, `1.06` | `{2025, 1, n}` |
+| `2025` — Worldographer 2025 | `map/@schema` (`release="2025"`) | `1.06` | `{2025, 1, n}` |
 
 The encoder selects a codec by **family** (`DataVersion.Major`). These on-disk
 values are **not** semantic versions: classic `1.73`–`1.77` share one schema, and
@@ -43,13 +43,12 @@ true release version is tracked in #13. See
 `docs/adr/0002-version-identity.md` for the rationale and the classic-side
 follow-up (ADR 0002 supersedes the interim `{2017,1}` handling B4 introduced).
 
-> **Note — application version vs. schema version are independent axes, and
-> `@schema` is not always present.** The table's 2025 row assumes an explicit
-> `map/@schema`, but only *later* W2025 files carry one; *early* W2025 files have
-> `release="2025"` with **no `@schema`** (their schema version is implicit), and
-> classic files never have one. Dispatch already handles this (it routes on
-> `release` alone), but version *identity* for the implicit-schema case is not yet
-> modeled — tracked in #28. See `docs/adr/0003-version-axes.md`.
+> **Note — application version and schema version are independent axes.** W2025
+> files carry both: `version="2.06"` alongside `schema="1.06"`. Classic files
+> carry no `@schema` at all, so their schema version is implicit. `DataVersion`
+> collapses the two axes into one field — its `Minor.Patch` comes from
+> `map/@version` for classic but `map/@schema` for 2025 — which is tracked in
+> #28. See `docs/adr/0003-version-axes.md`.
 
 ## Go package
 

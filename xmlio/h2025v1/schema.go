@@ -449,7 +449,7 @@ type TileRow_t struct {
 // Color/RingColor, some shapeStyle colors), a genuinely opaque-black on-disk
 // value changes byte form across a round-trip.
 //
-// This IS now exercised by testdata/input/w2025-populated.xml: Features[0].Color
+// This IS now exercised by testdata/w2025-populated.xml: Features[0].Color
 // = "0.0,0.0,0.0,1.0" decodes here to nil, and encodeFeature re-emits it via
 // rgbans as "null"; re-decoding "null" also yields nil. So at the Map_t level it
 // round-trips losslessly (nil both passes), and only the on-disk byte form shifts

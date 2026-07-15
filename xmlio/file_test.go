@@ -12,7 +12,7 @@ import (
 // classicFixture is a classic H2017 (COLUMNS) blank map. It is safe to
 // re-encode through the 2017 codec, so it drives the ReadFile/WriteFile
 // round-trip tests.
-const classicFixture = "../testdata/input/blank-2017-1.77-1.0.wxx"
+const classicFixture = "../testdata/blank-2017-1.77-1.0.wxx"
 
 // TestReadFile decodes a real .wxx fixture through the file-level convenience
 // API and asserts the expected map metadata.

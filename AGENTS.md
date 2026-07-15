@@ -34,8 +34,11 @@ documentation is sparse.
 - `cmd/` — CLI tools used to exercise the package: `bounds`, `copy`, `crop`,
   `import`, `info`, `merge`, `resize`, `schema`, `server`, `version`, and
   the umbrella `wxx` tool (subcommands: `export`).
-- `testdata/` — `input/`, `output/`, `debug/`, `terrain/` fixtures.
-- `data/` — sample WXX files (e.g. `2025-2.05.wxx`).
+- `testdata/` — every fixture the test harness reads, flat in the root
+  (e.g. `2025-2.06-13x11-941577-blank.wxx`). Tracked, so `go test ./...`
+  runs from a clean clone.
+- `scratch/` — local scratch: tool output, debug dumps, terrain textures, and inputs
+  for the WIP tools. Git-ignored; nothing here is required by a test.
 - `tools/` — maintenance scripts (e.g. `update-mod.sh`).
 
 ## Codec conventions

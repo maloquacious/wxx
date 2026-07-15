@@ -32,13 +32,13 @@ import (
 // deliberately. Run with `-v` to dump the full per-fixture loss set; the
 // harness doubles as the report generator for that document.
 
-const classicInputDir = "../testdata/input/"
+const classicInputDir = "../testdata/"
 
 // rowsFixture decodes but cannot be re-encoded: classic ROWS encode is a
 // documented hard-error (encode.go encodeTiles asserts orientation != ROWS).
 const rowsFixture = "2017-1.77-1.0-rows-blank.wxx"
 
-// classicFixtures are the eight classic 2017 fixtures under testdata/input/.
+// classicFixtures are the eight classic 2017 fixtures under testdata/.
 var classicFixtures = []string{
 	"blank-2017-1.73-1.0.wxx",
 	"blank-2017-1.74-1.0.wxx",

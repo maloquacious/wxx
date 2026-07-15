@@ -7,10 +7,24 @@
 *.so
 *.swp
 *.test
+
+# apple junk
 .DS_Store
+
+# IDE files
 .idea/
+
+# agent files
+.claude/
 .vscode/
 
 # ignore Go workspace file (used for local multi-module dev)
 go.work
 go.work.sum
+
+# worldographer files
+*-autosave.wxx
+
+# local scratch: tool output, debug dumps, terrain textures. Nothing a test
+# reads belongs here -- test fixtures live tracked in testdata/.
+/scratch/

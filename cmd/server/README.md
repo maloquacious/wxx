@@ -44,29 +44,29 @@ The `-timeout` option accepts Go duration format:
 
 ```bash
 # Start server with defaults (localhost:8081)
-dist/local/server testdata/input/blank-2017-1.73-1.0.wxx
+dist/local/server testdata/blank-2017-1.73-1.0.wxx
 
 # Custom port
-dist/local/server -port 9000 testdata/input/blank-2017-1.73-1.0.wxx
+dist/local/server -port 9000 testdata/blank-2017-1.73-1.0.wxx
 
 # Custom host and port
-dist/local/server -host 127.0.0.1 -port 8888 testdata/input/blank-2017-1.73-1.0.wxx
+dist/local/server -host 127.0.0.1 -port 8888 testdata/blank-2017-1.73-1.0.wxx
 
 # Bind to all interfaces
-dist/local/server -host 0.0.0.0 -port 8080 testdata/input/blank-2017-1.73-1.0.wxx
+dist/local/server -host 0.0.0.0 -port 8080 testdata/blank-2017-1.73-1.0.wxx
 ```
 
 ### Auto-Shutdown Examples
 
 ```bash
 # Auto-shutdown after 30 seconds
-dist/local/server -timeout 30s testdata/input/blank-2017-1.73-1.0.wxx
+dist/local/server -timeout 30s testdata/blank-2017-1.73-1.0.wxx
 
 # Auto-shutdown after 5 minutes with custom port
-dist/local/server -port 9000 -timeout 5m testdata/input/blank-2017-1.73-1.0.wxx
+dist/local/server -port 9000 -timeout 5m testdata/blank-2017-1.73-1.0.wxx
 
 # Testing configuration: shutdown after 1 minute
-dist/local/server -host localhost -port 8888 -timeout 1m testdata/input/blank-2017-1.73-1.0.wxx
+dist/local/server -host localhost -port 8888 -timeout 1m testdata/blank-2017-1.73-1.0.wxx
 ```
 
 ## Available Routes
@@ -100,7 +100,7 @@ Gracefully shutdown the server.
 
 ```bash
 # Start server
-dist/local/server -timeout 1m -port 9000 testdata/input/blank-2017-1.73-1.0.wxx &
+dist/local/server -timeout 1m -port 9000 testdata/blank-2017-1.73-1.0.wxx &
 
 # Wait for startup
 sleep 2
@@ -125,7 +125,7 @@ curl http://localhost:9000/shutdown
 set -e
 
 PORT=9001
-FILE="testdata/input/blank-2017-1.73-1.0.wxx"
+FILE="testdata/blank-2017-1.73-1.0.wxx"
 
 echo "Starting server..."
 dist/local/server -port $PORT -timeout 30s $FILE > server.log 2>&1 &
@@ -230,8 +230,8 @@ tail server.log
 **File not found**
 ```bash
 # Make sure file path is correct
-ls -la testdata/input/
-dist/local/server testdata/input/blank-2017-1.73-1.0.wxx
+ls -la testdata/
+dist/local/server testdata/blank-2017-1.73-1.0.wxx
 ```
 
 ### Debugging

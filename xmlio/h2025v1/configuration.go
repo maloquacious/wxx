@@ -198,10 +198,10 @@ func encodeLabelStyle(labelStyle *wxx.LabelStyle_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(" outlineColor=%q", rgbans(labelStyle.OutlineColor))) // "null" or decodeZeroableRgba
 	// The W2025 drop-shadow trio is present all-or-none in real data;
 	// dropShadowColor is "null" or an RGBA string when present, never empty, so an
-	// empty DropShadowColor reliably means "absent from the source". Older schemas
-	// (e.g. 1.01) omit the trio entirely -- gate the whole group on the color
-	// sentinel so a round-trip does not spuriously add the attributes. Do not gate
-	// on the numeric fields: 0 is a legal radius/spread value.
+	// empty DropShadowColor reliably means "absent from the source". Gate the whole
+	// group on that sentinel so a round-trip does not spuriously add the attributes
+	// (ADR 0002: never emit what was not on input). Do not gate on the numeric
+	// fields: 0 is a legal radius/spread value.
 	if labelStyle.DropShadowColor != "" {
 		wb.WriteString(fmt.Sprintf(" dropShadowColor=%q", labelStyle.DropShadowColor)) // nullable string ("null")
 		wb.WriteString(fmt.Sprintf(" dropShadowRadius=%q", floats(labelStyle.DropShadowRadius)))
