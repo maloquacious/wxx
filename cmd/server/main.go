@@ -23,7 +23,8 @@ var worldMap *wxx.Map_t
 type Map_t struct {
 	MetaData struct {
 		AppVersion  string
-		DataVersion string
+		FileVersion string // map/@version: the Worldographer build that wrote the file
+		FileSchema  string // map/@schema: the on-disk format it conforms to
 		Created     string
 	}
 	HexWidth        float64
@@ -51,9 +52,12 @@ var htmlTemplate = `<!DOCTYPE html>
             <dt>Application Version</dt>
             <dd>{{.MetaData.AppVersion}}</dd>
             
-            <dt>Data Version</dt>
-            <dd>{{.MetaData.DataVersion}}</dd>
-            
+            <dt>Worldographer Version</dt>
+            <dd>{{.MetaData.FileVersion}}</dd>
+
+            <dt>Schema Version</dt>
+            <dd>{{.MetaData.FileSchema}}</dd>
+
             <dt>Created</dt>
             <dd>{{.MetaData.Created}}</dd>
         </dl>
@@ -157,14 +161,24 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create a simplified map structure for the template
+	// The two version axes are reported separately: map/@version is the build
+	// that wrote the file and map/@schema is the format it conforms to. A classic
+	// file states no schema at all, and the absence is what identifies the
+	// implicit legacy one, so say that rather than showing an empty cell.
+	fileSchema := "implicit (classic)"
+	if s := worldMap.MetaData.Version.Schema; s != nil {
+		fileSchema = s.Raw
+	}
 	m := &Map_t{
 		MetaData: struct {
 			AppVersion  string
-			DataVersion string
+			FileVersion string
+			FileSchema  string
 			Created     string
 		}{
 			AppVersion:  worldMap.MetaData.AppVersion.String(),
-			DataVersion: worldMap.MetaData.DataVersion.String(),
+			FileVersion: worldMap.MetaData.Version.App.Raw,
+			FileSchema:  fileSchema,
 			Created:     worldMap.MetaData.Created,
 		},
 		HexWidth:        worldMap.HexWidth,

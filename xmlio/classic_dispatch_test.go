@@ -6,28 +6,51 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/maloquacious/semver"
+	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/xmlio"
+	"github.com/maloquacious/wxx/xmlio/h2017v1"
 )
 
 // classicSamples are H2017 ("classic") .wxx fixtures with their true on-disk
 // <map> version attribute. Classic files carry no release/schema attributes, so
 // the public dispatcher must route them by the "1.x" version shape.
 //
-// wantDV is the parsed DataVersion (ADR 0002): Major=2017 (schema family),
-// Minor.Patch = the on-disk dotted revision ("1.77" -> {2017,1,77}). All classic
-// fixtures are COLUMNS orientation (verified), so they can be re-encoded without
-// hitting the documented classic ROWS-encode gap.
+// wantMajor/wantMinor are the components MetaData.Version.App parses the on-disk
+// version into ("1.77" -> {1, 77}). Every classic fixture states no @schema, so
+// the identity's Schema is nil throughout -- that absence is the implicit legacy
+// schema, and it is what selects the classic codec on the way back out. All
+// classic fixtures are COLUMNS orientation (verified), so they can be re-encoded
+// without hitting the documented classic ROWS-encode gap.
 var classicSamples = []struct {
-	name    string
-	path    string
-	version string         // on-disk <map version=...>
-	wantDV  semver.Version // parsed MetaData.DataVersion
+	name      string
+	path      string
+	version   string // on-disk <map version=...>
+	wantMajor int    // parsed MetaData.Version.App.Major
+	wantMinor int    // parsed MetaData.Version.App.Minor
 }{
-	{"1.77-columns-blank", "../testdata/2017-1.77-1.0-columns-blank.wxx", "1.77", semver.Version{Major: 2017, Minor: 1, Patch: 77}},
-	{"1.77-blank", "../testdata/blank-2017-1.77-1.0.wxx", "1.77", semver.Version{Major: 2017, Minor: 1, Patch: 77}},
-	{"1.74-blank", "../testdata/blank-2017-1.74-1.0.wxx", "1.74", semver.Version{Major: 2017, Minor: 1, Patch: 74}},
-	{"1.73-blank", "../testdata/blank-2017-1.73-1.0.wxx", "1.73", semver.Version{Major: 2017, Minor: 1, Patch: 73}},
+	{"1.77-columns-blank", "../testdata/2017-1.77-1.0-columns-blank.wxx", "1.77", 1, 77},
+	{"1.77-blank", "../testdata/blank-2017-1.77-1.0.wxx", "1.77", 1, 77},
+	{"1.74-blank", "../testdata/blank-2017-1.74-1.0.wxx", "1.74", 1, 74},
+	{"1.73-blank", "../testdata/blank-2017-1.73-1.0.wxx", "1.73", 1, 73},
+}
+
+// assertClassicIdentity asserts m carries the on-disk version identity of a
+// classic file: the exact <map version> bytes, the components they parse to, and
+// a nil Schema for the @schema the file does not state.
+func assertClassicIdentity(t *testing.T, label string, v wxx.Version_t, wantApp string, wantMajor, wantMinor int) {
+	t.Helper()
+	if got := v.App.Raw; got != wantApp {
+		t.Errorf("%s: Version.App.Raw = %q, want %q verbatim", label, got, wantApp)
+	}
+	if got := v.App.Major; got != wantMajor {
+		t.Errorf("%s: Version.App.Major = %d, want %d", label, got, wantMajor)
+	}
+	if got := v.App.Minor; got != wantMinor {
+		t.Errorf("%s: Version.App.Minor = %d, want %d", label, got, wantMinor)
+	}
+	if v.Schema != nil {
+		t.Errorf("%s: Version.Schema = %+v, want nil (a classic file states no @schema)", label, *v.Schema)
+	}
 }
 
 // TestClassicDispatch_Decode asserts that the PUBLIC decoder
@@ -56,8 +79,9 @@ func TestClassicDispatch_Decode(t *testing.T) {
 
 // TestClassicVersionFidelity asserts that decoding a classic file preserves the
 // real on-disk sub-revision (1.73/1.74/1.77) both verbatim in
-// MetaData.Worldographer.Version and as a parsed semver in MetaData.DataVersion
-// ({2017,1,7x}) per ADR 0002.
+// MetaData.Worldographer.Version -- the string the encoder writes back -- and as
+// the version identity in MetaData.Version (App "1.7x", nil Schema) per ADR 0004
+// Decision 2.
 func TestClassicVersionFidelity(t *testing.T) {
 	for _, tc := range classicSamples {
 		t.Run(tc.name, func(t *testing.T) {
@@ -75,21 +99,23 @@ func TestClassicVersionFidelity(t *testing.T) {
 			if got := m.MetaData.Worldographer.Schema; got != "" {
 				t.Errorf("MetaData.Worldographer.Schema = %q, want empty", got)
 			}
-			// DataVersion carries the family in Major and the on-disk revision in
-			// Minor.Patch. Minor stays 1 for every classic file, so the encode
-			// dispatch (which routes on Major) is unaffected.
-			if got := m.MetaData.DataVersion; got != tc.wantDV {
-				t.Errorf("MetaData.DataVersion = %v, want %v", got, tc.wantDV)
-			}
+			// The identity states the on-disk version on the App axis and nothing
+			// on the schema axis, because the file states nothing there.
+			assertClassicIdentity(t, "MetaData", m.MetaData.Version, tc.version, tc.wantMajor, tc.wantMinor)
 		})
 	}
 }
 
-// TestClassicEncodeDispatch asserts that the public encoder routes a classic map
-// whose DataVersion is {2017,1,7x} to the h2017v1 encoder. This is the ADR 0002
-// dispatch relaxation: before it, MarshalXML required Minor==1 AND Patch==0-style
-// {2017,1} matching via the Minor switch; now it routes on Major (family) alone,
-// so a real parsed classic DataVersion no longer trips ErrUnsupportedSchemaVersion.
+// TestClassicEncodeDispatch asserts that the public encoder routes every classic
+// fixture to the h2017v1 encoder -- the guarantee this test has always made,
+// restated on the model that now carries it.
+//
+// What routes has changed: the encoder used to switch on a DataVersion.Major of
+// 2017, a family year no classic file states, and now resolves the codec from
+// the schema the file itself states -- for a classic file, the schema it pointedly
+// does not state (ADR 0004 Decision 4). The proof is unchanged and end-to-end: a
+// map decoded from each fixture re-encodes to bytes that decode back as a classic
+// file carrying its own version="1.7x", which only the classic encoder produces.
 func TestClassicEncodeDispatch(t *testing.T) {
 	for _, tc := range classicSamples {
 		t.Run(tc.name, func(t *testing.T) {
@@ -97,13 +123,25 @@ func TestClassicEncodeDispatch(t *testing.T) {
 			if err != nil {
 				t.Fatalf("public decode %s: %v", tc.path, err)
 			}
-			// sanity: this is the enriched DataVersion, not the old {2017,1,0}.
-			if m.MetaData.DataVersion != tc.wantDV {
-				t.Fatalf("DataVersion = %v, want %v", m.MetaData.DataVersion, tc.wantDV)
+			// sanity: the identity the encode dispatch reads is the real on-disk
+			// one, so what follows exercises the classic route rather than a
+			// zero-valued fallback.
+			assertClassicIdentity(t, "decoded", m.MetaData.Version, tc.version, tc.wantMajor, tc.wantMinor)
+
+			// The schema this fixture states selects the classic codec. This is
+			// the dispatch decision itself, asserted directly rather than inferred
+			// from the output.
+			codec, err := xmlio.CodecForSchema(m.MetaData.Version.Schema)
+			if err != nil {
+				t.Fatalf("CodecForSchema(%v): %v", m.MetaData.Version, err)
 			}
+			if funcPtr(codec.Encode) != funcPtr(h2017v1.Encode) {
+				t.Errorf("schema of %s does not select the h2017v1 encoder", tc.path)
+			}
+
 			var buf bytes.Buffer
 			if err := xmlio.NewEncoder().Encode(&buf, m); err != nil {
-				t.Fatalf("public encode %s (DataVersion %v): %v", tc.path, m.MetaData.DataVersion, err)
+				t.Fatalf("public encode %s (%v): %v", tc.path, m.MetaData.Version, err)
 			}
 			if buf.Len() == 0 {
 				t.Fatalf("public encode %s: empty output", tc.path)
@@ -117,9 +155,7 @@ func TestClassicEncodeDispatch(t *testing.T) {
 			if got := m2.MetaData.Worldographer.Version; got != tc.version {
 				t.Errorf("re-decoded Worldographer.Version = %q, want %q", got, tc.version)
 			}
-			if got := m2.MetaData.DataVersion; got != tc.wantDV {
-				t.Errorf("re-decoded DataVersion = %v, want %v", got, tc.wantDV)
-			}
+			assertClassicIdentity(t, "re-decoded", m2.MetaData.Version, tc.version, tc.wantMajor, tc.wantMinor)
 		})
 	}
 }

@@ -73,7 +73,7 @@ func main() {
 	}
 
 	if !quiet {
-		fmt.Printf("input: %s (data version %s)\n", inputFile, inputMap.MetaData.DataVersion.String())
+		fmt.Printf("input: %s (%s)\n", inputFile, inputMap.MetaData.Version)
 	}
 
 	// Write to the output file

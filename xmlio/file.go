@@ -21,9 +21,9 @@ func ReadFile(path string, opts ...DecoderOption) (*wxx.Map_t, error) {
 	return NewDecoder(opts...).Decode(f)
 }
 
-// WriteFile encodes m and writes it to path (0644). By default it targets
-// m.MetaData.DataVersion; pass WithTargetVersion(...) (or other EncoderOption)
-// to override.
+// WriteFile encodes m and writes it to path (0644). By default it targets the
+// release m states in m.MetaData.Version.App; pass WithTargetVersion(...) (or
+// other EncoderOption) to override.
 //
 // The map is encoded into memory first and only written to disk once the
 // encode succeeds, so a failed encode never truncates or creates a corrupt

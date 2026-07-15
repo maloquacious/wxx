@@ -6,13 +6,9 @@ import (
 	"bytes"
 	"compress/gzip"
 	"errors"
-	"fmt"
 	"io"
 
-	"github.com/maloquacious/semver"
 	"github.com/maloquacious/wxx"
-	"github.com/maloquacious/wxx/xmlio/h2017v1"
-	"github.com/maloquacious/wxx/xmlio/h2025v1"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/transform"
 )
@@ -26,11 +22,34 @@ type Encoder struct {
 
 type EncoderOption func(*encoderOpts)
 
+// targetKind records HOW the caller named the target release, which is not the
+// same question as which release they named.
+//
+// The distinction exists because "" is a legal string and a caller who passes
+// one has named a target -- badly. Storing only the string would make "" mean
+// "the caller said nothing", so WithTargetVersion("") would silently write the
+// map's own release instead of the one the caller asked for. That is the
+// best-effort write ADR 0004 Decision 5 forbids, dressed up as a default.
+type targetKind int
+
+const (
+	// targetFromMap is the default: no caller named a target, so the encoder
+	// targets the release the map itself states.
+	targetFromMap targetKind = iota
+	// targetByVersion: the caller named a verbatim application version, which the
+	// registry must resolve to a release.
+	targetByVersion
+	// targetByRelease: the caller named a release the registry already resolved.
+	targetByRelease
+)
+
 type encoderOpts struct {
 	compressedOutput bool
 	utf16BeOutput    bool
 	xmlHeader        bool
-	targetVersion    *semver.Version
+	targetKind       targetKind
+	targetVersion    string     // verbatim map/@version, when targetKind is targetByVersion
+	targetRelease    *Release_t // registry entry, when targetKind is targetByRelease
 	diagnostics      *EncoderDiagnostics
 }
 
@@ -40,6 +59,23 @@ type EncoderDiagnostics struct {
 	Utf16Encoded  []byte // output after converting UTF-8 to UTF-16
 	Compressed    []byte // output after running gzip
 	Schema        string
+
+	// Dropped is the inventory of content the source map carried that the target
+	// release cannot express (ADR 0004 Decision 7). It is empty when the encode
+	// loses nothing -- notably when the target is the release the map already
+	// states, which is the default.
+	//
+	// Only MODELED losses appear here. A downgrade that would drop an unmodeled
+	// stub does not report, it errors: the encoder can only stay quiet about a
+	// loss it can enumerate. See downgradeLoss for the contract.
+	//
+	// This follows the project's diagnostics-over-logging convention, so it is
+	// opt-in via WithEncoderDiagnostics. That is a real limit worth stating: a
+	// caller who never asks does not hear about a modeled downgrade loss. It is
+	// the enumerable, documented half of the loss -- the half a caller can
+	// reconstruct from Map_t and h2017v1/COVERAGE.md after the fact -- and the
+	// half that cannot be reconstructed is the half that errors.
+	Dropped []DroppedFeature_t
 }
 
 // NewEncoder returns an Encoder that implements the wxx.Encoder interface.
@@ -84,23 +120,93 @@ func WithXMLHeader(enabled bool) EncoderOption {
 	}
 }
 
-// WithTargetVersion overrides the default target Worldographer version.
-// By default the encoder targets m.MetaData.DataVersion; use this option
-// to re-target/convert the map to a different Worldographer version.
-func WithTargetVersion(v semver.Version) EncoderOption {
+// WithTargetVersion targets the supported release that states app as its
+// verbatim map/@version ("1.73", "1.77", "2.06"). Without it the encoder targets
+// the release the map itself states in m.MetaData.Version.App.
+//
+// The caller names a release, never a tuple: the registry resolves map/@release
+// and map/@schema from app, so a combination no release states -- @version="1.77"
+// on a modern schema, say -- cannot be asked for at all (ADR 0004 Decision 5).
+// An app no supported release states is an error at Encode, never a nearest
+// match and never a best-effort write. This is the licensing requirement: a user
+// licensed for "2.06" targets "2.06" and cannot be handed a "2.07" file.
+//
+// "" is not a sentinel. It names no supported release, so it is the same error
+// as any other unregistered version rather than a request for the default. An
+// empty version reaching here is a caller bug -- an unset flag, an empty config
+// field -- and quietly writing the map's own release instead would hand back a
+// file in a version nobody asked for.
+func WithTargetVersion(app string) EncoderOption {
 	return func(o *encoderOpts) {
-		o.targetVersion = &v
+		o.targetKind = targetByVersion
+		o.targetVersion = app
+		o.targetRelease = nil
+	}
+}
+
+// WithTargetRelease targets a release the registry has already resolved, as
+// returned by Lookup or SupportedReleases. It is the typed form of
+// WithTargetVersion, for a caller that has a *Release_t in hand and would
+// otherwise round-trip it back through its own App.Raw.
+//
+// Only the registry's own entries are accepted. A Release_t is an ordinary
+// exported struct, so a caller CAN assemble one naming @version="1.77" with the
+// W2025 schema; what it cannot do is get that past Encode, which rejects any
+// entry the registry did not produce. Without that check this option would be
+// the "any other path" by which an unregistered (App, Schema) pair reaches the
+// encoder -- and the codec follows the schema, so the file would be a W2025 one
+// claiming to be classic 1.77.
+//
+// A nil release is an error for the same reason "" is: it names nothing, and
+// defaulting it would write a release the caller never asked for.
+func WithTargetRelease(r *Release_t) EncoderOption {
+	return func(o *encoderOpts) {
+		o.targetKind = targetByRelease
+		o.targetRelease = r
+		o.targetVersion = ""
+	}
+}
+
+// resolveTarget resolves the release this encode targets.
+//
+// Every path ends at the registry: the caller's version string, the caller's
+// release entry, and the map's own version are three ways of naming a release
+// and none of them is a way of describing one. An unregistered target stops the
+// encode here, before a byte is written.
+func (o *encoderOpts) resolveTarget(m *wxx.Map_t) (*Release_t, error) {
+	switch o.targetKind {
+	case targetByVersion:
+		return Lookup(o.targetVersion)
+	case targetByRelease:
+		return Resolve(o.targetRelease)
+	default:
+		return Lookup(m.MetaData.Version.App.Raw)
 	}
 }
 
 func (e *Encoder) Encode(w io.Writer, m *wxx.Map_t) error {
 	var err error
 
-	// default the target version to the map's DataVersion; callers may
-	// override it with WithTargetVersion to re-target/convert the map.
-	target := m.MetaData.DataVersion
-	if e.opts.targetVersion != nil {
-		target = *e.opts.targetVersion
+	// Resolve the target before anything is written. A target the registry does
+	// not state stops the encode here: the caller gets an error and w gets
+	// nothing, rather than a file in a release that does not exist or that they
+	// are not licensed for (ADR 0004 Decision 5).
+	target, err := e.opts.resolveTarget(m)
+	if err != nil {
+		return err
+	}
+
+	// Inventory what this target cannot express, before anything is written. A
+	// modeled loss is reported through diagnostics and the encode proceeds; a
+	// loss the encoder cannot honestly describe -- an unmodeled stub -- stops it
+	// here, so w gets nothing rather than a file quietly missing content
+	// (ADR 0004 Decision 7; the contract is settled in downgradeLoss).
+	dropped, err := downgradeLoss(m, target)
+	if err != nil {
+		return err
+	}
+	if e.opts.diagnostics != nil {
+		e.opts.diagnostics.Dropped = dropped
 	}
 
 	// marshal the Map_t to UTF‑8 XML
@@ -113,14 +219,12 @@ func (e *Encoder) Encode(w io.Writer, m *wxx.Map_t) error {
 	}
 
 	if e.opts.xmlHeader {
-		var xmlHeader []byte
-		switch target.Major {
-		case 2017:
-			xmlHeader = []byte("<?xml version='1.0' encoding='utf-16'?>\n")
-		case 2025:
-			xmlHeader = []byte("<?xml version='1.1' encoding='utf-16'?>\n")
-		default:
-			return fmt.Errorf("unsupported worldographer version")
+		// The XML declaration follows the target release (classic opens 1.0,
+		// W2025 opens 1.1). It is data on the registry entry, not a switch on a
+		// family year.
+		xmlHeader, err := target.XMLHeader()
+		if err != nil {
+			return err
 		}
 		buf := make([]byte, 0, len(xmlHeader)+len(data))
 		buf = append(buf, xmlHeader...)
@@ -168,21 +272,39 @@ func (e *Encoder) Encode(w io.Writer, m *wxx.Map_t) error {
 
 // Parse/serialize the XML form of Map_t without transport concerns.
 
-// MarshalXML uses the target version to pick the right XML schema, then converts the Map_t to XML.
-// Returns an error for unsupported versions or if there are errors during the conversion.
-func MarshalXML(m *wxx.Map_t, worldographerTargetVersion semver.Version) ([]byte, error) {
-	// Dispatch on the schema family (Major) only (ADR 0002). Minor.Patch carries
-	// the on-disk sub-revision (classic 1.7x, 2025 schema 1.x) and is
-	// informational for codec selection, so any 2017.x routes to h2017v1 and any
-	// 2025.x to h2025v1. This removes the earlier Minor==1 gate, which would have
-	// mis-rejected a parsed classic DataVersion ({2017,1,77}) and any future 2025
-	// schema whose leading component is not 1.
-	switch worldographerTargetVersion.Major {
-	case 2017:
-		return h2017v1.Encode(m)
-	case 2025:
-		return h2025v1.Encode(m)
+// MarshalXML converts a Map_t to the XML of a target release, without transport
+// concerns (no header, no UTF-16, no gzip). Resolve target with Lookup or
+// SupportedReleases; an entry the registry did not produce is rejected, so an
+// unregistered (App, Schema) pair cannot reach a codec down this path either.
+//
+// The target's SCHEMA picks the codec (ADR 0004 Decision 4): the schema is the
+// format's identity, it is on disk, and it does not change when the product is
+// relabelled. The application version does not pick the codec -- it is
+// caller-chosen data, and two application versions sharing a schema marshal
+// through one codec and differ only in the string written to map/@version.
+//
+// Writing that string is what makes the target a target rather than a hint: the
+// bytes describe the release the caller asked for. See Release_t.identify.
+//
+// A downgrade that would drop an unmodeled stub is refused here too, and for the
+// same reason it is refused in Encode: this is a public entry point, so leaving
+// the check to Encode would leave a path that silently discards content the model
+// never understood. The MODELED half of the loss is reported through
+// EncoderDiagnostics, which this function has no access to -- a caller that needs
+// the inventory calls Encode.
+//
+// Returns an error for an unsupported target or if the conversion fails.
+func MarshalXML(m *wxx.Map_t, target *Release_t) ([]byte, error) {
+	target, err := Resolve(target)
+	if err != nil {
+		return nil, err
 	}
-	return nil, errors.Join(wxx.ErrUnsupportedSchemaVersion, fmt.Errorf("schema version: %s", worldographerTargetVersion.Short()))
+	if _, err := downgradeLoss(m, target); err != nil {
+		return nil, err
+	}
+	codec, err := CodecForSchema(target.Schema)
+	if err != nil {
+		return nil, err
+	}
+	return codec.Encode(target.identify(m))
 }
-

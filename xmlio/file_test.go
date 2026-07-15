@@ -48,8 +48,20 @@ func TestWriteFileReadFileRoundTrip(t *testing.T) {
 		t.Fatalf("ReadFile(%s): %v", out, err)
 	}
 
-	if got, want := m2.MetaData.DataVersion, m1.MetaData.DataVersion; got != want {
-		t.Errorf("MetaData.DataVersion = %v, want %v", got, want)
+	// The on-disk version identity must survive the write/read: same application
+	// version, and a Schema that is still the absent (implicit legacy) one rather
+	// than a schema the round-trip invented.
+	v1, v2 := m1.MetaData.Version, m2.MetaData.Version
+	if got, want := v2.App, v1.App; got != want {
+		t.Errorf("MetaData.Version.App = %+v, want %+v", got, want)
+	}
+	switch {
+	case v1.Schema == nil && v2.Schema != nil:
+		t.Errorf("MetaData.Version.Schema = %+v, want nil", *v2.Schema)
+	case v1.Schema != nil && v2.Schema == nil:
+		t.Errorf("MetaData.Version.Schema = nil, want %+v", *v1.Schema)
+	case v1.Schema != nil && v2.Schema != nil && *v1.Schema != *v2.Schema:
+		t.Errorf("MetaData.Version.Schema = %+v, want %+v", *v2.Schema, *v1.Schema)
 	}
 	if got, want := m2.HexOrientation, m1.HexOrientation; got != want {
 		t.Errorf("HexOrientation = %q, want %q", got, want)

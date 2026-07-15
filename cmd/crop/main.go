@@ -71,7 +71,7 @@ func main() {
 	}
 
 	if !quiet {
-		fmt.Printf("input: %s (data version %s)\n", inputFile, input.MetaData.DataVersion.String())
+		fmt.Printf("input: %s (%s)\n", inputFile, input.MetaData.Version)
 	}
 
 	if input.Tiles.TilesWide < 8 || input.Tiles.TilesHigh < 8 {

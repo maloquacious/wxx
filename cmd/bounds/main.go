@@ -30,7 +30,7 @@ func main() {
 			fmt.Printf("\t%v\n", err)
 			continue
 		}
-		fmt.Printf("\tversion %q: orientation %q: height %d: width %d\n", w.MetaData.DataVersion, w.HexOrientation, w.Tiles.TilesHigh, w.Tiles.TilesWide)
+		fmt.Printf("\t%s: orientation %q: height %d: width %d\n", w.MetaData.Version, w.HexOrientation, w.Tiles.TilesHigh, w.Tiles.TilesWide)
 	}
 
 }

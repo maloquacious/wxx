@@ -32,7 +32,7 @@ func main() {
 			fmt.Printf("\t%v\n", err)
 			continue
 		}
-		fmt.Printf("\t%8s schema version %q\n", decoderDiagnostics.Schema, w.MetaData.DataVersion.String())
+		fmt.Printf("\t%8s codec: %s\n", decoderDiagnostics.Schema, w.MetaData.Version)
 		fmt.Printf("\t%8d tiles high\n", w.Tiles.TilesHigh)
 		fmt.Printf("\t%8d tiles wide\n", w.Tiles.TilesWide)
 		fmt.Printf("\t%8d terrain tiles defined\n", len(w.TerrainMap.List))
