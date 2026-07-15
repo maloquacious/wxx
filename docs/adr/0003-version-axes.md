@@ -3,7 +3,8 @@
 - **Status:** Proposed — gates issue #28. Records the canonical conceptual model and
   corrects two doc assertions; the code/fixture work it authorizes lands separately.
 - **Date:** 2026-07-14
-- **Context tickets:** #1 (schema now has a version), #28 (this decision's follow-up
+- **Context tickets:** #1 (schema now has a version),
+  [#28](https://github.com/maloquacious/wxx/issues/28) (this decision's follow-up
   work). Builds on ADR 0002 (`0002-version-identity.md`, #12) and touches #13
   (true 2025 release) and #20 (version-identity invariant).
 
