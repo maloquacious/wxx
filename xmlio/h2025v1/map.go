@@ -42,7 +42,7 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	}
 	// derive the data version from the schema attribute: Major is the release
 	// year (2025) and Minor/Patch are the dotted components of the schema.
-	// e.g. schema "1.06" -> {2025,1,6}; schema "1.01" -> {2025,1,1}.
+	// e.g. schema "1.06" -> {2025,1,6}.
 	dataVersion := semver.Version{Major: 2025}
 	schemaParts := strings.Split(m.Schema, ".")
 	if len(schemaParts) != 2 {

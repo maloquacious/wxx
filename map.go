@@ -22,7 +22,7 @@ type Map_t struct {
 			Created time.Time `json:"created"` // timestamp of input
 			Release string    `json:"release"` // Worldographer release (e.g., 2025)
 			Version string    `json:"version"` // Worldographer/Hexographer version (e.g. 2.06)
-			Schema  string    `json:"schema"`  // Worldographer XML Schema version (e.g. 1.10)
+			Schema  string    `json:"schema"`  // Worldographer XML Schema version (e.g. 1.06)
 		} `json:"worldographer"`
 		Created string `json:"created"` // timestamp of this file
 	} `json:"meta-data"`

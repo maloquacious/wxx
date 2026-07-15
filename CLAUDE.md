@@ -77,7 +77,8 @@ wxx/
 │   ├── schema/         # Extract XML schema hierarchy
 │   ├── server/         # Web server for hex grid visualization
 │   └── version/        # Display package version
-├── testdata/           # Test fixtures and sample WXX files
+├── testdata/           # Test fixtures, flat in the root; tracked
+├── scratch/            # Local scratch: tool output, debug dumps, textures; git-ignored
 ├── tools/              # Build/utility scripts
 └── dist/               # Build output directory
 ```
@@ -121,9 +122,11 @@ Errors are composed using `errors.Join()` to combine context with root causes.
 
 ### Version Dispatching
 
-The decoder reads `<map>` element attributes (`release`, `version`, `schema`) to dispatch to the correct schema-specific decoder:
-- `/1.73/`, `/1.74/`, `/1.77/` -> `h2017v1`
-- `2025/1.10/1.01` -> `h2025v1`
+The decoder reads the `<map>` element's `release` attribute to dispatch to the correct schema-specific decoder; `version` and `schema` do not gate dispatch:
+- empty `release` + a `1.x` `version` (`1.73`, `1.74`, `1.77`) -> `h2017v1`
+- `release="2025"` -> `h2025v1`
+
+W2025 support is baselined on 2.06 (`release="2025" version="2.06" schema="1.06"`), the first post-beta build; earlier 2025 builds are out of scope.
 
 ## Coding Conventions
 
@@ -154,5 +157,5 @@ Read these files for deeper context:
 - The `cmd/import` and `cmd/merge` tools are also WIP
 - An Sqlite3 data store is planned for the future (after xmlio codecs are complete)
 - `Map_t` is a superset of all Worldographer schema versions; decoders target it, encoders source from it
-- WXX files are binary (gzip-compressed); test data lives in `testdata/`
-- The `dist/` directory is for local build output and is not committed
+- WXX files are binary (gzip-compressed); every fixture a test reads lives flat in `testdata/` and is tracked, so the suite runs from a clean clone. Do not add a fixture the tests need to `scratch/` — it is git-ignored
+- The `dist/` and `scratch/` directories are for local output and are not committed

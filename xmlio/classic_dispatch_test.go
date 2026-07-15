@@ -24,10 +24,10 @@ var classicSamples = []struct {
 	version string         // on-disk <map version=...>
 	wantDV  semver.Version // parsed MetaData.DataVersion
 }{
-	{"1.77-columns-blank", "../testdata/input/2017-1.77-1.0-columns-blank.wxx", "1.77", semver.Version{Major: 2017, Minor: 1, Patch: 77}},
-	{"1.77-blank", "../testdata/input/blank-2017-1.77-1.0.wxx", "1.77", semver.Version{Major: 2017, Minor: 1, Patch: 77}},
-	{"1.74-blank", "../testdata/input/blank-2017-1.74-1.0.wxx", "1.74", semver.Version{Major: 2017, Minor: 1, Patch: 74}},
-	{"1.73-blank", "../testdata/input/blank-2017-1.73-1.0.wxx", "1.73", semver.Version{Major: 2017, Minor: 1, Patch: 73}},
+	{"1.77-columns-blank", "../testdata/2017-1.77-1.0-columns-blank.wxx", "1.77", semver.Version{Major: 2017, Minor: 1, Patch: 77}},
+	{"1.77-blank", "../testdata/blank-2017-1.77-1.0.wxx", "1.77", semver.Version{Major: 2017, Minor: 1, Patch: 77}},
+	{"1.74-blank", "../testdata/blank-2017-1.74-1.0.wxx", "1.74", semver.Version{Major: 2017, Minor: 1, Patch: 74}},
+	{"1.73-blank", "../testdata/blank-2017-1.73-1.0.wxx", "1.73", semver.Version{Major: 2017, Minor: 1, Patch: 73}},
 }
 
 // TestClassicDispatch_Decode asserts that the PUBLIC decoder

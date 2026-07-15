@@ -25,12 +25,12 @@ The tool currently:
 ## Usage
 
 ```bash
-go run cmd/schema/main.go
+go run ./cmd/schema testdata/2025-2.06-13x11-941577-blank.wxx
 ```
 
-Currently reads from `input/blank-2025-1.10-1.01.wxx` and outputs:
-- `output/blank-2025-1.10-1.01.xml` - Converted XML file
-- Console output showing XML hierarchy
+Takes one or more `.wxx` files as arguments and prints the inferred XML
+hierarchy to the console. Pass `-sql` to emit `CREATE TABLE` statements for the
+inferred schema instead.
 
 ## XML Schema Versions
 
@@ -42,7 +42,7 @@ The tool supports two Worldographer versions:
 
 **Worldographer 2025 (XML 1.1)**  
 - Includes schema version in map element
-- Uses release "2025", version "1.10", schema "1.01"
+- Uses release "2025", version "2.06", schema "1.06"
 
 ## Generated Code Conventions
 

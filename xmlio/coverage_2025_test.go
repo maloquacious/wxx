@@ -301,21 +301,42 @@ func TestW2025CoverageMatrix(t *testing.T) {
 // TestW2025LabelStyleDropShadowGate guards the presence-gated emission of the
 // W2025 <labelstyle> drop-shadow trio at the XML byte level (which the Map_t
 // round-trip cannot catch, since absent decodes to the same zero values a
-// symmetric drop would produce). The older schema=1.01 blank fixture carries NO
-// dropShadow* attributes, so re-encoding it must not add them; the populated
-// fixture DOES carry them, so re-encoding it must preserve them.
+// symmetric drop would produce). The encoder keys the gate off DropShadowColor,
+// which is "null" or an RGBA string when present and never empty, so clearing it
+// models a source that carried no drop shadow and must suppress the trio; the
+// populated fixture DOES carry them, so re-encoding it must preserve them.
+//
+// The negative case is synthesized rather than read from a fixture: every
+// supported W2025 build (2.06 and later) writes the trio, so no sample supplies
+// a drop-shadow-free source directly.
 func TestW2025LabelStyleDropShadowGate(t *testing.T) {
-	// Blank 1.01 fixture: source has no dropShadowColor -> output must have none.
-	b1, err := decodeFile(t, sample2025_110)
+	// Synthesized: decode the baseline, then clear the trio it carries.
+	b1, err := decodeFile(t, sample2025_206)
 	if err != nil {
-		t.Fatalf("decode %s: %v", sample2025_110, err)
+		t.Fatalf("decode %s: %v", sample2025_206, err)
 	}
+	if b1.Configuration == nil || b1.Configuration.TextConfig == nil {
+		t.Fatalf("decode %s: no TextConfig to clear", sample2025_206)
+	}
+	var cleared int
+	for _, ls := range b1.Configuration.TextConfig.LabelStyles {
+		if ls.DropShadowColor != "" {
+			cleared++
+		}
+		ls.DropShadowColor, ls.DropShadowRadius, ls.DropShadowSpread = "", 0, 0
+	}
+	// Guard against a vacuous pass: if the baseline ever stops carrying the trio,
+	// clearing is a no-op and the assertion below proves nothing.
+	if cleared == 0 {
+		t.Fatalf("%s: no label style carried dropShadowColor, so the gate is not under test", sample2025_206)
+	}
+
 	blankBytes, err := h2025v1.Encode(b1)
 	if err != nil {
-		t.Fatalf("h2025v1.Encode(blank 1.01): %v", err)
+		t.Fatalf("h2025v1.Encode(cleared): %v", err)
 	}
 	if bytes.Contains(blankBytes, []byte("dropShadowColor")) {
-		t.Errorf("blank 1.01 re-encode spuriously added dropShadowColor (source had none)")
+		t.Errorf("re-encode spuriously added dropShadowColor (source had none)")
 	}
 
 	// Populated fixture: source has dropShadowColor -> output must preserve it.

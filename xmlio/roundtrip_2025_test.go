@@ -16,23 +16,26 @@ import (
 )
 
 // The W2025 samples we have on disk, with their true on-disk map metadata
-// (release/version/schema) as opposed to the possibly-misleading file name.
+// (release/version/schema). The file name records the map's own version
+// attribute, which is not necessarily the version the application reports.
+// 2.06 is the first supported W2025 build; earlier builds are out of scope.
 const (
-	// sample2025_206 decodes today: the dispatcher accepts 2025/2.06/1.06.
-	sample2025_206 = "../data/2025-2.05.wxx" // internally release=2025 version=2.06 schema=1.06
-	// sample2025_110 is a second, older W2025 build the dispatcher rejects today.
-	sample2025_110 = "../testdata/input/blank-2025-1.10-1.01.wxx" // release=2025 version=1.10 schema=1.01
+	// sample2025_206 is the baseline: a blank 13x11 map.
+	sample2025_206 = "../testdata/2025-2.06-13x11-941577-blank.wxx" // release=2025 version=2.06 schema=1.06
+	// sample2025_206Layers is the same build carrying labels, locations,
+	// map layers and terrain-and-location entries.
+	sample2025_206Layers = "../testdata/2025-2.06-13x11-941577-layers.wxx" // release=2025 version=2.06 schema=1.06
 )
 
-// TestW2025Decode_BothSamples documents which W2025 builds the public decoder
-// accepts. Until the release-based dispatch lands, the 1.10/1.01 sample fails.
+// TestW2025Decode_BothSamples documents that the public decoder accepts both
+// shipped W2025 samples.
 func TestW2025Decode_BothSamples(t *testing.T) {
 	for _, tc := range []struct {
 		name string
 		path string
 	}{
-		{"2.06/1.06", sample2025_206},
-		{"1.10/1.01", sample2025_110},
+		{"2.06/1.06 blank", sample2025_206},
+		{"2.06/1.06 layers", sample2025_206Layers},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			m, err := decodeFile(t, tc.path)
@@ -49,11 +52,13 @@ func TestW2025Decode_BothSamples(t *testing.T) {
 	}
 }
 
-// TestW2025RoundTrip exercises the codec core independent of the (currently
-// 2017-only) MarshalXML dispatch: decode a real file, h2025v1.Encode it back to
-// XML, h2025v1.Decode that XML, and assert the two Map_t values are
-// semantically equal. Any fidelity loss in encode/decode surfaces as a
-// per-group mismatch.
+// TestW2025RoundTrip exercises the codec core on its own, calling h2025v1
+// directly rather than through the public dispatch: decode a real file,
+// h2025v1.Encode it back to XML, h2025v1.Decode that XML, and assert the two
+// Map_t values are semantically equal. Any fidelity loss in encode/decode
+// surfaces as a per-group mismatch, unmixed with transport concerns.
+// TestW2025PublicRoundTrip covers the same ground through MarshalXML and the
+// gzip/UTF-16/header layers.
 func TestW2025RoundTrip(t *testing.T) {
 	m1, err := decodeFile(t, sample2025_206)
 	if err != nil {
@@ -108,7 +113,7 @@ func TestW2025PublicRoundTrip(t *testing.T) {
 // sample leaves empty (features with and without labels, shapes with points,
 // and notes). It is a raw .xml file, so it is decoded with h2025v1.Decode
 // directly rather than through the full gunzip/UTF-16 public pipeline.
-const populatedFixture = "../testdata/input/w2025-populated.xml"
+const populatedFixture = "../testdata/w2025-populated.xml"
 
 // decodeFixture reads a raw UTF-8 XML W2025 map and decodes it with the
 // schema-specific decoder (h2025v1.Decode), bypassing the gunzip/UTF-16

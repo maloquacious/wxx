@@ -40,12 +40,12 @@ Tests referenced (in `xmlio/roundtrip_2025_test.go` unless noted, package
 `xmlio_test`):
 
 - **RoundTrip** = `TestW2025RoundTrip` (in-memory codec over the real
-  `data/2025-2.05.wxx` sample)
+  `testdata/2025-2.06-13x11-941577-blank.wxx` sample)
 - **PublicRoundTrip** = `TestW2025PublicRoundTrip` (full gzip/UTF-16/header
   pipeline over the same sample)
 - **DecodeBoth** = `TestW2025Decode_BothSamples`
 - **DecodePopulated** = `TestW2025DecodePopulated` (decode-side assertions over
-  `testdata/input/w2025-populated.xml`)
+  `testdata/w2025-populated.xml`)
 - **PopulatedRoundTrip** = `TestW2025PopulatedRoundTrip` (in-memory codec over
   the populated fixture, which fills features/labels/shapes/notes the blank
   sample leaves empty)

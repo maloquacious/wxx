@@ -48,7 +48,7 @@ per-field fidelity check, and the `xmlio/h2017v1/` package itself still has no
 `_test.go`. So the per-element statuses in the matrix below remain cited to a
 **source line** (`decode.go` / `encode.go`) rather than to a test, and to a
 decoded classic sample where a fixture proves the shape. Decoded samples referenced are
-the classic fixtures under `testdata/input/` (`blank-2017-1.73/1.74/1.77-1.0.wxx`,
+the classic fixtures under `testdata/` (`blank-2017-1.73/1.74/1.77-1.0.wxx`,
 `2017-1.77-1.0-{columns,rows}-blank.wxx`, `2017-1.77-1.0-{import,merge-01}.wxx`),
 inspected by decompressing the gzip/UTF-16BE container to UTF-8 XML.
 
