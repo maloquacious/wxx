@@ -54,7 +54,7 @@ inspected by decompressing the gzip/UTF-16BE container to UTF-8 XML.
 
 | `<map>` child element | Decode | Encode | Evidence | Notes |
 |---|---|---|---|---|
-| `<map>` root + scalar attributes (24) | implemented | implemented | `decode.go:38-81`, `encode.go:27-59` | All 24 modeled attrs round-trip. `version` attr (`1.73`/`1.74`/`1.77`) is preserved verbatim in `Map_t.Version` (re-emitted) and `MetaData.Worldographer.Version`, and parsed into `MetaData.DataVersion` as `{2017,1,7x}` (ADR 0002); the encoder dispatches on `DataVersion.Major` (family) — see "Version identity" below. |
+| `<map>` root + scalar attributes (24) | implemented | implemented | `decode.go:38-81`, `encode.go:27-59` | All 24 modeled attrs round-trip. `version` attr (`1.73`/`1.74`/`1.77`) is preserved verbatim in `Map_t.Version` (re-emitted) and `MetaData.Worldographer.Version`, and parsed into `MetaData.Version.App` with a nil `Schema` (ADR 0004); the encoder resolves the codec from that schema — see "Version identity" below. |
 | `<gridandnumbering>` (30 attrs) | implemented | implemented | `decode.go:78-109`, `encode.go:110-145` | All 30 attributes modeled and re-emitted. |
 | `<terrainmap>` | implemented | implemented | `decode.go:111-128`, `encode.go:147-158` | Tab-delimited name/slot table parsed into `TerrainMap_t`; re-emitted sorted by slot. |
 | `<maplayer>` (`name`, `isVisible`) | implemented | implemented | `decode.go:130-132`, `encode.go:161-176` | Classic `<maplayer>` has no `opacity` attr (confirmed by RelaxNG + samples), so nothing is dropped. |
@@ -151,40 +151,41 @@ on-disk level: `map` root + its 24 scalar attributes, `<gridandnumbering>`,
 `<labels>`/`<label>`, and `<configuration>`'s `<shape-config>`/`<shapestyle>`.
 None of these appear in any fixture's loss set.
 
-## Version identity — sub-revision in `DataVersion` and `Worldographer.Version`
+## Version identity — `MetaData.Version` and `Worldographer.Version`
 
-**Implemented (ADR 0002, issue #12).** `decode.go` parses the on-disk `version`
-attribute into `DataVersion` via `classicDataVersion(m.Version)`: `Major = 2017`
-(schema family / dispatch key), `Minor.Patch` = the dotted on-disk revision, so
-`1.73`/`1.74`/`1.77` → `{2017,1,73}`/`{2017,1,74}`/`{2017,1,77}`. This mirrors how
-h2025 parses its `schema` attribute (`xmlio/h2025v1/map.go:43-56`). The classic
-XML schema did **not** change across `1.73`→`1.77` (these are application version
-bumps), so `Patch` distinguishes the *file*, not the schema; all sub-revisions
-share the one `h2017v1` codec.
+**Implemented (ADR 0004, issue #32).** `decode.go` parses the on-disk `version`
+attribute into `MetaData.Version` via `classicVersionIdentity(m.Version)`: `App`
+is the dotted on-disk revision (`1.73`/`1.74`/`1.77`) and `Schema` is **nil**,
+because a classic file states no `@schema` at all. That absence is not a gap — it
+identifies the one **implicit legacy schema** every classic revision shares. The
+classic XML schema did **not** change across `1.73`→`1.77` (these are application
+version bumps), which is the evidence for treating them as one schema; all
+sub-revisions share the one `h2017v1` codec.
 
-Because the leading component is `1` for every known classic file, `Minor` stays
-`1`, and the public encoder now dispatches on `Major` (family) **only**
-(`xmlio/encoder.go` `MarshalXML`, `2017.x → h2017v1.Encode`) — so the enriched
-`{2017,1,7x}` DataVersion routes correctly and every `cmd/*` caller that passes
-`m.MetaData.DataVersion` is unaffected. The relaxation also drops the earlier
-`Minor == 1` gate that would have mis-rejected the parsed value.
+The nil `Schema` is what routes an encode back here: `xmlio/encoder.go`
+`MarshalXML` resolves the codec from the target release's schema
+(`CodecForSchema`), so the implicit legacy schema selects `h2017v1.Encode`. There
+is no family-year dispatch key any more — the `2017` in this package's name is a
+project coinage that appears in no classic file (ADR 0004).
 
-The on-disk revision is preserved in two forms: the **parsed, comparable** semver
-in `DataVersion`, and the **verbatim** string in `Map_t.Version` /
-`MetaData.Worldographer.Version` (re-emitted byte-for-byte by the encoder).
-Classic files carry no `release`/`schema` attributes, so
-`Worldographer.Release`/`.Schema` stay empty. Guarded by
-`TestClassicVersionFidelity` and `TestClassicEncodeDispatch`
-(`xmlio/classic_dispatch_test.go`).
+The on-disk revision is preserved in two forms: the **parsed, comparable**
+`Dotted` in `MetaData.Version.App`, whose `Raw` is authoritative, and the
+**verbatim** string in `Map_t.Version` / `MetaData.Worldographer.Version`
+(re-emitted byte-for-byte by the encoder). Classic files carry no
+`release`/`schema` attributes, so `Worldographer.Release`/`.Schema` stay empty.
+Guarded by `TestClassicVersionFidelity` and `TestClassicEncodeDispatch`
+(`xmlio/classic_dispatch_test.go`), and the XML declaration classic files open
+with (`<?xml version='1.0'`) is bound to the release entry and pinned at the byte
+level by `TestEncodeXMLHeaderFollowsRelease` (`xmlio/encode_dispatch_test.go`).
 
 ## Dispatch symmetry — public decoder reads classic (backfilled)
 
 The public `xmlio` pipeline now **round-trips classic end to end** (issue B4
 backfill); it was previously write-only:
 
-- **Encode**: `xmlio/encoder.go` `MarshalXML` dispatches `DataVersion.Major ==
-  2017 → h2017v1.Encode` (family-only, ADR 0002). The public encoder can emit
-  classic XML.
+- **Encode**: `xmlio/encoder.go` `MarshalXML` resolves the codec from the target
+  release's schema, so the implicit legacy schema (`Schema == nil`) selects
+  `h2017v1.Encode` (ADR 0004). The public encoder can emit classic XML.
 - **Decode**: `xmlio/decoder.go` now has a classic dispatch case alongside the
   `release="2025"` case. Classic files carry **no `release` attribute at all**
   (confirmed by every sample and by the RelaxNG schema, which defines no

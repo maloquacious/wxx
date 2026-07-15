@@ -5,7 +5,6 @@ package xmlio_test
 import (
 	"testing"
 
-	"github.com/maloquacious/semver"
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/hexg"
 	"github.com/maloquacious/wxx/xmlio/h2025v1"
@@ -21,8 +20,14 @@ func newRowsMap() *wxx.Map_t {
 
 	m := &wxx.Map_t{}
 	m.MetaData.AppVersion = wxx.Version()
-	// DataVersion selects the encode schema: {2025,1} routes through h2025v1.
-	m.MetaData.DataVersion = semver.Version{Major: 2025, Minor: 1}
+	// The schema selects the encode codec: schema "1.06" routes through h2025v1.
+	// The components are spelled out rather than rendered, because Raw is the
+	// authority and "2.06" is not "2.6".
+	schema := wxx.Dotted{Raw: "1.06", Major: 1, Minor: 6}
+	m.MetaData.Version = wxx.Version_t{
+		App:    wxx.Dotted{Raw: "2.06", Major: 2, Minor: 6},
+		Schema: &schema,
+	}
 	m.MetaData.Worldographer.Release = "2025"
 	m.MetaData.Worldographer.Version = "2.06"
 	m.MetaData.Worldographer.Schema = "1.06"

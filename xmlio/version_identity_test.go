@@ -36,9 +36,9 @@ var versionIdentitySamples = []struct {
 // TestVersionIdentity asserts that decoding populates MetaData.Version with the
 // two axes the file states: App from map/@version and Schema from map/@schema.
 //
-// For W2025 this is the first time @version reaches the model at all — it has no
-// slot in DataVersion, which spends its Minor.Patch on the schema — so the App
-// assertions here are new ground rather than a restatement.
+// For W2025 this is the first time @version reaches the model at all — the
+// superseded DataVersion had no slot for it, spending its Minor.Patch on the
+// schema — so the App assertions here are new ground rather than a restatement.
 func TestVersionIdentity(t *testing.T) {
 	for _, tc := range versionIdentitySamples {
 		t.Run(tc.name, func(t *testing.T) {

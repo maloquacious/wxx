@@ -29,3 +29,17 @@ type Version_t struct {
 	// so the absence names a single schema rather than leaving a question open.
 	Schema *Dotted
 }
+
+// String renders both axes for display: `app 2.06, schema 1.06` for a W2025
+// file, `app 1.77, schema implicit (classic)` for a classic one.
+//
+// This is for humans -- a report line, an error message, a template. Nothing
+// written to a file ever comes from here: an encoder emits App.Raw and
+// Schema.Raw individually, into the attributes they came from.
+func (v Version_t) String() string {
+	schema := "implicit (classic)"
+	if v.Schema != nil {
+		schema = v.Schema.Raw
+	}
+	return "app " + v.App.Raw + ", schema " + schema
+}

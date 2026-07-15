@@ -14,14 +14,19 @@ import (
 // We are assuming that this will continue to work with future versions of the application.
 type Map_t struct {
 	MetaData struct {
-		AppVersion  semver.Version `json:"appVersion"`  // version of this application
-		DataVersion semver.Version `json:"dataVersion"` // version of the data in the file
+		// AppVersion is this tool's own version -- a genuine semver, and the only
+		// semver in this struct. The versions the file states are not semver and
+		// live in Version.
+		AppVersion semver.Version `json:"appVersion"`
 		// Version is the file's on-disk version identity: map/@version and
 		// map/@schema as the two independent axes they are (ADR 0004). It is
-		// populated by every decoder and is the successor to DataVersion, which
-		// conflates the two axes into one semver and still drives encode
-		// dispatch; the two coexist until that dispatch moves to the release
-		// registry.
+		// populated by every decoder, and its Schema selects the codec an encode
+		// dispatches to.
+		//
+		// It replaces DataVersion, which held one semver whose Major was a family
+		// year and whose Minor.Patch meant the application version for classic and
+		// the schema version for W2025 -- a different axis per family, in one slot,
+		// keyed by a label no file states (ADR 0004 Decisions 2 and 4).
 		Version Version_t `json:"version"`
 		// Worldographer defines the metadata for the WXX file
 		Worldographer struct {

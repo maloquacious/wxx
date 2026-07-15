@@ -7,11 +7,8 @@ import (
 	"encoding/xml"
 	"fmt"
 	"log"
-	"strconv"
-	"strings"
 	"time"
 
-	"github.com/maloquacious/semver"
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/hexg"
 )
@@ -57,33 +54,25 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	if m.Release != "2025" {
 		return nil, fmt.Errorf("%s/%s/%s: unsupported release", m.Release, m.Version, m.Schema)
 	}
-	// derive the data version from the schema attribute: Major is the release
-	// year (2025) and Minor/Patch are the dotted components of the schema.
-	// e.g. schema "1.06" -> {2025,1,6}.
-	dataVersion := semver.Version{Major: 2025}
-	schemaParts := strings.Split(m.Schema, ".")
-	if len(schemaParts) != 2 {
-		return nil, fmt.Errorf("%s/%s/%s: malformed schema", m.Release, m.Version, m.Schema)
-	}
-	if dataVersion.Minor, err = strconv.Atoi(schemaParts[0]); err != nil {
-		return nil, fmt.Errorf("%s/%s/%s: schema minor: %w", m.Release, m.Version, m.Schema, err)
-	}
-	if dataVersion.Patch, err = strconv.Atoi(schemaParts[1]); err != nil {
-		return nil, fmt.Errorf("%s/%s/%s: schema patch: %w", m.Release, m.Version, m.Schema, err)
+	// The schema must parse: it is what selects the codec on the way back out
+	// (ADR 0004 Decision 4), so a file whose @schema is not a dotted version is
+	// rejected here rather than carried as bytes nothing can dispatch on. This
+	// is the same input the removed schema-to-semver conversion rejected.
+	schema, err := wxx.ParseDotted(m.Schema)
+	if err != nil {
+		return nil, fmt.Errorf("%s/%s/%s: malformed schema: %w", m.Release, m.Version, m.Schema, err)
 	}
 
 	// process source into a WXX structure and return it or any errors
 	w := &wxx.Map_t{}
 	w.MetaData.AppVersion = wxx.Version()
-	w.MetaData.DataVersion = dataVersion
-	// Version is the axis-aware identity that supersedes DataVersion (ADR 0004
-	// Decision 2). App is the dotted <map version> ("2.06"), modeled here for the
-	// first time: DataVersion has no slot for it, so until now it survived only
+	// Version is the on-disk identity (ADR 0004 Decision 2). App is the dotted
+	// <map version> ("2.06"), which the superseded DataVersion had no slot for --
+	// it spent its Minor.Patch on the schema, so until now @version survived only
 	// as an unexamined string. Schema is the dotted <map schema> ("1.06"), always
 	// non-nil for W2025 because the guards above reject a file that states none
 	// (ADR 0003 Decision 2). The zero padding is preserved: Raw is "2.06", not
 	// the "2.6" a semver round-trip would return.
-	schema := dottedOrRaw(m.Schema)
 	w.MetaData.Version = wxx.Version_t{App: dottedOrRaw(m.Version), Schema: &schema}
 	w.MetaData.Created = time.Now().UTC().Format(time.RFC3339)
 	w.MetaData.Worldographer.Name = "unknown"

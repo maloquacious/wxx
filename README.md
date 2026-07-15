@@ -21,34 +21,48 @@ Worldographer has two file-format families, and `wxx` reads and writes both:
 * **Classic** — the original Worldographer / Hexographer 2 format (XML 1.0, no schema version in the file).
 * **2025** — the newer Worldographer 2025 format (XML 1.1, with a schema version in the `map` element).
 
-**Classic support is frozen.** It will continue to read and write existing files and will receive **security bug fixes only** — no new features. **Future development focuses on the 2025 version.** (One narrow exception is in progress: reconciling classic version *identity* metadata — see the note below and `docs/adr/0002-version-identity.md`.)
+**Classic support is frozen.** It will continue to read and write existing files and will receive **security bug fixes only** — no new features. **Future development focuses on the 2025 version.** (One narrow exception is in progress: reconciling classic version *identity* metadata — see the note below and `docs/adr/0004-version-struct-and-release-registry.md`.)
 
 ### Version identity
 
-Every decoded map carries a parsed, comparable `MetaData.DataVersion`
-(`semver`) whose `Major` is the **schema family** and whose `Minor.Patch` is the
-**on-disk dotted revision**. The verbatim on-disk string is also kept in
-`MetaData.Worldographer.Version`.
+Every decoded map carries `MetaData.Version`, the two independent version axes a
+file states — and nothing else (ADR 0004). The verbatim on-disk strings are also
+kept in `MetaData.Worldographer.*`.
 
-| family (`DataVersion.Major`) | on-disk identifier | values seen | `DataVersion` |
+```go
+type Version_t struct {
+	App    Dotted  // map/@version -- the build that wrote the file
+	Schema *Dotted // map/@schema  -- nil when the file states none
+}
+```
+
+| release | `map/@release` | `map/@version` (App) | `map/@schema` (Schema) |
 |---|---|---|---|
-| `2017` — classic (Hexographer 2) | `map/@version` (no `release`/`schema`) | `1.73`, `1.74`, `1.77` | `{2017, 1, nn}` |
-| `2025` — Worldographer 2025 | `map/@schema` (`release="2025"`) | `1.06` | `{2025, 1, n}` |
+| classic (Hexographer 2) | *absent* | `1.73`, `1.74`, `1.77` | *absent* → `nil` |
+| Worldographer 2025 | `2025` | `2.06` | `1.06` |
 
-The encoder selects a codec by **family** (`DataVersion.Major`). These on-disk
-values are **not** semantic versions: classic `1.73`–`1.77` share one schema, and
-the 2025 numbers are known to be buggy (`1.x` where `2.x` was intended), so `wxx`
-re-emits whatever it read **verbatim**. Reconciling the buggy 2025 values to the
-true release version is tracked in #13. See
-`docs/adr/0002-version-identity.md` for the rationale and the classic-side
-follow-up (ADR 0002 supersedes the interim `{2017,1}` handling B4 introduced).
+A `nil` Schema is meaningful: it identifies the one **implicit legacy** schema
+that classic `1.73`/`1.74`/`1.77` share, rather than an unknown one.
 
-> **Note — application version and schema version are independent axes.** W2025
-> files carry both: `version="2.06"` alongside `schema="1.06"`. Classic files
-> carry no `@schema` at all, so their schema version is implicit. `DataVersion`
-> collapses the two axes into one field — its `Minor.Patch` comes from
-> `map/@version` for classic but `map/@schema` for 2025 — which is tracked in
-> #28. See `docs/adr/0003-version-axes.md`.
+**The schema selects the codec**; the application version is caller-chosen data.
+Two application versions sharing a schema use one codec and differ only in the
+string written to `@version`. Which releases are supported, and the full on-disk
+identity of each, is the [release registry](xmlio/registry.go) — adding a release
+is an entry there.
+
+These on-disk values are **not** semantic versions: `"2.06"` through a `semver`
+round-trip comes back as `"2.6"`, a different string and therefore a different
+file. They are modeled as `Dotted`, whose `Raw` is authoritative for output and
+whose components exist only to compare. `wxx` re-emits **verbatim** whatever it
+read; nothing is ever re-rendered from components. The 2025 numbers are also
+known to be buggy (`1.x` where `2.x` was intended), which is why they are treated
+as opaque identifiers; reconciling them to the true release version is tracked in
+#13.
+
+See `docs/adr/0003-version-axes.md` for the two-axis model and
+`docs/adr/0004-version-struct-and-release-registry.md` for the identity and
+registry design. ADR 0002, which modeled identity as a single semver keyed by a
+family year, is **superseded**.
 
 ## Go package
 
@@ -76,7 +90,7 @@ func main() {
 
 	fmt.Println(world)
 
-	// Write it back out (defaults to the map's own DataVersion):
+	// Write it back out (defaults to the release the map itself states):
 	if err := xmlio.WriteFile("world.wxx", world); err != nil {
 		log.Fatal(err)
 	}

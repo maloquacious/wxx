@@ -50,10 +50,34 @@ type Release_t struct {
 	// one.
 	Schema *wxx.Dotted
 
+	// XMLVersion is the version in the XML declaration this release's files
+	// carry: "1.0" for classic, "1.1" for W2025. Like Release it is on-disk
+	// identity data the encoder needs in order to write a file, and like Release
+	// it never selects a codec.
+	//
+	// It is bound here as data rather than derived from Schema == nil, which
+	// would only work for as long as there are exactly two schemas. NewRegistry
+	// rejects an entry naming an XML version no header exists for.
+	XMLVersion string
+
 	// Decode and Encode are the codec pair the entry's Schema selects. Entries
 	// sharing a schema must name the same pair; NewRegistry enforces it.
 	Decode DecodeFunc
 	Encode EncodeFunc
+}
+
+// XMLHeader returns the XML declaration to write ahead of this release's XML.
+//
+// The header follows the release. It used to be chosen by a switch on a family
+// year (2017 -> 1.0, 2025 -> 1.1) -- the same coinage ADR 0004 deletes from the
+// model -- which tied the bytes of every file to a label no classic file states
+// and that a relabelled product would change without touching the format.
+func (r *Release_t) XMLHeader() ([]byte, error) {
+	h, ok := utf16XMLHeader(r.XMLVersion)
+	if !ok {
+		return nil, errors.Join(wxx.ErrUnknownXMLHeader, fmt.Errorf("version %q: xml version %q: no header", r.App.Raw, r.XMLVersion))
+	}
+	return []byte(h), nil
 }
 
 // Codec returns the parse/emit pair this entry's schema selects.
@@ -79,6 +103,8 @@ type Registry_t struct {
 // that surfaces as a silently wrong codec at encode time. An entry must:
 //   - state an application version;
 //   - name a non-nil codec pair;
+//   - name an XML version some header exists for, since every file written for
+//     the release opens with that declaration;
 //   - state a schema if and only if it states a release -- classic files carry
 //     neither, W2025 files carry both (ADR 0003 Decision 2);
 //   - not repeat another entry's verbatim application version, which is the
@@ -99,6 +125,12 @@ func NewRegistry(entries ...*Release_t) (*Registry_t, error) {
 		}
 		if e.Decode == nil || e.Encode == nil {
 			return nil, errors.Join(wxx.ErrInvalidReleaseEntry, wxx.ErrMissingCodec, fmt.Errorf("entry %d: version %q", i, e.App.Raw))
+		}
+		if _, ok := utf16XMLHeader(e.XMLVersion); !ok {
+			// Caught here rather than at encode time: an entry that cannot say
+			// how its files open cannot write one, and finding that out mid-write
+			// is finding it out too late.
+			return nil, errors.Join(wxx.ErrInvalidReleaseEntry, wxx.ErrUnknownXMLHeader, fmt.Errorf("entry %d: version %q: xml version %q", i, e.App.Raw, e.XMLVersion))
 		}
 		if (e.Schema == nil) != (e.Release == "") {
 			return nil, errors.Join(wxx.ErrInvalidReleaseEntry, fmt.Errorf("entry %d: version %q: release %q with schema %s: a release states a schema if and only if it states a release", i, e.App.Raw, e.Release, schemaLabel(e.Schema)))
@@ -239,11 +271,12 @@ func supportedReleaseEntries() ([]*Release_t, error) {
 			return nil, errors.Join(wxx.ErrInvalidReleaseEntry, fmt.Errorf("classic version %q", app), err)
 		}
 		entries = append(entries, &Release_t{
-			Release: "",
-			App:     a,
-			Schema:  nil,
-			Decode:  h2017v1.Decode,
-			Encode:  h2017v1.Encode,
+			Release:    "",
+			App:        a,
+			Schema:     nil,
+			XMLVersion: "1.0",
+			Decode:     h2017v1.Decode,
+			Encode:     h2017v1.Encode,
 		})
 	}
 
@@ -258,11 +291,12 @@ func supportedReleaseEntries() ([]*Release_t, error) {
 		return nil, errors.Join(wxx.ErrInvalidReleaseEntry, fmt.Errorf("w2025 schema %q", "1.06"), err)
 	}
 	entries = append(entries, &Release_t{
-		Release: "2025",
-		App:     app206,
-		Schema:  &schema106,
-		Decode:  h2025v1.Decode,
-		Encode:  h2025v1.Encode,
+		Release:    "2025",
+		App:        app206,
+		Schema:     &schema106,
+		XMLVersion: "1.1",
+		Decode:     h2025v1.Decode,
+		Encode:     h2025v1.Encode,
 	})
 
 	return entries, nil

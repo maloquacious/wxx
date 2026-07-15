@@ -44,19 +44,21 @@ func dottedPtr(t *testing.T, s string) *wxx.Dotted {
 // baseline. These four are the whole registry (ADR 0004 Decision 3).
 //
 // wantSchema is the exact map/@schema bytes; "" means the release states none
-// and must resolve to a nil Schema.
+// and must resolve to a nil Schema. wantXMLVersion is the version in the XML
+// declaration the release's files open with.
 var registrySamples = []struct {
-	name        string
-	app         string // the lookup key: map/@version verbatim
-	wantRelease string // map/@release verbatim
-	wantSchema  string // map/@schema verbatim; "" means the release states none
-	wantDecode  any
-	wantEncode  any
+	name           string
+	app            string // the lookup key: map/@version verbatim
+	wantRelease    string // map/@release verbatim
+	wantSchema     string // map/@schema verbatim; "" means the release states none
+	wantXMLVersion string // the release's XML declaration version
+	wantDecode     any
+	wantEncode     any
 }{
-	{"classic 1.73", "1.73", "", "", h2017v1.Decode, h2017v1.Encode},
-	{"classic 1.74", "1.74", "", "", h2017v1.Decode, h2017v1.Encode},
-	{"classic 1.77", "1.77", "", "", h2017v1.Decode, h2017v1.Encode},
-	{"w2025 2.06", "2.06", "2025", "1.06", h2025v1.Decode, h2025v1.Encode},
+	{"classic 1.73", "1.73", "", "", "1.0", h2017v1.Decode, h2017v1.Encode},
+	{"classic 1.74", "1.74", "", "", "1.0", h2017v1.Decode, h2017v1.Encode},
+	{"classic 1.77", "1.77", "", "", "1.0", h2017v1.Decode, h2017v1.Encode},
+	{"w2025 2.06", "2.06", "2025", "1.06", "1.1", h2025v1.Decode, h2025v1.Encode},
 }
 
 // TestRegistryLookup asserts every supported release resolves to its full
@@ -82,6 +84,18 @@ func TestRegistryLookup(t *testing.T) {
 				t.Errorf("Lookup(%q).Schema = nil, want %q", tc.app, tc.wantSchema)
 			} else if got := e.Schema.Raw; got != tc.wantSchema {
 				t.Errorf("Lookup(%q).Schema.Raw = %q, want %q verbatim", tc.app, got, tc.wantSchema)
+			}
+			if got := e.XMLVersion; got != tc.wantXMLVersion {
+				t.Errorf("Lookup(%q).XMLVersion = %q, want %q", tc.app, got, tc.wantXMLVersion)
+			}
+			// The entry must be able to hand back the declaration its files open
+			// with; the encoder writes exactly these bytes ahead of the XML.
+			h, err := e.XMLHeader()
+			if err != nil {
+				t.Fatalf("Lookup(%q).XMLHeader(): %v", tc.app, err)
+			}
+			if want := "<?xml version='" + tc.wantXMLVersion + "' encoding='utf-16'?>\n"; string(h) != want {
+				t.Errorf("Lookup(%q).XMLHeader() = %q, want %q", tc.app, h, want)
 			}
 			if got, want := funcPtr(e.Decode), funcPtr(tc.wantDecode); got != want {
 				t.Errorf("Lookup(%q).Decode is not the expected codec", tc.app)
@@ -202,6 +216,11 @@ func TestRegistrySelfConsistency(t *testing.T) {
 		if e.Decode == nil || e.Encode == nil {
 			t.Errorf("entry %d (version %q): nil codec (Decode nil: %v, Encode nil: %v)", i, e.App.Raw, e.Decode == nil, e.Encode == nil)
 		}
+		// Every release must know the declaration its files open with, or it
+		// cannot write one.
+		if _, err := e.XMLHeader(); err != nil {
+			t.Errorf("entry %d (version %q): XMLHeader(): %v", i, e.App.Raw, err)
+		}
 		// App.Raw must be the string it claims: the components are parsed from
 		// it and never rendered back, so they must agree with it.
 		if d, err := wxx.ParseDotted(e.App.Raw); err != nil {
@@ -226,11 +245,12 @@ func TestRegistrySelfConsistency(t *testing.T) {
 func classicEntry(t *testing.T, app string) *xmlio.Release_t {
 	t.Helper()
 	return &xmlio.Release_t{
-		Release: "",
-		App:     mustDotted(t, app),
-		Schema:  nil,
-		Decode:  h2017v1.Decode,
-		Encode:  h2017v1.Encode,
+		Release:    "",
+		App:        mustDotted(t, app),
+		Schema:     nil,
+		XMLVersion: "1.0",
+		Decode:     h2017v1.Decode,
+		Encode:     h2017v1.Encode,
 	}
 }
 
@@ -238,11 +258,12 @@ func classicEntry(t *testing.T, app string) *xmlio.Release_t {
 func w2025Entry(t *testing.T, app, schema string) *xmlio.Release_t {
 	t.Helper()
 	return &xmlio.Release_t{
-		Release: "2025",
-		App:     mustDotted(t, app),
-		Schema:  dottedPtr(t, schema),
-		Decode:  h2025v1.Decode,
-		Encode:  h2025v1.Encode,
+		Release:    "2025",
+		App:        mustDotted(t, app),
+		Schema:     dottedPtr(t, schema),
+		XMLVersion: "1.1",
+		Decode:     h2025v1.Decode,
+		Encode:     h2025v1.Encode,
 	}
 }
 
@@ -310,31 +331,41 @@ func TestNewRegistryRejectsInvalidEntry(t *testing.T) {
 		{"nil entry", nil},
 		{
 			"no application version",
-			&xmlio.Release_t{Release: "", App: wxx.Dotted{}, Schema: nil, Decode: h2017v1.Decode, Encode: h2017v1.Encode},
+			&xmlio.Release_t{Release: "", App: wxx.Dotted{}, Schema: nil, XMLVersion: "1.0", Decode: h2017v1.Decode, Encode: h2017v1.Encode},
 		},
 		{
 			"nil decoder",
-			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: nil, Decode: nil, Encode: h2017v1.Encode},
+			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: nil, XMLVersion: "1.0", Decode: nil, Encode: h2017v1.Encode},
 		},
 		{
 			"nil encoder",
-			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: nil, Decode: h2017v1.Decode, Encode: nil},
+			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: nil, XMLVersion: "1.0", Decode: h2017v1.Decode, Encode: nil},
 		},
 		{
 			// A release with no schema: W2025 states both or the absence stops
 			// identifying the implicit legacy schema.
 			"release without schema",
-			&xmlio.Release_t{Release: "2025", App: mustDotted(t, "2.06"), Schema: nil, Decode: h2025v1.Decode, Encode: h2025v1.Encode},
+			&xmlio.Release_t{Release: "2025", App: mustDotted(t, "2.06"), Schema: nil, XMLVersion: "1.1", Decode: h2025v1.Decode, Encode: h2025v1.Encode},
 		},
 		{
 			// A schema with no release: classic states neither.
 			"schema without release",
-			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: dottedPtr(t, "1.06"), Decode: h2017v1.Decode, Encode: h2017v1.Encode},
+			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: dottedPtr(t, "1.06"), XMLVersion: "1.0", Decode: h2017v1.Decode, Encode: h2017v1.Encode},
 		},
 		{
 			// An empty Raw would collide with the implicit legacy schema's key.
 			"empty schema",
-			&xmlio.Release_t{Release: "2025", App: mustDotted(t, "2.06"), Schema: &wxx.Dotted{}, Decode: h2025v1.Decode, Encode: h2025v1.Encode},
+			&xmlio.Release_t{Release: "2025", App: mustDotted(t, "2.06"), Schema: &wxx.Dotted{}, XMLVersion: "1.1", Decode: h2025v1.Decode, Encode: h2025v1.Encode},
+		},
+		{
+			// An entry that does not say how its files open cannot write one, and
+			// encode time is too late to find that out.
+			"no xml version",
+			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: nil, XMLVersion: "", Decode: h2017v1.Decode, Encode: h2017v1.Encode},
+		},
+		{
+			"unknown xml version",
+			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: nil, XMLVersion: "1.2", Decode: h2017v1.Decode, Encode: h2017v1.Encode},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
