@@ -78,8 +78,8 @@ type Map_t struct {
 	// BlurTerrainBG is a W2025 top-level element; nil means absent from the file.
 	BlurTerrainBG *BlurTerrainBG_t `json:"blurTerrainBG,omitempty"`
 
-	// ExtraTerrain is a W2025 top-level element (an empty container in observed
-	// samples); nil means absent from the file.
+	// ExtraTerrain is a W2025 top-level element; nil means absent from the file.
+	// Its content is opaque -- see ExtraTerrain_t.
 	ExtraTerrain *ExtraTerrain_t `json:"extraTerrain,omitempty"`
 
 	// TerrainMap assigns numbers to each terrain type.
@@ -164,11 +164,21 @@ type FeatureLocation_t struct {
 	Y         float64 `json:"y,omitempty"`
 }
 
-// ExtraTerrain models the W2025 top-level <extraTerrain> element. It appears as
-// an empty container in observed samples; InnerXML captures any inner content
-// verbatim so a present-but-empty element round-trips and any unseen children
-// are preserved. It is a pointer on Map_t so nil distinguishes absent from
-// present-but-empty.
+// ExtraTerrain models the W2025 top-level <extraTerrain> element. It is a
+// pointer on Map_t so nil distinguishes absent from present-but-empty.
+//
+// The two tracked 2.06 fixtures show both shapes it takes:
+// 2025-2.06-13x11-941577-blank.wxx carries an EMPTY container (InnerXML is "\n",
+// the pretty-printer's newline), while 2025-2.06-13x11-941577-layers.wxx carries
+// 183 bytes of real content -- a <mapLayer name="Terrain Layer"> holding a
+// <terrainAndLocation> that binds one hex's terrain to that layer.
+//
+// InnerXML captures whatever is between the tags VERBATIM, and that is the
+// element's entire modeling: nothing here understands a mapLayer or a
+// terrainAndLocation. The bytes round-trip 2025 -> 2025 intact, but the model
+// cannot answer a question about them, which is why encoding a populated
+// <extraTerrain> to a target that has no such element is an error rather than a
+// reported loss (#11 will model it; xmlio's downgradeLoss holds the contract).
 type ExtraTerrain_t struct {
 	InnerXML string `json:"innerXML,omitempty"`
 }

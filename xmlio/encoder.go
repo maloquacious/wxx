@@ -59,6 +59,23 @@ type EncoderDiagnostics struct {
 	Utf16Encoded  []byte // output after converting UTF-8 to UTF-16
 	Compressed    []byte // output after running gzip
 	Schema        string
+
+	// Dropped is the inventory of content the source map carried that the target
+	// release cannot express (ADR 0004 Decision 7). It is empty when the encode
+	// loses nothing -- notably when the target is the release the map already
+	// states, which is the default.
+	//
+	// Only MODELED losses appear here. A downgrade that would drop an unmodeled
+	// stub does not report, it errors: the encoder can only stay quiet about a
+	// loss it can enumerate. See downgradeLoss for the contract.
+	//
+	// This follows the project's diagnostics-over-logging convention, so it is
+	// opt-in via WithEncoderDiagnostics. That is a real limit worth stating: a
+	// caller who never asks does not hear about a modeled downgrade loss. It is
+	// the enumerable, documented half of the loss -- the half a caller can
+	// reconstruct from Map_t and h2017v1/COVERAGE.md after the fact -- and the
+	// half that cannot be reconstructed is the half that errors.
+	Dropped []DroppedFeature_t
 }
 
 // NewEncoder returns an Encoder that implements the wxx.Encoder interface.
@@ -179,6 +196,19 @@ func (e *Encoder) Encode(w io.Writer, m *wxx.Map_t) error {
 		return err
 	}
 
+	// Inventory what this target cannot express, before anything is written. A
+	// modeled loss is reported through diagnostics and the encode proceeds; a
+	// loss the encoder cannot honestly describe -- an unmodeled stub -- stops it
+	// here, so w gets nothing rather than a file quietly missing content
+	// (ADR 0004 Decision 7; the contract is settled in downgradeLoss).
+	dropped, err := downgradeLoss(m, target)
+	if err != nil {
+		return err
+	}
+	if e.opts.diagnostics != nil {
+		e.opts.diagnostics.Dropped = dropped
+	}
+
 	// marshal the Map_t to UTF‑8 XML
 	data, err := MarshalXML(m, target)
 	if err != nil {
@@ -256,10 +286,20 @@ func (e *Encoder) Encode(w io.Writer, m *wxx.Map_t) error {
 // Writing that string is what makes the target a target rather than a hint: the
 // bytes describe the release the caller asked for. See Release_t.identify.
 //
+// A downgrade that would drop an unmodeled stub is refused here too, and for the
+// same reason it is refused in Encode: this is a public entry point, so leaving
+// the check to Encode would leave a path that silently discards content the model
+// never understood. The MODELED half of the loss is reported through
+// EncoderDiagnostics, which this function has no access to -- a caller that needs
+// the inventory calls Encode.
+//
 // Returns an error for an unsupported target or if the conversion fails.
 func MarshalXML(m *wxx.Map_t, target *Release_t) ([]byte, error) {
 	target, err := Resolve(target)
 	if err != nil {
+		return nil, err
+	}
+	if _, err := downgradeLoss(m, target); err != nil {
 		return nil, err
 	}
 	codec, err := CodecForSchema(target.Schema)

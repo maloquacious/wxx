@@ -151,6 +151,61 @@ on-disk level: `map` root + its 24 scalar attributes, `<gridandnumbering>`,
 `<labels>`/`<label>`, and `<configuration>`'s `<shape-config>`/`<shapestyle>`.
 None of these appear in any fixture's loss set.
 
+## Downgrade loss inventory — W2025 → classic (executable)
+
+The two sections above are about what the classic codec loses **to itself**. This
+one is about what the classic **format** cannot hold at all, which is a different
+claim and must not be confused with it: a codec gap is our encoder not writing
+something classic has room for, while a downgrade loss is content classic has
+nowhere to put. Only the second is reported as loss by `xmlio/downgrade.go`
+(#32, ADR 0004 Decision 7); reporting the first would blame the format for our
+encoder.
+
+It was derived with the same harness, by encoding a decoded W2025 2.06 fixture
+through the classic target and diffing against the W2025 original, then
+subtracting two controls: a **2.06 → 2.06** trip (which isolates h2025 codec
+gaps) and the **classic → classic** trip above (which isolates classic codec
+gaps). Guarded by `TestClassicDowngradeLossInventory` in `xmlio/downgrade_test.go`,
+which re-runs that diff and fails **both** if the encoder reports a loss the
+harness does not show and if the harness shows one the encoder does not report.
+
+**Contract:** a **modeled** loss is reported through `EncoderDiagnostics.Dropped`
+and the encode succeeds; an **unmodeled stub** is a hard error, because the
+encoder cannot describe what such a loss costs. When #11 models a stub, its error
+becomes a diagnostic.
+
+| Path | Class | Evidence on `2025-2.06-13x11-941577-blank.wxx` | Why classic cannot express it |
+|---|---|---|---|
+| `map/maplayer/@opacity` | modeled → diagnostic | harness: `attr-dropped map/maplayer opacity`; 8 layers at `1.0` | RelaxNG `maplayer` states only `@name`/`@isVisible` (lines 63-66) |
+| `map/configuration/shape-config/shapestyle/@lineCap` | modeled → diagnostic | harness: `attr-dropped …/shapestyle lineCap` (`SQUARE`) | RelaxNG `shapestyle` has 27 attrs, no `@lineCap`; classic defines it on `<shape>`, a **different element** (line 157) |
+| `map/configuration/shape-config/shapestyle/@lineJoin` | modeled → diagnostic | harness: `attr-dropped …/shapestyle lineJoin` (`ROUND`) | as above (line 158) |
+| `map/blurTerrainBG` | modeled → diagnostic | harness: `element-dropped map/blurTerrainBG`; 6 real attrs | classic defines no `<blurTerrainBG>` |
+| `map/@hScrollbarPos`, `map/@vScrollbarPos` | modeled → diagnostic, **latent** | harness shows both `attr-dropped`, but **both fixtures carry `0.0`** | classic `<map>` states no scrollbar position |
+| `map/extraTerrain` | **unmodeled stub → hard ERROR** | `…-layers.wxx` carries 183 bytes (`<mapLayer name="Terrain Layer">`/`<terrainAndLocation>`); `…-blank.wxx` carries `"\n"` | classic defines no `<extraTerrain>`; classic binds `mapLayer` to features/labels/shapes but **never to tiles**, so per-hex layer assignment collapses (ADR 0004) |
+
+Notes:
+
+- **The scrollbar entry is latent.** `Map_t` models both as plain `float64`, so
+  absent and `0.0` are the same value and a zero cannot be reported as a loss
+  without inventing one. Both tracked fixtures carry `0.0`, so no fixture
+  demonstrates it; `TestClassicDowngradeScrollbarLatent` **synthesizes** a
+  non-zero source rather than pretending one does, mirroring
+  `TestW2025LabelStyleDropShadowGate`.
+- **`<extraTerrain>` emptiness.** The error fires on non-whitespace `InnerXML`
+  only. `…-blank.wxx`'s container holds `"\n"` — pretty-printer whitespace, in
+  which no element, attribute, or text node can hide — so it loses nothing and
+  must not error.
+- **Not in this table, deliberately.** `map/features/feature/label/@dropShadow*`
+  is dropped on a **2.06 → 2.06** trip too (`Map_t.Label_t` models no drop
+  shadow; the trio lives on `LabelStyle_t`), so it is an **h2025 codec gap**, not
+  a downgrade loss. `map/@version` altered and `map/@release`/`@schema` dropped
+  are **target identity** (`Release_t.identify`), not loss.
+- **Masked, and therefore unclaimed.** Classic `<labelstyle>` has no
+  `@dropShadow*` (RelaxNG lines 181-190), so a W2025 label style's drop shadow
+  *is* beyond the classic format — but the classic encoder drops the entire
+  `<labelstyle>` element as a codec gap, so the harness cannot separate the two
+  and the downgrade half is **not** claimed here.
+
 ## Version identity — `MetaData.Version` and `Worldographer.Version`
 
 **Implemented (ADR 0004, issue #32).** `decode.go` parses the on-disk `version`
