@@ -76,9 +76,9 @@ func (d DroppedFeature_t) String() string {
 // fully-enumerated downgrade as loud as the one we genuinely cannot describe).
 //
 // Consequence, and it is intended: when a feature moves from stub to modeled
-// (#11 is doing exactly this), its hard error BECOMES a diagnostic. Modeling it
-// is what earns the encoder the right to be quiet about it, because only then can
-// it say what was lost.
+// (#34 would do exactly this for <extraTerrain>), its hard error BECOMES a
+// diagnostic. Modeling it is what earns the encoder the right to be quiet about
+// it, because only then can it say what was lost.
 func downgradeLoss(m *wxx.Map_t, target *Release_t) ([]DroppedFeature_t, error) {
 	if target.Schema != nil {
 		// Every non-classic supported schema is W2025 1.06, which expresses
@@ -212,12 +212,12 @@ func classicDowngradeLoss(m *wxx.Map_t) ([]DroppedFeature_t, error) {
 	// assignment collapses. That much is a genuine downgrade loss.
 	//
 	// What makes it an error rather than a diagnostic is that Map_t models this
-	// element ONLY as opaque InnerXML (#11 has not reached it): the bytes
+	// element ONLY as opaque InnerXML (#34 tracks modeling it): the bytes
 	// round-trip 2025 -> 2025 intact, yet nothing in the model understands them.
 	// The encoder therefore cannot enumerate what dropping them costs -- it cannot
 	// say how many hexes, on which layers, with what terrain -- and under the loss
 	// contract it must refuse rather than discard content it cannot describe.
-	// When #11 models terrainAndLocation, this becomes a diagnostic like the rest.
+	// When #34 models terrainAndLocation, this becomes a diagnostic like the rest.
 	if m.ExtraTerrain != nil && !isEmptyInnerXML(m.ExtraTerrain.InnerXML) {
 		inner := strings.TrimSpace(m.ExtraTerrain.InnerXML)
 		return nil, errors.Join(wxx.ErrUnmodeledStubLoss, fmt.Errorf(
