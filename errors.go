@@ -11,6 +11,8 @@ func (e Error) Error() string {
 }
 
 const (
+	ErrAmbiguousSchemaCodec        = Error("ambiguous schema codec")
+	ErrDuplicateAppVersion         = Error("duplicate application version")
 	ErrFSError                     = Error("file-system")
 	ErrGUnZipFailed                = Error("gunzip failed")
 	ErrGZipFailed                  = Error("gzip failed")
@@ -22,6 +24,7 @@ const (
 	ErrInvalidGZip                 = Error("invalid gzip")
 	ErrInvalidHexOrientation       = Error("invalid hex orientation")
 	ErrInvalidMapMetadata          = Error("invalid <map> metadata")
+	ErrInvalidReleaseEntry         = Error("invalid release entry")
 	ErrInvalidTerrainMapFieldCount = Error("invalid terrain map field count")
 	ErrInvalidUTF16                = Error("invalid utf-16")
 	ErrInvalidUTF8                 = Error("invalid utf-8")
@@ -30,6 +33,7 @@ const (
 	ErrInvalidXMLHeader            = Error("invalid xml header")
 	ErrMapNotClosed                = Error("<map> not closed")
 	ErrMissingBOM                  = Error("missing bom")
+	ErrMissingCodec                = Error("missing codec")
 	ErrMissingFinalByte            = Error("missing final byte")
 	ErrMissingMapElement           = Error("missing map element")
 	ErrMissingVersion              = Error("missing version")
