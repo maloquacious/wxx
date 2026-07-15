@@ -16,6 +16,23 @@ import (
 	"github.com/maloquacious/wxx/hexg"
 )
 
+// dottedOrRaw parses an on-disk dotted version, falling back to a Dotted that
+// carries the verbatim bytes with zero components when the string does not fit
+// the dotted grammar.
+//
+// The fallback is deliberate: modeling these values must not turn a file that
+// decodes today into one that errors, so this never adds an error path of its
+// own. Raw is authoritative for output and is preserved in every case; the
+// components exist only to compare. Validating an identity against the set of
+// supported releases is the registry's job, not the decoder's.
+func dottedOrRaw(s string) wxx.Dotted {
+	d, err := wxx.ParseDotted(s)
+	if err != nil {
+		return wxx.Dotted{Raw: s}
+	}
+	return d
+}
+
 // Decode the XML data using the H2025.V1 schema and return a Map_t or an error.
 //
 // Decode does a single xml.Unmarshal into the version-specific XMLSchema structs
@@ -59,6 +76,15 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	w := &wxx.Map_t{}
 	w.MetaData.AppVersion = wxx.Version()
 	w.MetaData.DataVersion = dataVersion
+	// Version is the axis-aware identity that supersedes DataVersion (ADR 0004
+	// Decision 2). App is the dotted <map version> ("2.06"), modeled here for the
+	// first time: DataVersion has no slot for it, so until now it survived only
+	// as an unexamined string. Schema is the dotted <map schema> ("1.06"), always
+	// non-nil for W2025 because the guards above reject a file that states none
+	// (ADR 0003 Decision 2). The zero padding is preserved: Raw is "2.06", not
+	// the "2.6" a semver round-trip would return.
+	schema := dottedOrRaw(m.Schema)
+	w.MetaData.Version = wxx.Version_t{App: dottedOrRaw(m.Version), Schema: &schema}
 	w.MetaData.Created = time.Now().UTC().Format(time.RFC3339)
 	w.MetaData.Worldographer.Name = "unknown"
 	w.MetaData.Worldographer.Release = m.Release

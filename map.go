@@ -16,6 +16,13 @@ type Map_t struct {
 	MetaData struct {
 		AppVersion  semver.Version `json:"appVersion"`  // version of this application
 		DataVersion semver.Version `json:"dataVersion"` // version of the data in the file
+		// Version is the file's on-disk version identity: map/@version and
+		// map/@schema as the two independent axes they are (ADR 0004). It is
+		// populated by every decoder and is the successor to DataVersion, which
+		// conflates the two axes into one semver and still drives encode
+		// dispatch; the two coexist until that dispatch moves to the release
+		// registry.
+		Version Version_t `json:"version"`
 		// Worldographer defines the metadata for the WXX file
 		Worldographer struct {
 			Name    string    `json:"name"`    // name of input

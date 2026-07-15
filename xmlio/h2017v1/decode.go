@@ -41,6 +41,24 @@ func classicDataVersion(version string) semver.Version {
 	return dv
 }
 
+// classicVersionIdentity models the on-disk version identity of a classic file
+// (ADR 0004 Decision 2): App is the dotted <map version> ("1.73"/"1.74"/"1.77")
+// and Schema is nil, because a classic file states no @schema at all — that
+// absence identifies the one implicit legacy schema, which every classic
+// revision shares.
+//
+// Like classicDataVersion it is best-effort by design: a malformed version keeps
+// its bytes verbatim in Dotted.Raw with zero components rather than raising an
+// error, so nothing that decodes today starts failing. Raw is authoritative for
+// output either way; the components exist only to compare.
+func classicVersionIdentity(version string) wxx.Version_t {
+	app, err := wxx.ParseDotted(version)
+	if err != nil {
+		app = wxx.Dotted{Raw: version}
+	}
+	return wxx.Version_t{App: app, Schema: nil}
+}
+
 // Decode the XML data using the H2017.V1 schema and return a Map_t or an error.
 func Decode(input []byte) (*wxx.Map_t, error) {
 	m := &XMLSchema{}
@@ -63,6 +81,10 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	// itself did not change across 1.73/1.74/1.77 — these are application version
 	// bumps, so Patch distinguishes the file, not the schema.
 	w.MetaData.DataVersion = classicDataVersion(m.Version)
+	// Version is the axis-aware identity that supersedes DataVersion: the
+	// application version on disk, and no schema version because the file states
+	// none.
+	w.MetaData.Version = classicVersionIdentity(m.Version)
 	w.MetaData.Created = time.Now().UTC().Format(time.RFC3339)
 	w.MetaData.Worldographer.Name = "unknown"
 	// Also preserve the on-disk sub-revision verbatim in the Worldographer
