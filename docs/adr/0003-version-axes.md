@@ -19,21 +19,20 @@
 Worldographer files carry **two distinct notions of "version"**, and most of our
 prose and one of our fields quietly collapse them into one.
 
-1. **Application version** — the Worldographer build that wrote the file:
+1. **Application version** — the Worldographer build that wrote the file. It is
+   on disk in **every** supported schema:
    - classic (H2017): `map/@version` (`"1.73"` / `"1.74"` / `"1.77"`);
    - W2025: `map/@release` (`"2025"`) plus `map/@version` (e.g. `"2.06"`).
-
-   > **Unverified.** That `map/@version` *is* the application version is an
-   > assumption, and there is evidence against it for W2025: the sample formerly
-   > at `data/2025-2.05.wxx` was named for the application build that wrote it
-   > (2.05) but declared `version="2.06"` on disk. If `@version` does not track
-   > the application build, the application axis may not be recoverable from the
-   > file at all. Under investigation by the maintainer; do not build on this.
 
 2. **XML schema version** — the on-disk data format the file conforms to:
    - classic (H2017): **implicit** — there is no `@schema` attribute; the schema
      is identified by the *absence* of `release`/`schema` plus a `1.x` `version`;
    - W2025: **explicit** — `map/@schema` is present (e.g. `"1.06"`).
+
+So a W2025 file states **both** axes outright: `@version` is the application
+version, `@schema` is the schema version, and the two move independently
+(`version="2.06"` alongside `schema="1.06"`). Classic states only the
+application version and leaves the schema implicit.
 
 A single schema version can back **multiple** application versions: classic
 `1.73`/`1.74`/`1.77` all share one schema (already noted in `README.md`).
@@ -99,18 +98,18 @@ moved separately. That, not the implicit-schema claim, is what grounds this ADR.
    application version and schema version into separate fields, or something
    else, is decided under #28 — coordinated with #13 (true 2025 release) and #20
    (invariant guarding). This ADR does not pre-commit that shape; it commits only
-   the two-axis model. Note this is now blocked on the *unverified* question of
-   whether `map/@version` is the application version at all: if it is not, there
-   may be no application axis to separate out.
+   the two-axis model. Both axes are on disk for W2025 and the schema axis is
+   derivable for classic, so the refactor has everything it needs: it is
+   **unblocked**, and gated only on #28 being picked up.
 
 ## Consequences
 
 - The two-axis model is grounded in observation (`version="2.06"` alongside
   `schema="1.06"`) rather than in the retracted implicit-schema claim.
-- **#28 loses a deliverable and gains a blocker.** Hunting an early-2025
-  no-`@schema` fixture is dropped: no such file is known to exist. What remains
-  is the `DataVersion` conflation — which cannot be resolved until the
-  `map/@version` question is settled.
+- **#28 loses a deliverable.** Hunting an early-2025 no-`@schema` fixture is
+  dropped: no such file is known to exist. What remains is the `DataVersion`
+  conflation, and nothing blocks it — a W2025 file carries both axes, so
+  separating them is a modeling decision, not an investigation.
 - **Verbatim output stays inviolable** (ADR 0002, Decision 2): we never
   synthesize a `@schema` that was not on input.
 - No code changes are authorized by this ADR; the identity work is gated to #28.
@@ -125,3 +124,9 @@ moved separately. That, not the implicit-schema claim, is what grounds this ADR.
   accordingly, the `notes.adoc` and `README.md` edits authorized by the original
   Decision 3 are reverted, and the baseline policy is recorded in its place. The
   two-axis model and the `DataVersion` conflation finding are unchanged.
+- **2026-07-15** — Removed a note questioning whether `map/@version` is the
+  application version, and unblocked Decision 4. The note rested on a pre-2.06
+  sample that is out of scope under Decision 3; with the baseline settled, a
+  W2025 file states both axes outright (`@version` application, `@schema`
+  schema), so the identity refactor is a modeling decision with no open
+  investigation in front of it.

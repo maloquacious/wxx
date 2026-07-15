@@ -1,6 +1,7 @@
 # ADR 0002 — Version identity: `DataVersion` = `{familyYear, on-disk dotted revision}`
 
-- **Status:** Accepted (2026-07-14) — outcome: **adopt Option 3 (family-dispatch), harmonized with the existing h2025 parse.** Classic decode parses its `version` attribute into `DataVersion.Minor.Patch` with `Major = 2017`; the public encoder dispatches on `DataVersion.Major` (family) only. Classic is being **unfrozen** for this reconciliation.
+- **Status:** Accepted (2026-07-14), **superseded by [ADR 0004](0004-version-struct-and-release-registry.md) (2026-07-15)** — outcome: **adopt Option 3 (family-dispatch), harmonized with the existing h2025 parse.** Classic decode parses its `version` attribute into `DataVersion.Minor.Patch` with `Major = 2017`; the public encoder dispatches on `DataVersion.Major` (family) only. Classic is being **unfrozen** for this reconciliation.
+- **Superseded because:** this ADR defines `Minor.Patch` as parsed from "the single dotted value each format exposes." A W2025 file exposes two (`@version` and `@schema`), so the representation cannot hold the file's identity. ADR 0004 replaces `{familyYear, revision}` with `{App, Schema}` and a supported-release registry. **The verbatim-output guarantee (Decision 2) survives and is carried forward.**
 - **Date:** 2026-07-14
 - **Context tickets:** #12 (this decision), follow-up from #8 (Track B, B4 — version fidelity), PR #10.
 - **Gates:** the code change (classic `decode.go`, `xmlio/encoder.go`, tests, docs) is authorized by this acceptance. **Implemented 2026-07-14** — see "Follow-up task" below (all steps done, suite green).

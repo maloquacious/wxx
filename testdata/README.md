@@ -11,11 +11,9 @@ test needs there.
 
 e.g. `2025-2.06-13x11-941577-blank.wxx`.
 
-`VERSION` is the value of the `version` attribute on the file's own `map`
-element — **not** the version Worldographer reports in its UI. Read it from the
-file, never from the application; the earlier `2025-2.05.wxx` sample was named
-from the application and declared `version="2.06"` on disk, which cost us a
-round of confusion.
+`VERSION` is the `version` attribute on the file's own `map` element — the
+Worldographer build that wrote it. Read it out of the file rather than typing
+what the application reported, so the name always matches the contents.
 
 Recording width, height, seed and terrain in the name makes a sample
 reproducible from its filename alone.
