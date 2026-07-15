@@ -50,12 +50,16 @@ func TestParseDotted(t *testing.T) {
 // "2.6" -- a different string, and therefore a different file on disk. String()
 // must hand back the bytes we were given and must never re-render them from
 // Major and Minor.
+//
+// The zero-padded cases are the only ones that can catch a re-render: "1.73"
+// rendered from {1,73} is still "1.73", so it passes even against a broken
+// String(). Keep 1.06 and 2.06 -- without them this test cannot fail.
 func TestDottedStringIsVerbatim(t *testing.T) {
 	for _, input := range []string{
-		"1.06",
+		"1.06", // load-bearing: padded
 		"1.73",
 		"1.77",
-		"2.06",
+		"2.06", // load-bearing: padded
 	} {
 		t.Run(input, func(t *testing.T) {
 			d, err := ParseDotted(input)
