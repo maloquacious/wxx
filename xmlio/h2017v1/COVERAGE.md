@@ -171,8 +171,8 @@ harness does not show and if the harness shows one the encoder does not report.
 
 **Contract:** a **modeled** loss is reported through `EncoderDiagnostics.Dropped`
 and the encode succeeds; an **unmodeled stub** is a hard error, because the
-encoder cannot describe what such a loss costs. When #11 models a stub, its error
-becomes a diagnostic.
+encoder cannot describe what such a loss costs. When a stub becomes modeled (#34
+tracks the one stub this rule currently bites), its error becomes a diagnostic.
 
 | Path | Class | Evidence on `2025-2.06-13x11-941577-blank.wxx` | Why classic cannot express it |
 |---|---|---|---|

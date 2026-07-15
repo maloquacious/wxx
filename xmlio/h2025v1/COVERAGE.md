@@ -73,7 +73,7 @@ Tests referenced (in `xmlio/roundtrip_2025_test.go` unless noted, package
 | `<features>` / `<feature>` | implemented | implemented | DecodePopulated, PopulatedRoundTrip | Real blank sample has no features; populated fixture exercises them. |
 | feature `<location>` | implemented | implemented | PopulatedRoundTrip | viewLevel/x/y. |
 | feature inline `<label>` (optional) | implemented | implemented | DecodePopulated, PopulatedRoundTrip | `Feature.Label` is `*Label_t`; decode nil-guards a labelless feature so encode omits `<label>` (DecodePopulated asserts `Features[1].Label == nil`). |
-| `<labels>` / `<label>` (standalone) | implemented | implemented | PopulatedRoundTrip (1 label in fixture), RoundTrip (empty in sample) | Shares `encodeLabel` with the inline feature label. |
+| `<labels>` / `<label>` (standalone) | implemented | **partial** | PopulatedRoundTrip (1 label in fixture), RoundTrip (empty in sample) | Shares `encodeLabel` with the inline feature label. **`dropShadowColor` / `dropShadowRadius` / `dropShadowSpread` are NOT modeled on `Label_t`** and are dropped on a same-release round trip (#35) -- the trio is modeled on `LabelStyle_t`, not here. |
 | label `<location>` (with `scale`) | implemented | implemented | PopulatedRoundTrip | |
 | `<shapes>` / `<shape>` (+ `<p>` points) | implemented | implemented | DecodePopulated, PopulatedRoundTrip | Real sample has no shapes; fixture has 2 shapes with points (DecodePopulated checks `Points[0]`). `<shape>` DOES model `lineCap`/`lineJoin`. |
 | `<notes>` / `<note>` (+ `<notetext>`) | implemented | implemented | DecodePopulated, PopulatedRoundTrip | `notetext` CDATA body preserved verbatim; fixture has 2 notes. |
@@ -84,22 +84,33 @@ Tests referenced (in `xmlio/roundtrip_2025_test.go` unless noted, package
 | configuration `<text-config>` / `<labelstyle>` | implemented | implemented | RoundTrip, PublicRoundTrip, CoverageMatrix | 7 labelstyles in sample round-trip; `dropShadowColor` (nullable string) / `dropShadowRadius` / `dropShadowSpread` now modeled (#11). |
 | configuration `<shape-config>` / `<shapestyle>` | implemented | implemented | RoundTrip, PublicRoundTrip, CoverageMatrix | 7 shapestyles in sample round-trip; `lineCap` / `lineJoin` now modeled (#11). |
 | `<blurTerrainBG>` | implemented | implemented | CoverageMatrix | Optional top-level element modeled as `*BlurTerrainBG_t` (nil = absent); 6 attrs round-trip (#11). |
-| `<extraTerrain>` | **stub** | implemented | CoverageMatrix, ClassicDowngradeStubError | Optional top-level element modeled as `*ExtraTerrain_t` (nil = absent); the container round-trips but its **content is opaque raw innerxml**, not structured (#11). Both shapes are tracked: `…-blank.wxx` carries an empty container (innerxml `"\n"`), `…-layers.wxx` carries 183 bytes — a `<mapLayer name="Terrain Layer">` holding a `<terrainAndLocation>`. Decode is **stub**, not implemented: nothing in `Map_t` understands those children. |
+| `<extraTerrain>` | **stub** | implemented | CoverageMatrix, ClassicDowngradeStubError | Optional top-level element; the container is modeled as `*ExtraTerrain_t` by #11 (nil = absent), but its **content is opaque raw innerxml**, not structured (#34). Both shapes are tracked: `…-blank.wxx` carries an empty container (innerxml `"\n"`), `…-layers.wxx` carries 183 bytes — a `<mapLayer name="Terrain Layer">` holding a `<terrainAndLocation>`. Decode is **stub**, not implemented: nothing in `Map_t` understands those children. |
 
 ## Known un-modeled fields
 
-**None.** Issue #11 closed this section: the six W2025-native fields that were
-formerly listed here are now modeled additively in `schema.go` + `Map_t`, wired
-through h2025 decode and encode, and each is exercised by a green 2025 round trip
-(`TestW2025CoverageMatrix`). For the record, the six -- and where they now live --
-were:
+**Two, both tracked.** Issue #11 closed the section as it stood -- the six
+W2025-native fields formerly listed here are now modeled additively (below) --
+but two gaps have since been *demonstrated* and neither is covered by #11:
+
+- **`<extraTerrain>` children (`<mapLayer>` / `<terrainAndLocation>`)** -- the
+  container is modeled, its content is an opaque `InnerXML` **stub**. Nothing in
+  `Map_t` understands it, so a downgrade hard-errors rather than reporting a
+  loss. Tracked by **#34**.
+- **`<label>` `@dropShadowColor` / `@dropShadowRadius` / `@dropShadowSpread`** --
+  `Label_t` has no field for them (the trio is modeled on `LabelStyle_t` only), so
+  they are **dropped on a same-release 2025 -> 2025 round trip**. Demonstrated:
+  `…-layers.wxx` carries 3 such labels, re-encode carries 0. Tracked by **#35**.
+
+Do not read the matrix above as "nothing is missing" -- read it with these two.
+
+For the record, the six fields #11 modeled -- and where they now live -- were:
 
 - **`<maplayer opacity>`** -- `MapLayer_t.Opacity` (float) / schema `MapLayer_t.Opacity`. Round-trips via CoverageMatrix (`MapLayers[0].Opacity == 1.0`).
 - **`<labelstyle dropShadowColor / dropShadowRadius / dropShadowSpread>`** -- `LabelStyle_t.DropShadowColor` (nullable string, preserves `"null"`), `.DropShadowRadius`, `.DropShadowSpread` (floats). CoverageMatrix asserts `DropShadowColor == "null"` and zero radius/spread.
 - **`<shapestyle lineCap / lineJoin>`** -- `ShapeStyle_t.LineCap` / `.LineJoin` (strings), mirroring `Shape_t`. CoverageMatrix asserts `SQUARE` / `ROUND`.
 - **`<map hScrollbarPos / vScrollbarPos>`** -- `Map_t.HScrollbarPos` / `.VScrollbarPos` (floats) / schema root attrs. CoverageMatrix asserts they do not drift.
 - **`<blurTerrainBG>`** -- `Map_t.BlurTerrainBG *BlurTerrainBG_t` (nil = absent); 6 attrs modeled. CoverageMatrix asserts non-nil with attrs preserved.
-- **`<extraTerrain>`** -- `Map_t.ExtraTerrain *ExtraTerrain_t` (nil = absent); the container is preserved via **raw innerxml**, so its content remains a **stub**. CoverageMatrix asserts non-nil. The tracked `…-layers.wxx` fixture carries 183 bytes of real children (`<mapLayer name="Terrain Layer">` / `<terrainAndLocation>`), so "present-but-empty" describes only the `…-blank.wxx` fixture (innerxml `"\n"`). Because nothing in `Map_t` understands those children, a downgrade to a target with no `<extraTerrain>` **hard-errors** rather than dropping them silently (#32; `xmlio/downgrade.go`) — this is the ADR 0004 "stub coverage is a precondition for honest loss reporting" case, and it resolves when #11 models `terrainAndLocation`.
+- **`<extraTerrain>`** -- `Map_t.ExtraTerrain *ExtraTerrain_t` (nil = absent); the container is preserved via **raw innerxml**, so its content remains a **stub**. CoverageMatrix asserts non-nil. The tracked `…-layers.wxx` fixture carries 183 bytes of real children (`<mapLayer name="Terrain Layer">` / `<terrainAndLocation>`), so "present-but-empty" describes only the `…-blank.wxx` fixture (innerxml `"\n"`). Because nothing in `Map_t` understands those children, a downgrade to a target with no `<extraTerrain>` **hard-errors** rather than dropping them silently (#32; `xmlio/downgrade.go`) — this is the ADR 0004 "stub coverage is a precondition for honest loss reporting" case, and it resolves when **#34** models `terrainAndLocation`.
 
 ## RelaxNG cross-check
 

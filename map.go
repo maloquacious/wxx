@@ -178,7 +178,8 @@ type FeatureLocation_t struct {
 // terrainAndLocation. The bytes round-trip 2025 -> 2025 intact, but the model
 // cannot answer a question about them, which is why encoding a populated
 // <extraTerrain> to a target that has no such element is an error rather than a
-// reported loss (#11 will model it; xmlio's downgradeLoss holds the contract).
+// reported loss (#34 tracks modeling it; xmlio's downgradeLoss holds the
+// contract).
 type ExtraTerrain_t struct {
 	InnerXML string `json:"innerXML,omitempty"`
 }
