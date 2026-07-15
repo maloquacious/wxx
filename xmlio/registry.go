@@ -85,6 +85,36 @@ func (r *Release_t) Codec() Codec_t {
 	return Codec_t{Decode: r.Decode, Encode: r.Encode}
 }
 
+// identify returns a shallow copy of m stating this release's on-disk identity:
+// the map/@release, map/@version and map/@schema strings the codecs write into
+// the <map> element.
+//
+// This is what targeting a release means at the byte level. The schema picks the
+// codec, but the codec emits Map_t.Release/Version/Schema -- the strings the
+// SOURCE file stated -- so without this a map read from 1.77 and targeted at
+// 1.73 would route through the classic codec and still write version="1.77",
+// handing back a file claiming a release the caller did not ask for. The target
+// would be a codec hint rather than a target, and the licensing guarantee in ADR
+// 0004 Decision 5 would be worth nothing.
+//
+// Encoding a map as the release it already states -- the default target -- writes
+// exactly the values it already carried, so no byte moves.
+//
+// Every string is copied verbatim from Raw and none is re-rendered from a
+// Dotted's components (ADR 0004 Decision 1): "2.06" must never go to disk as
+// "2.6". The copy is shallow and m is never mutated: the target is a property of
+// one encode, not a change to the caller's map.
+func (r *Release_t) identify(m *wxx.Map_t) *wxx.Map_t {
+	out := *m
+	out.Release = r.Release
+	out.Version = r.App.Raw
+	out.Schema = ""
+	if r.Schema != nil {
+		out.Schema = r.Schema.Raw
+	}
+	return &out
+}
+
 // Registry_t is the single source of truth for supported releases. It is keyed
 // by verbatim application version (see Lookup) and additionally indexes
 // schema -> codec (see CodecForSchema).
@@ -174,6 +204,35 @@ func (r *Registry_t) Lookup(app string) (*Release_t, error) {
 		return e, nil
 	}
 	return nil, errors.Join(wxx.ErrUnsupportedMapVersion, fmt.Errorf("version %q: not a supported release", app))
+}
+
+// Resolve returns the registry's own entry for e, and is how a *Release_t from a
+// caller is admitted as a target.
+//
+// It rejects anything this registry did not produce, which is what keeps an
+// invalid target unrepresentable rather than merely rejected (ADR 0004 Decision
+// 5). Release_t is an ordinary exported struct, so a caller can assemble one
+// pairing @version="1.77" with the W2025 schema -- a release that has never
+// existed. Resolving by App.Raw and then requiring the identical entry back is
+// what stops it: the fields cannot disagree with the registry, because the only
+// entries that get through are the registry's.
+//
+// Pointer identity is the test, not field equality. A copy of an entry is
+// rejected on purpose: a value the caller owns is a value the caller can mutate
+// into an invalid pair after this check has passed, and Lookup and Releases both
+// document their entries as shared and not to be mutated.
+func (r *Registry_t) Resolve(e *Release_t) (*Release_t, error) {
+	if e == nil {
+		return nil, errors.Join(wxx.ErrUnsupportedMapVersion, fmt.Errorf("no target release"))
+	}
+	own, err := r.Lookup(e.App.Raw)
+	if err != nil {
+		return nil, err
+	}
+	if own != e {
+		return nil, errors.Join(wxx.ErrUnsupportedMapVersion, fmt.Errorf("version %q: not this registry's release entry: target a release with Lookup or SupportedReleases rather than assembling one", e.App.Raw))
+	}
+	return own, nil
 }
 
 // CodecForSchema resolves the parse/emit pair a schema selects (ADR 0004
@@ -306,6 +365,12 @@ func supportedReleaseEntries() ([]*Release_t, error) {
 // Registry_t.Lookup.
 func Lookup(app string) (*Release_t, error) {
 	return supportedReleases.Lookup(app)
+}
+
+// Resolve admits a caller's *Release_t as a supported release. See
+// Registry_t.Resolve.
+func Resolve(e *Release_t) (*Release_t, error) {
+	return supportedReleases.Resolve(e)
 }
 
 // CodecForSchema resolves the codec a schema selects. See
