@@ -43,6 +43,14 @@ true release version is tracked in #13. See
 `docs/adr/0002-version-identity.md` for the rationale and the classic-side
 follow-up (ADR 0002 supersedes the interim `{2017,1}` handling B4 introduced).
 
+> **Note — application version vs. schema version are independent axes, and
+> `@schema` is not always present.** The table's 2025 row assumes an explicit
+> `map/@schema`, but only *later* W2025 files carry one; *early* W2025 files have
+> `release="2025"` with **no `@schema`** (their schema version is implicit), and
+> classic files never have one. Dispatch already handles this (it routes on
+> `release` alone), but version *identity* for the implicit-schema case is not yet
+> modeled — tracked in #28. See `docs/adr/0003-version-axes.md`.
+
 ## Go package
 
 The `wxx` package can be imported into other Go applications that need to work with Worldographer files.

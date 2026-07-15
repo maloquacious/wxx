@@ -20,9 +20,16 @@ We generally call either version "Worldographer."
 The version number in the data is for the application that created the file.
 There is no versioning of the data format for H2017 files.
 
+There are two independent version axes (see `docs/adr/0003-version-axes.md`):
+the *application* version (the Worldographer build that wrote the file) and the
+*XML schema* version (the on-disk data format). They do not always line up, and
+the schema version is not always written to disk.
+
 1. map.release is only in W2025 files and identifies the Worldographer application major version.
 2. map.version is in both files and identifies the application minor version.
-3. map.schema is only in W2025 files and identifies the XML Schema version.
+3. map.schema identifies the XML Schema version. It is present only in *later*
+   W2025 files; classic (H2017) and *early* W2025 files omit it, so their schema
+   version is implicit (inferred from `release`/`version`, not read from an attribute).
 
 
 The following table maps values from the XML data to the WXX Package Schema Version.
