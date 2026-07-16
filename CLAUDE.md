@@ -56,6 +56,7 @@ wxx/
 │   ├── encoder.go      # Generic encoder with functional options
 │   ├── xml_header.go   # XML header utilities
 │   └── internal/       # codec packages; unimportable outside xmlio/
+│       ├── README.md   # the codec-version convention (what v0_77/v1_06 mean)
 │       ├── v0_77/      # classic schema: decode.go, encode.go, schema.go
 │       └── v1_06/      # W2025 schema: decode.go (incomplete)
 ├── hexg/               # Hexagonal grid coordinate system library
