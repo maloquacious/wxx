@@ -1,18 +1,26 @@
 # wxx
 
-`wxx` is a Go package and command-line toolkit for reading, writing, inspecting, modifying, and scripting [Worldographer](https://worldographer.com/) files.
+`wxx` is a Go package and command-line toolkit for reading, writing, inspecting, and modifying [Worldographer](https://worldographer.com/) files.
 
 The name comes from `.wxx`, Worldographer’s default file extension.
 
-The project provides:
+> **This README marks planned work as planned.** Anything under a *(planned)*
+> heading or in a **Planned** list does not exist yet. Everything else describes
+> the tree you are looking at.
+
+**What exists today:**
 
 * A Go API for working with Worldographer data
 * Reading and writing `.wxx` files
-* Inspecting and validating maps
-* Modifying and generating map content
-* Automating map-processing workflows
-* Running embedded Lua scripts with [GopherLua](https://github.com/yuin/gopher-lua)
-* Interactively scripting against loaded maps
+* Inspecting maps, and modifying them (crop, resize, copy)
+* A `wxx export` subcommand, plus a set of separate single-purpose binaries
+
+**Planned — not built yet:**
+
+* Folding the separate binaries into `wxx` and retiring them
+* Turning `wxx` into a Lua script host using [GopherLua](https://github.com/yuin/gopher-lua)
+* Interactive scripting against a loaded map
+* Validating maps ([#20](https://github.com/maloquacious/wxx/issues/20))
 
 ## Worldographer versions
 
@@ -46,18 +54,33 @@ that classic `1.73`/`1.74`/`1.77` share, rather than an unknown one.
 
 **The schema selects the codec**; the application version is caller-chosen data.
 Two application versions sharing a schema use one codec and differ only in the
-string written to `@version`. Which releases are supported, and the full on-disk
-identity of each, is the [release registry](xmlio/registry.go) — adding a release
-is an entry there.
+string written to `@version` — which is why classic `1.73`, `1.74` and `1.77` all
+run through one codec. Which releases are supported, and the full on-disk identity
+of each, is the [release registry](xmlio/registry.go).
+
+Callers name an **application version**, never a schema and never a codec:
+`xmlio.MarshalXML(m, "2.06")`. The codecs themselves live under
+`xmlio/internal/`, where an external caller cannot reach them; each declares the
+application versions it accepts, and
+[`xmlio/internal/README.md`](xmlio/internal/README.md) explains why the packages
+are named `v0_77` and `v1_06`. Adding support for a further application version
+means an entry in that codec's `apps.go` **and** one in the release registry.
 
 These on-disk values are **not** semantic versions: `"2.06"` through a `semver`
 round-trip comes back as `"2.6"`, a different string and therefore a different
 file. They are modeled as `Dotted`, whose `Raw` is authoritative for output and
 whose components exist only to compare. `wxx` re-emits **verbatim** whatever it
-read; nothing is ever re-rendered from components. The 2025 numbers are also
-known to be buggy (`1.x` where `2.x` was intended), which is why they are treated
-as opaque identifiers; reconciling them to the true release version is tracked in
-#13.
+read; nothing is ever re-rendered from components. That — not any defect in the
+numbers — is why they are treated as opaque identifiers.
+
+An earlier claim that the 2025 numbers are *buggy* (`1.x` written where `2.x` was
+intended) is **retired**: it does not survive the two-axis model, and
+[#13](https://github.com/maloquacious/wxx/issues/13) was closed as not planned
+for that reason. The claim read `schema="1.06"` as a mis-numbered *version*,
+which is the single-slot conflation ADR 0002 was built on and ADR 0004
+superseded. Separate the axes and both numbers are correct: `@version="2.06"` is
+the application version and *is* `2.x`; `@schema="1.06"` is the schema version, a
+different axis whose numbering starts at 1 by design.
 
 See `docs/adr/0003-version-axes.md` for the two-axis model and
 `docs/adr/0004-version-struct-and-release-registry.md` for the identity and
@@ -97,40 +120,53 @@ func main() {
 }
 ```
 
-The public API is intended to support parsing, inspecting, modifying, validating, and writing Worldographer data without requiring the command-line tool.
+The public API supports parsing, inspecting, modifying and writing Worldographer
+data without the command-line tool. Validation is *(planned)*: `Map_t` has no
+`Validate()` today — see [#20](https://github.com/maloquacious/wxx/issues/20).
 
-The exact package path and API are still evolving.
+The exact package path and API are still evolving, and the API has already made
+breaking changes at `0.x`.
 
 ## Command-line tool
 
-The `wxx` command exposes the package’s functionality through a subcommand-based interface.
+Today, the `wxx` command has exactly **one** subcommand:
 
 ```console
-wxx info world.wxx
-wxx validate world.wxx
-wxx run script.lua world.wxx
-wxx shell world.wxx
+wxx export world.wxx
 ```
 
-The exact commands and syntax are still evolving.
-
-## Lua scripting
-
-`wxx` embeds Lua using GopherLua, allowing scripts to inspect and modify Worldographer data.
+Everything else is a **separate binary**, built individually:
 
 ```console
-wxx run generate.lua world.wxx
+go build -o dist/local/info ./cmd/info
+dist/local/info world.wxx
 ```
 
-Scripts can use the Lua API exposed by `wxx` to read map data, make changes, and write the resulting file.
+The full set is `bounds`, `copy`, `crop`, `import`, `info`, `merge`, `resize`,
+`schema`, `server` and `version`. `import` and `merge` are works in progress.
 
-An interactive shell can also be opened for a map:
+### Where this is going *(planned)*
 
-```console
-wxx shell world.wxx
-```
+Those separate binaries fold into `wxx` and are retired, and `wxx` becomes a Lua
+script host rather than a subcommand tree. That also drops the `ff/v4`
+dependency, which exists only to parse subcommands.
 
-This keeps `wxx` as the name of the overall project while treating scripting and the interactive shell as parts of a broader toolkit.
+So the current subcommand surface is transitional and not worth learning.
+
+## Lua scripting *(planned)*
+
+**Not implemented.** GopherLua is not a dependency, and there is no `script`,
+`run` or `shell` subcommand.
+
+The intent is for `wxx` to embed Lua using
+[GopherLua](https://github.com/yuin/gopher-lua) so that scripts can inspect and
+modify Worldographer data, with `wxx` acting as the script host. An interactive
+shell against a loaded map is part of the same idea. This keeps `wxx` as the name
+of the overall project while treating scripting and the shell as parts of a
+broader toolkit.
+
+The API a script would use to discover which application versions it may write is
+being designed in [#46](https://github.com/maloquacious/wxx/issues/46).
 
 ## Why `wxx`?
 
