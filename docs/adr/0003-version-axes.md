@@ -1,7 +1,9 @@
 # ADR 0003 — Application version and schema version are independent axes
 
-- **Status:** Proposed — gates issue #28. Records the canonical conceptual model;
-  the code/fixture work it authorizes lands separately.
+- **Status:** **Accepted (2026-07-15)** — gated issue #28, now closed. The model
+  it records landed in #32 (PR #33): `DataVersion` was replaced by `{App, Schema}`
+  as two independent axes. Ratified after the fact; it was left at *Proposed* while
+  the code it authorized landed.
 - **Date:** 2026-07-14
 - **Amended:** 2026-07-15 — the original draft asserted that *early* W2025 files
   omit `@schema` (implicit schema). Every W2025 sample we have contradicts this;

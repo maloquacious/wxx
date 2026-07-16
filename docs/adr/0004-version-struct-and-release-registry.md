@@ -1,7 +1,15 @@
 # ADR 0004 — Version identity: `{App, Schema}` plus a supported-release registry
 
-- **Status:** Proposed — gates issue #28. Records the model and the encoder
-  contract; the code change lands separately under #28.
+- **Status:** **Accepted (2026-07-15)** — gated issue #28, now closed. The model
+  and the encoder contract landed in #32 (PR #33). Ratified after the fact; it was
+  left at *Proposed* while the code it authorized landed.
+- **Amended:** 2026-07-15 — **Decision 3** is amended by
+  [#45](https://github.com/maloquacious/wxx/issues/45) /
+  [PR #49](https://github.com/maloquacious/wxx/pull/49): every byte the encoder
+  writes is encoder-owned, `Release_t` is deleted, and the registry maps one
+  application version to one codec and holds nothing else. Decision 3's original
+  text stands as the record of the decision taken. See *Amendment — 2026-07-15*
+  at the end of this document.
 - **Date:** 2026-07-15
 - **Supersedes:** ADR 0002 (`0002-version-identity.md`, #12). Builds on ADR 0003
   (`0003-version-axes.md`, the two-axis model).
