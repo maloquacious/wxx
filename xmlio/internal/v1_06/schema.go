@@ -214,6 +214,11 @@ type Label_t struct {
 	Tags            string  `xml:"tags,attr"`
 	BackgroundColor string  `xml:"backgroundColor,attr"`
 
+	// W2025 drop-shadow attributes. dropShadowColor can be the literal "null".
+	DropShadowColor  string  `xml:"dropShadowColor,attr"`
+	DropShadowRadius float64 `xml:"dropShadowRadius,attr"`
+	DropShadowSpread float64 `xml:"dropShadowSpread,attr"`
+
 	// elements
 	Location  Location_t `xml:"location"`
 	InnerText string     `xml:",chardata"`

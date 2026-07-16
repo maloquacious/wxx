@@ -65,6 +65,10 @@ func decodeFeatures(src Features, w *wxx.Map_t) error {
 				IsGMOnly:    mFeature.Label.IsGMOnly,
 				Tags:        mFeature.Label.Tags,
 				InnerText:   mFeature.Label.InnerText,
+
+				DropShadowColor:  mFeature.Label.DropShadowColor,
+				DropShadowRadius: mFeature.Label.DropShadowRadius,
+				DropShadowSpread: mFeature.Label.DropShadowSpread,
 			}
 			if f.Label.Color, err = decodeRgba(mFeature.Label.Color); err != nil {
 				return fmt.Errorf("feature.label.color: %w", err)
