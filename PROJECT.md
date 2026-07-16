@@ -4,8 +4,9 @@
 wxx/
 ├── schema/                   # RelaxNG schema (reference only, v1.73/classic; not enforced)
 ├── xmlio/                    # packages for decoding and encoding XML data
-│   ├── h2017v1/              # schema-specific decoders and encoders
-│   └── h2025v1/              # schema-specific decoders and encoders
+│   └── internal/            # codec packages; unimportable outside xmlio/
+│       ├── v0_77/           # schema-specific decoders and encoders
+│       └── v1_06/           # schema-specific decoders and encoders
 └── cmd/
     ├── copy/                 # tool to copy a Worldographer file
     │   └── main.go

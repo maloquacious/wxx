@@ -9,7 +9,6 @@ import (
 
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/xmlio"
-	"github.com/maloquacious/wxx/xmlio/h2025v1"
 )
 
 // spyWriter is the io.Writer an encode that must write NOTHING is handed. It
@@ -392,121 +391,24 @@ func TestEncodeTargetsEveryRegisteredRelease(t *testing.T) {
 	}
 }
 
-// TestEncodeTargetRelease covers WithTargetRelease, the typed form of the
-// option: it takes a release the registry resolved rather than a string the
-// registry must resolve.
+// TestEncodeTargetRelease is gone, and its coverage moved rather than lapsed.
 //
-// Its whole reason to exist is the last two sub-tests. Release_t is an ordinary
-// exported struct, so a caller CAN assemble one pairing classic's @version with
-// the W2025 schema -- a release that has never shipped. Since the schema picks
-// the codec, honoring it would emit a W2025 file stating version="1.77". The
-// option is only safe because nothing but the registry's own entries get through,
-// which is what makes an invalid target unrepresentable rather than merely
-// rejected (ADR 0004 Decision 5).
-func TestEncodeTargetRelease(t *testing.T) {
-	m, err := decodeFile(t, classicFixture)
-	if err != nil {
-		t.Fatalf("public decode %s: %v", classicFixture, err)
-	}
-
-	t.Run("a registry entry targets its release", func(t *testing.T) {
-		const want = "1.73"
-		r, err := xmlio.Lookup(want)
-		if err != nil {
-			t.Fatalf("Lookup(%q): %v", want, err)
-		}
-		// Guard against a vacuous pass: the entry must name a release the source
-		// does not already state, or an encoder ignoring the target would pass.
-		if m.MetaData.Version.App.Raw == want {
-			t.Fatalf("%s already states %q, so this case does not exercise re-targeting", classicFixture, want)
-		}
-
-		var buf bytes.Buffer
-		if err := xmlio.NewEncoder(xmlio.WithTargetRelease(r)).Encode(&buf, m); err != nil {
-			t.Fatalf("public encode targeting release %q: %v", want, err)
-		}
-		m2, err := xmlio.NewDecoder().Decode(&buf)
-		if err != nil {
-			t.Fatalf("re-decode: %v", err)
-		}
-		if got := m2.MetaData.Worldographer.Version; got != want {
-			t.Errorf("WithTargetRelease(Lookup(%q)) wrote map/@version=%q, want %q", want, got, want)
-		}
-	})
-
-	t.Run("a nil release is an error", func(t *testing.T) {
-		var spy spyWriter
-		err := xmlio.NewEncoder(xmlio.WithTargetRelease(nil)).Encode(&spy, m)
-		if err == nil {
-			t.Fatalf("WithTargetRelease(nil) returned nil after %d writes (%d bytes), want an error: nil names no release and must not fall back to the map's own", spy.calls, spy.n)
-		}
-		if !errors.Is(err, wxx.ErrUnsupportedMapVersion) {
-			t.Errorf("WithTargetRelease(nil) error = %v, want it to wrap %v", err, wxx.ErrUnsupportedMapVersion)
-		}
-		if spy.calls != 0 || spy.n != 0 {
-			t.Errorf("WithTargetRelease(nil) made %d writes totaling %d bytes, want 0 and 0", spy.calls, spy.n)
-		}
-	})
-
-	// forged is the invalid combination the registry makes unrepresentable:
-	// classic's application version on the W2025 schema. No Worldographer release
-	// has ever stated this pair. Honoring it would pick the W2025 codec (the
-	// schema picks the codec) and write a W2025 file claiming to be classic 1.77.
-	forged := &xmlio.Release_t{
-		Release:    "2025",
-		App:        wxx.Dotted{Raw: "1.77", Major: 1, Minor: 77},
-		Schema:     &wxx.Dotted{Raw: "1.06", Major: 1, Minor: 6},
-		XMLVersion: "1.1",
-		Decode:     h2025v1.Decode,
-		Encode:     h2025v1.Encode,
-	}
-
-	t.Run("an assembled release is rejected", func(t *testing.T) {
-		var spy spyWriter
-		err := xmlio.NewEncoder(xmlio.WithTargetRelease(forged)).Encode(&spy, m)
-		if err == nil {
-			t.Fatalf("WithTargetRelease(assembled %q/schema %q) returned nil after %d writes (%d bytes), want an error: no release states that pair",
-				forged.App.Raw, forged.Schema.Raw, spy.calls, spy.n)
-		}
-		if !errors.Is(err, wxx.ErrUnsupportedMapVersion) {
-			t.Errorf("error = %v, want it to wrap %v", err, wxx.ErrUnsupportedMapVersion)
-		}
-		if spy.calls != 0 || spy.n != 0 {
-			t.Errorf("made %d writes totaling %d bytes, want 0 and 0: an unregistered (App, Schema) pair must never reach a codec", spy.calls, spy.n)
-		}
-	})
-
-	t.Run("MarshalXML rejects an assembled release", func(t *testing.T) {
-		// MarshalXML is exported and takes a *Release_t, so it is the "any other
-		// path" by which an unregistered pair could reach a codec (ADR 0004
-		// Decision 5). It must close the same way Encode does.
-		data, err := xmlio.MarshalXML(m, forged)
-		if err == nil {
-			t.Fatalf("MarshalXML(assembled %q/schema %q) returned %d bytes and nil, want an error", forged.App.Raw, forged.Schema.Raw, len(data))
-		}
-		if len(data) != 0 {
-			t.Errorf("MarshalXML returned %d bytes alongside its error, want none", len(data))
-		}
-		if !errors.Is(err, wxx.ErrUnsupportedMapVersion) {
-			t.Errorf("MarshalXML error = %v, want it to wrap %v", err, wxx.ErrUnsupportedMapVersion)
-		}
-	})
-
-	t.Run("a copy of a registry entry is rejected", func(t *testing.T) {
-		// A copy is rejected on purpose. Its fields are the registry's today, but
-		// it is a value the caller owns and can mutate into an invalid pair after
-		// any check has passed; only the registry's own entry is a release.
-		r, err := xmlio.Lookup("1.73")
-		if err != nil {
-			t.Fatalf(`Lookup("1.73"): %v`, err)
-		}
-		clone := *r
-		var spy spyWriter
-		if err := xmlio.NewEncoder(xmlio.WithTargetRelease(&clone)).Encode(&spy, m); err == nil {
-			t.Fatalf("WithTargetRelease(&copy) returned nil after %d writes (%d bytes), want an error", spy.calls, spy.n)
-		}
-		if spy.calls != 0 || spy.n != 0 {
-			t.Errorf("made %d writes totaling %d bytes, want 0 and 0", spy.calls, spy.n)
-		}
-	})
-}
+// It covered WithTargetRelease, which no longer exists: once Release_t stopped
+// carrying a codec, WithTargetRelease(r) was exactly WithTargetVersion(r.App.Raw)
+// and nothing more (issue #41). Each of its cases still has a home:
+//
+//   - "a registry entry targets its release" was Lookup("1.73") then targeting
+//     it. TestEncodeTargetsEveryRegisteredRelease already targets 1.73 from the
+//     1.77 fixture by version, and asserts the same thing about the same bytes.
+//   - "a nil release is an error" was the option's form of "the caller named
+//     nothing". WithTargetVersion("") is the surviving way to name nothing, and
+//     TestEncodeEmptyTargetVersionIsError holds it to the same contract:
+//     an error, and not one byte written.
+//   - "an assembled release is rejected", "MarshalXML rejects an assembled
+//     release" and "a copy of a registry entry is rejected" were the three faces
+//     of one guarantee -- an unregistered (App, Schema) pair must never reach a
+//     codec -- which Resolve enforced at run time by pointer identity. No public
+//     entry point takes a *Release_t any more, so an assembled or copied one has
+//     nowhere to go: the guarantee is now held by the type system rather than by
+//     a check, and TestChimeraIsUnreachableThroughThePublicAPI in
+//     chimera_test.go states it, including the compile-level half.

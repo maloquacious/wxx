@@ -11,6 +11,7 @@ func (e Error) Error() string {
 }
 
 const (
+	ErrAmbiguousAppCodec           = Error("ambiguous application version codec")
 	ErrAmbiguousSchemaCodec        = Error("ambiguous schema codec")
 	ErrDuplicateAppVersion         = Error("duplicate application version")
 	ErrFSError                     = Error("file-system")
@@ -46,6 +47,7 @@ const (
 	ErrNotImplemented              = Error("not implemented")
 	ErrPipelineHalted              = Error("pipeline halted")
 	ErrRawReadFailed               = Error("raw read failed")
+	ErrUnacceptedAppVersion        = Error("unaccepted application version")
 	ErrUnknownVersion              = Error("unknown version")
 	ErrUnknownXMLHeader            = Error("unknown xml header")
 	ErrUnmodeledStubLoss           = Error("target cannot express an unmodeled stub")

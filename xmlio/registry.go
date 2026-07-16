@@ -7,32 +7,21 @@ package xmlio
 import (
 	"errors"
 	"fmt"
-	"reflect"
 
 	"github.com/maloquacious/wxx"
-	"github.com/maloquacious/wxx/xmlio/h2017v1"
-	"github.com/maloquacious/wxx/xmlio/h2025v1"
+	"github.com/maloquacious/wxx/xmlio/internal/codec"
 )
 
-// DecodeFunc parses one schema's XML into the Map_t superset.
-type DecodeFunc func(input []byte) (*wxx.Map_t, error)
-
-// EncodeFunc emits a Map_t as one schema's XML.
-type EncodeFunc func(m *wxx.Map_t) ([]byte, error)
-
-// Codec_t is the parse/emit pair a schema selects (ADR 0004 Decision 4).
+// Release_t describes one supported release's full on-disk identity (ADR 0004
+// Decision 3).
 //
-// It is deliberately keyed off the schema and not off the release: two
-// application versions sharing one schema share this pair and differ only in the
-// string written to map/@version, which is caller-chosen data the codec cannot
-// infer.
-type Codec_t struct {
-	Decode DecodeFunc
-	Encode EncodeFunc
-}
-
-// Release_t binds one supported release's full on-disk identity to its codecs
-// (ADR 0004 Decision 3).
+// It is a READ-ONLY DESCRIPTOR, and that is the whole of it. It answers "what is
+// supported" and "what does 2.06 write"; it does not hand out an encoder. The
+// exported Decode/Encode fields and the Codec() method it used to carry made
+// every Lookup and SupportedReleases result a way for a caller to pick a codec,
+// which is the reach issue #41 requirement 5 denies -- the dispatcher picks the
+// encoder, and a caller may name only an application version. The codec a
+// release's schema selects is held by the registry and never handed out.
 type Release_t struct {
 	// Release is map/@release verbatim ("2025"); "" for classic, which states no
 	// such attribute. It is carried because writing a file requires it, not
@@ -59,11 +48,6 @@ type Release_t struct {
 	// would only work for as long as there are exactly two schemas. NewRegistry
 	// rejects an entry naming an XML version no header exists for.
 	XMLVersion string
-
-	// Decode and Encode are the codec pair the entry's Schema selects. Entries
-	// sharing a schema must name the same pair; NewRegistry enforces it.
-	Decode DecodeFunc
-	Encode EncodeFunc
 }
 
 // XMLHeader returns the XML declaration to write ahead of this release's XML.
@@ -80,11 +64,6 @@ func (r *Release_t) XMLHeader() ([]byte, error) {
 	return []byte(h), nil
 }
 
-// Codec returns the parse/emit pair this entry's schema selects.
-func (r *Release_t) Codec() Codec_t {
-	return Codec_t{Decode: r.Decode, Encode: r.Encode}
-}
-
 // identify returns a shallow copy of m stating this release's on-disk identity:
 // the map/@release, map/@version and map/@schema strings the codecs write into
 // the <map> element.
@@ -96,6 +75,19 @@ func (r *Release_t) Codec() Codec_t {
 // handing back a file claiming a release the caller did not ask for. The target
 // would be a codec hint rather than a target, and the licensing guarantee in ADR
 // 0004 Decision 5 would be worth nothing.
+//
+// It is also what makes the issue #41 chimera unreachable, and it is the ONLY
+// thing that does. The codec's application-version gate does not stop it: hand
+// the W2025 codec a classic map and the accepted version "2.06" and the gate
+// passes, because it checks the argument rather than the map, and the codec then
+// emits W2025 content under the classic identity the map still states -- 18,006
+// bytes declaring release="" version="1.77" schema="", which re-decodes silently
+// as classic. Calling identify first is what makes the bytes state the release
+// whose schema selected the codec that wrote them, so the identity in a file and
+// the format of its content can never disagree. Every public path to a codec must
+// therefore pass through here; TestChimeraIsUnreachableThroughThePublicAPI
+// builds the chimera through the internal codec to prove the hazard is real and
+// then holds every public path to this guarantee.
 //
 // Encoding a map as the release it already states -- the default target -- writes
 // exactly the values it already carried, so no byte moves.
@@ -117,14 +109,19 @@ func (r *Release_t) identify(m *wxx.Map_t) *wxx.Map_t {
 
 // Registry_t is the single source of truth for supported releases. It is keyed
 // by verbatim application version (see Lookup) and additionally indexes
-// schema -> codec (see CodecForSchema).
+// schema -> codec (see codecForSchema).
 //
 // A Registry_t is read-only once built; NewRegistry validates every invariant up
 // front so that a lookup can never resolve ambiguously at encode time.
+//
+// The schema -> codec index is UNEXPORTED and has no public accessor. The
+// registry holds each release's codec because it is the dispatcher and needs one
+// to write a file; it does not hand one out, because a caller who can ask for a
+// codec by schema can pair any codec with any identity (issue #41 requirement 5).
 type Registry_t struct {
 	entries  []*Release_t
-	byApp    map[string]*Release_t // key: App.Raw, verbatim
-	bySchema map[string]Codec_t    // key: schemaKey(Schema)
+	byApp    map[string]*Release_t    // key: App.Raw, verbatim
+	bySchema map[string]codec.Codec_t // key: schemaKey(Schema)
 }
 
 // NewRegistry validates entries and returns a registry over them.
@@ -132,19 +129,27 @@ type Registry_t struct {
 // Validation is exhaustive and up front because the alternative is an ambiguity
 // that surfaces as a silently wrong codec at encode time. An entry must:
 //   - state an application version;
-//   - name a non-nil codec pair;
 //   - name an XML version some header exists for, since every file written for
 //     the release opens with that declaration;
 //   - state a schema if and only if it states a release -- classic files carry
 //     neither, W2025 files carry both (ADR 0003 Decision 2);
+//   - name a schema that selects a codec (ADR 0004 Decision 4), since a release
+//     nothing can parse or emit is not one this package supports;
 //   - not repeat another entry's verbatim application version, which is the
-//     lookup key and must therefore identify exactly one release;
-//   - agree with every other entry on the same schema about which codec that
-//     schema selects (ADR 0004 Decision 4).
+//     lookup key and must therefore identify exactly one release.
+//
+// An entry no longer NAMES a codec -- it names a schema, and the schema selects
+// the codec (ADR 0004 Decision 4). Two consequences are intended. Entries sharing
+// a schema can no longer disagree about which codec it selects, because neither
+// one gets a say: what used to be checked here is now unrepresentable, and the
+// ambiguity that remains -- one schema claiming two codecs in the codec table
+// itself -- is checked by codec.VerifyTable at load. And an assembled Release_t
+// cannot smuggle a codec in past this constructor, because there is nowhere on it
+// to put one.
 func NewRegistry(entries ...*Release_t) (*Registry_t, error) {
 	r := &Registry_t{
 		byApp:    make(map[string]*Release_t, len(entries)),
-		bySchema: make(map[string]Codec_t, len(entries)),
+		bySchema: make(map[string]codec.Codec_t, len(entries)),
 	}
 	for i, e := range entries {
 		if e == nil {
@@ -152,9 +157,6 @@ func NewRegistry(entries ...*Release_t) (*Registry_t, error) {
 		}
 		if e.App.Raw == "" {
 			return nil, errors.Join(wxx.ErrInvalidReleaseEntry, wxx.ErrMissingVersion, fmt.Errorf("entry %d: release %q", i, e.Release))
-		}
-		if e.Decode == nil || e.Encode == nil {
-			return nil, errors.Join(wxx.ErrInvalidReleaseEntry, wxx.ErrMissingCodec, fmt.Errorf("entry %d: version %q", i, e.App.Raw))
 		}
 		if _, ok := utf16XMLHeader(e.XMLVersion); !ok {
 			// Caught here rather than at encode time: an entry that cannot say
@@ -170,19 +172,18 @@ func NewRegistry(entries ...*Release_t) (*Registry_t, error) {
 			// legacy schema, and ParseDotted rejects "" anyway.
 			return nil, errors.Join(wxx.ErrInvalidReleaseEntry, wxx.ErrMissingVersion, fmt.Errorf("entry %d: version %q: empty schema", i, e.App.Raw))
 		}
+		// The schema selects the codec, so an entry naming a schema nothing can
+		// parse or emit is caught here rather than at encode time.
+		key := schemaKey(e.Schema)
+		c, err := codec.ForSchema(key)
+		if err != nil {
+			return nil, errors.Join(wxx.ErrInvalidReleaseEntry, fmt.Errorf("entry %d: version %q", i, e.App.Raw), err)
+		}
 		if prev, ok := r.byApp[e.App.Raw]; ok {
 			return nil, errors.Join(wxx.ErrDuplicateAppVersion, fmt.Errorf("version %q: claimed by release %q and release %q", e.App.Raw, prev.Release, e.Release))
 		}
 		r.byApp[e.App.Raw] = e
-
-		key := schemaKey(e.Schema)
-		if prev, ok := r.bySchema[key]; ok {
-			if !sameCodec(prev, e.Codec()) {
-				return nil, errors.Join(wxx.ErrAmbiguousSchemaCodec, fmt.Errorf("schema %s: version %q selects a different codec than an earlier entry on the same schema", schemaLabel(e.Schema), e.App.Raw))
-			}
-		} else {
-			r.bySchema[key] = e.Codec()
-		}
+		r.bySchema[key] = c
 		r.entries = append(r.entries, e)
 	}
 	return r, nil
@@ -206,46 +207,21 @@ func (r *Registry_t) Lookup(app string) (*Release_t, error) {
 	return nil, errors.Join(wxx.ErrUnsupportedMapVersion, fmt.Errorf("version %q: not a supported release", app))
 }
 
-// Resolve returns the registry's own entry for e, and is how a *Release_t from a
-// caller is admitted as a target.
-//
-// It rejects anything this registry did not produce, which is what keeps an
-// invalid target unrepresentable rather than merely rejected (ADR 0004 Decision
-// 5). Release_t is an ordinary exported struct, so a caller can assemble one
-// pairing @version="1.77" with the W2025 schema -- a release that has never
-// existed. Resolving by App.Raw and then requiring the identical entry back is
-// what stops it: the fields cannot disagree with the registry, because the only
-// entries that get through are the registry's.
-//
-// Pointer identity is the test, not field equality. A copy of an entry is
-// rejected on purpose: a value the caller owns is a value the caller can mutate
-// into an invalid pair after this check has passed, and Lookup and Releases both
-// document their entries as shared and not to be mutated.
-func (r *Registry_t) Resolve(e *Release_t) (*Release_t, error) {
-	if e == nil {
-		return nil, errors.Join(wxx.ErrUnsupportedMapVersion, fmt.Errorf("no target release"))
-	}
-	own, err := r.Lookup(e.App.Raw)
-	if err != nil {
-		return nil, err
-	}
-	if own != e {
-		return nil, errors.Join(wxx.ErrUnsupportedMapVersion, fmt.Errorf("version %q: not this registry's release entry: target a release with Lookup or SupportedReleases rather than assembling one", e.App.Raw))
-	}
-	return own, nil
-}
-
-// CodecForSchema resolves the parse/emit pair a schema selects (ADR 0004
+// codecForSchema resolves the parse/emit pair a schema selects (ADR 0004
 // Decision 4). A nil schema asks for the implicit legacy (classic) schema.
 //
-// The schema answers "which code path parses/emits this"; the application
-// version does not, and is caller-chosen data. Two application versions sharing
-// a schema therefore resolve to one Codec_t here.
-func (r *Registry_t) CodecForSchema(schema *wxx.Dotted) (Codec_t, error) {
+// It is unexported and stays that way. A public selector taking a schema and
+// returning a codec is issue #41's demonstrated hole: it lets a caller pair the
+// W2025 codec with a classic map and emit a file that is neither format. The
+// registry needs the index because it is the dispatcher; nobody else does. Tests
+// that legitimately choose an encoder import xmlio/internal/codec instead, which
+// is requirement 5's exception and is not reachable from outside the xmlio
+// subtree.
+func (r *Registry_t) codecForSchema(schema *wxx.Dotted) (codec.Codec_t, error) {
 	if c, ok := r.bySchema[schemaKey(schema)]; ok {
 		return c, nil
 	}
-	return Codec_t{}, errors.Join(wxx.ErrUnsupportedMapSchema, fmt.Errorf("schema %s: not a supported schema", schemaLabel(schema)))
+	return codec.Codec_t{}, errors.Join(wxx.ErrUnsupportedMapSchema, fmt.Errorf("schema %s: not a supported schema", schemaLabel(schema)))
 }
 
 // Releases returns the registry's entries in declaration order. The slice is a
@@ -274,16 +250,6 @@ func schemaLabel(d *wxx.Dotted) string {
 		return "implicit (classic)"
 	}
 	return fmt.Sprintf("%q", d.Raw)
-}
-
-// sameCodec reports whether two codec pairs name the same functions.
-//
-// Func values are not comparable with ==, so this compares code pointers. Every
-// codec in the registry is a package-level function rather than a closure, so a
-// code pointer identifies it uniquely.
-func sameCodec(a, b Codec_t) bool {
-	return reflect.ValueOf(a.Decode).Pointer() == reflect.ValueOf(b.Decode).Pointer() &&
-		reflect.ValueOf(a.Encode).Pointer() == reflect.ValueOf(b.Encode).Pointer()
 }
 
 // supportedReleases is the registry of releases this package supports. It is
@@ -334,13 +300,11 @@ func supportedReleaseEntries() ([]*Release_t, error) {
 			App:        a,
 			Schema:     nil,
 			XMLVersion: "1.0",
-			Decode:     h2017v1.Decode,
-			Encode:     h2017v1.Encode,
 		})
 	}
 
-	// W2025 baseline. The h2025v1 decoder is a work in progress; the entry binds
-	// the codec that exists today.
+	// W2025 baseline. The entry states the schema; the schema selects the codec,
+	// which for 1.06 is v1_06, whose decoder is a work in progress.
 	app206, err := wxx.ParseDotted("2.06")
 	if err != nil {
 		return nil, errors.Join(wxx.ErrInvalidReleaseEntry, fmt.Errorf("w2025 version %q", "2.06"), err)
@@ -354,8 +318,6 @@ func supportedReleaseEntries() ([]*Release_t, error) {
 		App:        app206,
 		Schema:     &schema106,
 		XMLVersion: "1.1",
-		Decode:     h2025v1.Decode,
-		Encode:     h2025v1.Encode,
 	})
 
 	return entries, nil
@@ -367,16 +329,10 @@ func Lookup(app string) (*Release_t, error) {
 	return supportedReleases.Lookup(app)
 }
 
-// Resolve admits a caller's *Release_t as a supported release. See
-// Registry_t.Resolve.
-func Resolve(e *Release_t) (*Release_t, error) {
-	return supportedReleases.Resolve(e)
-}
-
-// CodecForSchema resolves the codec a schema selects. See
-// Registry_t.CodecForSchema.
-func CodecForSchema(schema *wxx.Dotted) (Codec_t, error) {
-	return supportedReleases.CodecForSchema(schema)
+// codecForSchema resolves the codec a schema selects. See
+// Registry_t.codecForSchema.
+func codecForSchema(schema *wxx.Dotted) (codec.Codec_t, error) {
+	return supportedReleases.codecForSchema(schema)
 }
 
 // SupportedReleases returns the supported releases in declaration order. See

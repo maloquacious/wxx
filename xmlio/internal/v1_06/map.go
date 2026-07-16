@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Michael D Henderson. All rights reserved.
 
-package h2025v1
+package v1_06
 
 import (
 	"bytes"
@@ -41,7 +41,7 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	// unmarshal into a structure that's built just for the conversion
 	err := xml.Unmarshal(input, &m)
 	if err != nil {
-		log.Printf("h2025v1: %v\n", err)
+		log.Printf("v1_06: %v\n", err)
 		return nil, err
 	}
 	if m.Release == "" {
@@ -166,9 +166,23 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 
 // Encode the Map_t into a slice of UTF-8 bytes that matches this version's XML schema.
 //
+// app is the application version to write the map as, verbatim as map/@version
+// states it ("2.06"). It is verified against this codec's declared set before
+// anything is emitted (see acceptedApps): this codec writes one schema, so an
+// application version outside that set names a release that never existed, and
+// writing it would produce a file claiming a build that did not write this format
+// (issue #41 requirement 3).
+//
+// The check comes first, before any encode error can, so that a caller asking for
+// an impossible release is told that rather than told about the contents of a map
+// it was never going to get.
+//
 // Note: the style of this code is intentionally verbose to make it easier to find changes between
 // versions of the Worldographer files.
-func Encode(w *wxx.Map_t) ([]byte, error) {
+func Encode(w *wxx.Map_t, app string) ([]byte, error) {
+	if err := acceptedApps.VerifyApp(app); err != nil {
+		return nil, err
+	}
 	wb := &bytes.Buffer{}
 	if err := encodeMap(w, wb); err != nil {
 		return nil, err

@@ -67,7 +67,7 @@ NOT covered:
 
 Anyone using this as a checklist for W2025 codec coverage must layer those known
 additions on top. For the W2025 shape of the format, see the `wog` V2025 structs noted
-in `docs/WORLDOGRAPHER_INVENTORY.md` and the W2025 decoder work in `xmlio/h2025v1/`.
+in `docs/WORLDOGRAPHER_INVENTORY.md` and the W2025 decoder work in `xmlio/internal/v1_06/`.
 
 ## Not build-time enforced
 

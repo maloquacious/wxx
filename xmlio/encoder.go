@@ -39,8 +39,6 @@ const (
 	// targetByVersion: the caller named a verbatim application version, which the
 	// registry must resolve to a release.
 	targetByVersion
-	// targetByRelease: the caller named a release the registry already resolved.
-	targetByRelease
 )
 
 type encoderOpts struct {
@@ -48,8 +46,7 @@ type encoderOpts struct {
 	utf16BeOutput    bool
 	xmlHeader        bool
 	targetKind       targetKind
-	targetVersion    string     // verbatim map/@version, when targetKind is targetByVersion
-	targetRelease    *Release_t // registry entry, when targetKind is targetByRelease
+	targetVersion    string // verbatim map/@version, when targetKind is targetByVersion
 	diagnostics      *EncoderDiagnostics
 }
 
@@ -73,7 +70,7 @@ type EncoderDiagnostics struct {
 	// opt-in via WithEncoderDiagnostics. That is a real limit worth stating: a
 	// caller who never asks does not hear about a modeled downgrade loss. It is
 	// the enumerable, documented half of the loss -- the half a caller can
-	// reconstruct from Map_t and h2017v1/COVERAGE.md after the fact -- and the
+	// reconstruct from Map_t and internal/v0_77/COVERAGE.md after the fact -- and the
 	// half that cannot be reconstructed is the half that errors.
 	Dropped []DroppedFeature_t
 }
@@ -124,6 +121,12 @@ func WithXMLHeader(enabled bool) EncoderOption {
 // verbatim map/@version ("1.73", "1.77", "2.06"). Without it the encoder targets
 // the release the map itself states in m.MetaData.Version.App.
 //
+// It is the ONE way to name a target, which is issue #41 requirement 5: a caller
+// may request an application version and never an encoder. WithTargetRelease(r)
+// used to be a second way; once Release_t stopped carrying a codec it was exactly
+// WithTargetVersion(r.App.Raw), so it was redundancy rather than a typed
+// alternative, and two ways to say one thing is two things to keep honest.
+//
 // The caller names a release, never a tuple: the registry resolves map/@release
 // and map/@schema from app, so a combination no release states -- @version="1.77"
 // on a modern schema, say -- cannot be asked for at all (ADR 0004 Decision 5).
@@ -140,45 +143,22 @@ func WithTargetVersion(app string) EncoderOption {
 	return func(o *encoderOpts) {
 		o.targetKind = targetByVersion
 		o.targetVersion = app
-		o.targetRelease = nil
-	}
-}
-
-// WithTargetRelease targets a release the registry has already resolved, as
-// returned by Lookup or SupportedReleases. It is the typed form of
-// WithTargetVersion, for a caller that has a *Release_t in hand and would
-// otherwise round-trip it back through its own App.Raw.
-//
-// Only the registry's own entries are accepted. A Release_t is an ordinary
-// exported struct, so a caller CAN assemble one naming @version="1.77" with the
-// W2025 schema; what it cannot do is get that past Encode, which rejects any
-// entry the registry did not produce. Without that check this option would be
-// the "any other path" by which an unregistered (App, Schema) pair reaches the
-// encoder -- and the codec follows the schema, so the file would be a W2025 one
-// claiming to be classic 1.77.
-//
-// A nil release is an error for the same reason "" is: it names nothing, and
-// defaulting it would write a release the caller never asked for.
-func WithTargetRelease(r *Release_t) EncoderOption {
-	return func(o *encoderOpts) {
-		o.targetKind = targetByRelease
-		o.targetRelease = r
-		o.targetVersion = ""
 	}
 }
 
 // resolveTarget resolves the release this encode targets.
 //
-// Every path ends at the registry: the caller's version string, the caller's
-// release entry, and the map's own version are three ways of naming a release
-// and none of them is a way of describing one. An unregistered target stops the
+// Every path ends at the registry: the caller's version string and the map's own
+// version are two ways of NAMING a release and neither is a way of DESCRIBING
+// one. That is why Resolve is gone along with WithTargetRelease -- its
+// pointer-identity check existed only to stop an assembled Release_t from
+// reaching a codec, and a Release_t that carries no codec and cannot be passed to
+// the encoder has nothing left to smuggle. An unregistered target stops the
 // encode here, before a byte is written.
 func (o *encoderOpts) resolveTarget(m *wxx.Map_t) (*Release_t, error) {
 	switch o.targetKind {
 	case targetByVersion:
 		return Lookup(o.targetVersion)
-	case targetByRelease:
-		return Resolve(o.targetRelease)
 	default:
 		return Lookup(m.MetaData.Version.App.Raw)
 	}
@@ -209,8 +189,10 @@ func (e *Encoder) Encode(w io.Writer, m *wxx.Map_t) error {
 		e.opts.diagnostics.Dropped = dropped
 	}
 
-	// marshal the Map_t to UTF‑8 XML
-	data, err := MarshalXML(m, target)
+	// marshal the Map_t to UTF‑8 XML. The target is named by its verbatim
+	// application version, the only way to name one: MarshalXML resolves it back
+	// to this same entry.
+	data, err := MarshalXML(m, target.App.Raw)
 	if err != nil {
 		return err
 	}
@@ -272,19 +254,30 @@ func (e *Encoder) Encode(w io.Writer, m *wxx.Map_t) error {
 
 // Parse/serialize the XML form of Map_t without transport concerns.
 
-// MarshalXML converts a Map_t to the XML of a target release, without transport
-// concerns (no header, no UTF-16, no gzip). Resolve target with Lookup or
-// SupportedReleases; an entry the registry did not produce is rejected, so an
-// unregistered (App, Schema) pair cannot reach a codec down this path either.
+// MarshalXML converts a Map_t to the XML of the supported release that states
+// app as its verbatim map/@version ("1.73", "1.77", "2.06"), without transport
+// concerns (no header, no UTF-16, no gzip).
 //
-// The target's SCHEMA picks the codec (ADR 0004 Decision 4): the schema is the
-// format's identity, it is on disk, and it does not change when the product is
-// relabelled. The application version does not pick the codec -- it is
+// app is an APPLICATION VERSION and nothing else. It is never a schema version
+// and never a *Release_t, and no codec comes back: those were the three ways this
+// function used to let a caller reach past the dispatcher and choose an encoder,
+// which is what issue #41 requirement 5 denies. The registry resolves app to a
+// release exactly as Encode does, so the two public encode paths cannot disagree
+// about what a target is. "" is not a sentinel here either -- it names no release
+// and is the same error as any other unregistered version.
+//
+// The resolved release's SCHEMA picks the codec (ADR 0004 Decision 4): the schema
+// is the format's identity, it is on disk, and it does not change when the
+// product is relabelled. The application version does not pick the codec -- it is
 // caller-chosen data, and two application versions sharing a schema marshal
 // through one codec and differ only in the string written to map/@version.
 //
-// Writing that string is what makes the target a target rather than a hint: the
-// bytes describe the release the caller asked for. See Release_t.identify.
+// Because app resolves to the release whose schema then picks the codec, the
+// identity in the bytes and the format of the content always come from one entry.
+// That is what makes #41's chimera -- W2025 content declaring release=""
+// version="1.77" schema="" -- unaskable here: naming the identity IS naming the
+// codec. Writing that identity is Release_t.identify's job, and it is what makes
+// the target a target rather than a codec hint.
 //
 // A downgrade that would drop an unmodeled stub is refused here too, and for the
 // same reason it is refused in Encode: this is a public entry point, so leaving
@@ -294,17 +287,23 @@ func (e *Encoder) Encode(w io.Writer, m *wxx.Map_t) error {
 // the inventory calls Encode.
 //
 // Returns an error for an unsupported target or if the conversion fails.
-func MarshalXML(m *wxx.Map_t, target *Release_t) ([]byte, error) {
-	target, err := Resolve(target)
+func MarshalXML(m *wxx.Map_t, app string) ([]byte, error) {
+	target, err := Lookup(app)
 	if err != nil {
 		return nil, err
 	}
 	if _, err := downgradeLoss(m, target); err != nil {
 		return nil, err
 	}
-	codec, err := CodecForSchema(target.Schema)
+	c, err := codecForSchema(target.Schema)
 	if err != nil {
 		return nil, err
 	}
-	return codec.Encode(target.identify(m))
+	// The codec is handed the application version explicitly and verifies it
+	// against the set it declares. identify has already written the same string
+	// onto the map's identity, so the two agree by construction here; passing it
+	// is what lets the codec state requirement 3 rather than trust its input.
+	// The string is target.App.Raw verbatim -- never re-rendered from a Dotted's
+	// components, which would send "2.06" to disk as "2.6" (ADR 0004 Decision 1).
+	return c.Encode(target.identify(m), target.App.Raw)
 }

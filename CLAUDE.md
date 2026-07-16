@@ -55,8 +55,10 @@ wxx/
 │   ├── decoder.go      # Generic decoder with functional options
 │   ├── encoder.go      # Generic encoder with functional options
 │   ├── xml_header.go   # XML header utilities
-│   ├── h2017v1/        # H2017 schema: decode.go, encode.go, schema.go
-│   └── h2025v1/        # W2025 schema: decode.go (incomplete)
+│   └── internal/       # codec packages; unimportable outside xmlio/
+│       ├── README.md   # the codec-version convention (what v0_77/v1_06 mean)
+│       ├── v0_77/      # classic schema: decode.go, encode.go, schema.go
+│       └── v1_06/      # W2025 schema: decode.go (incomplete)
 ├── hexg/               # Hexagonal grid coordinate system library
 │   ├── cube.go         # Cube coordinates (primary system)
 │   ├── offset.go       # Offset coordinates
@@ -123,10 +125,17 @@ Errors are composed using `errors.Join()` to combine context with root causes.
 ### Version Dispatching
 
 The decoder reads the `<map>` element's `release` attribute to dispatch to the correct schema-specific decoder; `version` and `schema` do not gate dispatch:
-- empty `release` + a `1.x` `version` (`1.73`, `1.74`, `1.77`) -> `h2017v1`
-- `release="2025"` -> `h2025v1`
+- empty `release` + a `1.x` `version` (`1.73`, `1.74`, `1.77`) -> `v0_77`
+- `release="2025"` -> `v1_06`
 
 W2025 support is baselined on 2.06 (`release="2025" version="2.06" schema="1.06"`), the first post-beta build; earlier 2025 builds are out of scope.
+
+The **encoder** dispatches the other way round, and the rule is a contract rather than a convenience (issue #41):
+
+- A caller names a target **only** by its verbatim application version (`map/@version`): `xmlio.MarshalXML(m, "2.06")` or `xmlio.NewEncoder(xmlio.WithTargetVersion("2.06"))`. `""` is not a sentinel — it names no release and errors.
+- The registry resolves that string to exactly one `Release_t`, which supplies the identity written into the file; that release's **schema** then selects the codec (`xmlio/internal/codec.ForSchema`).
+- **No public symbol accepts a schema version or returns a codec.** `Release_t` is a read-only descriptor (`Release`, `App`, `Schema`, `XMLVersion`); the codec packages and the schema→codec selector live under `xmlio/internal/`, unreachable from `cmd/*` and from outside the module.
+- Because one release supplies both the identity and the codec, a file's declared identity and its content format cannot disagree. `Release_t.identify` is what writes that identity, and it is load-bearing: see `xmlio/chimera_test.go`.
 
 ## Coding Conventions
 
@@ -153,7 +162,7 @@ Read these files for deeper context:
 
 ## Important Notes
 
-- The W2025 decoder (`xmlio/h2025v1/`) is incomplete and a work in progress
+- The W2025 decoder (`xmlio/internal/v1_06/`) is incomplete and a work in progress
 - The `cmd/import` and `cmd/merge` tools are also WIP
 - An Sqlite3 data store is planned for the future (after xmlio codecs are complete)
 - `Map_t` is a superset of all Worldographer schema versions; decoders target it, encoders source from it

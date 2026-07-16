@@ -8,7 +8,8 @@ import (
 
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/xmlio"
-	"github.com/maloquacious/wxx/xmlio/h2017v1"
+	"github.com/maloquacious/wxx/xmlio/internal/codec"
+	"github.com/maloquacious/wxx/xmlio/internal/v0_77"
 )
 
 // classicSamples are H2017 ("classic") .wxx fixtures with their true on-disk
@@ -107,7 +108,7 @@ func TestClassicVersionFidelity(t *testing.T) {
 }
 
 // TestClassicEncodeDispatch asserts that the public encoder routes every classic
-// fixture to the h2017v1 encoder -- the guarantee this test has always made,
+// fixture to the v0_77 encoder -- the guarantee this test has always made,
 // restated on the model that now carries it.
 //
 // What routes has changed: the encoder used to switch on a DataVersion.Major of
@@ -131,12 +132,19 @@ func TestClassicEncodeDispatch(t *testing.T) {
 			// The schema this fixture states selects the classic codec. This is
 			// the dispatch decision itself, asserted directly rather than inferred
 			// from the output.
-			codec, err := xmlio.CodecForSchema(m.MetaData.Version.Schema)
+			//
+			// The selector is reached through xmlio/internal/codec rather than
+			// through xmlio: a public schema -> codec selector is what issue #41
+			// requirement 5 removes. An external test package physically inside
+			// xmlio/ may import it, which is requirement 5's exception. A classic
+			// file states no @schema, which is the implicit legacy schema and the
+			// "" key here.
+			c, err := codec.ForSchema(schemaKeyForTest(m.MetaData.Version.Schema))
 			if err != nil {
-				t.Fatalf("CodecForSchema(%v): %v", m.MetaData.Version, err)
+				t.Fatalf("codec.ForSchema(%v): %v", m.MetaData.Version, err)
 			}
-			if funcPtr(codec.Encode) != funcPtr(h2017v1.Encode) {
-				t.Errorf("schema of %s does not select the h2017v1 encoder", tc.path)
+			if funcPtr(c.Encode) != funcPtr(v0_77.Encode) {
+				t.Errorf("schema of %s does not select the v0_77 encoder", tc.path)
 			}
 
 			var buf bytes.Buffer

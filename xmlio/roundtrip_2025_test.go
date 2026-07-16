@@ -12,7 +12,7 @@ import (
 
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/xmlio"
-	"github.com/maloquacious/wxx/xmlio/h2025v1"
+	"github.com/maloquacious/wxx/xmlio/internal/v1_06"
 )
 
 // The W2025 samples we have on disk, with their true on-disk map metadata
@@ -52,9 +52,9 @@ func TestW2025Decode_BothSamples(t *testing.T) {
 	}
 }
 
-// TestW2025RoundTrip exercises the codec core on its own, calling h2025v1
+// TestW2025RoundTrip exercises the codec core on its own, calling v1_06
 // directly rather than through the public dispatch: decode a real file,
-// h2025v1.Encode it back to XML, h2025v1.Decode that XML, and assert the two
+// v1_06.Encode it back to XML, v1_06.Decode that XML, and assert the two
 // Map_t values are semantically equal. Any fidelity loss in encode/decode
 // surfaces as a per-group mismatch, unmixed with transport concerns.
 // TestW2025PublicRoundTrip covers the same ground through MarshalXML and the
@@ -65,14 +65,14 @@ func TestW2025RoundTrip(t *testing.T) {
 		t.Fatalf("initial decode: %v", err)
 	}
 
-	xmlBytes, err := h2025v1.Encode(m1)
+	xmlBytes, err := v1_06.Encode(m1, m1.Version)
 	if err != nil {
-		t.Fatalf("h2025v1.Encode: %v", err)
+		t.Fatalf("v1_06.Encode: %v", err)
 	}
 
-	m2, err := h2025v1.Decode(xmlBytes)
+	m2, err := v1_06.Decode(xmlBytes)
 	if err != nil {
-		t.Fatalf("h2025v1.Decode(re-encoded): %v\n---encoded xml (first 800 bytes)---\n%s", err, head(xmlBytes, 800))
+		t.Fatalf("v1_06.Decode(re-encoded): %v\n---encoded xml (first 800 bytes)---\n%s", err, head(xmlBytes, 800))
 	}
 
 	normalizeVolatile(m1)
@@ -111,12 +111,12 @@ func TestW2025PublicRoundTrip(t *testing.T) {
 
 // populatedFixture is a UTF-8 W2025 map that fills the elements the blank
 // sample leaves empty (features with and without labels, shapes with points,
-// and notes). It is a raw .xml file, so it is decoded with h2025v1.Decode
+// and notes). It is a raw .xml file, so it is decoded with v1_06.Decode
 // directly rather than through the full gunzip/UTF-16 public pipeline.
 const populatedFixture = "../testdata/w2025-populated.xml"
 
 // decodeFixture reads a raw UTF-8 XML W2025 map and decodes it with the
-// schema-specific decoder (h2025v1.Decode), bypassing the gunzip/UTF-16
+// schema-specific decoder (v1_06.Decode), bypassing the gunzip/UTF-16
 // transport that decodeFile applies to .wxx files.
 func decodeFixture(t *testing.T, path string) *wxx.Map_t {
 	t.Helper()
@@ -124,9 +124,9 @@ func decodeFixture(t *testing.T, path string) *wxx.Map_t {
 	if err != nil {
 		t.Fatalf("read %s: %v", path, err)
 	}
-	m, err := h2025v1.Decode(raw)
+	m, err := v1_06.Decode(raw)
 	if err != nil {
-		t.Fatalf("h2025v1.Decode(%s): %v", path, err)
+		t.Fatalf("v1_06.Decode(%s): %v", path, err)
 	}
 	return m
 }
@@ -197,19 +197,19 @@ func TestW2025PopulatedRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read %s: %v", populatedFixture, err)
 	}
-	m1, err := h2025v1.Decode(raw)
+	m1, err := v1_06.Decode(raw)
 	if err != nil {
 		t.Fatalf("initial decode: %v", err)
 	}
 
-	xmlBytes, err := h2025v1.Encode(m1)
+	xmlBytes, err := v1_06.Encode(m1, m1.Version)
 	if err != nil {
-		t.Fatalf("h2025v1.Encode: %v", err)
+		t.Fatalf("v1_06.Encode: %v", err)
 	}
 
-	m2, err := h2025v1.Decode(xmlBytes)
+	m2, err := v1_06.Decode(xmlBytes)
 	if err != nil {
-		t.Fatalf("h2025v1.Decode(re-encoded): %v\n---encoded xml (first 800 bytes)---\n%s", err, head(xmlBytes, 800))
+		t.Fatalf("v1_06.Decode(re-encoded): %v\n---encoded xml (first 800 bytes)---\n%s", err, head(xmlBytes, 800))
 	}
 
 	normalizeVolatile(m1)
@@ -247,7 +247,7 @@ func TestW2025PopulatedPublicRoundTrip(t *testing.T) {
 // TestW2025ConfigSectionsEmpty guards the intentional no-op encoders for the
 // <terrain-config>, <feature-config>, and <texture-config> sections
 // (encodeTerrainConfig / encodeFeatureConfig / encodeTextureConfig in
-// xmlio/h2025v1/encode.go). Those encoders emit an empty wrapper and drop their
+// xmlio/internal/v1_06/encode.go). Those encoders emit an empty wrapper and drop their
 // decoded content; that is only lossless because real W2025 maps leave these
 // sections empty. This test documents-in-code that invariant by asserting that
 // every decoded config entry carries no non-whitespace content, for BOTH the
