@@ -283,6 +283,12 @@ type Label_t struct {
 	Tags            string  `json:"tags,omitempty"`
 	BackgroundColor *RGBA_t `json:"backgroundColor,omitempty"`
 
+	// W2025 drop-shadow attributes. DropShadowColor is a nullable string that
+	// preserves the literal "null" spelling (mirrors Shape_t.DsColor).
+	DropShadowColor  string  `json:"dropShadowColor,omitempty"`
+	DropShadowRadius float64 `json:"dropShadowRadius,omitempty"`
+	DropShadowSpread float64 `json:"dropShadowSpread,omitempty"`
+
 	Location  *LabelLocation_t `json:"location,omitempty"`
 	InnerText string           `json:"innerText,omitempty"`
 }
