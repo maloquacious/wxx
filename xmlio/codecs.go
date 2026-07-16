@@ -68,12 +68,14 @@ var byApp map[string]codec.Codec
 // panic cannot be inspected.
 //
 // VerifyDisjoint is doing the work of TWO checks that issue #41 was careful to
-// distinguish: the registry's ErrDuplicateAppVersion guard (one application
-// version must not name two RELEASES) and the codec disjointness guard (one
-// application version must not be accepted by two CODECS). They were different
-// statements only because the registry had releases in it to be ambiguous about.
-// Now that the registry IS application version -> codec, they are the same
-// statement, and this is the survivor.
+// distinguish: the registry's duplicate-application-version guard (one
+// application version must not name two RELEASES) and the codec disjointness
+// guard (one application version must not be accepted by two CODECS). They were
+// different statements only because the registry had releases in it to be
+// ambiguous about. Now that the registry IS application version -> codec, they
+// are the same statement, and this is the survivor -- reporting
+// wxx.ErrAmbiguousAppCodec, the disjointness guard's own error. The duplicate
+// guard's error constant went with the registry, having lost its producer.
 func init() {
 	all := codecs()
 	sets := make([]appver.Set_t, 0, len(all))

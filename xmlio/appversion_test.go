@@ -191,8 +191,8 @@ func TestCodecAppSetsAreDeclaredAndDisjoint(t *testing.T) {
 // shaped the same way, for the same reason.
 //
 // This is also the MERGED guard. Issue #41 kept the registry's
-// ErrDuplicateAppVersion check (one version must not name two RELEASES) apart
-// from this one (one version must not be accepted by two CODECS); with the
+// duplicate-application-version check (one version must not name two RELEASES)
+// apart from this one (one version must not be accepted by two CODECS); with the
 // registry collapsed to application version -> codec they are the same statement,
 // and this is the survivor.
 func TestVerifyDisjointRejectsOverlap(t *testing.T) {

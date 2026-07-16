@@ -56,8 +56,12 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	w.MetaData.Created = time.Now().UTC().Format(time.RFC3339)
 	w.MetaData.Worldographer.Name = "unknown"
 	// Also preserve the on-disk sub-revision verbatim in the Worldographer
-	// metadata, which is what the encoder writes back to <map version>. Classic
-	// files carry no release/schema attributes, so those fields stay empty.
+	// metadata. This is provenance -- the application version that wrote the file
+	// that came in -- and this is its only home (issue #45 Decision 9). It is NOT
+	// what the encoder writes back to <map version>: an encoder writes the
+	// application version its caller required and never reads the map for one, which
+	// is the whole of issue #45. Classic files carry no release/schema attributes,
+	// so those fields stay empty; that absence is classic's identity.
 	w.MetaData.Worldographer.Version = m.Version
 	// w.MetaData.Worldographer.Created = time.Time{}
 
@@ -97,7 +101,6 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	w.ShowShadows = m.ShowShadows
 	w.TriangleSize = m.TriangleSize
 	w.Type = m.Type
-	w.Version = m.Version
 	w.WorldToContinentHOffset = m.WorldToContinentHOffset
 	w.WorldToContinentVOffset = m.WorldToContinentVOffset
 

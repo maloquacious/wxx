@@ -9,8 +9,10 @@ package wxx
 // in no classic file, and "2025" is a marketing label that may change while the
 // data format does not; neither is a fact about the format, so neither belongs
 // in a version identity (ADR 0004). The marketing label survives verbatim in
-// Map_t.Release and MetaData.Worldographer.Release, where it is fidelity data
-// rather than identity.
+// MetaData.Worldographer.Release, where it is provenance rather than identity --
+// a fact about the file that came in. On the way out it is neither: the encoder
+// derives map/@release from the application version it was required to write
+// (issue #45 Decision 5).
 //
 // Both members are Dotted, never semver: the components exist to compare and Raw
 // is what goes back to disk.

@@ -1,7 +1,8 @@
 // Copyright (c) 2026 Michael D Henderson. All rights reserved.
 
-// Package codec defines what a codec IS: the parse/emit pair for one schema
-// (ADR 0004 Decision 4), plus the declaration it states about itself.
+// Package codec defines the codec as the DISPATCHER sees one: the emit half of
+// the parse/emit pair for one schema (ADR 0004 Decision 4), plus the declaration
+// it states about itself. See Codec for why the parse half is not on it.
 //
 // It holds the INTERFACE and nothing else. It used to hold the schema -> codec
 // selector as well, which issue #45 Decision 8 removes: the application version
@@ -34,8 +35,8 @@ import (
 	"github.com/maloquacious/wxx/xmlio/internal/appver"
 )
 
-// Codec parses and emits exactly one schema, and declares what it accepts and
-// what it writes.
+// Codec emits exactly one schema, and declares what it accepts and what it
+// writes.
 //
 // It is an interface rather than a struct of function fields because a Go
 // PACKAGE cannot implement an interface: the codecs are packages, so each has to
@@ -45,15 +46,23 @@ import (
 // set or does not compile. The check that guarded against the half-built pair is
 // not rescued anywhere, because it is now a compile error.
 //
+// It carries no Decode. A codec is conceptually the parse/emit pair for one
+// schema (ADR 0004 Decision 4), and each codec package does implement both, but
+// the parse half is not reached through this interface: decoder.go dispatches on
+// the map/@release the file states and calls the codec package's Decode function
+// directly, because it has already read the bytes that identify the file and does
+// not need the registry to tell it which parser to use. A Decode method here was
+// never called by anything, and the ruling is that what is unused goes. The
+// asymmetry is real and it is the point: ENCODE dispatch is what the registry
+// exists for, because an encode has no file to read its target from and must be
+// told one (issue #45).
+//
 // AcceptedApps is on the interface, not alongside it, for the same reason Encode
 // is: the declaration is the codec's own knowledge (see appver), and the
 // dispatcher must be able to ask any codec for it without knowing which one it
 // holds. That question -- "which application versions do you write?" -- is the
 // whole of what the registry is built from (issue #45 Decision 8).
 type Codec interface {
-	// Decode parses one schema's XML into the Map_t superset.
-	Decode(input []byte) (*wxx.Map_t, error)
-
 	// Encode emits a Map_t as one schema's XML, as the application version app.
 	//
 	// app is verbatim map/@version. The codec verifies it against the set it

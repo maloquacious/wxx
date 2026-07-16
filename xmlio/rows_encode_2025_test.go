@@ -32,11 +32,11 @@ func newRowsMap() *wxx.Map_t {
 	m.MetaData.Worldographer.Version = "2.06"
 	m.MetaData.Worldographer.Schema = "1.06"
 
-	// <map> attributes the encoder emits and the decoder re-reads.
+	// <map> attributes the encoder emits and the decoder re-reads. The identity
+	// attributes are not among them and cannot be: the encoder derives
+	// release/version/schema from the application version it is handed, so a map
+	// has no way to state them (issue #45).
 	m.Type = "WORLD"
-	m.Release = "2025"
-	m.Version = "2.06"
-	m.Schema = "1.06"
 	m.MapProjection = wxx.FLAT
 	m.HexOrientation = "ROWS"
 	m.GridOrientation = hexg.OddR
@@ -94,7 +94,7 @@ func newRowsMap() *wxx.Map_t {
 func TestW2025RowsRoundTrip(t *testing.T) {
 	m1 := newRowsMap()
 
-	xmlBytes, err := v1_06.Encode(m1, m1.Version)
+	xmlBytes, err := v1_06.Encode(m1, m1.MetaData.Version.App.Raw)
 	if err != nil {
 		t.Fatalf("v1_06.Encode(ROWS): %v", err)
 	}

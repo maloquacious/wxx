@@ -245,9 +245,14 @@ func TestEncodeIgnoresTheMapsOwnVersion(t *testing.T) {
 			}
 			// Doctor the identity the map states. Every one of these would have
 			// stopped the encode dead when the encoder defaulted to it.
+			//
+			// These two are now the whole of what a map CAN state: the top-level
+			// Map_t.Version this also doctored is deleted, so that third statement
+			// of the identity no longer exists to be doctored or to be read. Both
+			// survivors are under MetaData, which is where provenance belongs
+			// (issue #45 Decision 9) and which no encoder reads.
 			m.MetaData.Version.App = tc.app
 			m.MetaData.Worldographer.Version = tc.app.Raw
-			m.Version = tc.app.Raw
 
 			var got bytes.Buffer
 			if err := xmlio.NewEncoder(target).Encode(&got, m); err != nil {

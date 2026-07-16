@@ -15,15 +15,16 @@ import (
 // that is the real implementation, which stays exported because the test units
 // requirement 5 admits call it directly (see xmlio/chimera_test.go).
 //
-// It carries the declaration alongside decode and encode because the registry is
-// built by ASKING each codec what it accepts (issue #45 Decision 8): the mapping
+// It forwards Encode but not Decode, because the dispatcher only ever asks a
+// codec to encode: xmlio's decoder reads the file's own map/@release and calls
+// this package's Decode function directly, so a forwarding method had no caller.
+// See codec.Codec.
+//
+// It carries the declaration alongside encode because the registry is built by
+// ASKING each codec what it accepts (issue #45 Decision 8): the mapping
 // application version -> encoder exists in exactly one place, here, and the
 // dispatcher reads it rather than restating it.
 type Codec_t struct{}
-
-// Decode parses W2025 schema 1.06 XML into the Map_t superset. It is a work in
-// progress; see COVERAGE.md.
-func (Codec_t) Decode(input []byte) (*wxx.Map_t, error) { return Decode(input) }
 
 // Encode emits a Map_t as W2025 schema 1.06 XML, as the application version app.
 func (Codec_t) Encode(m *wxx.Map_t, app string) ([]byte, error) { return Encode(m, app) }

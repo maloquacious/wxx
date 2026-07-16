@@ -40,10 +40,19 @@ type Map_t struct {
 	} `json:"meta-data"`
 
 	// attributes
+	//
+	// There is no Release, Version or Schema here, and their absence is load-bearing.
+	// They held map/@release, map/@version and map/@schema as the SOURCE file stated
+	// them, which is provenance, and provenance has one home: MetaData.Worldographer
+	// (issue #45 Decision 9). Carried here as well, they were a second copy of the
+	// same facts sitting among the fields an encoder reads -- which is how issue #45
+	// happened, the encoder writing the input file's identity into the output. The
+	// encoder now derives every identity byte it writes from the application version
+	// the caller requires and never reads the map for one, so the copy had no reader
+	// and is gone. A future reader wanting to know what wrote a file asks
+	// MetaData.Worldographer; a future writer wanting to know what to emit is told,
+	// and asks nothing.
 	Type                      string             `json:"type,omitempty"`
-	Release                   string             `json:"release,omitempty"`
-	Version                   string             `json:"version,omitempty"`
-	Schema                    string             `json:"schema,omitempty"`
 	LastViewLevel             string             `json:"lastViewLevel,omitempty"`
 	ContinentFactor           int                `json:"continentFactor,omitempty"`
 	KingdomFactor             int                `json:"kingdomFactor,omitempty"`

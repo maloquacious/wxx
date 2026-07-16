@@ -32,10 +32,15 @@ func dottedOrRaw(s string) wxx.Dotted {
 }
 
 // Decode the XML data using the H2025.V1 schema and return a Map_t or an error.
+// It is a work in progress; see COVERAGE.md.
 //
 // Decode does a single xml.Unmarshal into the version-specific XMLSchema structs
 // (schema.go) then copies the <map> root attributes here and dispatches each
 // child element to its co-located decodeXxx helper (see the per-element files).
+//
+// This is the whole of decode dispatch: xmlio's decoder.go calls it directly,
+// having read the map/@release that identifies the file. There is no Decode on
+// codec.Codec to route through -- see that interface for why.
 func Decode(input []byte) (*wxx.Map_t, error) {
 	m := &XMLSchema{}
 
@@ -77,6 +82,11 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	w.MetaData.Version = wxx.Version_t{App: dottedOrRaw(m.Version), Schema: &schema}
 	w.MetaData.Created = time.Now().UTC().Format(time.RFC3339)
 	w.MetaData.Worldographer.Name = "unknown"
+	// The three identity attributes the source states, verbatim. This is the ONLY
+	// place they are recorded: they are provenance -- what wrote the file that came
+	// in -- and provenance lives with the file's other metadata (issue #45 Decision
+	// 9). The decoder is right to keep them; nothing downstream may treat them as
+	// what to write, and no encoder reads them.
 	w.MetaData.Worldographer.Release = m.Release
 	w.MetaData.Worldographer.Version = m.Version
 	w.MetaData.Worldographer.Schema = m.Schema
@@ -109,8 +119,6 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 		return nil, fmt.Errorf("%q: unknown projection", m.MapProjection)
 	}
 	w.ProvinceFactor = m.ProvinceFactor
-	w.Release = m.Release
-	w.Schema = m.Schema
 	w.ShowFeatureLabels = m.ShowFeatureLabels
 	w.ShowGMOnly = m.ShowGMOnly
 	w.ShowGMOnlyGlow = m.ShowGMOnlyGlow
@@ -120,7 +128,6 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	w.ShowShadows = m.ShowShadows
 	w.TriangleSize = m.TriangleSize
 	w.Type = m.Type
-	w.Version = m.Version
 	w.WorldToContinentHOffset = m.WorldToContinentHOffset
 	w.WorldToContinentVOffset = m.WorldToContinentVOffset
 	w.HScrollbarPos = m.HScrollbarPos

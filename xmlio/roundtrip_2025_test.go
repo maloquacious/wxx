@@ -65,7 +65,7 @@ func TestW2025RoundTrip(t *testing.T) {
 		t.Fatalf("initial decode: %v", err)
 	}
 
-	xmlBytes, err := v1_06.Encode(m1, m1.Version)
+	xmlBytes, err := v1_06.Encode(m1, m1.MetaData.Version.App.Raw)
 	if err != nil {
 		t.Fatalf("v1_06.Encode: %v", err)
 	}
@@ -205,7 +205,7 @@ func TestW2025PopulatedRoundTrip(t *testing.T) {
 		t.Fatalf("initial decode: %v", err)
 	}
 
-	xmlBytes, err := v1_06.Encode(m1, m1.Version)
+	xmlBytes, err := v1_06.Encode(m1, m1.MetaData.Version.App.Raw)
 	if err != nil {
 		t.Fatalf("v1_06.Encode: %v", err)
 	}
@@ -408,9 +408,15 @@ func firstDiff(path string, a, b reflect.Value) (string, bool) {
 }
 
 // mapAttrs bundles the scalar <map> attributes for comparison.
+//
+// The three identity attributes are not here, and they are not uncovered: they
+// live in MetaData.Worldographer as the provenance they are (issue #45 Decision
+// 9), which compareGroups compares as its own "MetaData" group. Map_t no longer
+// carries a second copy of them among the fields an encoder reads, because a
+// second copy among those fields is what issue #45 was.
 func mapAttrs(m *wxx.Map_t) map[string]any {
 	return map[string]any{
-		"Type": m.Type, "Release": m.Release, "Version": m.Version, "Schema": m.Schema,
+		"Type":           m.Type,
 		"HexOrientation": m.HexOrientation, "MapProjection": m.MapProjection,
 		"HexWidth": m.HexWidth, "HexHeight": m.HexHeight,
 		"ContinentFactor": m.ContinentFactor, "KingdomFactor": m.KingdomFactor, "ProvinceFactor": m.ProvinceFactor,

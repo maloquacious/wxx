@@ -398,10 +398,10 @@ func TestRegistryMatchesFixtures(t *testing.T) {
 // accepted by two codecs.
 //
 // It is the MERGED guard. Issue #41 kept two checks apart -- the registry's
-// ErrDuplicateAppVersion (one version must not name two RELEASES) and codec
-// disjointness (one version must not be accepted by two CODECS) -- because the
-// registry had releases in it to be ambiguous about. The registry is now
-// application version -> codec, so the two are the same statement and
+// duplicate-application-version check (one version must not name two RELEASES)
+// and codec disjointness (one version must not be accepted by two CODECS) --
+// because the registry had releases in it to be ambiguous about. The registry is
+// now application version -> codec, so the two are the same statement and
 // appver.VerifyDisjoint is the survivor.
 //
 // xmlio's init runs this and panics, which is why this cannot be the only
