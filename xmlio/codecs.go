@@ -28,8 +28,10 @@ func codecAppSets() []appver.Set_t {
 	}
 }
 
-// init verifies that no application version is accepted by more than one codec,
-// panicking if one is.
+// init verifies that every codec's declaration is valid on its own terms and that
+// no application version is accepted by more than one codec, panicking if either
+// fails. Both checks are appver.VerifyDisjoint's; see its doc for why the
+// per-declaration one is there.
 //
 // This is issue #41 requirement 4, checked over what the CODECS declare. The
 // registry's duplicate-application-version guard is not this check: it stops one

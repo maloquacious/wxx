@@ -13,10 +13,23 @@ import "github.com/maloquacious/wxx/xmlio/internal/appver"
 // the schema the file states, and it says nothing about which builds wrote that
 // schema. A later build on the same schema is added here, not by adding a
 // package.
+//
+// 2.06 writes release="2025". That is stated per application version rather than
+// as a constant of the codec because map/@release is DERIVED from the application
+// version (issue #45 Decision 5): a later build on schema 1.06 shipped under a
+// different label writes a different map/@release and is added as another App_t
+// here. Today there is exactly one W2025 build, which makes the mapping look
+// constant. It is not one, and collapsing it into one would hard-code away the
+// relabel scenario ADR 0004 exists to keep expressible.
+//
+// XMLVersion is "1.1", the declaration 2.06 opens its files with.
 var acceptedApps = appver.Set_t{
-	Codec:  "v1_06",
-	Schema: "1.06",
-	Apps:   []string{"2.06"},
+	Codec:      "v1_06",
+	Schema:     "1.06",
+	XMLVersion: "1.1",
+	Apps: []appver.App_t{
+		{Version: "2.06", Release: "2025"},
+	},
 }
 
 // AcceptedApps returns this codec's declaration of the application versions it

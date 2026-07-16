@@ -18,6 +18,7 @@ const (
 	ErrGUnZipFailed                = Error("gunzip failed")
 	ErrGZipFailed                  = Error("gzip failed")
 	ErrGZipNewReaderFailed         = Error("gzip new reader failed")
+	ErrInvalidCodecDeclaration     = Error("invalid codec declaration")
 	ErrInvalidDottedComponent      = Error("invalid dotted version component")
 	ErrInvalidDottedComponentCount = Error("invalid dotted version component count")
 	ErrInvalidDottedVersion        = Error("invalid dotted version")

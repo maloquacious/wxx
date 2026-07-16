@@ -16,11 +16,21 @@ import "github.com/maloquacious/wxx/xmlio/internal/appver"
 // Schema is "" because classic files state no map/@schema at all. That absence is
 // the identity (ADR 0004 Decision 2); the codec must never invent a schema string
 // for it, and "0.77" in particular is a codec version that appears on no disk and
-// may never reach a file.
+// may never reach a file. Every app's Release is "" for the same reason: a classic
+// file states no map/@release either, and the declaration says so per application
+// version because the mapping is derived rather than constant (issue #45 Decision
+// 5) -- these three agreeing is a fact about classic, not a property of codecs.
+//
+// XMLVersion is "1.0": every classic build opens its files with that declaration.
 var acceptedApps = appver.Set_t{
-	Codec:  "v0_77",
-	Schema: "",
-	Apps:   []string{"1.73", "1.74", "1.77"},
+	Codec:      "v0_77",
+	Schema:     "",
+	XMLVersion: "1.0",
+	Apps: []appver.App_t{
+		{Version: "1.73", Release: ""},
+		{Version: "1.74", Release: ""},
+		{Version: "1.77", Release: ""},
+	},
 }
 
 // AcceptedApps returns this codec's declaration of the application versions it
