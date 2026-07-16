@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/maloquacious/wxx"
+	"github.com/maloquacious/wxx/xmlio/internal/appver"
 )
 
 // Encode the Map_t into a slice of UTF-8 bytes that matches this version's XML schema.
@@ -25,23 +26,51 @@ import (
 // an impossible release is told that rather than told about the contents of a map
 // it was never going to get.
 //
+// Resolving app through acceptedApps.App RATHER than merely verifying it is what
+// closes issue #45. The gate and the write path must read the SAME input: the
+// former shape verified the app ARGUMENT and then wrote w.Version, the map's own
+// field, so the two read different inputs and the verified argument was never
+// written -- Encode(classicMap, "1.77") was checked and then emitted whatever the
+// source happened to state. The resolved App_t is now the only identity input
+// encodeMap is given, so no value the caller did not ask for can reach the file.
+//
 // Note: the style of this code is intentionally verbose to make it easier to find changes between
 // versions of the Worldographer files.
 func Encode(w *wxx.Map_t, app string) ([]byte, error) {
-	if err := acceptedApps.VerifyApp(app); err != nil {
-		return nil, err
+	target, ok := acceptedApps.App(app)
+	if !ok {
+		// VerifyApp is what names the accepted set in the error text; App reports
+		// only that the lookup missed.
+		return nil, acceptedApps.VerifyApp(app)
 	}
 	wb := &bytes.Buffer{}
-	if err := encodeMap(w, wb); err != nil {
+	if err := encodeMap(w, target, wb); err != nil {
 		return nil, err
 	}
 	return wb.Bytes(), nil
 }
 
-func encodeMap(w *wxx.Map_t, wb *bytes.Buffer) error {
+// encodeMap writes the <map> element for the application version target.
+//
+// target carries every identity value this element states, and w carries none of
+// them: the identity written is the one the caller asked for, never the one the
+// decoded map happens to state (issue #45 Decisions 4 and 6). w is consulted for
+// map CONTENT only.
+//
+// Classic states map/@version alone -- no map/@release and no map/@schema
+// attribute at all. That absence IS classic's identity (ADR 0004 Decision 2), so
+// this must not start writing either attribute; target.Release is "" for every
+// classic application version and is deliberately not written rather than written
+// empty.
+//
+// target.Version is written verbatim, and is the app argument itself: App matched
+// it by string equality, so the two are the same string. It is never re-rendered
+// from a parsed version's components, because "2.06" must never reach disk as
+// "2.6" (ADR 0004 Decision 1).
+func encodeMap(w *wxx.Map_t, target appver.App_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf("<map"))
 	wb.WriteString(fmt.Sprintf(" type=%q", w.Type))
-	wb.WriteString(fmt.Sprintf(" version=%q", w.Version))
+	wb.WriteString(fmt.Sprintf(" version=%q", target.Version))
 	wb.WriteString(fmt.Sprintf(" lastViewLevel=%q", w.LastViewLevel))
 	wb.WriteString(fmt.Sprintf(" continentFactor=%q", ints(w.ContinentFactor)))
 	wb.WriteString(fmt.Sprintf(" kingdomFactor=%q", ints(w.KingdomFactor)))

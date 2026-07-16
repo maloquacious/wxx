@@ -11,6 +11,7 @@ import (
 
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/hexg"
+	"github.com/maloquacious/wxx/xmlio/internal/appver"
 )
 
 // dottedOrRaw parses an on-disk dotted version, falling back to a Dotted that
@@ -177,25 +178,58 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 // an impossible release is told that rather than told about the contents of a map
 // it was never going to get.
 //
+// Resolving app through acceptedApps.App RATHER than merely verifying it is what
+// closes issue #45. The gate and the write path must read the SAME input: the
+// former shape verified the app ARGUMENT and then wrote w.Release/w.Version/
+// w.Schema, the map's own fields, so the two read different inputs and the
+// verified argument was never written. Encode(classicMap, "2.06") passed the gate
+// -- 2.06 IS this codec's version -- and then emitted W2025 content under the
+// classic identity the map still stated: release="" version="1.77" schema="",
+// which re-decodes silently as classic. That chimera is now unconstructible
+// rather than merely prevented, because the resolved App_t and this codec's
+// declared schema are the only identity inputs encodeMap is given.
+//
 // Note: the style of this code is intentionally verbose to make it easier to find changes between
 // versions of the Worldographer files.
 func Encode(w *wxx.Map_t, app string) ([]byte, error) {
-	if err := acceptedApps.VerifyApp(app); err != nil {
-		return nil, err
+	target, ok := acceptedApps.App(app)
+	if !ok {
+		// VerifyApp is what names the accepted set in the error text; App reports
+		// only that the lookup missed.
+		return nil, acceptedApps.VerifyApp(app)
 	}
 	wb := &bytes.Buffer{}
-	if err := encodeMap(w, wb); err != nil {
+	if err := encodeMap(w, target, acceptedApps.Schema, wb); err != nil {
 		return nil, err
 	}
 	return wb.Bytes(), nil
 }
 
-func encodeMap(w *wxx.Map_t, wb *bytes.Buffer) error {
+// encodeMap writes the <map> element for the application version target, stating
+// schema.
+//
+// target and schema carry every identity value this element states, and w carries
+// none of them: the identity written is the one the caller asked for, never the
+// one the decoded map happens to state (issue #45 Decisions 4 and 6). w is
+// consulted for map CONTENT only.
+//
+// map/@release comes from target rather than being a constant of this codec
+// because it is DERIVED from the application version (issue #45 Decision 5):
+// 2.06 writes "2025", and a later build on schema 1.06 shipped under a different
+// label writes a different one. map/@schema is this codec's single declared
+// constant, threaded in rather than read here so that the signature names every
+// identity byte this function writes.
+//
+// Both strings, and target.Version, are written verbatim and are never re-rendered
+// from a parsed version's components, because "2.06" must never reach disk as
+// "2.6" (ADR 0004 Decision 1). target.Version is the app argument itself: App
+// matched it by string equality, so the two are the same string.
+func encodeMap(w *wxx.Map_t, target appver.App_t, schema string, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf("<map"))
 	wb.WriteString(fmt.Sprintf(" type=%q", w.Type))
-	wb.WriteString(fmt.Sprintf(" release=%q", w.Release))
-	wb.WriteString(fmt.Sprintf(" version=%q", w.Version))
-	wb.WriteString(fmt.Sprintf(" schema=%q", w.Schema))
+	wb.WriteString(fmt.Sprintf(" release=%q", target.Release))
+	wb.WriteString(fmt.Sprintf(" version=%q", target.Version))
+	wb.WriteString(fmt.Sprintf(" schema=%q", schema))
 	wb.WriteString(fmt.Sprintf(" lastViewLevel=%q", w.LastViewLevel))
 	wb.WriteString(fmt.Sprintf(" continentFactor=%q", ints(w.ContinentFactor)))
 	wb.WriteString(fmt.Sprintf(" kingdomFactor=%q", ints(w.KingdomFactor)))
