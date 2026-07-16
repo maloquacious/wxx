@@ -1,14 +1,14 @@
-# Classic H2017 (h2017v1) codec coverage
+# Classic H2017 (v0_77) codec coverage
 
 Per-element read/write coverage for the classic Worldographer / Hexographer 2
-XML codec (`xmlio/h2017v1`), covering on-disk `version="1.73"`, `"1.74"`, and
-`"1.77"` files. This uses the **same format** as `xmlio/h2025v1/COVERAGE.md`
+XML codec (`xmlio/internal/v0_77`), covering on-disk `version="1.73"`, `"1.74"`, and
+`"1.77"` files. This uses the **same format** as `xmlio/internal/v1_06/COVERAGE.md`
 (issue #7) so the two per-version matrices read as one artifact, and it exists
 for the same reason: to make **stub-drift** visible. Classic decode is nearly
 complete, but the encoder still contains several silent stubs — this matrix
 records exactly which, with a code citation for every claim.
 
-Classic (h2017v1) is **frozen** per `README.adoc` (security fixes only, no new
+Classic (v0_77) is **frozen** per `README.adoc` (security fixes only, no new
 features), so these gaps are documented rather than scheduled: the point is that
 a caller can see the truth before relying on a round-trip.
 
@@ -44,7 +44,7 @@ The classic codec's first automated test is the round-trip loss harness
 `xmlio/roundtrip_2017_test.go` (issue #25), covered in "Round-trip loss inventory
 (executable)" below. It is an **on-disk audit** — it asserts *what the classic
 codec drops/alters* on a decode → encode round trip per fixture — not a
-per-field fidelity check, and the `xmlio/h2017v1/` package itself still has no
+per-field fidelity check, and the `xmlio/internal/v0_77/` package itself still has no
 `_test.go`. So the per-element statuses in the matrix below remain cited to a
 **source line** (`decode.go` / `encode.go`) rather than to a test, and to a
 decoded classic sample where a fixture proves the shape. Decoded samples referenced are
@@ -215,11 +215,11 @@ because a classic file states no `@schema` at all. That absence is not a gap —
 identifies the one **implicit legacy schema** every classic revision shares. The
 classic XML schema did **not** change across `1.73`→`1.77` (these are application
 version bumps), which is the evidence for treating them as one schema; all
-sub-revisions share the one `h2017v1` codec.
+sub-revisions share the one `v0_77` codec.
 
 The nil `Schema` is what routes an encode back here: `xmlio/encoder.go`
 `MarshalXML` resolves the codec from the target release's schema
-(`CodecForSchema`), so the implicit legacy schema selects `h2017v1.Encode`. There
+(`CodecForSchema`), so the implicit legacy schema selects `v0_77.Encode`. There
 is no family-year dispatch key any more — the `2017` in this package's name is a
 project coinage that appears in no classic file (ADR 0004).
 
@@ -240,12 +240,12 @@ backfill); it was previously write-only:
 
 - **Encode**: `xmlio/encoder.go` `MarshalXML` resolves the codec from the target
   release's schema, so the implicit legacy schema (`Schema == nil`) selects
-  `h2017v1.Encode` (ADR 0004). The public encoder can emit classic XML.
+  `v0_77.Encode` (ADR 0004). The public encoder can emit classic XML.
 - **Decode**: `xmlio/decoder.go` now has a classic dispatch case alongside the
   `release="2025"` case. Classic files carry **no `release` attribute at all**
   (confirmed by every sample and by the RelaxNG schema, which defines no
   `release`), so the dispatcher routes them by the classic version shape:
-  `Release == "" && strings.HasPrefix(Version, "1.") → h2017v1.Decode`. The
+  `Release == "" && strings.HasPrefix(Version, "1.") → v0_77.Decode`. The
   predicate is deliberately conservative — anything that is neither `release=2025`
   nor a `1.x` classic version still falls through to `ErrUnsupportedMapMetadata`,
   so unknown/future formats are not silently swallowed.
@@ -259,7 +259,7 @@ The dispatch asymmetry recorded in earlier revisions of this matrix is resolved.
 
 **None found in the available classic samples.** Every attribute present on every
 element across all seven classic fixtures is modeled by a field in
-`xmlio/h2017v1/schema.go`. This was verified by sweeping the decoded UTF-8 XML of
+`xmlio/internal/v0_77/schema.go`. This was verified by sweeping the decoded UTF-8 XML of
 all seven samples for `element → {attribute}` sets and diffing against the
 `schema.go` structs. Element-by-element:
 
@@ -292,7 +292,7 @@ Cross-checked against `schema/utf-8-xml.rnc` (the formal RelaxNG schema imported
 in B1). That schema was reverse-engineered from a real `version="1.73"` classic
 export, so it is **directly in scope for this codec** (see `schema/README.md`).
 
-Every element the RelaxNG schema defines is **modeled** in `xmlio/h2017v1/schema.go`:
+Every element the RelaxNG schema defines is **modeled** in `xmlio/internal/v0_77/schema.go`:
 
 | RelaxNG element | Modeled in schema.go | Note |
 |---|---|---|

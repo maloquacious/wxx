@@ -27,8 +27,8 @@ documentation is sparse.
   errors, and `Version()` (semver, currently `0.41.0-alpha`).
 - `xmlio/` — XML decode/encode entry points and shared transforms
   (`decoder.go`, `encoder.go`, `xml_header.go`).
-  - `xmlio/h2017v1/` — H2017 decoder, encoder, and schema types.
-  - `xmlio/h2025v1/` — H2025 decoder (encoder pending).
+  - `xmlio/internal/v0_77/` — H2017 decoder, encoder, and schema types.
+  - `xmlio/internal/v1_06/` — H2025 decoder (encoder pending).
 - `hexg/` — hex-grid math (cube/offset/doubled coordinates, layouts,
   orientations, TribeNet adapter). See [hexg/HEXES.md](./hexg/HEXES.md).
 - `cmd/` — CLI tools used to exercise the package: `bounds`, `copy`, `crop`,

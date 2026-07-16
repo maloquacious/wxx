@@ -212,7 +212,7 @@ func TestClassicDowngradeDiagnostics(t *testing.T) {
 // float64 -- so absent and zero are the same value and the encoder cannot report
 // one as a loss without inventing it. The entry is real by format (the classic
 // <map> element has no such attribute) and LATENT on the samples, in the sense
-// h2017v1/COVERAGE.md means by "latent-by-code".
+// internal/v0_77/COVERAGE.md means by "latent-by-code".
 //
 // The non-zero source is therefore synthesized, exactly as
 // TestW2025LabelStyleDropShadowGate synthesizes its drop-shadow-free source.

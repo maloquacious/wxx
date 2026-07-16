@@ -135,11 +135,11 @@ What actually landed when consolidating the reusable knowledge into this package
 
 - **B1 — `tnwxx` RelaxNG schema imported** to `schema/` (`utf-8-xml.rnc`/`.rng` + README), as
   reference/validation material only (v1.73/classic scope; not build-time enforced; no new dep).
-- **B2 — per-version coverage matrices**: `xmlio/h2017v1/COVERAGE.md` (new) + aligned
-  `xmlio/h2025v1/COVERAGE.md`, cross-checked against the RelaxNG schema, indexed by
+- **B2 — per-version coverage matrices**: `xmlio/internal/v0_77/COVERAGE.md` (new) + aligned
+  `xmlio/internal/v1_06/COVERAGE.md`, cross-checked against the RelaxNG schema, indexed by
   `docs/CODEC_COVERAGE.md`.
 - **B3 — architecture ADR** (`docs/adr/0001-codec-file-organization.md`, Accepted): co-locate
-  each element's decode+encode in the active `h2025v1` package (leaving frozen `h2017v1` alone),
+  each element's decode+encode in the active `v1_06` package (leaving frozen `v0_77` alone),
   executed in **B3b** as pure code motion plus a coverage-assertion test.
 - **B4 — `tcfna` cross-check**: backfilled classic dispatch through the public `Decode`; preserved
   the real classic sub-revision additively in `MetaData.Worldographer.Version`; implemented
@@ -172,6 +172,6 @@ package. `Map_t` is unchanged and remains a superset.
 **Not gemgem-driven, deferred to a separate ticket:** the six genuine W2025-native fields still
 dropped on disk — `maplayer/@opacity`, `labelstyle/@dropShadow{Color,Radius,Spread}`,
 `shapestyle/@lineCap`+`@lineJoin`, `map/@hScrollbarPos`+`@vScrollbarPos`, `<blurTerrainBG>`,
-`<extraTerrain>` (tracked in `xmlio/h2025v1/COVERAGE.md` "Known un-modeled fields"). These are
+`<extraTerrain>` (tracked in `xmlio/internal/v1_06/COVERAGE.md` "Known un-modeled fields"). These are
 legitimate additive folds on their own merits but are W2025-native gaps, not part of consolidating
 `gemgem`'s modeling, so they are left for a follow-up.

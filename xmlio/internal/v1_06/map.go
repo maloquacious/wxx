@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Michael D Henderson. All rights reserved.
 
-package h2025v1
+package v1_06
 
 import (
 	"bytes"
@@ -41,7 +41,7 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	// unmarshal into a structure that's built just for the conversion
 	err := xml.Unmarshal(input, &m)
 	if err != nil {
-		log.Printf("h2025v1: %v\n", err)
+		log.Printf("v1_06: %v\n", err)
 		return nil, err
 	}
 	if m.Release == "" {

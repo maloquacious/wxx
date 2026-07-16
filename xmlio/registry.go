@@ -10,8 +10,8 @@ import (
 	"reflect"
 
 	"github.com/maloquacious/wxx"
-	"github.com/maloquacious/wxx/xmlio/h2017v1"
-	"github.com/maloquacious/wxx/xmlio/h2025v1"
+	"github.com/maloquacious/wxx/xmlio/internal/v0_77"
+	"github.com/maloquacious/wxx/xmlio/internal/v1_06"
 )
 
 // DecodeFunc parses one schema's XML into the Map_t superset.
@@ -334,12 +334,12 @@ func supportedReleaseEntries() ([]*Release_t, error) {
 			App:        a,
 			Schema:     nil,
 			XMLVersion: "1.0",
-			Decode:     h2017v1.Decode,
-			Encode:     h2017v1.Encode,
+			Decode:     v0_77.Decode,
+			Encode:     v0_77.Encode,
 		})
 	}
 
-	// W2025 baseline. The h2025v1 decoder is a work in progress; the entry binds
+	// W2025 baseline. The v1_06 decoder is a work in progress; the entry binds
 	// the codec that exists today.
 	app206, err := wxx.ParseDotted("2.06")
 	if err != nil {
@@ -354,8 +354,8 @@ func supportedReleaseEntries() ([]*Release_t, error) {
 		App:        app206,
 		Schema:     &schema106,
 		XMLVersion: "1.1",
-		Decode:     h2025v1.Decode,
-		Encode:     h2025v1.Encode,
+		Decode:     v1_06.Decode,
+		Encode:     v1_06.Encode,
 	})
 
 	return entries, nil

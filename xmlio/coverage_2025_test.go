@@ -8,28 +8,28 @@ import (
 	"testing"
 
 	"github.com/maloquacious/wxx"
-	"github.com/maloquacious/wxx/xmlio/h2025v1"
+	"github.com/maloquacious/wxx/xmlio/internal/v1_06"
 )
 
-// w2025Recode drives the in-memory XML codec once: encode m1 with h2025v1.Encode
-// then decode those bytes with h2025v1.Decode, returning the round-tripped model.
+// w2025Recode drives the in-memory XML codec once: encode m1 with v1_06.Encode
+// then decode those bytes with v1_06.Decode, returning the round-tripped model.
 // It is the mechanism the coverage assertions below use to prove that what decode
 // read, encode wrote, and decode read back again.
 func w2025Recode(t *testing.T, m1 *wxx.Map_t) *wxx.Map_t {
 	t.Helper()
-	xmlBytes, err := h2025v1.Encode(m1)
+	xmlBytes, err := v1_06.Encode(m1)
 	if err != nil {
-		t.Fatalf("h2025v1.Encode: %v", err)
+		t.Fatalf("v1_06.Encode: %v", err)
 	}
-	m2, err := h2025v1.Decode(xmlBytes)
+	m2, err := v1_06.Decode(xmlBytes)
 	if err != nil {
-		t.Fatalf("h2025v1.Decode(re-encoded): %v", err)
+		t.Fatalf("v1_06.Decode(re-encoded): %v", err)
 	}
 	return m2
 }
 
 // TestW2025CoverageMatrix mechanically locks in the current per-element codec
-// behavior documented in xmlio/h2025v1/COVERAGE.md. For every element the matrix
+// behavior documented in xmlio/internal/v1_06/COVERAGE.md. For every element the matrix
 // marks "implemented", it asserts that element counts and key field values
 // survive a decode -> encode -> decode round-trip. Any future drift (a stubbed
 // encoder half, a dropped field, a changed count) trips one of these assertions.
@@ -331,9 +331,9 @@ func TestW2025LabelStyleDropShadowGate(t *testing.T) {
 		t.Fatalf("%s: no label style carried dropShadowColor, so the gate is not under test", sample2025_206)
 	}
 
-	blankBytes, err := h2025v1.Encode(b1)
+	blankBytes, err := v1_06.Encode(b1)
 	if err != nil {
-		t.Fatalf("h2025v1.Encode(cleared): %v", err)
+		t.Fatalf("v1_06.Encode(cleared): %v", err)
 	}
 	if bytes.Contains(blankBytes, []byte("dropShadowColor")) {
 		t.Errorf("re-encode spuriously added dropShadowColor (source had none)")
@@ -341,9 +341,9 @@ func TestW2025LabelStyleDropShadowGate(t *testing.T) {
 
 	// Populated fixture: source has dropShadowColor -> output must preserve it.
 	p1 := decodeFixture(t, populatedFixture)
-	popBytes, err := h2025v1.Encode(p1)
+	popBytes, err := v1_06.Encode(p1)
 	if err != nil {
-		t.Fatalf("h2025v1.Encode(populated): %v", err)
+		t.Fatalf("v1_06.Encode(populated): %v", err)
 	}
 	if !bytes.Contains(popBytes, []byte("dropShadowColor")) {
 		t.Errorf("populated re-encode dropped dropShadowColor (source had it); gate over-corrected")

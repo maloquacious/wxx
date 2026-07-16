@@ -10,8 +10,8 @@ import (
 
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/xmlio"
-	"github.com/maloquacious/wxx/xmlio/h2017v1"
-	"github.com/maloquacious/wxx/xmlio/h2025v1"
+	"github.com/maloquacious/wxx/xmlio/internal/v0_77"
+	"github.com/maloquacious/wxx/xmlio/internal/v1_06"
 )
 
 // funcPtr returns a function value's code pointer, which is how a test asserts
@@ -55,10 +55,10 @@ var registrySamples = []struct {
 	wantDecode     any
 	wantEncode     any
 }{
-	{"classic 1.73", "1.73", "", "", "1.0", h2017v1.Decode, h2017v1.Encode},
-	{"classic 1.74", "1.74", "", "", "1.0", h2017v1.Decode, h2017v1.Encode},
-	{"classic 1.77", "1.77", "", "", "1.0", h2017v1.Decode, h2017v1.Encode},
-	{"w2025 2.06", "2.06", "2025", "1.06", "1.1", h2025v1.Decode, h2025v1.Encode},
+	{"classic 1.73", "1.73", "", "", "1.0", v0_77.Decode, v0_77.Encode},
+	{"classic 1.74", "1.74", "", "", "1.0", v0_77.Decode, v0_77.Encode},
+	{"classic 1.77", "1.77", "", "", "1.0", v0_77.Decode, v0_77.Encode},
+	{"w2025 2.06", "2.06", "2025", "1.06", "1.1", v1_06.Decode, v1_06.Encode},
 }
 
 // TestRegistryLookup asserts every supported release resolves to its full
@@ -249,8 +249,8 @@ func classicEntry(t *testing.T, app string) *xmlio.Release_t {
 		App:        mustDotted(t, app),
 		Schema:     nil,
 		XMLVersion: "1.0",
-		Decode:     h2017v1.Decode,
-		Encode:     h2017v1.Encode,
+		Decode:     v0_77.Decode,
+		Encode:     v0_77.Encode,
 	}
 }
 
@@ -262,8 +262,8 @@ func w2025Entry(t *testing.T, app, schema string) *xmlio.Release_t {
 		App:        mustDotted(t, app),
 		Schema:     dottedPtr(t, schema),
 		XMLVersion: "1.1",
-		Decode:     h2025v1.Decode,
-		Encode:     h2025v1.Encode,
+		Decode:     v1_06.Decode,
+		Encode:     v1_06.Encode,
 	}
 }
 
@@ -331,41 +331,41 @@ func TestNewRegistryRejectsInvalidEntry(t *testing.T) {
 		{"nil entry", nil},
 		{
 			"no application version",
-			&xmlio.Release_t{Release: "", App: wxx.Dotted{}, Schema: nil, XMLVersion: "1.0", Decode: h2017v1.Decode, Encode: h2017v1.Encode},
+			&xmlio.Release_t{Release: "", App: wxx.Dotted{}, Schema: nil, XMLVersion: "1.0", Decode: v0_77.Decode, Encode: v0_77.Encode},
 		},
 		{
 			"nil decoder",
-			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: nil, XMLVersion: "1.0", Decode: nil, Encode: h2017v1.Encode},
+			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: nil, XMLVersion: "1.0", Decode: nil, Encode: v0_77.Encode},
 		},
 		{
 			"nil encoder",
-			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: nil, XMLVersion: "1.0", Decode: h2017v1.Decode, Encode: nil},
+			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: nil, XMLVersion: "1.0", Decode: v0_77.Decode, Encode: nil},
 		},
 		{
 			// A release with no schema: W2025 states both or the absence stops
 			// identifying the implicit legacy schema.
 			"release without schema",
-			&xmlio.Release_t{Release: "2025", App: mustDotted(t, "2.06"), Schema: nil, XMLVersion: "1.1", Decode: h2025v1.Decode, Encode: h2025v1.Encode},
+			&xmlio.Release_t{Release: "2025", App: mustDotted(t, "2.06"), Schema: nil, XMLVersion: "1.1", Decode: v1_06.Decode, Encode: v1_06.Encode},
 		},
 		{
 			// A schema with no release: classic states neither.
 			"schema without release",
-			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: dottedPtr(t, "1.06"), XMLVersion: "1.0", Decode: h2017v1.Decode, Encode: h2017v1.Encode},
+			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: dottedPtr(t, "1.06"), XMLVersion: "1.0", Decode: v0_77.Decode, Encode: v0_77.Encode},
 		},
 		{
 			// An empty Raw would collide with the implicit legacy schema's key.
 			"empty schema",
-			&xmlio.Release_t{Release: "2025", App: mustDotted(t, "2.06"), Schema: &wxx.Dotted{}, XMLVersion: "1.1", Decode: h2025v1.Decode, Encode: h2025v1.Encode},
+			&xmlio.Release_t{Release: "2025", App: mustDotted(t, "2.06"), Schema: &wxx.Dotted{}, XMLVersion: "1.1", Decode: v1_06.Decode, Encode: v1_06.Encode},
 		},
 		{
 			// An entry that does not say how its files open cannot write one, and
 			// encode time is too late to find that out.
 			"no xml version",
-			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: nil, XMLVersion: "", Decode: h2017v1.Decode, Encode: h2017v1.Encode},
+			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: nil, XMLVersion: "", Decode: v0_77.Decode, Encode: v0_77.Encode},
 		},
 		{
 			"unknown xml version",
-			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: nil, XMLVersion: "1.2", Decode: h2017v1.Decode, Encode: h2017v1.Encode},
+			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: nil, XMLVersion: "1.2", Decode: v0_77.Decode, Encode: v0_77.Encode},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -392,8 +392,8 @@ func TestRegistrySchemaSelectsCodec(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CodecForSchema(nil): %v", err)
 		}
-		if funcPtr(c.Decode) != funcPtr(h2017v1.Decode) || funcPtr(c.Encode) != funcPtr(h2017v1.Encode) {
-			t.Errorf("CodecForSchema(nil) is not the h2017v1 codec")
+		if funcPtr(c.Decode) != funcPtr(v0_77.Decode) || funcPtr(c.Encode) != funcPtr(v0_77.Encode) {
+			t.Errorf("CodecForSchema(nil) is not the v0_77 codec")
 		}
 	})
 
@@ -402,8 +402,8 @@ func TestRegistrySchemaSelectsCodec(t *testing.T) {
 		if err != nil {
 			t.Fatalf(`CodecForSchema("1.06"): %v`, err)
 		}
-		if funcPtr(c.Decode) != funcPtr(h2025v1.Decode) || funcPtr(c.Encode) != funcPtr(h2025v1.Encode) {
-			t.Errorf(`CodecForSchema("1.06") is not the h2025v1 codec`)
+		if funcPtr(c.Decode) != funcPtr(v1_06.Decode) || funcPtr(c.Encode) != funcPtr(v1_06.Encode) {
+			t.Errorf(`CodecForSchema("1.06") is not the v1_06 codec`)
 		}
 	})
 
@@ -486,7 +486,7 @@ func TestNewRegistryRejectsAmbiguousSchemaCodec(t *testing.T) {
 	first := w2025Entry(t, "2.06", "1.06")
 	second := w2025Entry(t, "3.01", "1.06")
 	// Same schema, a different codec.
-	second.Decode, second.Encode = h2017v1.Decode, h2017v1.Encode
+	second.Decode, second.Encode = v0_77.Decode, v0_77.Encode
 
 	r, err := xmlio.NewRegistry(first, second)
 	if err == nil {

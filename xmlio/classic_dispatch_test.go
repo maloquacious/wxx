@@ -8,7 +8,7 @@ import (
 
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/xmlio"
-	"github.com/maloquacious/wxx/xmlio/h2017v1"
+	"github.com/maloquacious/wxx/xmlio/internal/v0_77"
 )
 
 // classicSamples are H2017 ("classic") .wxx fixtures with their true on-disk
@@ -107,7 +107,7 @@ func TestClassicVersionFidelity(t *testing.T) {
 }
 
 // TestClassicEncodeDispatch asserts that the public encoder routes every classic
-// fixture to the h2017v1 encoder -- the guarantee this test has always made,
+// fixture to the v0_77 encoder -- the guarantee this test has always made,
 // restated on the model that now carries it.
 //
 // What routes has changed: the encoder used to switch on a DataVersion.Major of
@@ -135,8 +135,8 @@ func TestClassicEncodeDispatch(t *testing.T) {
 			if err != nil {
 				t.Fatalf("CodecForSchema(%v): %v", m.MetaData.Version, err)
 			}
-			if funcPtr(codec.Encode) != funcPtr(h2017v1.Encode) {
-				t.Errorf("schema of %s does not select the h2017v1 encoder", tc.path)
+			if funcPtr(codec.Encode) != funcPtr(v0_77.Encode) {
+				t.Errorf("schema of %s does not select the v0_77 encoder", tc.path)
 			}
 
 			var buf bytes.Buffer

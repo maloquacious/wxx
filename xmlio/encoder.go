@@ -73,7 +73,7 @@ type EncoderDiagnostics struct {
 	// opt-in via WithEncoderDiagnostics. That is a real limit worth stating: a
 	// caller who never asks does not hear about a modeled downgrade loss. It is
 	// the enumerable, documented half of the loss -- the half a caller can
-	// reconstruct from Map_t and h2017v1/COVERAGE.md after the fact -- and the
+	// reconstruct from Map_t and internal/v0_77/COVERAGE.md after the fact -- and the
 	// half that cannot be reconstructed is the half that errors.
 	Dropped []DroppedFeature_t
 }

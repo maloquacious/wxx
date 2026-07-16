@@ -7,7 +7,7 @@ import (
 
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/hexg"
-	"github.com/maloquacious/wxx/xmlio/h2025v1"
+	"github.com/maloquacious/wxx/xmlio/internal/v1_06"
 )
 
 // newRowsMap builds a minimal, fully-populated W2025 Map_t with ROWS
@@ -20,7 +20,7 @@ func newRowsMap() *wxx.Map_t {
 
 	m := &wxx.Map_t{}
 	m.MetaData.AppVersion = wxx.Version()
-	// The schema selects the encode codec: schema "1.06" routes through h2025v1.
+	// The schema selects the encode codec: schema "1.06" routes through v1_06.
 	// The components are spelled out rather than rendered, because Raw is the
 	// authority and "2.06" is not "2.6".
 	schema := wxx.Dotted{Raw: "1.06", Major: 1, Minor: 6}
@@ -87,21 +87,21 @@ func newRowsMap() *wxx.Map_t {
 	return m
 }
 
-// TestW2025RowsRoundTrip drives the h2025v1 codec over a ROWS map: encode the
+// TestW2025RowsRoundTrip drives the v1_06 codec over a ROWS map: encode the
 // in-memory ROWS map, decode the bytes back, and assert the orientation and
 // every tile's data round-trips to the SAME grid position. Before the ROWS
-// encode branch lands, h2025v1.Encode returns an error for ROWS and this fails.
+// encode branch lands, v1_06.Encode returns an error for ROWS and this fails.
 func TestW2025RowsRoundTrip(t *testing.T) {
 	m1 := newRowsMap()
 
-	xmlBytes, err := h2025v1.Encode(m1)
+	xmlBytes, err := v1_06.Encode(m1)
 	if err != nil {
-		t.Fatalf("h2025v1.Encode(ROWS): %v", err)
+		t.Fatalf("v1_06.Encode(ROWS): %v", err)
 	}
 
-	m2, err := h2025v1.Decode(xmlBytes)
+	m2, err := v1_06.Decode(xmlBytes)
 	if err != nil {
-		t.Fatalf("h2025v1.Decode(re-encoded ROWS): %v\n---encoded xml---\n%s", err, head(xmlBytes, 1200))
+		t.Fatalf("v1_06.Decode(re-encoded ROWS): %v\n---encoded xml---\n%s", err, head(xmlBytes, 1200))
 	}
 
 	// Orientation must round-trip.

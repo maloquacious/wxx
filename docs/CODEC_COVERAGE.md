@@ -10,8 +10,8 @@ to downgrade content it holds only as an unmodeled stub, because it cannot say
 what dropping it would cost (`xmlio/downgrade.go`, #32). A matrix that overstates
 coverage therefore weakens a runtime guarantee — it is not just documentation.
 
-- **Classic H2017** — [`xmlio/h2017v1/COVERAGE.md`](../xmlio/h2017v1/COVERAGE.md)
-- **Worldographer 2025** — [`xmlio/h2025v1/COVERAGE.md`](../xmlio/h2025v1/COVERAGE.md)
+- **Classic H2017** — [`xmlio/internal/v0_77/COVERAGE.md`](../xmlio/internal/v0_77/COVERAGE.md)
+- **Worldographer 2025** — [`xmlio/internal/v1_06/COVERAGE.md`](../xmlio/internal/v1_06/COVERAGE.md)
 
 Both share one status vocabulary: **implemented** / **stub** /
 **no-op(intentional)** / **lossy** / **unimplemented(dropped)**, mapping to the

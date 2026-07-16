@@ -9,7 +9,7 @@ import (
 
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/xmlio"
-	"github.com/maloquacious/wxx/xmlio/h2025v1"
+	"github.com/maloquacious/wxx/xmlio/internal/v1_06"
 )
 
 // spyWriter is the io.Writer an encode that must write NOTHING is handed. It
@@ -457,8 +457,8 @@ func TestEncodeTargetRelease(t *testing.T) {
 		App:        wxx.Dotted{Raw: "1.77", Major: 1, Minor: 77},
 		Schema:     &wxx.Dotted{Raw: "1.06", Major: 1, Minor: 6},
 		XMLVersion: "1.1",
-		Decode:     h2025v1.Decode,
-		Encode:     h2025v1.Encode,
+		Decode:     v1_06.Decode,
+		Encode:     v1_06.Encode,
 	}
 
 	t.Run("an assembled release is rejected", func(t *testing.T) {

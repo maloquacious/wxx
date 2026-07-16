@@ -12,8 +12,8 @@ import (
 	"strings"
 
 	"github.com/maloquacious/wxx"
-	"github.com/maloquacious/wxx/xmlio/h2017v1"
-	"github.com/maloquacious/wxx/xmlio/h2025v1"
+	"github.com/maloquacious/wxx/xmlio/internal/v0_77"
+	"github.com/maloquacious/wxx/xmlio/internal/v1_06"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/transform"
 )
@@ -237,12 +237,12 @@ func (d *Decoder) Decode(r io.Reader) (*wxx.Map_t, error) {
 	// use the metadata to call the correct decoder for the XML
 	switch xmlMetaData.Release {
 	case "2025":
-		// any W2025 build (release=2025) routes to the h2025v1 decoder;
+		// any W2025 build (release=2025) routes to the v1_06 decoder;
 		// version/schema no longer gate the dispatch.
 		if d.opts.diagnostics != nil {
 			d.opts.diagnostics.Schema = "h2025v1"
 		}
-		return h2025v1.Decode(data)
+		return v1_06.Decode(data)
 	case "":
 		// H2017 ("classic") files carry no release or schema attribute; they
 		// are identified solely by a "1.x" version (e.g. 1.73/1.74/1.77).
@@ -252,7 +252,7 @@ func (d *Decoder) Decode(r io.Reader) (*wxx.Map_t, error) {
 			if d.opts.diagnostics != nil {
 				d.opts.diagnostics.Schema = "h2017v1"
 			}
-			return h2017v1.Decode(data)
+			return v0_77.Decode(data)
 		}
 	}
 

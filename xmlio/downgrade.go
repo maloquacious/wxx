@@ -118,7 +118,7 @@ func downgradeLoss(m *wxx.Map_t, target *Release_t) ([]DroppedFeature_t, error) 
 //     map/informations/information and map/configuration/text-config/labelstyle
 //     are dropped -- but the classic FORMAT has room for all three (RelaxNG
 //     schema/utf-8-xml.rnc defines them, classic samples carry them). Our classic
-//     ENCODER does not write them yet, which h2017v1/COVERAGE.md documents and
+//     ENCODER does not write them yet, which internal/v0_77/COVERAGE.md documents and
 //     the classic round-trip harness proves by losing the same three on a
 //     classic -> classic trip. They cost the caller data, but they are this
 //     codec's gaps and would not be fixed by targeting differently. Reporting
@@ -131,13 +131,13 @@ func classicDowngradeLoss(m *wxx.Map_t) ([]DroppedFeature_t, error) {
 
 	// map/@hScrollbarPos, map/@vScrollbarPos -- the classic <map> element states
 	// no scrollbar position (RelaxNG defines 24 map attributes, none of them
-	// these; h2017v1's XMLSchema struct has no field for either).
+	// these; v0_77's XMLSchema struct has no field for either).
 	//
 	// Gated on non-zero because Map_t models these as plain float64: absent and
 	// "0.0" decode identically, so a zero cannot be reported as a loss without
 	// inventing one. Both tracked 2.06 fixtures carry 0.0, so this entry is
 	// LATENT on them -- real by format, unexercised by the samples, in the same
-	// sense h2017v1/COVERAGE.md means "latent-by-code". Its test synthesizes a
+	// sense internal/v0_77/COVERAGE.md means "latent-by-code". Its test synthesizes a
 	// non-zero value rather than pretending a fixture proves it.
 	const scrollbarReason = "the classic <map> element states no scrollbar position (schema/utf-8-xml.rnc defines 24 map attributes, none of them a scrollbar position)"
 	if m.HScrollbarPos != 0 {
@@ -158,7 +158,7 @@ func classicDowngradeLoss(m *wxx.Map_t) ([]DroppedFeature_t, error) {
 	}
 
 	// map/maplayer/@opacity -- the classic <maplayer> element has only @name and
-	// @isVisible (RelaxNG lines 63-66; h2017v1.MapLayer_t has the same two
+	// @isVisible (RelaxNG lines 63-66; v0_77.MapLayer_t has the same two
 	// fields). Note this is NOT "classic has no layers": both formats carry
 	// <maplayer> elements, and classic re-emits every one of them. Only the
 	// per-layer opacity is lost.
@@ -177,7 +177,7 @@ func classicDowngradeLoss(m *wxx.Map_t) ([]DroppedFeature_t, error) {
 
 	// map/configuration/shape-config/shapestyle/@lineCap and @lineJoin -- the
 	// classic <shapestyle> element has 27 attributes and neither of these
-	// (RelaxNG lines 194-222; h2017v1.ShapeStyle_t has no LineCap/LineJoin).
+	// (RelaxNG lines 194-222; v0_77.ShapeStyle_t has no LineCap/LineJoin).
 	//
 	// The near-miss worth naming: classic DOES define @lineCap and @lineJoin --
 	// on <shape>, a different element (RelaxNG lines 157-158), which is why a

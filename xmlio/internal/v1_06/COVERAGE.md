@@ -1,7 +1,7 @@
-# W2025 (h2025v1) codec coverage
+# W2025 (v1_06) codec coverage
 
 Per-element read/write coverage for the Worldographer 2025 XML codec
-(`xmlio/h2025v1`). This mirrors `wog/FEATURES.md` from the sibling ottomap repo
+(`xmlio/internal/v1_06`). This mirrors `wog/FEATURES.md` from the sibling ottomap repo
 and exists to make stub-drift visible: this whole ticket (#7) began because a
 stub encoder hid behind a passing round-trip test.
 
@@ -33,7 +33,7 @@ no-op(intentional)** → ⚠️ (partial, with documented caveats); **not modele
 not emitted** → ❌ (for the affected direction). The richer vocabulary is kept
 here because it distinguishes *how* a field is partial (raw-chardata stub vs.
 constant-block lossy vs. symmetric drop), which is exactly the distinction that
-lets stub-drift hide. The classic matrix (`xmlio/h2017v1/COVERAGE.md`) uses this
+lets stub-drift hide. The classic matrix (`xmlio/internal/v0_77/COVERAGE.md`) uses this
 same vocabulary.
 
 Tests referenced (in `xmlio/roundtrip_2025_test.go` unless noted, package
@@ -124,7 +124,7 @@ about W2025 additions.
   defines — `map`, `gridandnumbering`, `terrainmap`, `maplayer`, `tiles`/`tilerow`,
   `mapkey`, `features`/`feature`, `location`, `labels`/`label`, `shapes`/`shape`/`p`,
   `notes`, `informations`/`information`, `configuration` + its five sub-configs,
-  `labelstyle`, `shapestyle` — has a corresponding type in `xmlio/h2025v1/schema.go`
+  `labelstyle`, `shapestyle` — has a corresponding type in `xmlio/internal/v1_06/schema.go`
   and appears as **implemented** in the table above. No RelaxNG element is
   unmodeled by the h2025 decoder.
 - **The six W2025-native fields modeled in #11 lie outside the schema's scope.**

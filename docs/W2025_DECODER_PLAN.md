@@ -18,7 +18,7 @@ We need at least one `.wxx` file created by Worldographer 2025 in `testdata/`. T
 - A small map (e.g. 10x10) with a few features, labels, shapes, and notes populated.
 - A larger map to test performance and edge cases.
 
-The file must decode through the existing pipeline's first stages (gunzip, UTF-16/BE to UTF-8) - the dispatcher already recognizes `2025/1.10/1.01` and routes to `h2025v1.Decode`. We just need the Decode function to do real work.
+The file must decode through the existing pipeline's first stages (gunzip, UTF-16/BE to UTF-8) - the dispatcher already recognizes `2025/1.10/1.01` and routes to `v1_06.Decode`. We just need the Decode function to do real work.
 
 **Action:** Create or export a W2025 map from Worldographer 2025 and place it in `testdata/`.
 
@@ -35,11 +35,11 @@ This produces:
 - Confirmation the file is W2025 (`W2025: version 1.10: schema 1.01`)
 - The full XML element/attribute hierarchy
 
-**Action:** Run the schema tool, save the output to `xmlio/h2025v1/SCHEMA_DUMP.md` for reference during development.
+**Action:** Run the schema tool, save the output to `xmlio/internal/v1_06/SCHEMA_DUMP.md` for reference during development.
 
 ### P3. Diff the schema against H2017
 
-Compare the W2025 hierarchy output against the H2017 schema types in `xmlio/h2017v1/schema.go`. Categorize differences:
+Compare the W2025 hierarchy output against the H2017 schema types in `xmlio/internal/v0_77/schema.go`. Categorize differences:
 
 | Category | What to look for |
 |---|---|
@@ -56,22 +56,22 @@ Pay special attention to:
 - Configuration sections (terrain-config, feature-config, etc.)
 - Any entirely new top-level sections
 
-**Action:** Document findings in `xmlio/h2025v1/SCHEMA_DIFF.md`.
+**Action:** Document findings in `xmlio/internal/v1_06/SCHEMA_DIFF.md`.
 
 ---
 
 ## Implementation Steps
 
-### Step 1. Define `h2025v1/schema.go` - XML unmarshal types
+### Step 1. Define `internal/v1_06/schema.go` - XML unmarshal types
 
-Create Go structs with `xml` tags that match the W2025 XML structure. Follow the exact pattern from `h2017v1/schema.go`:
+Create Go structs with `xml` tags that match the W2025 XML structure. Follow the exact pattern from `internal/v0_77/schema.go`:
 
 - One top-level `XMLSchema` struct with `xml:"map"` name
 - Map attributes as fields with `xml:"...,attr"` tags (including the new `release` and `schema` attrs)
 - Nested structs for each child element (`gridandnumbering`, `terrainmap`, `tiles`, etc.)
 - Wrapper types for element collections (e.g. `Features` wrapping `[]Feature`)
 - `InnerText string \`xml:",chardata"\`` for elements with text content
-- Helper functions (`decodeRgba`, etc.) - reuse from h2017v1 if format is identical, or create W2025-specific versions
+- Helper functions (`decodeRgba`, etc.) - reuse from v0_77 if format is identical, or create W2025-specific versions
 
 **Key differences to expect vs H2017:**
 - `XMLSchema` will have `Release string \`xml:"release,attr"\`` and `Schema string \`xml:"schema,attr"\``
@@ -79,15 +79,15 @@ Create Go structs with `xml` tags that match the W2025 XML structure. Follow the
 - Possible new elements/attributes identified in P3
 
 **Guidance:**
-- Start by copying `h2017v1/schema.go` as a template, then modify based on the schema diff
+- Start by copying `internal/v0_77/schema.go` as a template, then modify based on the schema diff
 - Keep types unexported (package-private) except the `Decode` function
 - Use the same naming conventions (`_t` suffix for types, PascalCase for fields)
 
-**File:** `xmlio/h2025v1/schema.go`
+**File:** `xmlio/internal/v1_06/schema.go`
 
-### Step 2. Implement `h2025v1/decode.go` - XML to Map_t translation
+### Step 2. Implement `internal/v1_06/decode.go` - XML to Map_t translation
 
-Replace the current stub with a full implementation. Follow the pattern in `h2017v1/decode.go`:
+Replace the current stub with a full implementation. Follow the pattern in `internal/v0_77/decode.go`:
 
 ```go
 func Decode(input []byte) (*wxx.Map_t, error) {
@@ -131,17 +131,17 @@ Translation sections (mirroring H2017 decode order):
 - Use `json:"...,omitempty"` tags to avoid breaking H2017 round-trips
 - Document what was added and why in the commit message
 
-**File:** `xmlio/h2025v1/decode.go`
+**File:** `xmlio/internal/v1_06/decode.go`
 
 ### Step 3. Add helper functions
 
 Depending on the schema diff, we may need:
 
-- **`decodeRgba` / `decodeZeroableRgba`** - If W2025 uses the same RGBA string format (`"R,G,B,A"`), share or duplicate from h2017v1. If the format changed, write W2025-specific versions.
-- **Tile row parser** - If the tile format changed, write a dedicated parser. If it's the same, the logic from h2017v1 can be adapted.
+- **`decodeRgba` / `decodeZeroableRgba`** - If W2025 uses the same RGBA string format (`"R,G,B,A"`), share or duplicate from v0_77. If the format changed, write W2025-specific versions.
+- **Tile row parser** - If the tile format changed, write a dedicated parser. If it's the same, the logic from v0_77 can be adapted.
 - **New type converters** - For any new W2025-specific data types.
 
-**File:** `xmlio/h2025v1/schema.go` (alongside types, as in h2017v1)
+**File:** `xmlio/internal/v1_06/schema.go` (alongside types, as in v0_77)
 
 ### Step 4. Update version dispatch (if needed)
 
@@ -149,21 +149,21 @@ The dispatcher in `xmlio/decoder.go:234` already handles `"2025/1.10/1.01"`. If 
 
 ```go
 case "2025/1.10/1.01", "2025/1.11/1.01", ...:
-    return h2025v1.Decode(data)
+    return v1_06.Decode(data)
 ```
 
 **File:** `xmlio/decoder.go`
 
 ### Step 5. Write tests
 
-Create `xmlio/h2025v1/decode_test.go` with:
+Create `xmlio/internal/v1_06/decode_test.go` with:
 
 1. **Round-trip test** - Decode a W2025 file, verify `Map_t` is populated (non-nil tiles, terrain map, features, etc.)
 2. **Metadata test** - Verify `DataVersion.Major == 2025`, `Worldographer.Release == "2025"`, `Worldographer.Schema == "1.01"`
 3. **Tile count test** - Decode and verify `Tiles.TilesWide` and `Tiles.TilesHigh` match expected values
 4. **Terrain map test** - Verify terrain labels and indices are parsed correctly
 5. **Feature/label/shape counts** - Verify expected counts from the sample file
-6. **Integration test via xmlio.Decoder** - Test the full pipeline (gunzip -> UTF-16 -> header -> dispatch -> h2025v1.Decode) using a W2025 `.wxx` file
+6. **Integration test via xmlio.Decoder** - Test the full pipeline (gunzip -> UTF-16 -> header -> dispatch -> v1_06.Decode) using a W2025 `.wxx` file
 
 Since test data files are gitignored, tests should skip gracefully if the sample file is missing:
 
@@ -177,7 +177,7 @@ func TestDecode(t *testing.T) {
 }
 ```
 
-**File:** `xmlio/h2025v1/decode_test.go`
+**File:** `xmlio/internal/v1_06/decode_test.go`
 
 ### Step 6. Validate with CLI tools
 
@@ -221,11 +221,11 @@ Based on what we know about the W2025 format:
 ## Definition of Done
 
 - [ ] W2025 sample file in `testdata/` (local only, gitignored)
-- [ ] Schema dump documented in `xmlio/h2025v1/SCHEMA_DUMP.md`
-- [ ] Schema diff documented in `xmlio/h2025v1/SCHEMA_DIFF.md`
-- [ ] `xmlio/h2025v1/schema.go` with XML unmarshal types
-- [ ] `xmlio/h2025v1/decode.go` with full Decode implementation
-- [ ] `xmlio/h2025v1/decode_test.go` with tests (skip if no test data)
+- [ ] Schema dump documented in `xmlio/internal/v1_06/SCHEMA_DUMP.md`
+- [ ] Schema diff documented in `xmlio/internal/v1_06/SCHEMA_DIFF.md`
+- [ ] `xmlio/internal/v1_06/schema.go` with XML unmarshal types
+- [ ] `xmlio/internal/v1_06/decode.go` with full Decode implementation
+- [ ] `xmlio/internal/v1_06/decode_test.go` with tests (skip if no test data)
 - [ ] Any Map_t additions in `map.go` (if needed)
 - [ ] `cmd/info` successfully reads and displays W2025 file info
 - [ ] `go test ./...` passes (including existing H2017 tests)
@@ -235,7 +235,7 @@ Based on what we know about the W2025 format:
 
 ## Out of Scope
 
-- **W2025 encoder** (`h2025v1/encode.go`) - separate task, depends on decode being done first
+- **W2025 encoder** (`internal/v1_06/encode.go`) - separate task, depends on decode being done first
 - **Map_t redesign** - only additive changes; structural redesign is a separate task
 - **SQLite3 store** - depends on Map_t stability
 - **DSL/scripting** - depends on store and Map_t
@@ -250,4 +250,4 @@ Based on what we know about the W2025 format:
 
 3. **Go's `encoding/xml` and XML 1.1.** The XML header is stripped before parsing, so Go's XML 1.0 parser should work. But if W2025 uses XML 1.1-specific features in the body (e.g. additional character references), we may hit issues. Low risk but worth noting.
 
-4. **Version string evolution.** If Worldographer 2025 has shipped updates since the `1.10/1.01` combination, we'll need to decide whether to handle them all in `h2025v1` or create additional schema packages.
+4. **Version string evolution.** If Worldographer 2025 has shipped updates since the `1.10/1.01` combination, we'll need to decide whether to handle them all in `v1_06` or create additional schema packages.

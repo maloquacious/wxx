@@ -1,6 +1,6 @@
 // Copyright (c) 2025 Michael D Henderson. All rights reserved.
 
-package h2025v1
+package v1_06
 
 import (
 	"encoding/xml"

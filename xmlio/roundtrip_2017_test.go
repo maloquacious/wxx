@@ -28,7 +28,7 @@ import (
 // classicRoundTripExpect below), mirroring how the h2025 coverage-matrix test
 // asserts its matrix: any drift (a newly dropped/altered field, or a
 // previously dropped field that starts surviving) trips the test so a
-// maintainer must update the inventory in xmlio/h2017v1/COVERAGE.md
+// maintainer must update the inventory in xmlio/internal/v0_77/COVERAGE.md
 // deliberately. Run with `-v` to dump the full per-fixture loss set; the
 // harness doubles as the report generator for that document.
 
@@ -334,7 +334,7 @@ func assertLossSet(t *testing.T, fixture string, want, got []string) {
 				fmt.Fprintf(&b, "    - %s\n", r)
 			}
 		}
-		b.WriteString("  Update classicRoundTripExpect and xmlio/h2017v1/COVERAGE.md together.")
+		b.WriteString("  Update classicRoundTripExpect and xmlio/internal/v0_77/COVERAGE.md together.")
 		t.Error(b.String())
 	}
 }
@@ -342,7 +342,7 @@ func assertLossSet(t *testing.T, fixture string, want, got []string) {
 // classicRoundTripExpect is the documented per-fixture loss inventory, derived
 // from the harness's first real run. It is the machine-checkable twin of the
 // "Round-trip loss inventory (executable)" section in
-// xmlio/h2017v1/COVERAGE.md; keep the two in sync.
+// xmlio/internal/v0_77/COVERAGE.md; keep the two in sync.
 //
 // Shared across every classic fixture (blank, columns, import, merge):
 //   - <informations>/<information> lore tree dropped (encode.go:438-442 emits
