@@ -44,12 +44,24 @@ documentation is sparse.
 ## Codec conventions
 
 - The public surface lives on `wxx.Decoder` / `wxx.Encoder` interfaces in
-  [wxx.go](./wxx.go). Version-specific implementations live under `xmlio/<schema>/`.
+  [wxx.go](./wxx.go). Version-specific implementations live under
+  `xmlio/internal/<codec version>/` and are **not** publicly importable.
 - Follow [CODECS.md](./CODECS.md): `Decode(io.Reader) (*Map_t, error)` and
   `Encode(io.Writer, *Map_t) error`; expose transforms (gunzip, UTF-16↔UTF-8,
   XML header fix) as composable functions; tune behavior via options.
 - `Map_t` is a superset of all known schema versions. Decoders populate it;
   encoders consume it. Never narrow `Map_t` to a single schema.
+- **An encoder takes an application version, never a schema version, and hands
+  out no codec** (issue #41). A caller names a target only by its verbatim
+  `map/@version` string — `xmlio.MarshalXML(m, "2.06")` or
+  `xmlio.WithTargetVersion("2.06")` — and the registry resolves it to exactly one
+  release, whose schema then selects the codec. There is no public way to name a
+  schema or hold an encoder: `xmlio.Release_t` is a read-only descriptor, and the
+  schema→codec selector lives in `xmlio/internal/codec`.
+  - Do not add a public symbol that accepts a schema or returns a codec. Tests
+    that legitimately choose an encoder import `xmlio/internal/...` directly —
+    `package xmlio_test` lives inside `xmlio/`, and Go's internal rule is
+    directory-based, so that works with no escape hatch in the package.
 
 ## CLI conventions
 

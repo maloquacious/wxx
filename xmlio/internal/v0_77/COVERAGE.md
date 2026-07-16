@@ -218,10 +218,13 @@ version bumps), which is the evidence for treating them as one schema; all
 sub-revisions share the one `v0_77` codec.
 
 The nil `Schema` is what routes an encode back here: `xmlio/encoder.go`
-`MarshalXML` resolves the codec from the target release's schema
-(`CodecForSchema`), so the implicit legacy schema selects `v0_77.Encode`. There
-is no family-year dispatch key any more — the `2017` in this package's name is a
-project coinage that appears in no classic file (ADR 0004).
+`MarshalXML(m, app)` resolves the caller's **application version** to a release
+and then resolves that release's schema to a codec
+(`xmlio/internal/codec.ForSchema`), so the implicit legacy schema selects
+`v0_77.Encode`. There is no family-year dispatch key any more — the `2017` in this
+codec's old name was a project coinage that appears in no classic file (ADR
+0004). Note the selector is **internal**: a caller names an application version
+and never a schema, and is never handed a codec (issue #41 requirements 1 and 5).
 
 The on-disk revision is preserved in two forms: the **parsed, comparable**
 `Dotted` in `MetaData.Version.App`, whose `Raw` is authoritative, and the
@@ -238,9 +241,10 @@ level by `TestEncodeXMLHeaderFollowsRelease` (`xmlio/encode_dispatch_test.go`).
 The public `xmlio` pipeline now **round-trips classic end to end** (issue B4
 backfill); it was previously write-only:
 
-- **Encode**: `xmlio/encoder.go` `MarshalXML` resolves the codec from the target
-  release's schema, so the implicit legacy schema (`Schema == nil`) selects
-  `v0_77.Encode` (ADR 0004). The public encoder can emit classic XML.
+- **Encode**: `xmlio/encoder.go` `MarshalXML(m, app)` resolves the target release
+  from the caller's application version, and the target's schema selects the
+  codec, so the implicit legacy schema (`Schema == nil`) selects `v0_77.Encode`
+  (ADR 0004). The public encoder can emit classic XML.
 - **Decode**: `xmlio/decoder.go` now has a classic dispatch case alongside the
   `release="2025"` case. Classic files carry **no `release` attribute at all**
   (confirmed by every sample and by the RelaxNG schema, which defines no

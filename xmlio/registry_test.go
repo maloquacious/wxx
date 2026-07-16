@@ -10,6 +10,7 @@ import (
 
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/xmlio"
+	"github.com/maloquacious/wxx/xmlio/internal/codec"
 	"github.com/maloquacious/wxx/xmlio/internal/v0_77"
 	"github.com/maloquacious/wxx/xmlio/internal/v1_06"
 )
@@ -19,6 +20,36 @@ import (
 // the registry is a package-level function, so the pointer identifies it.
 func funcPtr(f any) uintptr {
 	return reflect.ValueOf(f).Pointer()
+}
+
+// schemaKeyForTest renders a schema as the key codec.ForSchema takes, mirroring
+// the unexported schemaKey the registry uses.
+//
+// nil -- the implicit legacy (classic) schema -- keys on "". Nothing on disk can
+// collide with it: ParseDotted rejects an empty string, so no file states one.
+func schemaKeyForTest(d *wxx.Dotted) string {
+	if d == nil {
+		return ""
+	}
+	return d.Raw
+}
+
+// codecForSchemaOfTest resolves the codec an entry's schema selects, the way the
+// registry does internally.
+//
+// Tests reach the selector through xmlio/internal/codec because xmlio no longer
+// exports one: a public schema -> codec selector is exactly the reach issue #41
+// requirement 5 removes. These tests may import it because Go's internal rule is
+// directory-based -- package xmlio_test is an external test package that still
+// lives inside xmlio/ -- which is requirement 5's "test units may choose the
+// encoder" exception, granted without any escape hatch in the package itself.
+func codecForSchemaOfTest(t *testing.T, schema *wxx.Dotted) codec.Codec_t {
+	t.Helper()
+	c, err := codec.ForSchema(schemaKeyForTest(schema))
+	if err != nil {
+		t.Fatalf("codec.ForSchema(%q): %v", schemaKeyForTest(schema), err)
+	}
+	return c
 }
 
 // mustDotted parses an on-disk dotted version for a test table.
@@ -62,7 +93,14 @@ var registrySamples = []struct {
 }
 
 // TestRegistryLookup asserts every supported release resolves to its full
-// on-disk identity and its codec pair.
+// on-disk identity, and that the schema that identity states selects the
+// expected codec.
+//
+// The codec assertion moved off the entry and onto the schema. Lookup used to
+// hand back Decode/Encode fields, which is how a caller could take a release
+// descriptor and encode with it; the entry now describes the release and the
+// schema selects the codec, so what is under test is the same binding read the
+// way the dispatcher reads it.
 func TestRegistryLookup(t *testing.T) {
 	for _, tc := range registrySamples {
 		t.Run(tc.name, func(t *testing.T) {
@@ -97,11 +135,12 @@ func TestRegistryLookup(t *testing.T) {
 			if want := "<?xml version='" + tc.wantXMLVersion + "' encoding='utf-16'?>\n"; string(h) != want {
 				t.Errorf("Lookup(%q).XMLHeader() = %q, want %q", tc.app, h, want)
 			}
-			if got, want := funcPtr(e.Decode), funcPtr(tc.wantDecode); got != want {
-				t.Errorf("Lookup(%q).Decode is not the expected codec", tc.app)
+			c := codecForSchemaOfTest(t, e.Schema)
+			if got, want := funcPtr(c.Decode), funcPtr(tc.wantDecode); got != want {
+				t.Errorf("the schema Lookup(%q) states does not select the expected decoder", tc.app)
 			}
-			if got, want := funcPtr(e.Encode), funcPtr(tc.wantEncode); got != want {
-				t.Errorf("Lookup(%q).Encode is not the expected codec", tc.app)
+			if got, want := funcPtr(c.Encode), funcPtr(tc.wantEncode); got != want {
+				t.Errorf("the schema Lookup(%q) states does not select the expected encoder", tc.app)
 			}
 		})
 	}
@@ -213,8 +252,10 @@ func TestRegistrySelfConsistency(t *testing.T) {
 		if e.Schema != nil && e.Schema.Raw == "" {
 			t.Errorf("entry %d (version %q): Schema.Raw is empty", i, e.App.Raw)
 		}
-		if e.Decode == nil || e.Encode == nil {
-			t.Errorf("entry %d (version %q): nil codec (Decode nil: %v, Encode nil: %v)", i, e.App.Raw, e.Decode == nil, e.Encode == nil)
+		// The schema the entry states must select a codec, or the release is one
+		// nothing can parse or emit.
+		if _, err := codec.ForSchema(schemaKeyForTest(e.Schema)); err != nil {
+			t.Errorf("entry %d (version %q): its schema selects no codec: %v", i, e.App.Raw, err)
 		}
 		// Every release must know the declaration its files open with, or it
 		// cannot write one.
@@ -249,8 +290,6 @@ func classicEntry(t *testing.T, app string) *xmlio.Release_t {
 		App:        mustDotted(t, app),
 		Schema:     nil,
 		XMLVersion: "1.0",
-		Decode:     v0_77.Decode,
-		Encode:     v0_77.Encode,
 	}
 }
 
@@ -262,8 +301,6 @@ func w2025Entry(t *testing.T, app, schema string) *xmlio.Release_t {
 		App:        mustDotted(t, app),
 		Schema:     dottedPtr(t, schema),
 		XMLVersion: "1.1",
-		Decode:     v1_06.Decode,
-		Encode:     v1_06.Encode,
 	}
 }
 
@@ -331,41 +368,43 @@ func TestNewRegistryRejectsInvalidEntry(t *testing.T) {
 		{"nil entry", nil},
 		{
 			"no application version",
-			&xmlio.Release_t{Release: "", App: wxx.Dotted{}, Schema: nil, XMLVersion: "1.0", Decode: v0_77.Decode, Encode: v0_77.Encode},
+			&xmlio.Release_t{Release: "", App: wxx.Dotted{}, Schema: nil, XMLVersion: "1.0"},
 		},
 		{
-			"nil decoder",
-			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: nil, XMLVersion: "1.0", Decode: nil, Encode: v0_77.Encode},
-		},
-		{
-			"nil encoder",
-			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: nil, XMLVersion: "1.0", Decode: v0_77.Decode, Encode: nil},
+			// The successor to the old "nil decoder"/"nil encoder" cases. An entry
+			// can no longer name a codec, so it can no longer name a nil one; what
+			// it can still do is name a SCHEMA that selects no codec, which is the
+			// same failure -- a release the registry cannot parse or emit -- reached
+			// the only way left to reach it. It must still be caught at
+			// construction: encode time is too late to learn a release has no codec.
+			"schema selects no codec",
+			&xmlio.Release_t{Release: "2025", App: mustDotted(t, "2.06"), Schema: dottedPtr(t, "9.99"), XMLVersion: "1.1"},
 		},
 		{
 			// A release with no schema: W2025 states both or the absence stops
 			// identifying the implicit legacy schema.
 			"release without schema",
-			&xmlio.Release_t{Release: "2025", App: mustDotted(t, "2.06"), Schema: nil, XMLVersion: "1.1", Decode: v1_06.Decode, Encode: v1_06.Encode},
+			&xmlio.Release_t{Release: "2025", App: mustDotted(t, "2.06"), Schema: nil, XMLVersion: "1.1"},
 		},
 		{
 			// A schema with no release: classic states neither.
 			"schema without release",
-			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: dottedPtr(t, "1.06"), XMLVersion: "1.0", Decode: v0_77.Decode, Encode: v0_77.Encode},
+			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: dottedPtr(t, "1.06"), XMLVersion: "1.0"},
 		},
 		{
 			// An empty Raw would collide with the implicit legacy schema's key.
 			"empty schema",
-			&xmlio.Release_t{Release: "2025", App: mustDotted(t, "2.06"), Schema: &wxx.Dotted{}, XMLVersion: "1.1", Decode: v1_06.Decode, Encode: v1_06.Encode},
+			&xmlio.Release_t{Release: "2025", App: mustDotted(t, "2.06"), Schema: &wxx.Dotted{}, XMLVersion: "1.1"},
 		},
 		{
 			// An entry that does not say how its files open cannot write one, and
 			// encode time is too late to find that out.
 			"no xml version",
-			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: nil, XMLVersion: "", Decode: v0_77.Decode, Encode: v0_77.Encode},
+			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: nil, XMLVersion: ""},
 		},
 		{
 			"unknown xml version",
-			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: nil, XMLVersion: "1.2", Decode: v0_77.Decode, Encode: v0_77.Encode},
+			&xmlio.Release_t{Release: "", App: mustDotted(t, "1.77"), Schema: nil, XMLVersion: "1.2"},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -383,31 +422,42 @@ func TestNewRegistryRejectsInvalidEntry(t *testing.T) {
 	}
 }
 
-// TestRegistrySchemaSelectsCodec asserts ADR 0004 Decision 4 against the
-// compiled-in registry: the schema answers "which code path parses/emits this",
-// and a nil schema asks for the implicit legacy one.
-func TestRegistrySchemaSelectsCodec(t *testing.T) {
+// TestSchemaSelectsCodec asserts ADR 0004 Decision 4 against the compiled-in
+// codec table: the schema answers "which code path parses/emits this", and the
+// implicit legacy schema -- which classic files state by stating no @schema at
+// all -- asks for the classic codec.
+//
+// The selector moved from xmlio.CodecForSchema to xmlio/internal/codec.ForSchema
+// (issue #41: a public selector taking a schema and returning an encoder is the
+// hole that let a classic map out through the W2025 codec). The assertions are
+// the same ones; only the reach changed, and this test is allowed the reach
+// because it is a test unit -- requirement 5's exception, which works because
+// Go's internal rule is directory-based and package xmlio_test lives inside
+// xmlio/.
+func TestSchemaSelectsCodec(t *testing.T) {
 	t.Run("implicit legacy schema", func(t *testing.T) {
-		c, err := xmlio.CodecForSchema(nil)
+		c, err := codec.ForSchema("")
 		if err != nil {
-			t.Fatalf("CodecForSchema(nil): %v", err)
+			t.Fatalf(`codec.ForSchema(""): %v`, err)
 		}
 		if funcPtr(c.Decode) != funcPtr(v0_77.Decode) || funcPtr(c.Encode) != funcPtr(v0_77.Encode) {
-			t.Errorf("CodecForSchema(nil) is not the v0_77 codec")
+			t.Errorf(`codec.ForSchema("") is not the v0_77 codec`)
 		}
 	})
 
 	t.Run("w2025 schema 1.06", func(t *testing.T) {
-		c, err := xmlio.CodecForSchema(dottedPtr(t, "1.06"))
+		c, err := codec.ForSchema("1.06")
 		if err != nil {
-			t.Fatalf(`CodecForSchema("1.06"): %v`, err)
+			t.Fatalf(`codec.ForSchema("1.06"): %v`, err)
 		}
 		if funcPtr(c.Decode) != funcPtr(v1_06.Decode) || funcPtr(c.Encode) != funcPtr(v1_06.Encode) {
-			t.Errorf(`CodecForSchema("1.06") is not the v1_06 codec`)
+			t.Errorf(`codec.ForSchema("1.06") is not the v1_06 codec`)
 		}
 	})
 
-	// Schemas key on Raw too, for the same reason application versions do.
+	// A codec version is not a schema version: "0.77" names the classic CODEC and
+	// appears in no file, so it must select nothing here. Were it ever to resolve,
+	// a codec version would have become addressable as if it were on disk.
 	for _, tc := range []struct {
 		name   string
 		schema string
@@ -415,21 +465,18 @@ func TestRegistrySchemaSelectsCodec(t *testing.T) {
 		{"unpadded 1.06", "1.6"},
 		{"unknown schema", "9.99"},
 		{"app not schema", "2.06"},
+		{"codec version not schema", "0.77"},
 	} {
 		t.Run("miss: "+tc.name, func(t *testing.T) {
-			d := wxx.Dotted{Raw: tc.schema}
-			if parsed, err := wxx.ParseDotted(tc.schema); err == nil {
-				d = parsed
-			}
-			c, err := xmlio.CodecForSchema(&d)
+			c, err := codec.ForSchema(tc.schema)
 			if err == nil {
-				t.Fatalf("CodecForSchema(%q) resolved to a codec, want a miss", tc.schema)
+				t.Fatalf("codec.ForSchema(%q) resolved to a codec, want a miss", tc.schema)
 			}
 			if !errors.Is(err, wxx.ErrUnsupportedMapSchema) {
-				t.Errorf("CodecForSchema(%q) error = %v, want it to wrap %v", tc.schema, err, wxx.ErrUnsupportedMapSchema)
+				t.Errorf("codec.ForSchema(%q) error = %v, want it to wrap %v", tc.schema, err, wxx.ErrUnsupportedMapSchema)
 			}
 			if c.Decode != nil || c.Encode != nil {
-				t.Errorf("CodecForSchema(%q) returned a codec alongside an error, want the zero Codec_t", tc.schema)
+				t.Errorf("codec.ForSchema(%q) returned a codec alongside an error, want the zero Codec_t", tc.schema)
 			}
 		})
 	}
@@ -466,34 +513,96 @@ func TestNewRegistrySharedSchema(t *testing.T) {
 	}
 
 	// ...and to the same codec, because the schema -- not the version -- selects it.
-	if funcPtr(a.Decode) != funcPtr(b.Decode) || funcPtr(a.Encode) != funcPtr(b.Encode) {
+	// Both entries state schema 1.06, so both resolve through the one selector; an
+	// entry cannot name a codec of its own any more, which is what makes "two
+	// versions on one schema disagree about the codec" unrepresentable rather than
+	// merely rejected. See TestVerifyTableRejectsAmbiguousSchemaCodec for the
+	// ambiguity that CAN still be expressed.
+	ca := codecForSchemaOfTest(t, a.Schema)
+	cb := codecForSchemaOfTest(t, b.Schema)
+	if funcPtr(ca.Decode) != funcPtr(cb.Decode) || funcPtr(ca.Encode) != funcPtr(cb.Encode) {
 		t.Errorf("two versions on schema 1.06 resolved to different codecs; the schema selects the codec")
 	}
-	c, err := r.CodecForSchema(dottedPtr(t, "1.06"))
-	if err != nil {
-		t.Fatalf(`CodecForSchema("1.06"): %v`, err)
-	}
-	if funcPtr(c.Decode) != funcPtr(a.Decode) || funcPtr(c.Encode) != funcPtr(a.Encode) {
-		t.Errorf("CodecForSchema does not agree with the entries on the same schema")
+	if funcPtr(ca.Encode) != funcPtr(v1_06.Encode) {
+		t.Errorf("schema 1.06 does not select the v1_06 codec")
 	}
 }
 
-// TestNewRegistryRejectsAmbiguousSchemaCodec is the converse of
-// TestNewRegistrySharedSchema: entries may share a schema, but only if they
-// agree on the codec it selects. Disagreement means the schema no longer answers
-// "which code path emits this", so it must fail at construction.
-func TestNewRegistryRejectsAmbiguousSchemaCodec(t *testing.T) {
-	first := w2025Entry(t, "2.06", "1.06")
-	second := w2025Entry(t, "3.01", "1.06")
-	// Same schema, a different codec.
-	second.Decode, second.Encode = v0_77.Decode, v0_77.Encode
+// TestVerifyTableRejectsAmbiguousSchemaCodec is the converse of
+// TestNewRegistrySharedSchema: a schema may be named more than once, but only if
+// every mention agrees on the codec it selects. Disagreement means the schema no
+// longer answers "which code path emits this", so it must fail at load.
+//
+// This is what TestNewRegistryRejectsAmbiguousSchemaCodec used to assert, moved
+// to the table that can still express the ambiguity. It used to be checked over
+// REGISTRY entries, because each entry named its own codec pair and two entries
+// on one schema could therefore disagree. Entries no longer name a codec -- they
+// name a schema, and the schema selects the codec -- so that disagreement is now
+// unrepresentable and there is nothing left for NewRegistry to check. The
+// ambiguity survives one level down, in the schema -> codec table itself, and
+// that is where the guard follows it.
+//
+// The check has to live outside init to be testable at all -- init panics, and a
+// panic cannot be inspected -- which is why codec.VerifyTable takes a table. This
+// mirrors NewRegistry and appver.VerifyDisjoint, and the reason is the same.
+func TestVerifyTableRejectsAmbiguousSchemaCodec(t *testing.T) {
+	v0 := codec.Codec_t{Decode: v0_77.Decode, Encode: v0_77.Encode}
+	v1 := codec.Codec_t{Decode: v1_06.Decode, Encode: v1_06.Encode}
 
-	r, err := xmlio.NewRegistry(first, second)
-	if err == nil {
-		t.Fatalf("NewRegistry(one schema, two codecs) succeeded with %d entries, want an ambiguity error", len(r.Releases()))
+	// Control: the real shape of the table is accepted. Guard against a vacuous
+	// pass -- if VerifyTable rejected everything, the cases below would pass while
+	// proving nothing about ambiguity.
+	ok := []codec.Entry_t{{Schema: "", Codec: v0}, {Schema: "1.06", Codec: v1}}
+	if err := codec.VerifyTable(ok...); err != nil {
+		t.Fatalf("VerifyTable(unambiguous table): %v; the cases below would prove nothing", err)
 	}
-	if !errors.Is(err, wxx.ErrAmbiguousSchemaCodec) {
-		t.Errorf("NewRegistry(one schema, two codecs) error = %v, want it to wrap %v", err, wxx.ErrAmbiguousSchemaCodec)
+	// A schema named twice with the SAME codec is fine: it is a restatement, not
+	// an ambiguity. Without this the assertions below could be passing because
+	// VerifyTable rejects every repeat.
+	if err := codec.VerifyTable(append(ok, codec.Entry_t{Schema: "1.06", Codec: v1})...); err != nil {
+		t.Fatalf("VerifyTable(schema repeated with the same codec): %v; a repeat that agrees is not an ambiguity", err)
+	}
+
+	for _, tc := range []struct {
+		name    string
+		entries []codec.Entry_t
+		wantErr error
+		wantMsg string
+	}{
+		{
+			// The failure ADR 0004 Decision 4 exists to stop: one schema with two
+			// answers, so the file you get depends on lookup order.
+			name:    "one schema selects two codecs",
+			entries: []codec.Entry_t{{Schema: "1.06", Codec: v1}, {Schema: "1.06", Codec: v0}},
+			wantErr: wxx.ErrAmbiguousSchemaCodec,
+			wantMsg: `"1.06"`,
+		},
+		{
+			// The implicit legacy schema is a schema like any other here.
+			name:    "the implicit legacy schema selects two codecs",
+			entries: []codec.Entry_t{{Schema: "", Codec: v0}, {Schema: "", Codec: v1}},
+			wantErr: wxx.ErrAmbiguousSchemaCodec,
+			wantMsg: "implicit (classic)",
+		},
+		{
+			name:    "incomplete codec pair",
+			entries: []codec.Entry_t{{Schema: "1.06", Codec: codec.Codec_t{Decode: v1_06.Decode}}},
+			wantErr: wxx.ErrMissingCodec,
+			wantMsg: `"1.06"`,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := codec.VerifyTable(tc.entries...)
+			if err == nil {
+				t.Fatalf("VerifyTable(%s) = nil, want an error", tc.name)
+			}
+			if !errors.Is(err, tc.wantErr) {
+				t.Errorf("VerifyTable(%s) error = %v, want it to wrap %v", tc.name, err, tc.wantErr)
+			}
+			if !strings.Contains(err.Error(), tc.wantMsg) {
+				t.Errorf("VerifyTable(%s) error = %v, want it to name %s", tc.name, err, tc.wantMsg)
+			}
+		})
 	}
 }
 
@@ -573,13 +682,18 @@ func TestRegistryMatchesFixtures(t *testing.T) {
 				}
 			}
 
-			// The codec the file's schema selects must be the entry's codec.
-			c, err := xmlio.CodecForSchema(v.Schema)
+			// The codec the FILE's schema selects must be the codec the release
+			// ENTRY's schema selects. The entry no longer names a codec, so the
+			// two are compared the only way left -- through the selector, from each
+			// side's schema -- which is also the comparison that matters: the file
+			// on disk and the registry must route to the same code path.
+			cFile, err := codec.ForSchema(schemaKeyForTest(v.Schema))
 			if err != nil {
-				t.Fatalf("%s: CodecForSchema(%v): %v", tc.path, v.Schema, err)
+				t.Fatalf("%s: codec.ForSchema(%v): %v", tc.path, v.Schema, err)
 			}
-			if funcPtr(c.Decode) != funcPtr(e.Decode) || funcPtr(c.Encode) != funcPtr(e.Encode) {
-				t.Errorf("%s: the codec its schema selects is not the codec its release entry names", tc.path)
+			cEntry := codecForSchemaOfTest(t, e.Schema)
+			if funcPtr(cFile.Decode) != funcPtr(cEntry.Decode) || funcPtr(cFile.Encode) != funcPtr(cEntry.Encode) {
+				t.Errorf("%s: the codec its schema selects is not the codec its release entry's schema selects", tc.path)
 			}
 		})
 	}

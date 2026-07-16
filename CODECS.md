@@ -93,9 +93,24 @@ func FixXMLHeaderToUTF8(r io.Reader) (io.Reader, error)
 
 // Parse/serialize the XML form of Map_t without transport concerns.
 func UnmarshalXML(r io.Reader) (*Map_t, error)
-func MarshalXML(w io.Writer, m *Map_t) error
-func MarshalXMLBytes(m *Map_t) ([]byte, error) // handy for tests
+func MarshalXML(m *wxx.Map_t, app string) ([]byte, error)
 ```
+
+> **Shipped, and it differs from the sketch above.** `MarshalXML` returns bytes
+> rather than writing to an `io.Writer`, and it takes an **application version
+> string** (`"1.73"`, `"1.77"`, `"2.06"`) naming the release to target.
+>
+> The `app` parameter is not optional decoration. An encoder **accepts an
+> application version and never a schema version**, and a caller may request an
+> application version but **never a specific encoder** (issue #41 requirements 1
+> and 5). The registry resolves `app` to exactly one release; that release
+> supplies both the identity written into the bytes and the schema that selects
+> the codec writing them, so the two can never disagree. A signature taking no
+> target at all — as sketched above — could only write the identity the map
+> already carried, which is the "target as codec hint" failure ADR 0004
+> Decision 5 rules out.
+>
+> `MarshalXMLBytes` does not exist; `MarshalXML` already returns bytes.
 
 Internally, `Decoder.Decode` becomes a small pipeline:
 
@@ -114,9 +129,13 @@ And `Encoder.Encode` is the mirror image:
 
 ```go
 func (e *Encoder) Encode(w io.Writer, m *Map_t) error {
-    // start with UTF‑8 XML
-    var buf bytes.Buffer
-    if err := MarshalXML(&buf, m); err != nil { return err }
+    // Resolve the target release first: a target the registry does not state
+    // stops the encode before a byte is written. Then marshal to UTF-8 XML,
+    // naming the target by its verbatim application version.
+    target, err := e.opts.resolveTarget(m)
+    if err != nil { return err }
+    data, err := MarshalXML(m, target.App.Raw)
+    if err != nil { return err }
 
     var out io.Writer = w
     var closers []io.Closer
@@ -132,7 +151,7 @@ func (e *Encoder) Encode(w io.Writer, m *Map_t) error {
         out = gz; closers = append(closers, gz)
     }
 
-    if _, err := io.Copy(out, &buf); err != nil { return err }
+    if _, err := io.Copy(out, bytes.NewReader(data)); err != nil { return err }
     for i := len(closers)-1; i >= 0; i-- { if cerr := closers[i].Close(); cerr != nil && err == nil { err = cerr } }
     return err
 }

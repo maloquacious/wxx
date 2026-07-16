@@ -129,6 +129,13 @@ The decoder reads the `<map>` element's `release` attribute to dispatch to the c
 
 W2025 support is baselined on 2.06 (`release="2025" version="2.06" schema="1.06"`), the first post-beta build; earlier 2025 builds are out of scope.
 
+The **encoder** dispatches the other way round, and the rule is a contract rather than a convenience (issue #41):
+
+- A caller names a target **only** by its verbatim application version (`map/@version`): `xmlio.MarshalXML(m, "2.06")` or `xmlio.NewEncoder(xmlio.WithTargetVersion("2.06"))`. `""` is not a sentinel — it names no release and errors.
+- The registry resolves that string to exactly one `Release_t`, which supplies the identity written into the file; that release's **schema** then selects the codec (`xmlio/internal/codec.ForSchema`).
+- **No public symbol accepts a schema version or returns a codec.** `Release_t` is a read-only descriptor (`Release`, `App`, `Schema`, `XMLVersion`); the codec packages and the schema→codec selector live under `xmlio/internal/`, unreachable from `cmd/*` and from outside the module.
+- Because one release supplies both the identity and the codec, a file's declared identity and its content format cannot disagree. `Release_t.identify` is what writes that identity, and it is load-bearing: see `xmlio/chimera_test.go`.
+
 ## Coding Conventions
 
 - **Go version**: 1.24.4 (specified in `go.mod`)
