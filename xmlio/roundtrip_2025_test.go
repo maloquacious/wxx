@@ -82,7 +82,7 @@ func TestW2025RoundTrip(t *testing.T) {
 }
 
 // TestW2025PublicRoundTrip exercises the entire public pipeline end to end:
-// decode a real .wxx file, encode it back through xmlio.NewEncoder().Encode
+// decode a real .wxx file, encode it back through xmlio.NewEncoder(app).Encode
 // (XML + header + UTF-16BE + gzip), then decode those bytes with
 // xmlio.NewDecoder().Decode and assert semantic equality. Unlike
 // TestW2025RoundTrip (which drives only the in-memory XML codec), this proves
@@ -93,8 +93,11 @@ func TestW2025PublicRoundTrip(t *testing.T) {
 		t.Fatalf("initial decode: %v", err)
 	}
 
+	// The target is the version the fixture states: a round trip writes back what
+	// it read. Since issue #45 the caller says so rather than the encoder assuming
+	// it -- reading provenance and choosing a target is a CLIENT's job.
 	var buf bytes.Buffer
-	if err := xmlio.NewEncoder().Encode(&buf, m1); err != nil {
+	if err := xmlio.NewEncoder(m1.MetaData.Version.App.Raw).Encode(&buf, m1); err != nil {
 		t.Fatalf("public Encode: %v", err)
 	}
 
@@ -228,8 +231,11 @@ func TestW2025PopulatedRoundTrip(t *testing.T) {
 func TestW2025PopulatedPublicRoundTrip(t *testing.T) {
 	m1 := decodeFixture(t, populatedFixture)
 
+	// The target is the version the fixture states: a round trip writes back what
+	// it read. Since issue #45 the caller says so rather than the encoder assuming
+	// it -- reading provenance and choosing a target is a CLIENT's job.
 	var buf bytes.Buffer
-	if err := xmlio.NewEncoder().Encode(&buf, m1); err != nil {
+	if err := xmlio.NewEncoder(m1.MetaData.Version.App.Raw).Encode(&buf, m1); err != nil {
 		t.Fatalf("public Encode: %v", err)
 	}
 

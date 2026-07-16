@@ -16,10 +16,18 @@ import (
 // It is the mechanism the coverage assertions below use to prove that what decode
 // read, encode wrote, and decode read back again.
 //
-// The map is encoded as the application version it already states, which is what
-// the public path does too (Release_t.identify writes the target's application
-// version onto the map before the codec sees it), so this exercises the codec and
-// not the app-version gate. TestCodecRejectsUnacceptedAppVersion covers the gate.
+// The map is encoded as the application version it already states, so this
+// exercises the codec and not the app-version gate.
+// TestCodecRejectsUnacceptedAppVersion covers the gate.
+//
+// Naming that version explicitly is the ONLY way to encode since issue #45: the
+// codec derives every identity byte it writes from the app it is handed and reads
+// none of them from the map, so the app is not optional and not inferable. It used
+// to be inferable, and that was the bug -- Release_t.identify stamped the target's
+// identity onto the map on every public path, which meant the codec emitting the
+// map's identity looked correct from outside. Reading m1.Version to choose the
+// target is fine HERE and is what a client does; what the encoder may not do is
+// read it for us.
 func w2025Recode(t *testing.T, m1 *wxx.Map_t) *wxx.Map_t {
 	t.Helper()
 	xmlBytes, err := v1_06.Encode(m1, m1.Version)

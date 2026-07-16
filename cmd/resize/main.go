@@ -270,9 +270,14 @@ func main() {
 	}
 	inputMap.Labels = outputLabels
 
-	// Write to the output file
+	// Write to the output file, as the application version the INPUT states.
+	//
+	// Resizing changes the map's extent and nothing about its format, so this tool
+	// names the input's own version as the target -- reading the provenance the
+	// decoder recorded and choosing to write that. A CLIENT may do that; the
+	// encoder may not do it for us, and has no default target (issue #45).
 	var encoderDiagnostics xmlio.EncoderDiagnostics
-	encoder := xmlio.NewEncoder(xmlio.WithEncoderDiagnostics(&encoderDiagnostics))
+	encoder := xmlio.NewEncoder(inputMap.MetaData.Version.App.Raw, xmlio.WithEncoderDiagnostics(&encoderDiagnostics))
 	outputBuffer := &bytes.Buffer{}
 	err = encoder.Encode(outputBuffer, inputMap)
 	if err != nil {

@@ -76,9 +76,16 @@ func main() {
 		fmt.Printf("input: %s (%s)\n", inputFile, inputMap.MetaData.Version)
 	}
 
-	// Write to the output file
+	// Write to the output file, as the application version the INPUT states.
+	//
+	// Copying means preserving the input's version, so this tool names it as the
+	// target -- reading the provenance the decoder recorded and choosing to write
+	// that. A CLIENT may do that; the encoder may not do it for us. It has no
+	// default target precisely because "what wrote the input" is not an answer to
+	// "what should I write" (issue #45): it is the right answer HERE, for copy, and
+	// it is copy's job to say so.
 	var encoderDiagnostics xmlio.EncoderDiagnostics
-	bah := xmlio.NewEncoder(xmlio.WithEncoderDiagnostics(&encoderDiagnostics))
+	bah := xmlio.NewEncoder(inputMap.MetaData.Version.App.Raw, xmlio.WithEncoderDiagnostics(&encoderDiagnostics))
 	outputBuffer := &bytes.Buffer{}
 	err = bah.Encode(outputBuffer, inputMap)
 	if err != nil {

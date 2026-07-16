@@ -2,7 +2,34 @@
 
 package v1_06
 
-import "github.com/maloquacious/wxx/xmlio/internal/appver"
+import (
+	"github.com/maloquacious/wxx"
+	"github.com/maloquacious/wxx/xmlio/internal/appver"
+)
+
+// Codec_t is this package's codec as a VALUE, which is what the dispatcher holds.
+//
+// A Go package cannot implement an interface, and the codecs are packages, so
+// "the v1_06 codec" is not something the dispatcher can hold without this. It is
+// zero-size and stateless: every method forwards to the package-level function
+// that is the real implementation, which stays exported because the test units
+// requirement 5 admits call it directly (see xmlio/chimera_test.go).
+//
+// It carries the declaration alongside decode and encode because the registry is
+// built by ASKING each codec what it accepts (issue #45 Decision 8): the mapping
+// application version -> encoder exists in exactly one place, here, and the
+// dispatcher reads it rather than restating it.
+type Codec_t struct{}
+
+// Decode parses W2025 schema 1.06 XML into the Map_t superset. It is a work in
+// progress; see COVERAGE.md.
+func (Codec_t) Decode(input []byte) (*wxx.Map_t, error) { return Decode(input) }
+
+// Encode emits a Map_t as W2025 schema 1.06 XML, as the application version app.
+func (Codec_t) Encode(m *wxx.Map_t, app string) ([]byte, error) { return Encode(m, app) }
+
+// AcceptedApps returns this codec's declaration. See acceptedApps.
+func (Codec_t) AcceptedApps() appver.Set_t { return AcceptedApps() }
 
 // acceptedApps declares what this codec accepts and what it writes.
 //

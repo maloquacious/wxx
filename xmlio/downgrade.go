@@ -49,8 +49,20 @@ func (d DroppedFeature_t) String() string {
 	return fmt.Sprintf("%s (%s): %s -- %s", d.Path, d.Field, d.Detail, d.Reason)
 }
 
-// downgradeLoss reports what m carries that target cannot express, and errors if
-// the loss is one the encoder cannot honestly describe.
+// downgradeLoss reports what m carries that the target SCHEMA cannot express, and
+// errors if the loss is one the encoder cannot honestly describe.
+//
+// targetSchema is the schema the target codec writes, verbatim map/@schema
+// ("1.06"); "" is the implicit legacy (classic) schema, which files state by
+// stating no @schema at all (ADR 0004 Decision 2). It is asked of the codec rather
+// than of a registry entry because the schema is a byte the encoder writes and the
+// encoder owns it (issue #45).
+//
+// The schema is the right axis here even though it no longer selects the codec.
+// What can be expressed is a property of the FORMAT, not of the build that wrote
+// it: two application versions sharing a schema lose exactly the same things, so
+// keying this on the application version would restate one fact per build and
+// invite them to disagree.
 //
 // The question is about the TARGET's expressiveness, not about which file m was
 // read from: a map holding a W2025-native field loses it when written as classic
@@ -79,8 +91,8 @@ func (d DroppedFeature_t) String() string {
 // (#34 would do exactly this for <extraTerrain>), its hard error BECOMES a
 // diagnostic. Modeling it is what earns the encoder the right to be quiet about
 // it, because only then can it say what was lost.
-func downgradeLoss(m *wxx.Map_t, target *Release_t) ([]DroppedFeature_t, error) {
-	if target.Schema != nil {
+func downgradeLoss(m *wxx.Map_t, targetSchema string) ([]DroppedFeature_t, error) {
+	if targetSchema != "" {
 		// Every non-classic supported schema is W2025 1.06, which expresses
 		// everything Map_t models: Map_t is the superset of the two supported
 		// schemas (ADR 0004 Decision 6) and every field classic-only content
@@ -90,8 +102,8 @@ func downgradeLoss(m *wxx.Map_t, target *Release_t) ([]DroppedFeature_t, error) 
 		//
 		// This is a claim about the schemas that exist today, not a law. A future
 		// schema that cannot express something Map_t models needs its own arm
-		// here; adding the registry entry alone would silently claim the target
-		// is lossless.
+		// here; adding the codec alone would silently claim the target is
+		// lossless.
 		return nil, nil
 	}
 	return classicDowngradeLoss(m)
@@ -111,9 +123,9 @@ func downgradeLoss(m *wxx.Map_t, target *Release_t) ([]DroppedFeature_t, error) 
 // neither is a downgrade:
 //
 //   - TARGET IDENTITY. map/@version changes 2.06 -> 1.77 and map/@release and
-//     map/@schema disappear. That is Release_t.identify writing the release the
-//     caller asked for; a classic file states no release and no schema. Nothing
-//     is lost -- the file is being told what it now is.
+//     map/@schema disappear. That is the classic codec writing the identity of the
+//     application version the caller asked for; a classic file states no release
+//     and no schema. Nothing is lost -- the file is being told what it now is.
 //   - CLASSIC CODEC GAPS. map/mapkey/@viewlevel is altered and
 //     map/informations/information and map/configuration/text-config/labelstyle
 //     are dropped -- but the classic FORMAT has room for all three (RelaxNG

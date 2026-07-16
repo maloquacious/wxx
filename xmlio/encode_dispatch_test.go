@@ -39,11 +39,12 @@ func (w *spyWriter) Write(p []byte) (int, error) {
 var xmlHeaderSamples = []struct {
 	name       string
 	path       string
+	app        string // the target, which each fixture states as its own
 	wantSchema string
 	wantHeader string
 }{
-	{"classic 1.77", classicFixture, "", "<?xml version='1.0' encoding='utf-16'?>\n"},
-	{"w2025 2.06", sample2025_206, "1.06", "<?xml version='1.1' encoding='utf-16'?>\n"},
+	{"classic 1.77", classicFixture, "1.77", "", "<?xml version='1.0' encoding='utf-16'?>\n"},
+	{"w2025 2.06", sample2025_206, "2.06", "1.06", "<?xml version='1.1' encoding='utf-16'?>\n"},
 }
 
 // TestEncodeXMLHeaderFollowsRelease asserts, at the byte level and from real
@@ -51,10 +52,11 @@ var xmlHeaderSamples = []struct {
 // classic opens `<?xml version='1.0'`, W2025 opens `<?xml version='1.1'`.
 //
 // This is the property the deleted `switch target.Major { case 2017: ...; case
-// 2025: ... }` used to guarantee. The declaration is now data on the registry
-// entry (Release_t.XMLVersion), so nothing in the encoder knows a family year --
-// but the bytes of every file written must not have moved an inch, and that is
-// what this pins.
+// 2025: ... }` used to guarantee. The declaration is now the CODEC's, declared
+// alongside the schema and release it writes (appver.Set_t.XMLVersion), so nothing
+// in the encoder knows a family year and the registry does not carry the answer
+// either -- but the bytes of every file written must not have moved an inch, and
+// that is what this pins.
 //
 // The bytes are the real ones: each fixture is encoded through the full default
 // pipeline (XML, header, UTF-16/BE, gzip) and the output is transported back
@@ -94,8 +96,14 @@ func TestEncodeXMLHeaderFollowsRelease(t *testing.T) {
 				t.Fatalf("%s: Version.Schema.Raw = %q, want %q", tc.path, schema.Raw, tc.wantSchema)
 			}
 
+			// The target is named explicitly -- there is no default (issue #45) --
+			// and each case names the version its own fixture states, which is what
+			// keeps this test about the HEADER rather than about re-targeting.
+			if got := m.MetaData.Version.App.Raw; got != tc.app {
+				t.Fatalf("%s states version %q, want %q: this case must target the version its fixture states", tc.path, got, tc.app)
+			}
 			var buf bytes.Buffer
-			if err := xmlio.NewEncoder().Encode(&buf, m); err != nil {
+			if err := xmlio.NewEncoder(tc.app).Encode(&buf, m); err != nil {
 				t.Fatalf("public encode %s (%v): %v", tc.path, m.MetaData.Version, err)
 			}
 
@@ -124,13 +132,22 @@ func TestEncodeXMLHeaderFollowsRelease(t *testing.T) {
 	}
 }
 
-// TestEncodeUnsupportedTargetIsError asserts that a target no supported release
-// states is an error and writes nothing (ADR 0004 Decision 5). A best-effort
-// write here would hand a user a file claiming to be a release that does not
-// exist, or one they are not licensed for.
+// TestEncodeUnsupportedTargetIsError asserts that a target no codec writes is an
+// error and writes nothing (ADR 0004 Decision 5). A best-effort write here would
+// hand a user a file claiming to be a release that does not exist, or one they
+// are not licensed for.
 //
-// The target reaches the encoder two ways -- the caller names it, or the map
-// states it -- and neither may fall back to a nearest match.
+// The target now reaches the encoder ONE way: the caller names it (issue #45
+// Decision 1). It used to reach it two, and the second one -- the map states it,
+// the caller names nothing -- is what this ticket deleted, so the cases that
+// covered it are gone rather than restated:
+//
+//   - "map states a future version" and "map states an unpadded 2.06" fed the
+//     encoder a map with a doctored MetaData.Version.App and watched the fallback
+//     refuse it. There is no fallback to refuse anything: the encoder never reads
+//     that field, which TestEncodeIgnoresTheMapsOwnVersion pins directly.
+//   - "map states nothing" was the fallback's version of the empty target, and
+//     TestEncodeEmptyTargetVersionIsError is the surviving statement of it.
 func TestEncodeUnsupportedTargetIsError(t *testing.T) {
 	// Control: the fixture encodes cleanly as itself. Guard against a vacuous
 	// pass -- if this map could not be encoded at all, every error below would be
@@ -140,7 +157,7 @@ func TestEncodeUnsupportedTargetIsError(t *testing.T) {
 		t.Fatalf("public decode %s: %v", classicFixture, err)
 	}
 	var control bytes.Buffer
-	if err := xmlio.NewEncoder().Encode(&control, base); err != nil {
+	if err := xmlio.NewEncoder(base.MetaData.Version.App.Raw).Encode(&control, base); err != nil {
 		t.Fatalf("public encode %s as itself: %v; the unsupported-target cases below would prove nothing", classicFixture, err)
 	}
 	if control.Len() == 0 {
@@ -148,48 +165,97 @@ func TestEncodeUnsupportedTargetIsError(t *testing.T) {
 	}
 
 	for _, tc := range []struct {
-		name string
-		// app, when non-empty, is the version the map states; the caller names
-		// nothing and the encoder must fall back to it.
-		app string
-		// target, when non-empty, is the version the caller names.
+		name   string
 		target string
 	}{
-		{"caller names a future version", "", "9.99"},
-		{"caller names an unpadded 2.06", "", "2.6"},
-		{"caller names a schema, not an app version", "", "1.06"},
-		{"caller names an unreleased classic", "", "1.75"},
-		{"map states a future version", "9.99", ""},
-		{"map states an unpadded 2.06", "2.6", ""},
-		{"map states nothing", "", ""}, // App.Raw == "": no release states an empty version
+		{"a future version", "9.99"},
+		{"an unpadded 2.06", "2.6"},
+		{"a schema, not an app version", "1.06"},
+		{"a codec version, not an app version", "0.77"},
+		{"an unreleased classic", "1.75"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			m, err := decodeFile(t, classicFixture)
 			if err != nil {
 				t.Fatalf("public decode %s: %v", classicFixture, err)
 			}
-			// Rewrite the identity the map states, keeping Raw authoritative.
-			m.MetaData.Version.App = wxx.Dotted{Raw: tc.app}
-			if d, err := wxx.ParseDotted(tc.app); err == nil {
-				m.MetaData.Version.App = d
-			}
-
-			var opts []xmlio.EncoderOption
-			if tc.target != "" {
-				opts = append(opts, xmlio.WithTargetVersion(tc.target))
-			}
 
 			var buf bytes.Buffer
-			err = xmlio.NewEncoder(opts...).Encode(&buf, m)
+			err = xmlio.NewEncoder(tc.target).Encode(&buf, m)
 			if err == nil {
-				t.Fatalf("encode targeting an unsupported release wrote %d bytes and returned nil, want an error: an unregistered target must never be a best-effort write", buf.Len())
+				t.Fatalf("encode targeting %q wrote %d bytes and returned nil, want an error: an unregistered target must never be a best-effort write", tc.target, buf.Len())
 			}
 			if !errors.Is(err, wxx.ErrUnsupportedMapVersion) {
-				t.Errorf("encode error = %v, want it to wrap %v", err, wxx.ErrUnsupportedMapVersion)
+				t.Errorf("encode targeting %q error = %v, want it to wrap %v", tc.target, err, wxx.ErrUnsupportedMapVersion)
 			}
 			// Nothing may reach the writer: a rejected target is not a partial file.
 			if buf.Len() != 0 {
-				t.Errorf("encode wrote %d bytes before failing, want 0", buf.Len())
+				t.Errorf("encode targeting %q wrote %d bytes before failing, want 0", tc.target, buf.Len())
+			}
+		})
+	}
+}
+
+// TestEncodeIgnoresTheMapsOwnVersion is issue #45's bug, stated at the level the
+// public API can see it: the encoder writes the version it was ASKED for, and the
+// version the map states has no effect on the file at all.
+//
+// It is the successor to the deleted "map states a future version" cases, and it
+// asserts the stronger thing they gestured at. Those cases proved the fallback
+// refused a bad value; this proves there is no fallback -- a map whose stated
+// identity is garbage encodes to a perfectly good file, byte-identical to the one
+// the untouched map produces, because nothing ever read it.
+//
+// The doctored identity is deliberately something no codec accepts. If the
+// encoder still read the map at all, this would fail loudly rather than quietly
+// producing a slightly different file.
+func TestEncodeIgnoresTheMapsOwnVersion(t *testing.T) {
+	const target = "1.73"
+
+	clean, err := decodeFile(t, classicFixture)
+	if err != nil {
+		t.Fatalf("public decode %s: %v", classicFixture, err)
+	}
+	// Guard against a vacuous pass: the fixture must state something OTHER than
+	// the target, or "the map's version is ignored" is untested -- the two would
+	// agree and either could be the source of the bytes.
+	if got := clean.MetaData.Version.App.Raw; got == target {
+		t.Fatalf("%s states version %q, the same as the target: the map's version must differ or it cannot be shown to be ignored", classicFixture, got)
+	}
+	var want bytes.Buffer
+	if err := xmlio.NewEncoder(target).Encode(&want, clean); err != nil {
+		t.Fatalf("public encode %s targeting %q: %v", classicFixture, target, err)
+	}
+	if want.Len() == 0 {
+		t.Fatalf("public encode %s targeting %q: empty output", classicFixture, target)
+	}
+
+	for _, tc := range []struct {
+		name string
+		app  wxx.Dotted
+	}{
+		{"a version no codec writes", wxx.Dotted{Raw: "9.99", Major: 9, Minor: 99}},
+		{"a schema version", wxx.Dotted{Raw: "1.06", Major: 1, Minor: 6}},
+		{"nothing at all", wxx.Dotted{}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			m, err := decodeFile(t, classicFixture)
+			if err != nil {
+				t.Fatalf("public decode %s: %v", classicFixture, err)
+			}
+			// Doctor the identity the map states. Every one of these would have
+			// stopped the encode dead when the encoder defaulted to it.
+			m.MetaData.Version.App = tc.app
+			m.MetaData.Worldographer.Version = tc.app.Raw
+			m.Version = tc.app.Raw
+
+			var got bytes.Buffer
+			if err := xmlio.NewEncoder(target).Encode(&got, m); err != nil {
+				t.Fatalf("public encode targeting %q with the map stating %q: %v; the map's own version must not reach the encoder", target, tc.app.Raw, err)
+			}
+			if !bytes.Equal(got.Bytes(), want.Bytes()) {
+				t.Errorf("a map stating %q encodes to %d bytes targeting %q, want the %d bytes the untouched map produces: the encoder must not read the map's identity (issue #45)",
+					tc.app.Raw, got.Len(), target, want.Len())
 			}
 		})
 	}
@@ -218,8 +284,8 @@ func TestEncodeUnlicensedTargetWritesNothing(t *testing.T) {
 	// Guard against a vacuous pass: this test says nothing unless the target it
 	// names is genuinely unregistered. Were 2.07 ever added to the registry, this
 	// stops the test rather than letting it "pass" against a licensed target.
-	if r, err := xmlio.Lookup(unlicensedTarget); err == nil {
-		t.Fatalf("Lookup(%q) resolved to release %q: this test requires an UNREGISTERED version, so it is not testing the licensing refusal", unlicensedTarget, r.Release)
+	if _, ok := codecForAppOfTest(t, unlicensedTarget); ok {
+		t.Fatalf("%q is accepted by a codec: this test requires an UNREGISTERED version, so it is not testing the licensing refusal", unlicensedTarget)
 	}
 
 	m, err := decodeFile(t, sample2025_206)
@@ -231,7 +297,7 @@ func TestEncodeUnlicensedTargetWritesNothing(t *testing.T) {
 	// Control: the licensed target encodes. If it did not, the refusal below
 	// would be the map's fault and would prove nothing about the target.
 	var ok spyWriter
-	if err := xmlio.NewEncoder(xmlio.WithTargetVersion(licensed)).Encode(&ok, m); err != nil {
+	if err := xmlio.NewEncoder(licensed).Encode(&ok, m); err != nil {
 		t.Fatalf("public encode %s targeting its licensed %q: %v; the refusal below would prove nothing", sample2025_206, licensed, err)
 	}
 	if ok.n == 0 {
@@ -240,7 +306,7 @@ func TestEncodeUnlicensedTargetWritesNothing(t *testing.T) {
 
 	// The unlicensed target: refused, and the writer never touched.
 	var spy spyWriter
-	err = xmlio.NewEncoder(xmlio.WithTargetVersion(unlicensedTarget)).Encode(&spy, m)
+	err = xmlio.NewEncoder(unlicensedTarget).Encode(&spy, m)
 	if err == nil {
 		t.Fatalf("encode targeting unlicensed %q returned nil after %d writes (%d bytes), want an error: an unregistered target must never be a best-effort write", unlicensedTarget, spy.calls, spy.n)
 	}
@@ -253,9 +319,9 @@ func TestEncodeUnlicensedTargetWritesNothing(t *testing.T) {
 	}
 }
 
-// TestEncodeEmptyTargetVersionIsError pins the contract for
-// WithTargetVersion(""): it names no release, so it is an error, exactly as any
-// other unregistered version is.
+// TestEncodeEmptyTargetVersionIsError pins the contract for NewEncoder(""): it
+// names no application version, so it is an error, exactly as any other
+// unregistered version is.
 //
 // "" used to be a sentinel meaning "target the map's own version". That made an
 // unset flag or an empty config field silently produce a file in a release the
@@ -263,6 +329,13 @@ func TestEncodeUnlicensedTargetWritesNothing(t *testing.T) {
 // the request. An explicitly passed empty version is overwhelmingly a caller bug,
 // and the correct answer to a caller bug is not to write a file anyway and hope
 // the version it lands in was the one they meant.
+//
+// Issue #45 removed the sentinel's meaning entirely rather than only its use:
+// there is no default target for "" to fall back TO. This test therefore reads
+// differently than it did -- the control below can no longer show what "" used to
+// buy, because no call can ask for it -- but the contract it pins is the same one,
+// and "" being an ordinary miss is now a property of the registry rather than a
+// special case in the option.
 func TestEncodeEmptyTargetVersionIsError(t *testing.T) {
 	m, err := decodeFile(t, classicFixture)
 	if err != nil {
@@ -270,34 +343,34 @@ func TestEncodeEmptyTargetVersionIsError(t *testing.T) {
 	}
 
 	// Guard against a vacuous pass: the map's own version must be REGISTERED, so
-	// that the old sentinel behavior would have succeeded here and the error
-	// below is the new contract firing rather than an unrelated failure that
-	// would happen with or without it.
+	// that the old sentinel behavior would have succeeded here and the error below
+	// is the new contract firing rather than an unrelated failure that would
+	// happen with or without it.
 	own := m.MetaData.Version.App.Raw
-	if _, err := xmlio.Lookup(own); err != nil {
-		t.Fatalf("fixture states version %q, which is not a registered release: an empty target would then fail for the wrong reason and this test would assert nothing: %v", own, err)
+	if _, ok := codecForAppOfTest(t, own); !ok {
+		t.Fatalf("fixture states version %q, which no codec accepts: an empty target would then fail for the wrong reason and this test would assert nothing", own)
 	}
 
-	// Control: naming NO target really does fall back to the map's own release
-	// and really does write a file. That is the behavior "" must no longer buy.
+	// Control: naming the map's own release really does write a file. That is the
+	// behavior "" used to buy silently and must now be asked for out loud.
 	var control bytes.Buffer
-	if err := xmlio.NewEncoder().Encode(&control, m); err != nil {
-		t.Fatalf("public encode %s with no target named: %v", classicFixture, err)
+	if err := xmlio.NewEncoder(own).Encode(&control, m); err != nil {
+		t.Fatalf("public encode %s targeting its own %q: %v", classicFixture, own, err)
 	}
 	if control.Len() == 0 {
-		t.Fatalf("public encode %s with no target named: empty output", classicFixture)
+		t.Fatalf("public encode %s targeting its own %q: empty output", classicFixture, own)
 	}
 
 	var spy spyWriter
-	err = xmlio.NewEncoder(xmlio.WithTargetVersion("")).Encode(&spy, m)
+	err = xmlio.NewEncoder("").Encode(&spy, m)
 	if err == nil {
-		t.Fatalf(`WithTargetVersion("") returned nil after %d writes (%d bytes), want an error: "" names no release and must not silently fall back to the map's own %q`, spy.calls, spy.n, own)
+		t.Fatalf(`NewEncoder("") returned nil after %d writes (%d bytes), want an error: "" names no application version and must not silently fall back to the map's own %q`, spy.calls, spy.n, own)
 	}
 	if !errors.Is(err, wxx.ErrUnsupportedMapVersion) {
-		t.Errorf(`WithTargetVersion("") error = %v, want it to wrap %v`, err, wxx.ErrUnsupportedMapVersion)
+		t.Errorf(`NewEncoder("") error = %v, want it to wrap %v`, err, wxx.ErrUnsupportedMapVersion)
 	}
 	if spy.calls != 0 || spy.n != 0 {
-		t.Errorf(`WithTargetVersion("") made %d writes totaling %d bytes, want 0 and 0: a target the encoder rejected is not a partial file`, spy.calls, spy.n)
+		t.Errorf(`NewEncoder("") made %d writes totaling %d bytes, want 0 and 0: a target the encoder rejected is not a partial file`, spy.calls, spy.n)
 	}
 }
 
@@ -341,9 +414,11 @@ func TestEncodeTargetsEveryRegisteredRelease(t *testing.T) {
 	for _, tc := range retargetCases {
 		targeted[tc.target] = true
 	}
-	for _, r := range xmlio.SupportedReleases() {
-		if !targeted[r.App.Raw] {
-			t.Errorf("release %q is registered but no case targets it: add one, or this test does not cover the registry", r.App.Raw)
+	for _, c := range codecsForTest() {
+		for _, a := range c.AcceptedApps().Apps {
+			if !targeted[a.Version] {
+				t.Errorf("version %q is registered but no case targets it: add one, or this test does not cover the registry", a.Version)
+			}
 		}
 	}
 
@@ -364,7 +439,7 @@ func TestEncodeTargetsEveryRegisteredRelease(t *testing.T) {
 			}
 
 			var buf bytes.Buffer
-			if err := xmlio.NewEncoder(xmlio.WithTargetVersion(tc.target)).Encode(&buf, m); err != nil {
+			if err := xmlio.NewEncoder(tc.target).Encode(&buf, m); err != nil {
 				t.Fatalf("public encode %s targeting %q: %v", tc.path, tc.target, err)
 			}
 			if buf.Len() == 0 {
@@ -401,7 +476,7 @@ func TestEncodeTargetsEveryRegisteredRelease(t *testing.T) {
 //     it. TestEncodeTargetsEveryRegisteredRelease already targets 1.73 from the
 //     1.77 fixture by version, and asserts the same thing about the same bytes.
 //   - "a nil release is an error" was the option's form of "the caller named
-//     nothing". WithTargetVersion("") is the surviving way to name nothing, and
+//     nothing". NewEncoder("") is the surviving way to name nothing, and
 //     TestEncodeEmptyTargetVersionIsError holds it to the same contract:
 //     an error, and not one byte written.
 //   - "an assembled release is rejected", "MarshalXML rejects an assembled

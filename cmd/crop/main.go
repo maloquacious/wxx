@@ -108,13 +108,18 @@ func main() {
 	input.Tiles.Tiles = dst
 	fmt.Printf("input: %4d x %4d\n", input.Tiles.TilesWide, input.Tiles.TilesHigh)
 
-	// Write to the output file
+	// Write to the output file, as the application version the INPUT states.
+	//
+	// Cropping changes the map's extent and nothing about its format, so this tool
+	// names the input's own version as the target -- reading the provenance the
+	// decoder recorded and choosing to write that. A CLIENT may do that; the
+	// encoder may not do it for us, and has no default target (issue #45).
 	var encoderDiagnostics xmlio.EncoderDiagnostics
 	var encoderOptions []xmlio.EncoderOption
 	if debugUtf8XmlFile != "" {
 		encoderOptions = append(encoderOptions, xmlio.WithEncoderDiagnostics(&encoderDiagnostics))
 	}
-	encoder := xmlio.NewEncoder(encoderOptions...)
+	encoder := xmlio.NewEncoder(input.MetaData.Version.App.Raw, encoderOptions...)
 	outputBuffer := &bytes.Buffer{}
 	err = encoder.Encode(outputBuffer, input)
 	if err != nil {

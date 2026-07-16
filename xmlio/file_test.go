@@ -38,8 +38,12 @@ func TestWriteFileReadFileRoundTrip(t *testing.T) {
 		t.Fatalf("ReadFile(%s): %v", classicFixture, err)
 	}
 
+	// The target is named explicitly: WriteFile has no default, for the reason
+	// NewEncoder has none (issue #45). A round trip means writing the version the
+	// file states, so this reads that provenance and says so -- which a CLIENT may
+	// do and the encoder may not do for it.
 	out := filepath.Join(t.TempDir(), "roundtrip.wxx")
-	if err := xmlio.WriteFile(out, m1); err != nil {
+	if err := xmlio.WriteFile(out, m1, m1.MetaData.Version.App.Raw); err != nil {
 		t.Fatalf("WriteFile(%s): %v", out, err)
 	}
 

@@ -61,7 +61,7 @@ func probeEncode(m *wxx.Map_t, app string) (res string) {
 		}
 	}()
 	var buf bytes.Buffer
-	err := xmlio.NewEncoder(xmlio.WithTargetVersion(app)).Encode(&buf, m)
+	err := xmlio.NewEncoder(app).Encode(&buf, m)
 	if err != nil {
 		return "ERR(" + err.Error() + ")"
 	}

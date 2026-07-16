@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/maloquacious/wxx"
-	"github.com/maloquacious/wxx/xmlio"
 	"github.com/maloquacious/wxx/xmlio/internal/appver"
 	"github.com/maloquacious/wxx/xmlio/internal/v0_77"
 	"github.com/maloquacious/wxx/xmlio/internal/v1_06"
@@ -167,23 +166,18 @@ func TestCodecAppSetsAreDeclaredAndDisjoint(t *testing.T) {
 	}
 
 	// The property itself, over the real sets.
+	//
+	// "Every supported release is accepted by exactly one codec" used to be
+	// asserted here too, by walking xmlio.SupportedReleases() and counting the
+	// codecs that claimed each entry. It is gone rather than restated, and issue
+	// #45 Decision 8 is why: the registry no longer has a table of releases to
+	// disagree with the codecs -- it IS the union of what they declare -- so the
+	// check would be asking whether the codecs agree with themselves. What
+	// survives of it is disjointness, which is the half that was ever a property,
+	// and TestRegistryIsExactlyTheSupportedApplicationVersions in codecs_test.go,
+	// which pins what that union contains.
 	if err := appver.VerifyDisjoint(codecAppSetsForTest()...); err != nil {
 		t.Errorf("the compiled-in codec sets are not disjoint: %v", err)
-	}
-
-	// Every supported release's application version must be accepted by the codec
-	// bound to it -- exactly one codec, since the sets are disjoint. Without this
-	// the declarations could be fiction that no registry entry ever reaches.
-	for _, e := range xmlio.SupportedReleases() {
-		var claims []string
-		for _, s := range codecAppSetsForTest() {
-			if s.Accepts(e.App.Raw) {
-				claims = append(claims, s.Codec)
-			}
-		}
-		if len(claims) != 1 {
-			t.Errorf("supported release %q is accepted by %d codecs (%s), want exactly 1", e.App.Raw, len(claims), strings.Join(claims, ", "))
-		}
 	}
 }
 
@@ -193,7 +187,14 @@ func TestCodecAppSetsAreDeclaredAndDisjoint(t *testing.T) {
 //
 // The check has to live outside init to be testable at all -- init panics, and a
 // panic cannot be inspected -- which is why appver.VerifyDisjoint takes a table.
-// This mirrors NewRegistry and the reason is the same.
+// xmlio.verifyXMLVersions is the other half of the same load-time contract and is
+// shaped the same way, for the same reason.
+//
+// This is also the MERGED guard. Issue #41 kept the registry's
+// ErrDuplicateAppVersion check (one version must not name two RELEASES) apart
+// from this one (one version must not be accepted by two CODECS); with the
+// registry collapsed to application version -> codec they are the same statement,
+// and this is the survivor.
 func TestVerifyDisjointRejectsOverlap(t *testing.T) {
 	// Control: without the overlap this table is accepted. Guard against a
 	// vacuous pass -- if VerifyDisjoint rejected everything, the cases below
@@ -302,9 +303,10 @@ func TestAcceptedAppsIsACopy(t *testing.T) {
 // The property is "a codec states a schema if and only if its apps state a
 // release": classic files carry neither map/@schema nor map/@release, W2025 files
 // carry both (ADR 0003 Decision 2). NewRegistry used to enforce this over registry
-// entries, and issue #41 called it load-bearing; with schema and release off the
-// registry (issue #45 Decision 8) the declaration is the only place left that
-// knows both, so the check lives there and this asserts it over the real codecs.
+// entries, and issue #41 called it load-bearing; with the registry collapsed to
+// application version -> codec (issue #45 Decision 8) the declaration is the only
+// place left that knows both, so the check lives there and this asserts it over
+// the real codecs.
 //
 // codecs.go's init runs the same check and panics, which is why this cannot be
 // the only coverage: a panic cannot be inspected, and
