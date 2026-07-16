@@ -17,15 +17,22 @@ import (
 // DecodeFunc parses one schema's XML into the Map_t superset.
 type DecodeFunc func(input []byte) (*wxx.Map_t, error)
 
-// EncodeFunc emits a Map_t as one schema's XML.
-type EncodeFunc func(m *wxx.Map_t) ([]byte, error)
+// EncodeFunc emits a Map_t as one schema's XML, as the application version app.
+//
+// app is verbatim map/@version. The codec verifies it against the set it declares
+// and rejects one it does not accept, so an encoder can never be talked into
+// writing a release that never existed (issue #41 requirement 3). It has to be
+// passed rather than derived because the schema cannot tell the codec which of
+// the application versions sharing it the caller meant (ADR 0004 Decision 4).
+type EncodeFunc func(m *wxx.Map_t, app string) ([]byte, error)
 
 // Codec_t is the parse/emit pair a schema selects (ADR 0004 Decision 4).
 //
 // It is deliberately keyed off the schema and not off the release: two
 // application versions sharing one schema share this pair and differ only in the
 // string written to map/@version, which is caller-chosen data the codec cannot
-// infer.
+// infer -- but not data it accepts unexamined, since each codec declares the
+// application versions it accepts and Encode verifies against that set.
 type Codec_t struct {
 	Decode DecodeFunc
 	Encode EncodeFunc

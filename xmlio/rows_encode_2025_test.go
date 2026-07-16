@@ -94,7 +94,7 @@ func newRowsMap() *wxx.Map_t {
 func TestW2025RowsRoundTrip(t *testing.T) {
 	m1 := newRowsMap()
 
-	xmlBytes, err := v1_06.Encode(m1)
+	xmlBytes, err := v1_06.Encode(m1, m1.Version)
 	if err != nil {
 		t.Fatalf("v1_06.Encode(ROWS): %v", err)
 	}

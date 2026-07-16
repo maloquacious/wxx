@@ -15,9 +15,14 @@ import (
 // then decode those bytes with v1_06.Decode, returning the round-tripped model.
 // It is the mechanism the coverage assertions below use to prove that what decode
 // read, encode wrote, and decode read back again.
+//
+// The map is encoded as the application version it already states, which is what
+// the public path does too (Release_t.identify writes the target's application
+// version onto the map before the codec sees it), so this exercises the codec and
+// not the app-version gate. TestCodecRejectsUnacceptedAppVersion covers the gate.
 func w2025Recode(t *testing.T, m1 *wxx.Map_t) *wxx.Map_t {
 	t.Helper()
-	xmlBytes, err := v1_06.Encode(m1)
+	xmlBytes, err := v1_06.Encode(m1, m1.Version)
 	if err != nil {
 		t.Fatalf("v1_06.Encode: %v", err)
 	}
@@ -331,7 +336,7 @@ func TestW2025LabelStyleDropShadowGate(t *testing.T) {
 		t.Fatalf("%s: no label style carried dropShadowColor, so the gate is not under test", sample2025_206)
 	}
 
-	blankBytes, err := v1_06.Encode(b1)
+	blankBytes, err := v1_06.Encode(b1, b1.Version)
 	if err != nil {
 		t.Fatalf("v1_06.Encode(cleared): %v", err)
 	}
@@ -341,7 +346,7 @@ func TestW2025LabelStyleDropShadowGate(t *testing.T) {
 
 	// Populated fixture: source has dropShadowColor -> output must preserve it.
 	p1 := decodeFixture(t, populatedFixture)
-	popBytes, err := v1_06.Encode(p1)
+	popBytes, err := v1_06.Encode(p1, p1.Version)
 	if err != nil {
 		t.Fatalf("v1_06.Encode(populated): %v", err)
 	}

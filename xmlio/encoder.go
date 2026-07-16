@@ -306,5 +306,11 @@ func MarshalXML(m *wxx.Map_t, target *Release_t) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return codec.Encode(target.identify(m))
+	// The codec is handed the application version explicitly and verifies it
+	// against the set it declares. identify has already written the same string
+	// onto the map's identity, so the two agree by construction here; passing it
+	// is what lets the codec state requirement 3 rather than trust its input.
+	// The string is target.App.Raw verbatim -- never re-rendered from a Dotted's
+	// components, which would send "2.06" to disk as "2.6" (ADR 0004 Decision 1).
+	return codec.Encode(target.identify(m), target.App.Raw)
 }
