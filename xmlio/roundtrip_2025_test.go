@@ -65,7 +65,7 @@ func TestW2025RoundTrip(t *testing.T) {
 		t.Fatalf("initial decode: %v", err)
 	}
 
-	xmlBytes, err := v1_06.Encode(m1, m1.Version)
+	xmlBytes, err := v1_06.Encode(m1, m1.MetaData.Version.App.Raw)
 	if err != nil {
 		t.Fatalf("v1_06.Encode: %v", err)
 	}
@@ -82,7 +82,7 @@ func TestW2025RoundTrip(t *testing.T) {
 }
 
 // TestW2025PublicRoundTrip exercises the entire public pipeline end to end:
-// decode a real .wxx file, encode it back through xmlio.NewEncoder().Encode
+// decode a real .wxx file, encode it back through xmlio.NewEncoder(app).Encode
 // (XML + header + UTF-16BE + gzip), then decode those bytes with
 // xmlio.NewDecoder().Decode and assert semantic equality. Unlike
 // TestW2025RoundTrip (which drives only the in-memory XML codec), this proves
@@ -93,8 +93,11 @@ func TestW2025PublicRoundTrip(t *testing.T) {
 		t.Fatalf("initial decode: %v", err)
 	}
 
+	// The target is the version the fixture states: a round trip writes back what
+	// it read. Since issue #45 the caller says so rather than the encoder assuming
+	// it -- reading provenance and choosing a target is a CLIENT's job.
 	var buf bytes.Buffer
-	if err := xmlio.NewEncoder().Encode(&buf, m1); err != nil {
+	if err := xmlio.NewEncoder(m1.MetaData.Version.App.Raw).Encode(&buf, m1); err != nil {
 		t.Fatalf("public Encode: %v", err)
 	}
 
@@ -202,7 +205,7 @@ func TestW2025PopulatedRoundTrip(t *testing.T) {
 		t.Fatalf("initial decode: %v", err)
 	}
 
-	xmlBytes, err := v1_06.Encode(m1, m1.Version)
+	xmlBytes, err := v1_06.Encode(m1, m1.MetaData.Version.App.Raw)
 	if err != nil {
 		t.Fatalf("v1_06.Encode: %v", err)
 	}
@@ -228,8 +231,11 @@ func TestW2025PopulatedRoundTrip(t *testing.T) {
 func TestW2025PopulatedPublicRoundTrip(t *testing.T) {
 	m1 := decodeFixture(t, populatedFixture)
 
+	// The target is the version the fixture states: a round trip writes back what
+	// it read. Since issue #45 the caller says so rather than the encoder assuming
+	// it -- reading provenance and choosing a target is a CLIENT's job.
 	var buf bytes.Buffer
-	if err := xmlio.NewEncoder().Encode(&buf, m1); err != nil {
+	if err := xmlio.NewEncoder(m1.MetaData.Version.App.Raw).Encode(&buf, m1); err != nil {
 		t.Fatalf("public Encode: %v", err)
 	}
 
@@ -402,9 +408,15 @@ func firstDiff(path string, a, b reflect.Value) (string, bool) {
 }
 
 // mapAttrs bundles the scalar <map> attributes for comparison.
+//
+// The three identity attributes are not here, and they are not uncovered: they
+// live in MetaData.Worldographer as the provenance they are (issue #45 Decision
+// 9), which compareGroups compares as its own "MetaData" group. Map_t no longer
+// carries a second copy of them among the fields an encoder reads, because a
+// second copy among those fields is what issue #45 was.
 func mapAttrs(m *wxx.Map_t) map[string]any {
 	return map[string]any{
-		"Type": m.Type, "Release": m.Release, "Version": m.Version, "Schema": m.Schema,
+		"Type":           m.Type,
 		"HexOrientation": m.HexOrientation, "MapProjection": m.MapProjection,
 		"HexWidth": m.HexWidth, "HexHeight": m.HexHeight,
 		"ContinentFactor": m.ContinentFactor, "KingdomFactor": m.KingdomFactor, "ProvinceFactor": m.ProvinceFactor,

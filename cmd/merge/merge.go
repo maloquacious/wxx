@@ -186,9 +186,16 @@ func main() {
 		panic("assert(outputMap != nil)")
 	}
 
-	// Write to the output file
+	// Write to the output file, as the application version the merged map states
+	// -- which is the FIRST input's, since outputMap is built from it.
+	//
+	// This tool reads that provenance and names it as the target, which a CLIENT
+	// may do; the encoder may not do it for us, and has no default target (issue
+	// #45). Merging inputs that state DIFFERENT versions is an open question this
+	// preserves rather than answers: it took the first input's version before and
+	// it takes it now.
 	var encoderDiagnostics xmlio.EncoderDiagnostics
-	encoder := xmlio.NewEncoder(xmlio.WithEncoderDiagnostics(&encoderDiagnostics))
+	encoder := xmlio.NewEncoder(outputMap.MetaData.Version.App.Raw, xmlio.WithEncoderDiagnostics(&encoderDiagnostics))
 	outputBuffer := &bytes.Buffer{}
 	err = encoder.Encode(outputBuffer, outputMap)
 	if err != nil {

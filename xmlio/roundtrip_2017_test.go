@@ -214,9 +214,12 @@ func classicRoundTrip(t *testing.T, fixture string) (loss []string, encodeErr er
 		t.Fatalf("decode %s: diagnostics.Converted is empty", fixture)
 	}
 
+	// The round trip writes the version the file states, which since issue #45 the
+	// caller names rather than the encoder assuming: a CLIENT may read provenance
+	// and choose it as the target, and that is what a round trip means.
 	var e xmlio.EncoderDiagnostics
 	var buf bytes.Buffer
-	if err := xmlio.NewEncoder(xmlio.WithEncoderDiagnostics(&e)).Encode(&buf, m); err != nil {
+	if err := xmlio.NewEncoder(m.MetaData.Version.App.Raw, xmlio.WithEncoderDiagnostics(&e)).Encode(&buf, m); err != nil {
 		return nil, err
 	}
 	if len(e.Utf8Encoded) == 0 {
@@ -286,7 +289,7 @@ func TestRoundTrip2017RowsHardError(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	if err := xmlio.NewEncoder().Encode(&buf, m); err == nil {
+	if err := xmlio.NewEncoder(m.MetaData.Version.App.Raw).Encode(&buf, m); err == nil {
 		t.Fatalf("encode %s: want non-nil error (classic ROWS is a hard-error), got nil", rowsFixture)
 	}
 }

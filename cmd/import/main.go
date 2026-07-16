@@ -99,8 +99,12 @@ func main() {
 	if outputMap == nil {
 		panic("assert(outputMap != nil)")
 	}
+	// The target is the application version the INPUT states: importing adds
+	// content to a map without changing what version it is. This tool reads that
+	// provenance and names it as the target, which a CLIENT may do; the encoder may
+	// not do it for us, and has no default target (issue #45).
 	var encoderDiagnostics xmlio.EncoderDiagnostics
-	encoder := xmlio.NewEncoder(xmlio.WithEncoderDiagnostics(&encoderDiagnostics))
+	encoder := xmlio.NewEncoder(outputMap.MetaData.Version.App.Raw, xmlio.WithEncoderDiagnostics(&encoderDiagnostics))
 	outputBuffer := &bytes.Buffer{}
 	err = encoder.Encode(outputBuffer, outputMap)
 	if err != nil {

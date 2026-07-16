@@ -8,7 +8,6 @@ import (
 
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/xmlio"
-	"github.com/maloquacious/wxx/xmlio/internal/codec"
 	"github.com/maloquacious/wxx/xmlio/internal/v0_77"
 )
 
@@ -111,12 +110,14 @@ func TestClassicVersionFidelity(t *testing.T) {
 // fixture to the v0_77 encoder -- the guarantee this test has always made,
 // restated on the model that now carries it.
 //
-// What routes has changed: the encoder used to switch on a DataVersion.Major of
-// 2017, a family year no classic file states, and now resolves the codec from
-// the schema the file itself states -- for a classic file, the schema it pointedly
-// does not state (ADR 0004 Decision 4). The proof is unchanged and end-to-end: a
-// map decoded from each fixture re-encodes to bytes that decode back as a classic
-// file carrying its own version="1.7x", which only the classic encoder produces.
+// What routes has changed twice. The encoder used to switch on a DataVersion.Major
+// of 2017, a family year no classic file states; then on the schema the file
+// stated -- for a classic file, the schema it pointedly does not state; and now on
+// the APPLICATION VERSION the caller names (issue #45 Decision 8), which the tool
+// reads from the file when, as here, it means to write the same version back. The
+// proof is unchanged and end-to-end: a map decoded from each fixture re-encodes to
+// bytes that decode back as a classic file carrying its own version="1.7x", which
+// only the classic encoder produces.
 func TestClassicEncodeDispatch(t *testing.T) {
 	for _, tc := range classicSamples {
 		t.Run(tc.name, func(t *testing.T) {
@@ -129,26 +130,28 @@ func TestClassicEncodeDispatch(t *testing.T) {
 			// zero-valued fallback.
 			assertClassicIdentity(t, "decoded", m.MetaData.Version, tc.version, tc.wantMajor, tc.wantMinor)
 
-			// The schema this fixture states selects the classic codec. This is
-			// the dispatch decision itself, asserted directly rather than inferred
-			// from the output.
+			// The version this fixture states resolves to the classic codec. This
+			// is the dispatch decision itself, asserted directly rather than
+			// inferred from the output.
 			//
-			// The selector is reached through xmlio/internal/codec rather than
-			// through xmlio: a public schema -> codec selector is what issue #41
+			// The codecs are reached through xmlio/internal/... rather than through
+			// xmlio: a public symbol that hands back an encoder is what issue #41
 			// requirement 5 removes. An external test package physically inside
-			// xmlio/ may import it, which is requirement 5's exception. A classic
-			// file states no @schema, which is the implicit legacy schema and the
-			// "" key here.
-			c, err := codec.ForSchema(schemaKeyForTest(m.MetaData.Version.Schema))
-			if err != nil {
-				t.Fatalf("codec.ForSchema(%v): %v", m.MetaData.Version, err)
+			// xmlio/ may import them, which is requirement 5's exception.
+			c, ok := codecForAppOfTest(t, m.MetaData.Version.App.Raw)
+			if !ok {
+				t.Fatalf("no codec accepts %q, which %s states", m.MetaData.Version.App.Raw, tc.path)
 			}
-			if funcPtr(c.Encode) != funcPtr(v0_77.Encode) {
-				t.Errorf("schema of %s does not select the v0_77 encoder", tc.path)
+			if c != (v0_77.Codec_t{}) {
+				t.Errorf("%q resolves to codec %T, want %T", m.MetaData.Version.App.Raw, c, v0_77.Codec_t{})
 			}
 
+			// The target is named explicitly: there is no default (issue #45). This
+			// tool means to write the version the file states, so it reads that
+			// provenance and says so -- which a CLIENT may do and the encoder may
+			// not do for it.
 			var buf bytes.Buffer
-			if err := xmlio.NewEncoder().Encode(&buf, m); err != nil {
+			if err := xmlio.NewEncoder(m.MetaData.Version.App.Raw).Encode(&buf, m); err != nil {
 				t.Fatalf("public encode %s (%v): %v", tc.path, m.MetaData.Version, err)
 			}
 			if buf.Len() == 0 {

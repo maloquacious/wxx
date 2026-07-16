@@ -21,16 +21,20 @@ func ReadFile(path string, opts ...DecoderOption) (*wxx.Map_t, error) {
 	return NewDecoder(opts...).Decode(f)
 }
 
-// WriteFile encodes m and writes it to path (0644). By default it targets the
-// release m states in m.MetaData.Version.App; pass WithTargetVersion(...) (or
-// other EncoderOption) to override.
+// WriteFile encodes m as the supported application version app ("1.73", "1.77",
+// "2.06") and writes it to path (0644). Encoder behavior may be tuned with
+// EncoderOption values (see NewEncoder).
+//
+// app is required, for the reason it is required on NewEncoder: writing the
+// version the map happens to state would make the SOURCE file's identity the
+// target, and a caller who wants that says so with m.MetaData.Version.App.Raw.
 //
 // The map is encoded into memory first and only written to disk once the
 // encode succeeds, so a failed encode never truncates or creates a corrupt
 // file at path.
-func WriteFile(path string, m *wxx.Map_t, opts ...EncoderOption) error {
+func WriteFile(path string, m *wxx.Map_t, app string, opts ...EncoderOption) error {
 	var buf bytes.Buffer
-	if err := NewEncoder(opts...).Encode(&buf, m); err != nil {
+	if err := NewEncoder(app, opts...).Encode(&buf, m); err != nil {
 		return fmt.Errorf("write %s: %w", path, err)
 	}
 	if err := os.WriteFile(path, buf.Bytes(), 0644); err != nil {

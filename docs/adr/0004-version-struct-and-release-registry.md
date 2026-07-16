@@ -1,7 +1,15 @@
 # ADR 0004 — Version identity: `{App, Schema}` plus a supported-release registry
 
-- **Status:** Proposed — gates issue #28. Records the model and the encoder
-  contract; the code change lands separately under #28.
+- **Status:** **Accepted (2026-07-15)** — gated issue #28, now closed. The model
+  and the encoder contract landed in #32 (PR #33). Ratified after the fact; it was
+  left at *Proposed* while the code it authorized landed.
+- **Amended:** 2026-07-15 — **Decision 3** is amended by
+  [#45](https://github.com/maloquacious/wxx/issues/45) /
+  [PR #49](https://github.com/maloquacious/wxx/pull/49): every byte the encoder
+  writes is encoder-owned, `Release_t` is deleted, and the registry maps one
+  application version to one codec and holds nothing else. Decision 3's original
+  text stands as the record of the decision taken. See *Amendment — 2026-07-15*
+  at the end of this document.
 - **Date:** 2026-07-15
 - **Supersedes:** ADR 0002 (`0002-version-identity.md`, #12). Builds on ADR 0003
   (`0003-version-axes.md`, the two-axis model).
@@ -81,6 +89,12 @@ That is an accident worth making a rule.
 
    `Release` is carried because writing a file requires it — not because it means
    anything. It is marketing data preserved for fidelity.
+
+   > **Amended 2026-07-15 by [#45](https://github.com/maloquacious/wxx/issues/45)
+   > / [PR #49](https://github.com/maloquacious/wxx/pull/49).** `Release_t` no
+   > longer exists and the registry carries none of this. The text above is left
+   > as written, as the record of the decision that was taken. See
+   > **Amendment — 2026-07-15** at the end of this document.
 
 4. **Schema selects the codec; the application version is data.** These are
    different questions and conflating them is what produced the "weird vibe":
@@ -172,3 +186,74 @@ this ADR rather than merely informational.
 - **Registry keying.** Targeting by application version assumes it uniquely
   identifies a release. If that ever fails, callers target a release identifier
   instead.
+
+---
+
+## Amendment — 2026-07-15 (#45, PR #49)
+
+Amends **Decision 3**. Decisions 1, 2, 4, 5, 6 and 7 stand as written; Decision 1
+(verbatim output) in particular is untouched and remains inviolable.
+
+### What was wrong
+
+Decision 3 binds the full on-disk identity — `map/@release`, `map/@version`,
+`map/@schema` — to the registry, on the reasoning that *"writing a file requires
+it"*. Requiring a value to write a file is an argument for the **encoder** owning
+it, not the registry. Carrying it in the registry made it a second source for a
+value the encoder also had, and [#45](https://github.com/maloquacious/wxx/issues/45)
+is what that costs: the encoder verified the caller's application version and then
+wrote the **source file's** identity, because the gate read the argument and the
+write path read the map. Two sources for one value, free to disagree.
+
+### The amended decision
+
+**Every byte the encoder writes is encoder-owned, and the encoder derives all of
+them from the required application version.** It may consult the source's metadata
+to decide *how* to emit a field; it must never emit the source's metadata.
+
+- **`map/@release` is derived from the application version by the encoder**, and
+  the mapping lives in exactly one place: the codec's own declaration
+  (`appver.Set_t`). It is **not** a per-codec constant. Every application version
+  a codec accepts today agrees on `@release`, which makes the mapping look
+  constant — but a constant could not express a future build on an unchanged
+  schema being relabelled, which is the scenario this ADR's own Context invokes
+  to justify deleting the family year. The mapping is per application version so
+  that scenario stays expressible.
+- **`map/@schema` and the XML declaration version are codec constants**, declared
+  alongside it. The XML version is per-codec because that is what the current
+  builds produce, not as a law; if a later build on the same schema ever opens its
+  files differently, it moves onto the per-application-version declaration. The
+  codec owns the mapping either way.
+- **`Release_t` is deleted.** Stripped of release, schema and XML version it held
+  nothing but its own lookup key.
+- **The registry maps one application version to one codec, and holds nothing
+  else.** It performs no derivations. At heart it is a switch statement.
+- **The application version selects the codec.** This does not reverse Decision 4:
+  the schema is still the format's identity, and a codec still implements exactly
+  one. But a codec now declares which application versions it accepts, so the
+  application version resolves to a codec directly and the schema no longer needs
+  to be a lookup key. Decision 4's substance — that two application versions
+  sharing a schema use one codec and differ only in the string written to
+  `@version` — is unchanged, and the encoder must still be **told** which.
+
+### Consequences
+
+- **Decision 3's premise is inverted, not refined.** "The registry is the single
+  source of truth for supported releases" becomes "the codecs are, and the
+  registry is an index over what they declare." The registry is built by querying
+  every codec once at load.
+- **Client-facing discovery is gone for now.** `Lookup` and `SupportedReleases`
+  returned `Release_t`, and nothing in the repo consumed them. They are absent
+  deliberately until [#46](https://github.com/maloquacious/wxx/issues/46) designs
+  a replacement against its real consumer, the planned `wxx script` Lua host.
+- **`Map_t.{Release, Version, Schema}` are deleted.** They were decode-only
+  provenance duplicating `MetaData.Worldographer.{Release, Version, Schema}`
+  exactly, and once no encoder read them they were a second copy of the same
+  facts. Provenance keeps its home under `MetaData` (Decision 9 of #45). They
+  return if the Lua host needs them and can say what for.
+- **Two guards merge.** The registry's duplicate-application-version check and the
+  codec disjointness check become the same statement once the registry *is*
+  application-version → codec. `appver.VerifyDisjoint` is the survivor.
+- **No file byte moved.** Every fixture encodes to identical bytes before and
+  after (68/68 (fixture × application version) pairs), which is Decision 1 held to
+  across the change rather than assumed.

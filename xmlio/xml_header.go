@@ -19,11 +19,14 @@ var (
 // utf16XMLHeader returns the UTF-16 XML declaration for an XML version ("1.0",
 // "1.1"), reporting whether one exists.
 //
-// The version comes from the target release (Release_t.XMLVersion): the XML
-// declaration is on-disk identity data bound to a release, not something to
-// infer from the map. Worldographer writes UTF-16, so that is the only encoding
-// this offers -- the utf-8 rows of the table exist for reading files a tool has
-// already transcoded.
+// The version comes from the target codec's declaration (appver.Set_t.XMLVersion):
+// the XML declaration is a byte the encoder writes, so the encoder owns it, and it
+// is not something to infer from the map. Worldographer writes UTF-16, so that is
+// the only encoding this offers -- the utf-8 rows of the table exist for reading
+// files a tool has already transcoded.
+//
+// This is also the table verifyXMLVersions checks a codec's declaration against at
+// load, which is why "1.0" and "1.1" are the only two answers a codec may name.
 func utf16XMLHeader(xmlVersion string) (string, bool) {
 	for _, h := range xmlHeaders {
 		if h.version == xmlVersion && h.encoding == "utf-16" {

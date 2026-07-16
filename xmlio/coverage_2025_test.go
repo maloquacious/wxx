@@ -16,13 +16,29 @@ import (
 // It is the mechanism the coverage assertions below use to prove that what decode
 // read, encode wrote, and decode read back again.
 //
-// The map is encoded as the application version it already states, which is what
-// the public path does too (Release_t.identify writes the target's application
-// version onto the map before the codec sees it), so this exercises the codec and
-// not the app-version gate. TestCodecRejectsUnacceptedAppVersion covers the gate.
+// The map is encoded as the application version it already states, so this
+// exercises the codec and not the app-version gate.
+// TestCodecRejectsUnacceptedAppVersion covers the gate.
+//
+// Naming that version explicitly is the ONLY way to encode since issue #45: the
+// codec derives every identity byte it writes from the app it is handed and reads
+// none of them from the map, so the app is not optional and not inferable. It used
+// to be inferable, and that was the bug -- Release_t.identify stamped the target's
+// identity onto the map on every public path, which meant the codec emitting the
+// map's identity looked correct from outside. Reading the source's own version to
+// choose the target is fine HERE and is what a client does (every cmd/* tool does
+// exactly this); what the ENCODER may not do is read it for us. That distinction
+// is the whole of issue #45, and it is why the read is spelled out at the call
+// site rather than hidden inside Encode.
+//
+// It reads MetaData.Version.App.Raw because that is where the file's stated
+// application version lives now: the top-level Map_t.Version this used to read was
+// a second copy of the same provenance, sitting among the fields an encoder reads,
+// and it is deleted. Raw is verbatim -- "2.06", never a re-rendered "2.6" (ADR
+// 0004 Decision 1).
 func w2025Recode(t *testing.T, m1 *wxx.Map_t) *wxx.Map_t {
 	t.Helper()
-	xmlBytes, err := v1_06.Encode(m1, m1.Version)
+	xmlBytes, err := v1_06.Encode(m1, m1.MetaData.Version.App.Raw)
 	if err != nil {
 		t.Fatalf("v1_06.Encode: %v", err)
 	}
@@ -336,7 +352,7 @@ func TestW2025LabelStyleDropShadowGate(t *testing.T) {
 		t.Fatalf("%s: no label style carried dropShadowColor, so the gate is not under test", sample2025_206)
 	}
 
-	blankBytes, err := v1_06.Encode(b1, b1.Version)
+	blankBytes, err := v1_06.Encode(b1, b1.MetaData.Version.App.Raw)
 	if err != nil {
 		t.Fatalf("v1_06.Encode(cleared): %v", err)
 	}
@@ -346,7 +362,7 @@ func TestW2025LabelStyleDropShadowGate(t *testing.T) {
 
 	// Populated fixture: source has dropShadowColor -> output must preserve it.
 	p1 := decodeFixture(t, populatedFixture)
-	popBytes, err := v1_06.Encode(p1, p1.Version)
+	popBytes, err := v1_06.Encode(p1, p1.MetaData.Version.App.Raw)
 	if err != nil {
 		t.Fatalf("v1_06.Encode(populated): %v", err)
 	}

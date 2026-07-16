@@ -125,7 +125,7 @@ func TestClassicDowngradeStubError(t *testing.T) {
 			}
 
 			var w countingWriter
-			err := xmlio.NewEncoder(xmlio.WithTargetVersion(classicTarget)).Encode(&w, m)
+			err := xmlio.NewEncoder(classicTarget).Encode(&w, m)
 
 			if !tc.wantErr {
 				if err != nil {
@@ -168,7 +168,7 @@ func TestClassicDowngradeDiagnostics(t *testing.T) {
 
 	var d xmlio.EncoderDiagnostics
 	var buf bytes.Buffer
-	if err := xmlio.NewEncoder(xmlio.WithEncoderDiagnostics(&d), xmlio.WithTargetVersion(classicTarget)).Encode(&buf, m); err != nil {
+	if err := xmlio.NewEncoder(classicTarget, xmlio.WithEncoderDiagnostics(&d)).Encode(&buf, m); err != nil {
 		t.Fatalf("encode %s -> classic %s: %v", sample2025_206, classicTarget, err)
 	}
 
@@ -230,7 +230,7 @@ func TestClassicDowngradeScrollbarLatent(t *testing.T) {
 	// Latent half: zero values report nothing.
 	var zero xmlio.EncoderDiagnostics
 	var zbuf bytes.Buffer
-	if err := xmlio.NewEncoder(xmlio.WithEncoderDiagnostics(&zero), xmlio.WithTargetVersion(classicTarget)).Encode(&zbuf, m); err != nil {
+	if err := xmlio.NewEncoder(classicTarget, xmlio.WithEncoderDiagnostics(&zero)).Encode(&zbuf, m); err != nil {
 		t.Fatalf("encode: %v", err)
 	}
 	for _, e := range zero.Dropped {
@@ -243,7 +243,7 @@ func TestClassicDowngradeScrollbarLatent(t *testing.T) {
 	m.HScrollbarPos, m.VScrollbarPos = 0.25, 0.5
 	var live xmlio.EncoderDiagnostics
 	var lbuf bytes.Buffer
-	if err := xmlio.NewEncoder(xmlio.WithEncoderDiagnostics(&live), xmlio.WithTargetVersion(classicTarget)).Encode(&lbuf, m); err != nil {
+	if err := xmlio.NewEncoder(classicTarget, xmlio.WithEncoderDiagnostics(&live)).Encode(&lbuf, m); err != nil {
 		t.Fatalf("encode (synthesized scrollbars): %v", err)
 	}
 	got := map[string]string{}
@@ -295,9 +295,15 @@ func TestNoLossOnSameReleaseTargets(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			m := decodeW2025(t, tc.fixture)
 
+			// "Its own release" is now something the caller says out loud: the
+			// encoder has no default target (issue #45), so this reads the version
+			// the fixture states and names it. That is a CLIENT reading provenance
+			// and choosing a target, which is exactly what this test means by
+			// "encode as its own release".
+			own := m.MetaData.Version.App.Raw
 			var d xmlio.EncoderDiagnostics
 			var withDiag bytes.Buffer
-			if err := xmlio.NewEncoder(xmlio.WithEncoderDiagnostics(&d)).Encode(&withDiag, m); err != nil {
+			if err := xmlio.NewEncoder(own, xmlio.WithEncoderDiagnostics(&d)).Encode(&withDiag, m); err != nil {
 				t.Fatalf("%s: encode as its own release: %v", tc.fixture, err)
 			}
 			if len(d.Dropped) != 0 {
@@ -311,7 +317,7 @@ func TestNoLossOnSameReleaseTargets(t *testing.T) {
 
 			// Asking for diagnostics must not move a byte.
 			var noDiag bytes.Buffer
-			if err := xmlio.NewEncoder().Encode(&noDiag, m); err != nil {
+			if err := xmlio.NewEncoder(own).Encode(&noDiag, m); err != nil {
 				t.Fatalf("%s: encode without diagnostics: %v", tc.fixture, err)
 			}
 			if !bytes.Equal(withDiag.Bytes(), noDiag.Bytes()) {
@@ -350,7 +356,7 @@ func TestClassicDowngradeLossInventory(t *testing.T) {
 
 	var ed xmlio.EncoderDiagnostics
 	var buf bytes.Buffer
-	if err := xmlio.NewEncoder(xmlio.WithEncoderDiagnostics(&ed), xmlio.WithTargetVersion(classicTarget)).Encode(&buf, m); err != nil {
+	if err := xmlio.NewEncoder(classicTarget, xmlio.WithEncoderDiagnostics(&ed)).Encode(&buf, m); err != nil {
 		t.Fatalf("encode %s -> classic %s: %v", sample2025_206, classicTarget, err)
 	}
 
@@ -372,8 +378,9 @@ func TestClassicDowngradeLossInventory(t *testing.T) {
 
 	// Not downgrade losses. Every path here is justified in downgrade.go's
 	// classicDowngradeLoss doc comment, and each is independently evidenced:
-	// the identity entries by Release_t.identify, the codec-gap entries by
-	// classicRoundTripExpect (classic loses them to ITSELF).
+	// the identity entries by the classic codec writing the identity of the app it
+	// was given, the codec-gap entries by classicRoundTripExpect (classic loses
+	// them to ITSELF).
 	notDowngrade := map[string]string{
 		"attr-altered\tmap\tversion":                                            "target identity: the file states the release the caller asked for",
 		"attr-dropped\tmap\trelease":                                            "target identity: a classic file states no @release",
