@@ -126,15 +126,22 @@ func downgradeLoss(m *wxx.Map_t, targetSchema string) ([]DroppedFeature_t, error
 //     map/@schema disappear. That is the classic codec writing the identity of the
 //     application version the caller asked for; a classic file states no release
 //     and no schema. Nothing is lost -- the file is being told what it now is.
+//
 //   - CLASSIC CODEC GAPS. map/mapkey/@viewlevel is altered and
-//     map/informations/information and map/configuration/text-config/labelstyle
-//     are dropped -- but the classic FORMAT has room for all three (RelaxNG
-//     schema/utf-8-xml.rnc defines them, classic samples carry them). Our classic
-//     ENCODER does not write them yet, which internal/v0_77/COVERAGE.md documents and
-//     the classic round-trip harness proves by losing the same three on a
-//     classic -> classic trip. They cost the caller data, but they are this
-//     codec's gaps and would not be fixed by targeting differently. Reporting
-//     them as downgrade loss would blame the format for our encoder.
+//     map/informations/information is dropped -- but the classic FORMAT has room
+//     for both (RelaxNG schema/utf-8-xml.rnc defines them, classic samples carry
+//     them). Our classic ENCODER does not write them yet, which
+//     internal/v0_77/COVERAGE.md documents and the classic round-trip harness
+//     proves by losing the same two on a classic -> classic trip. They cost the
+//     caller data, but they are this codec's gaps and would not be fixed by
+//     targeting differently. Reporting them as downgrade loss would blame the
+//     format for our encoder.
+//
+//     map/configuration/text-config/labelstyle was a third such gap and is not
+//     one any more (issue #36): the classic encoder writes <labelstyle> again, so
+//     the element survives a downgrade and only the attributes classic genuinely
+//     lacks are reported -- see the @dropShadow* entry below, which that fix is
+//     what made evidenceable.
 //
 // The residual -- what the W2025 -> classic diff shows that a classic -> classic
 // and a W2025 -> W2025 diff do not -- is the inventory below.
@@ -198,6 +205,26 @@ func classicDowngradeLoss(m *wxx.Map_t) ([]DroppedFeature_t, error) {
 	//
 	// Gated on non-empty: classic decode leaves both strings "".
 	dropped = append(dropped, shapeStyleLineLoss(m)...)
+
+	// map/configuration/text-config/labelstyle/@dropShadowColor, @dropShadowRadius
+	// and @dropShadowSpread -- the classic <labelstyle> element has nine
+	// attributes and none of these (RelaxNG lines 181-190).
+	//
+	// This entry is issue #36, and it is here now because it could not be
+	// evidenced before. The classic encoder dropped the whole <labelstyle>
+	// element as a codec gap, so the harness saw `element-dropped` and could not
+	// separate "the format has no room for these attributes" from "our encoder
+	// never wrote the element". Two different claims with two different fixes, so
+	// #32 made neither rather than guess. Closing the encode gap removed the mask,
+	// and the same 2.06 -> classic diff now reports, verbatim:
+	//
+	//	attr-dropped	map/configuration/text-config/labelstyle	dropShadowColor
+	//	attr-dropped	map/configuration/text-config/labelstyle	dropShadowRadius
+	//	attr-dropped	map/configuration/text-config/labelstyle	dropShadowSpread
+	//
+	// The claim is confirmed rather than refuted, which was not a foregone
+	// conclusion and is why #36 asked for the diff instead of the schema alone.
+	dropped = append(dropped, labelStyleDropShadowLoss(m)...)
 
 	// map/blurTerrainBG -- a W2025 top-level element the classic format does not
 	// define at all (absent from the RelaxNG schema; schema/README.md
@@ -322,6 +349,46 @@ func shapeStyleLineLoss(m *wxx.Map_t) []DroppedFeature_t {
 		})
 	}
 	return out
+}
+
+// labelStyleDropShadowLoss returns the @dropShadow* entry for m's label styles,
+// naming the styles that carry the trio and what each spells.
+//
+// It is ONE entry for three attributes, where shapeStyleLineLoss is one entry
+// per attribute. The difference is in the data, not in taste: @lineCap and
+// @lineJoin are independent, and a style may carry either alone, so a caller
+// recovering one needs to know which. The drop-shadow trio is present all-or-none
+// in real data (see v1_06's encodeLabelStyle, where the same fact gates the
+// emit), so splitting it would report one feature three times and say the same
+// thing about the same styles each time.
+//
+// Gated on DropShadowColor != "" for that reason and not on the numbers: the
+// colour is "null" or an RGBA string whenever the trio is present and empty when
+// it is absent, while 0 is a legal radius and a legal spread. A classic-decoded
+// map leaves the colour empty on every style, so a classic -> classic encode
+// reports nothing here -- which is what makes this a downgrade loss rather than
+// a restatement of "this map has label styles".
+func labelStyleDropShadowLoss(m *wxx.Map_t) []DroppedFeature_t {
+	if m.Configuration == nil || m.Configuration.TextConfig == nil {
+		return nil
+	}
+	var styles []string
+	for _, ls := range m.Configuration.TextConfig.LabelStyles {
+		if ls == nil || ls.DropShadowColor == "" {
+			continue
+		}
+		styles = append(styles, fmt.Sprintf("%q=(color=%s radius=%s spread=%s)",
+			ls.Name, ls.DropShadowColor, floatDetail(ls.DropShadowRadius), floatDetail(ls.DropShadowSpread)))
+	}
+	if len(styles) == 0 {
+		return nil
+	}
+	return []DroppedFeature_t{{
+		Path:   "map/configuration/text-config/labelstyle/@dropShadow*",
+		Field:  "Map_t.Configuration.TextConfig.LabelStyles[].DropShadow{Color,Radius,Spread}",
+		Detail: fmt.Sprintf("the drop-shadow trio is dropped from %d label style(s): %s", len(styles), strings.Join(styles, ", ")),
+		Reason: "the classic <labelstyle> element states none of @dropShadowColor, @dropShadowRadius or @dropShadowSpread (schema/utf-8-xml.rnc lines 181-190 define nine labelstyle attributes, without them)",
+	}}
 }
 
 // floatDetail renders a float for a Detail string. It is display only -- no

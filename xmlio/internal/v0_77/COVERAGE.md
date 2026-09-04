@@ -70,8 +70,8 @@ inspected by decompressing the gzip/UTF-16BE container to UTF-8 XML.
 | configuration `<terrain-config>` | stub | no-op(intentional) | decode `decode.go:489-495`; encode `encode.go:465-469` | Parsed as raw chardata only; encoder emits an empty wrapper. Real samples leave it empty. |
 | configuration `<feature-config>` | stub | no-op(intentional) | decode `decode.go:496-501`; encode `encode.go:471-475` | Same as terrain-config. |
 | configuration `<texture-config>` | stub | no-op(intentional) | decode `decode.go:502-507`; encode `encode.go:477-481` | Same as terrain-config. |
-| configuration `<text-config>`/`<labelstyle>` | implemented | **unimplemented(dropped)** | decode `decode.go:508-532`; encode `encode.go:483-507` | Decode builds structured `LabelStyle_t` (samples have 10 labelstyles). **`encodeLabelStyle` is a commented-out no-op** — `<text-config></text-config>` emitted with **no `<labelstyle>` children**. Labelstyles are lost on write. |
-| configuration `<shape-config>`/`<shapestyle>` | implemented | implemented | decode `decode.go:533-575`; encode `encode.go:509-551` | Decode builds structured `ShapeStyle_t` (samples have 9–10 shapestyles); **`encodeShapeStyle` writes all attributes**. Note the asymmetry: shapestyle encodes, labelstyle (a peer sub-config) does not. |
+| configuration `<text-config>`/`<labelstyle>` | implemented | implemented | decode `decode.go:508-532`; encode `encode.go` `encodeLabelStyle` | Decode builds structured `LabelStyle_t` (samples have 10 labelstyles); **encode writes all nine attributes** and the emitted element is **byte-identical to the source** on every encodable fixture (`TestClassicLabelStyleBytes`). Closed by issue #36. It was a commented-out no-op — `<text-config></text-config>` with no children — so all ten styles were silently dropped from every classic encode. The two nullable colours use `rgbans`, not `rgbas`: classic spells both `"null"`, `decodeRgba` maps `"null"` to nil, and `rgbas` would render nil as `0.0,0.0,0.0,1.0` (measured: the audit then reports `attr-altered … backgroundColor`). v1_06 still has that drift — issue #62. |
+| configuration `<shape-config>`/`<shapestyle>` | implemented | implemented | decode `decode.go:533-575`; encode `encode.go:509-551` | Decode builds structured `ShapeStyle_t` (samples have 9–10 shapestyles); **`encodeShapeStyle` writes all attributes**. It was for a long time the only sub-config that encoded; labelstyle, its peer, was a no-op until issue #36, and `encodeShapeStyle` was the model that fix was written against. |
 
 ## Round-trip loss inventory (executable)
 
@@ -102,7 +102,6 @@ returns an error; round trip impossible).
 | Path | Classification | Fixtures | Encode citation |
 |---|---|---|---|
 | `map/informations/information` (+ nested `/information` to depth 2–3) | dropped | all 7 encodable fixtures | `encode.go:438-442` (`encodeInformations` emits only an empty `<informations>` wrapper) |
-| `map/configuration/text-config/labelstyle` | dropped | all 7 encodable fixtures | `encode.go:483-507` (`encodeLabelStyle` is a commented-out no-op; `<text-config>` wrapper still emitted, empty) |
 | `map/mapkey` `@viewlevel` (`"null"` → `"WORLD"`) | altered | `blank-1.73`, `blank-1.77`, `import`, `merge-01`, `merge-02` | `encode.go:253-258` (`encodeMapKey` writes a hardcoded constant `<mapkey>` block) |
 | `<tiles>`/`<tilerow>` (ROWS) | encode-hard-error | `2017-1.77-1.0-rows-blank.wxx` | `encode.go` `verifyOrientation` (`wxx.ErrUnsupportedHexOrientation`, refused before the emit begins) |
 
@@ -201,11 +200,17 @@ Notes:
   shadow; the trio lives on `LabelStyle_t`), so it is an **h2025 codec gap**, not
   a downgrade loss. `map/@version` altered and `map/@release`/`@schema` dropped
   are **target identity** (`Release_t.identify`), not loss.
-- **Masked, and therefore unclaimed.** Classic `<labelstyle>` has no
-  `@dropShadow*` (RelaxNG lines 181-190), so a W2025 label style's drop shadow
-  *is* beyond the classic format — but the classic encoder drops the entire
-  `<labelstyle>` element as a codec gap, so the harness cannot separate the two
-  and the downgrade half is **not** claimed here.
+- **Unmasked, and now claimed (issue #36).** Classic `<labelstyle>` has no
+  `@dropShadow*` (RelaxNG lines 181-190). That was true before and could not be
+  *demonstrated*: the classic encoder dropped the entire `<labelstyle>` element
+  as a codec gap, so the harness saw `element-dropped` and could not separate
+  "the format has no room for these attributes" from "our encoder never wrote
+  the element". Closing the encode gap removed the mask, and the same 2.06 →
+  classic diff now reports `attr-dropped … labelstyle dropShadowColor`,
+  `…dropShadowRadius` and `…dropShadowSpread`. The claim was **confirmed, not
+  refuted**, and `classicDowngradeLoss` carries it as
+  `map/configuration/text-config/labelstyle/@dropShadow*` — one entry for the
+  trio, which is present all-or-none.
 
 ## Version identity — `MetaData.Version` and `Worldographer.Version`
 
@@ -280,8 +285,8 @@ Two caveats on coverage of the sweep (not gaps, just scope limits):
   those two elements' attribute fidelity is verified only against `schema.go`
   and the RelaxNG schema, not a live fixture. `schema.go` models `Shape_t` /
   `Point_t` / `Note_t`, and their fields match the RelaxNG definition (below).
-- Un-modeled *behavior* on the **encode** side (shapes / notes / informations /
-  labelstyles dropped, mapkey constant) is captured in the table above, not
+- Un-modeled *behavior* on the **encode** side (shapes / notes / informations
+  dropped, mapkey constant) is captured in the table above, not
   here; this section is specifically about attributes with **no field in the
   schema**, of which there are none for classic.
 
@@ -318,7 +323,7 @@ Every element the RelaxNG schema defines is **modeled** in `xmlio/internal/v0_77
 
 **Conclusion:** there is **no RelaxNG element that neither this codec models nor
 lists as a gap** — decode models 100% of the schema. The classic gaps are all on
-the **encode** side (ROWS, mapkey, shapes, notes, informations, labelstyles;
-tabulated above), which the RelaxNG schema — being a document-shape grammar, not
+the **encode** side (ROWS, mapkey, shapes, notes, informations; labelstyles
+were among them until issue #36 closed that one; tabulated above), which the RelaxNG schema — being a document-shape grammar, not
 a codec spec — cannot by itself detect. That is precisely why this matrix is
 maintained alongside the schema.

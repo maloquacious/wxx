@@ -372,45 +372,38 @@ func assertLossSet(t *testing.T, fixture string, want, got []string) {
 var classicRoundTripExpect = map[string][]string{
 	"blank-2017-1.73-1.0.wxx": {
 		"attr-altered\tmap/mapkey\tviewlevel",
-		"element-dropped\tmap/configuration/text-config/labelstyle",
 		"element-dropped\tmap/informations/information",
 		"element-dropped\tmap/informations/information/information",
 		"element-dropped\tmap/informations/information/information/information",
 	},
 	"blank-2017-1.74-1.0.wxx": {
-		"element-dropped\tmap/configuration/text-config/labelstyle",
 		"element-dropped\tmap/informations/information",
 		"element-dropped\tmap/informations/information/information",
 	},
 	"blank-2017-1.77-1.0.wxx": {
 		"attr-altered\tmap/mapkey\tviewlevel",
-		"element-dropped\tmap/configuration/text-config/labelstyle",
 		"element-dropped\tmap/informations/information",
 		"element-dropped\tmap/informations/information/information",
 		"element-dropped\tmap/informations/information/information/information",
 	},
 	"2017-1.77-1.0-columns-blank.wxx": {
-		"element-dropped\tmap/configuration/text-config/labelstyle",
 		"element-dropped\tmap/informations/information",
 		"element-dropped\tmap/informations/information/information",
 	},
 	"2017-1.77-1.0-import.wxx": {
 		"attr-altered\tmap/mapkey\tviewlevel",
-		"element-dropped\tmap/configuration/text-config/labelstyle",
 		"element-dropped\tmap/informations/information",
 		"element-dropped\tmap/informations/information/information",
 		"element-dropped\tmap/informations/information/information/information",
 	},
 	"2017-1.77-1.0-merge-01.wxx": {
 		"attr-altered\tmap/mapkey\tviewlevel",
-		"element-dropped\tmap/configuration/text-config/labelstyle",
 		"element-dropped\tmap/informations/information",
 		"element-dropped\tmap/informations/information/information",
 		"element-dropped\tmap/informations/information/information/information",
 	},
 	"2017-1.77-1.0-merge-02.wxx": {
 		"attr-altered\tmap/mapkey\tviewlevel",
-		"element-dropped\tmap/configuration/text-config/labelstyle",
 		"element-dropped\tmap/informations/information",
 		"element-dropped\tmap/informations/information/information",
 		"element-dropped\tmap/informations/information/information/information",
