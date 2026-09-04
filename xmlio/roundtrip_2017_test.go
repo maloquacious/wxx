@@ -35,7 +35,9 @@ import (
 const classicInputDir = "../testdata/"
 
 // rowsFixture decodes but cannot be re-encoded: classic ROWS encode is a
-// documented hard-error (encode.go encodeTiles asserts orientation != ROWS).
+// documented hard-error, refused by encode.go's verifyOrientation before any
+// output is built (issue #20; the refusal used to be an assert inside
+// encodeTiles). TestClassicRowsRefusedUpFront asserts what the error says.
 const rowsFixture = "2017-1.77-1.0-rows-blank.wxx"
 
 // classicFixtures are the eight classic 2017 fixtures under testdata/.
@@ -269,6 +271,11 @@ func TestRoundTrip2017LossInventory(t *testing.T) {
 // TestRoundTrip2017RowsHardError is the focused ROWS subtest: the ROWS fixture
 // must DECODE successfully but its re-encode must return a non-nil error
 // (classic ROWS encode is intentionally unimplemented -- COVERAGE.md).
+//
+// It asserts only that the encode FAILS, which is deliberately weaker than
+// TestClassicRowsRefusedUpFront: this one holds the round-trip inventory's
+// premise (the ROWS fixture has no re-encode to diff), the other holds what the
+// refusal tells the caller. Weakening either would not weaken the other.
 func TestRoundTrip2017RowsHardError(t *testing.T) {
 	path := classicInputDir + rowsFixture
 	f, err := os.Open(path)

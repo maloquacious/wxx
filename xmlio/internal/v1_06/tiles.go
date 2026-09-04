@@ -4,6 +4,7 @@ package v1_06
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -172,7 +173,15 @@ func encodeTiles(tiles *wxx.Tiles_t, hexOrientation string, wb *bytes.Buffer) er
 			wb.WriteString(fmt.Sprintf("</tilerow>\n"))
 		}
 	} else {
-		return fmt.Errorf("assert(orientation != %q)", hexOrientation)
+		// An orientation this codec has never seen. v1_06 writes both of the
+		// two that exist, so reaching here means the map states something that
+		// is not an orientation at all, and Map_t.Validate rejects that before
+		// an encode begins (issue #20). Kept as a refusal for a test unit
+		// calling the codec directly, and worded as one: it used to be
+		// `assert(orientation != ...)`, which named a condition the codec
+		// expected rather than the problem the caller has.
+		return errors.Join(wxx.ErrInvalidHexOrientation,
+			fmt.Errorf("map/@hexOrientation %q: want %q or %q", hexOrientation, "COLUMNS", "ROWS"))
 	}
 	wb.WriteString(fmt.Sprintf("</tiles>\n"))
 	return nil
