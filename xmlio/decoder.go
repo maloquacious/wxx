@@ -43,7 +43,19 @@ type DecoderDiagnostics struct {
 	XMLHeader    []byte // the XML declaration that was removed, and only that
 	XMLData      []byte // everything after the declaration: the XML handed to the codec
 	MapElement   []byte
-	Schema       string
+
+	// Codec names the codec package that decoded the file: "v0_77" or
+	// "v1_06". It is a diagnostic label, not identity -- see ADR 0004 and
+	// #44. It is set only once dispatch has chosen, so it stays empty when
+	// the file's metadata matches no codec.
+	Codec string
+
+	// Schema is the schema version the FILE stated in map/@schema, verbatim.
+	// A classic file states no schema at all, so this is empty for one; that
+	// absence is the honest answer, not a missing value. It is set from the
+	// parsed metadata before dispatch, so it is populated even when Decode
+	// goes on to reject the file as unsupported.
+	Schema string
 }
 
 // NewDecoder returns a Decoder that implements the wxx.Decoder interface.
@@ -234,13 +246,19 @@ func (d *Decoder) Decode(r io.Reader) (*wxx.Map_t, error) {
 		return nil, errors.Join(wxx.ErrInvalidMapMetadata, err)
 	}
 
+	// Report the schema the file itself stated, before dispatch and whatever
+	// dispatch decides. A classic file states none, which leaves this empty.
+	if d.opts.diagnostics != nil {
+		d.opts.diagnostics.Schema = xmlMetaData.Schema
+	}
+
 	// use the metadata to call the correct decoder for the XML
 	switch xmlMetaData.Release {
 	case "2025":
 		// any W2025 build (release=2025) routes to the v1_06 decoder;
 		// version/schema no longer gate the dispatch.
 		if d.opts.diagnostics != nil {
-			d.opts.diagnostics.Schema = "h2025v1"
+			d.opts.diagnostics.Codec = "v1_06"
 		}
 		return v1_06.Decode(data)
 	case "":
@@ -250,7 +268,7 @@ func (d *Decoder) Decode(r io.Reader) (*wxx.Map_t, error) {
 		// not accidentally swallow unknown or future formats.
 		if strings.HasPrefix(xmlMetaData.Version, "1.") {
 			if d.opts.diagnostics != nil {
-				d.opts.diagnostics.Schema = "h2017v1"
+				d.opts.diagnostics.Codec = "v0_77"
 			}
 			return v0_77.Decode(data)
 		}
