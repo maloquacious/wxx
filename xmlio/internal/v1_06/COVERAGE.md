@@ -69,7 +69,7 @@ Tests referenced (in `xmlio/roundtrip_2025_test.go` unless noted, package
 | `<maplayer>` | implemented | implemented | RoundTrip, PublicRoundTrip, CoverageMatrix | `opacity` now modeled (#11); `name` + `isVisible` + `opacity` round-trip. |
 | `<tiles>` / `<tilerow>` | implemented | implemented | RoundTrip, PublicRoundTrip, DecodeBoth, RowsRoundTrip | Decode handles COLUMNS and ROWS; **encoder now supports COLUMNS and ROWS** (`tiles.go` `encodeTiles`). The physical `<tilerow>` emission is orientation-independent — decode stores tiles in file-physical `Tiles[x][y]` order (`tilesWide` rows of `tilesHigh` lines) for both orientations, so ROWS emits the identical structure; orientation only affects the OddQ/OddR coordinate interpretation and the RowsHigh/ColumnsWide labels. The on-disk `.wxx` sample is COLUMNS; ROWS is covered by `TestW2025RowsRoundTrip`, which builds an asymmetric 2x3 ROWS grid in memory and asserts every cell round-trips to the same position (catching any transpose). |
 | tile data (terrain, elevation, isIcy, isGMOnly, resources, customBackgroundColor) | implemented | implemented | RoundTrip, PublicRoundTrip | 6/7/11/12-column forms + `Z`-compressed resources; opaque-black `customBackgroundColor` folds to nil per `decodeRgba`. |
-| `<mapkey>` | implemented | implemented | RoundTrip, PublicRoundTrip | All attributes modeled. (Decode is nested inside the tilerow loop but runs given >=1 tilerow.) |
+| `<mapkey>` | implemented | implemented | RoundTrip, PublicRoundTrip, **IntegerAttributeSpelling**, **NonIntegralValueRefused** | All attributes modeled. (Decode is nested inside the tilerow loop but runs given >=1 tilerow.) **Five attributes are INTEGERS on disk and must never carry a decimal point** — `@height`, `@backgroundopacity`, `@titleScale`, `@scaleScale`, `@entryScale`. Worldographer reads them with `Integer.parseInt` and **refuses to open the file** otherwise (issue #64: `NumberFormatException: For input string: "-1.0"` at `LoadMapTask.readMapKey`, reproduced by experiment). They are typed `Int_t` in `schema.go` and rendered through it; a caller setting a non-integral value is refused before any output is written. |
 | `<features>` / `<feature>` | implemented | implemented | DecodePopulated, PopulatedRoundTrip | Real blank sample has no features; populated fixture exercises them. |
 | feature `<location>` | implemented | implemented | PopulatedRoundTrip | viewLevel/x/y. |
 | feature inline `<label>` (optional) | implemented | implemented | DecodePopulated, PopulatedRoundTrip | `Feature.Label` is `*Label_t`; decode nil-guards a labelless feature so encode omits `<label>` (DecodePopulated asserts `Features[1].Label == nil`). |
@@ -81,10 +81,33 @@ Tests referenced (in `xmlio/roundtrip_2025_test.go` unless noted, package
 | configuration `<terrain-config>` | stub | no-op(intentional) | ConfigEmpty | Parsed as raw chardata only; encoder emits empty wrapper. Lossless only because real samples leave it empty (guarded by ConfigEmpty). |
 | configuration `<feature-config>` | stub | no-op(intentional) | ConfigEmpty | Same as terrain-config. |
 | configuration `<texture-config>` | stub | no-op(intentional) | ConfigEmpty | Same as terrain-config. |
-| configuration `<text-config>` / `<labelstyle>` | implemented | implemented | RoundTrip, PublicRoundTrip, CoverageMatrix, **AttrsMatchSource**, **BlackBackgroundIsNotNull** | 7 labelstyles in sample round-trip; `dropShadowColor` (nullable string) / `dropShadowRadius` / `dropShadowSpread` now modeled (#11). **Both nullable colours are exact as of #62**: `backgroundColor="null"` used to come back as `"0.0,0.0,0.0,1.0"` on every label style of every file this codec wrote, because `decodeRgba` folded `"null"` and opaque black into the same nil and `rgbas` rendered nil as black. Decode now uses `decodeZeroableRgba` so nil means `"null"` and nothing else, and encode uses `rgbaOrNull`; `rgbans` was rejected as the fix because it decides on the formatted string and would have laundered a genuine opaque black into `"null"` instead. `TestW2025LabelStyleAttrsMatchSource` compares every attribute against the source document — the audit classic always had and W2025 lacked, which is why the structural round-trip tests could not see this — and `TestW2025LabelStyleBlackBackgroundIsNotNull` synthesizes the black case no fixture carries. Remaining known difference: `dropShadowRadius`/`dropShadowSpread` are written `"0.0"` where the source writes `"0"` (same value, spelling unverified — issue #64). |
+| configuration `<text-config>` / `<labelstyle>` | implemented | implemented | RoundTrip, PublicRoundTrip, CoverageMatrix, **AttrsMatchSource**, **BlackBackgroundIsNotNull**, **IntegerAttributeSpelling** | 7 labelstyles in sample round-trip; `dropShadowColor` (nullable string) / `dropShadowRadius` / `dropShadowSpread` now modeled (#11). **Both nullable colours are exact as of #62**: `backgroundColor="null"` used to come back as `"0.0,0.0,0.0,1.0"` on every label style of every file this codec wrote, because `decodeRgba` folded `"null"` and opaque black into the same nil and `rgbas` rendered nil as black. Decode now uses `decodeZeroableRgba` so nil means `"null"` and nothing else, and encode uses `rgbaOrNull`; `rgbans` was rejected as the fix because it decides on the formatted string and would have laundered a genuine opaque black into `"null"` instead. `TestW2025LabelStyleAttrsMatchSource` compares every attribute against the source document — the audit classic always had and W2025 lacked, which is why the structural round-trip tests could not see this — and `TestW2025LabelStyleBlackBackgroundIsNotNull` synthesizes the black case no fixture carries. `dropShadowRadius` and `dropShadowSpread` are **integers on disk** and are now written as such (issue #64); they were emitted `"0.0"`, which Worldographer refuses to load. The element is byte-identical to the source apart from inter-attribute whitespace. |
 | configuration `<shape-config>` / `<shapestyle>` | implemented | implemented | RoundTrip, PublicRoundTrip, CoverageMatrix | 7 shapestyles in sample round-trip; `lineCap` / `lineJoin` now modeled (#11). |
 | `<blurTerrainBG>` | implemented | implemented | CoverageMatrix | Optional top-level element modeled as `*BlurTerrainBG_t` (nil = absent); 6 attrs round-trip (#11). |
 | `<extraTerrain>` | **stub** | implemented | CoverageMatrix, ClassicDowngradeStubError | Optional top-level element; the container is modeled as `*ExtraTerrain_t` by #11 (nil = absent), but its **content is opaque raw innerxml**, not structured (#34). Both shapes are tracked: `…-blank.wxx` carries an empty container (innerxml `"\n"`), `…-layers.wxx` carries 183 bytes — a `<mapLayer name="Terrain Layer">` holding a `<terrainAndLocation>`. Decode is **stub**, not implemented: nothing in `Map_t` understands those children. |
+
+## Integer attributes
+
+**22 attributes of this schema are Java `int` fields**, written without a decimal
+point, and Worldographer reads them with `Integer.parseInt`: a decimal point in
+any of them is a hard load failure, not a formatting difference (issue #64).
+`schema.go` declares them as integer types, which is the single statement both
+halves of the codec read — 15 were already `int` and the 7 the struct mistyped as
+`float64` were exactly the ones that shipped broken.
+
+`Map_t` deliberately does not carry this knowledge. It is the superset of every
+supported format (ADR 0004 Decision 6) and keeps these fields `float64`; the
+conversion happens at the codec boundary, and a value the schema cannot state is
+refused there rather than rounded onto disk.
+
+`TestW2025IntegerAttributeSpelling` enforces the rule without a list to maintain:
+every attribute a tracked document always spells integrally must be emitted
+integrally. It reads RAW attribute values — `xmlAggregate`'s `normVal`
+canonicalizes `"0"` and `"0.0"` to the same string, which is right for the loss
+inventory and blind to this.
+
+The classic codec is **not** covered and is safe only because its `<mapkey>` is a
+hard-coded constant carrying the integer spellings verbatim: see issue #67.
 
 ## Known un-modeled fields
 

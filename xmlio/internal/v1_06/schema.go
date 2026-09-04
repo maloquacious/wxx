@@ -242,9 +242,9 @@ type LabelStyle_t struct {
 	OutlineColor    string  `xml:"outlineColor,attr"`
 
 	// W2025 drop-shadow attributes. dropShadowColor can be the literal "null".
-	DropShadowColor  string  `xml:"dropShadowColor,attr"`
-	DropShadowRadius float64 `xml:"dropShadowRadius,attr"`
-	DropShadowSpread float64 `xml:"dropShadowSpread,attr"`
+	DropShadowColor  string `xml:"dropShadowColor,attr"`
+	DropShadowRadius Int_t  `xml:"dropShadowRadius,attr"`
+	DropShadowSpread Int_t  `xml:"dropShadowSpread,attr"`
 }
 
 type Location_t struct {
@@ -260,26 +260,26 @@ type MapKey_t struct {
 	PositionX         float64 `xml:"positionx,attr"`
 	PositionY         float64 `xml:"positiony,attr"`
 	Viewlevel         string  `xml:"viewlevel,attr"`
-	Height            float64 `xml:"height,attr"`
+	Height            Int_t   `xml:"height,attr"`
 	BackgroundColor   string  `xml:"backgroundcolor,attr"`
-	BackgroundOpacity float64 `xml:"backgroundopacity,attr"`
+	BackgroundOpacity Int_t   `xml:"backgroundopacity,attr"`
 	TitleText         string  `xml:"titleText,attr"`
 	TitleFontFace     string  `xml:"titleFontFace,attr"`
 	TitleFontColor    string  `xml:"titleFontColor,attr"`
 	TitleFontBold     bool    `xml:"titleFontBold,attr"`
 	TitleFontItalic   bool    `xml:"titleFontItalic,attr"`
-	TitleScale        float64 `xml:"titleScale,attr"`
+	TitleScale        Int_t   `xml:"titleScale,attr"`
 	ScaleText         string  `xml:"scaleText,attr"`
 	ScaleFontFace     string  `xml:"scaleFontFace,attr"`
 	ScaleFontColor    string  `xml:"scaleFontColor,attr"`
 	ScaleFontBold     bool    `xml:"scaleFontBold,attr"`
 	ScaleFontItalic   bool    `xml:"scaleFontItalic,attr"`
-	ScaleScale        float64 `xml:"scaleScale,attr"`
+	ScaleScale        Int_t   `xml:"scaleScale,attr"`
 	EntryFontFace     string  `xml:"entryFontFace,attr"`
 	EntryFontColor    string  `xml:"entryFontColor,attr"`
 	EntryFontBold     bool    `xml:"entryFontBold,attr"`
 	EntryFontItalic   bool    `xml:"entryFontItalic,attr"`
-	EntryScale        float64 `xml:"entryScale,attr"`
+	EntryScale        Int_t   `xml:"entryScale,attr"`
 }
 
 type MapLayer_t struct {
