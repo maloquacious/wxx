@@ -180,6 +180,7 @@ func TestClassicDowngradeDiagnostics(t *testing.T) {
 		"map/blurTerrainBG",
 		"map/configuration/shape-config/shapestyle/@lineCap",
 		"map/configuration/shape-config/shapestyle/@lineJoin",
+		"map/configuration/text-config/labelstyle/@dropShadow*",
 		"map/maplayer/@opacity",
 	}
 	assertDroppedPaths(t, sample2025_206+" -> classic", want, d.Dropped)
@@ -200,6 +201,21 @@ func TestClassicDowngradeDiagnostics(t *testing.T) {
 		}
 		if !strings.Contains(e.Detail, "8 of 8 map layer(s)") {
 			t.Errorf("opacity Detail = %q, want it to count the 8 layers the fixture carries", e.Detail)
+		}
+	}
+
+	// The same demand of the @dropShadow* entry (issue #36). It must name the
+	// styles and what each spells, not merely that a trio was dropped: a caller
+	// recovering the shadows needs the values, and "the trio is dropped" is a
+	// restatement of Path.
+	for _, e := range d.Dropped {
+		if e.Path != "map/configuration/text-config/labelstyle/@dropShadow*" {
+			continue
+		}
+		for _, want := range []string{"label style(s)", `"Nation"`, "color=", "radius=", "spread="} {
+			if !strings.Contains(e.Detail, want) {
+				t.Errorf("dropShadow Detail = %q, want it to contain %q", e.Detail, want)
+			}
 		}
 	}
 }
@@ -386,7 +402,6 @@ func TestClassicDowngradeLossInventory(t *testing.T) {
 		"attr-dropped\tmap\trelease":                                            "target identity: a classic file states no @release",
 		"attr-dropped\tmap\tschema":                                             "target identity: a classic file states no @schema",
 		"attr-altered\tmap/mapkey\tviewlevel":                                   "classic codec gap: encodeMapKey writes a constant block (classic->classic loses it too)",
-		"element-dropped\tmap/configuration/text-config/labelstyle":             "classic codec gap: encodeLabelStyle is a no-op (classic->classic loses it too)",
 		"element-dropped\tmap/informations/information":                         "classic codec gap: encodeInformations emits an empty wrapper (classic->classic loses it too)",
 		"element-dropped\tmap/informations/information/information":             "classic codec gap: as above",
 		"element-dropped\tmap/informations/information/information/information": "classic codec gap: as above",
@@ -409,6 +424,14 @@ func TestClassicDowngradeLossInventory(t *testing.T) {
 		"attr-dropped\tmap/configuration/shape-config/shapestyle\tlineCap":  "map/configuration/shape-config/shapestyle/@lineCap",
 		"attr-dropped\tmap/configuration/shape-config/shapestyle\tlineJoin": "map/configuration/shape-config/shapestyle/@lineJoin",
 		"element-dropped\tmap/blurTerrainBG":                                "map/blurTerrainBG",
+		// Issue #36. These three lines did not exist before the classic
+		// <labelstyle> encode gap was closed: the harness reported
+		// `element-dropped ... labelstyle` and the attribute-level loss was
+		// masked by it. One inventory entry evidences all three, because the
+		// trio is one feature (see labelStyleDropShadowLoss).
+		"attr-dropped\tmap/configuration/text-config/labelstyle\tdropShadowColor":  "map/configuration/text-config/labelstyle/@dropShadow*",
+		"attr-dropped\tmap/configuration/text-config/labelstyle\tdropShadowRadius": "map/configuration/text-config/labelstyle/@dropShadow*",
+		"attr-dropped\tmap/configuration/text-config/labelstyle\tdropShadowSpread": "map/configuration/text-config/labelstyle/@dropShadow*",
 	}
 
 	evidenced := map[string]bool{}

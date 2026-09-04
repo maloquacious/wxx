@@ -586,18 +586,56 @@ func encodeTextConfig(textConfig *wxx.TextConfig_t, wb *bytes.Buffer) error {
 	return nil
 }
 
+// encodeLabelStyle writes one <labelstyle> element (issue #36).
+//
+// It was a commented-out no-op, so <text-config> was emitted with no children
+// and every classic encode silently dropped all ten label styles the samples
+// carry -- a file on disk quietly missing content the caller handed us, which
+// is the worst failure this codebase has. Decode has always built a full
+// LabelStyle_t (decode.go), so the data was in the model the whole time and
+// only the emit half was missing.
+//
+// The attribute ORDER and the double spaces are the source file's, not a
+// choice: classic writes
+//
+//	<labelstyle name="Building" ... isItalic="false"  color="..."  backgroundColor="null"  outlineSize="0.0" outlineColor="null" />
+//
+// with two spaces ahead of color, backgroundColor and outlineSize and one ahead
+// of outlineColor. encodeShapeStyle preserves the same oddity for its own
+// element, and the commented-out stub this replaces already listed the order.
+// Reproducing it makes the emitted element byte-identical to the source for
+// every classic fixture, which is stronger than the element/attribute-set
+// comparison the round-trip harness makes, and it is what
+// TestClassicLabelStyleBytes pins.
+//
+// The two nullable colors use rgbans and NOT rgbas, and that is load-bearing.
+// Classic spells both as the literal "null", decodeRgba maps "null" to nil, and
+// rgbas renders nil as "0.0,0.0,0.0,1.0" -- so rgbas would emit black-opaque
+// where the file said "null" on all ten styles of all seven encodable fixtures.
+// Measured: with rgbas the round-trip audit reports
+// `attr-altered map/configuration/text-config/labelstyle backgroundColor`; with
+// rgbans it reports nothing. v1_06's encodeLabelStyle uses rgbas for
+// backgroundColor and has the same drift, invisible there only because the
+// W2025 round-trip tests compare Map_t structures rather than the input bytes.
+// That is issue #62 and is deliberately not fixed here.
+//
+// No dropShadowColor/Radius/Spread. Classic <labelstyle> has no such attributes
+// (schema/utf-8-xml.rnc lines 181-190), which is the format limit issue #36
+// exists to verify; writing them would invent an attribute no classic build
+// reads. What that costs a downgrade is now measurable and is recorded in
+// classicDowngradeLoss.
 func encodeLabelStyle(labelStyle *wxx.LabelStyle_t, wb *bytes.Buffer) error {
-	//wb.WriteString("<labelstyle")
-	////name="Building"
-	////fontFace="Arial"
-	////scale="25.0"
-	////isBold="false"
-	////isItalic="false"
-	////color="0.0,0.0,0.0,1.0"
-	////backgroundColor="null"
-	////outlineSize="0.0"
-	////outlineColor="null"
-	//wb.WriteString(" />\n\n")
+	wb.WriteString("<labelstyle")
+	wb.WriteString(fmt.Sprintf(" name=%q", labelStyle.Name))
+	wb.WriteString(fmt.Sprintf(" fontFace=%q", labelStyle.FontFace))
+	wb.WriteString(fmt.Sprintf(" scale=%q", floats(labelStyle.Scale)))
+	wb.WriteString(fmt.Sprintf(" isBold=%q", bools(labelStyle.IsBold)))
+	wb.WriteString(fmt.Sprintf(" isItalic=%q", bools(labelStyle.IsItalic)))
+	wb.WriteString(fmt.Sprintf("  color=%q", rgbas(labelStyle.Color)))                      // not nullable
+	wb.WriteString(fmt.Sprintf("  backgroundColor=%q", rgbans(labelStyle.BackgroundColor))) // nullable
+	wb.WriteString(fmt.Sprintf("  outlineSize=%q", floats(labelStyle.OutlineSize)))
+	wb.WriteString(fmt.Sprintf(" outlineColor=%q", rgbans(labelStyle.OutlineColor))) // nullable
+	wb.WriteString(" />\n")
 	return nil
 }
 
