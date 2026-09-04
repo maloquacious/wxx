@@ -93,6 +93,37 @@ func rgbans(rgba *wxx.RGBA_t) string {
 	return s
 }
 
+// rgbaOrNull renders a nullable colour: the literal "null" for nil, and the
+// colour itself otherwise (issue #62).
+//
+// It exists because neither rgbas nor rgbans can do this. rgbas renders nil as
+// "0.0,0.0,0.0,1.0", so a file that said "null" came back claiming an opaque
+// black -- that is the bug #62 reports, and it was live on every <labelstyle>
+// this codec wrote. rgbans goes the other way: it renders nil as "null", but it
+// decides by comparing the FORMATTED STRING, so a genuine opaque black is
+// laundered into "null" as well. Both answers are wrong for one of the two
+// inputs; this one is wrong for neither, because it asks the pointer rather
+// than the string.
+//
+// That only works where nil means "null" and nothing else, so the decode half
+// has to reserve it: decodeZeroableRgba maps "" and "null" to nil and leaves
+// black alone, while decodeRgba folds black into nil as well. A field decoded
+// with decodeRgba must NOT be encoded with this -- the model has already lost
+// which spelling the file used, and the honest rendering is whatever the old
+// helper did. See the labelstyle decode in configuration.go, which was moved to
+// decodeZeroableRgba for exactly this reason.
+//
+// rgbans keeps its callers: the shape colours (dscolor, fillPaint, insColor)
+// decode through decodeRgba, so nil there is ambiguous and this helper would be
+// no more correct than what they do today. Whether those fields should also
+// stop collapsing is a bigger question than #62 and is not answered here.
+func rgbaOrNull(rgba *wxx.RGBA_t) string {
+	if rgba == nil {
+		return "null"
+	}
+	return rgbas(rgba)
+}
+
 // rgbas converts an RGBA_t struct into an XML attribute string.
 // RGBA_t struct contains four fields, each representing Red, Green, Blue and Alpha respectively.
 // Each field is a float. We format the struct as a comma separated string.
