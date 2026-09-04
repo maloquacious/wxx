@@ -39,7 +39,6 @@ type EncoderDiagnostics struct {
 	WithXmlHeader []byte // output after inserting XML header
 	Utf16Encoded  []byte // output after converting UTF-8 to UTF-16
 	Compressed    []byte // output after running gzip
-	Schema        string
 
 	// Dropped is the inventory of content the source map carried that the target
 	// release cannot express (ADR 0004 Decision 7). It is empty when the encode
