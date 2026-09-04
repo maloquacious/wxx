@@ -24,6 +24,7 @@ const (
 	ErrInvalidEncodingHeader       = Error("invalid encoding header")
 	ErrInvalidGZip                 = Error("invalid gzip")
 	ErrInvalidHexOrientation       = Error("invalid hex orientation")
+	ErrInvalidIntegerAttribute     = Error("invalid integer attribute")
 	ErrInvalidMapMetadata          = Error("invalid <map> metadata")
 	ErrInvalidTerrainMapFieldCount = Error("invalid terrain map field count")
 	ErrInvalidTileGrid             = Error("invalid tile grid")

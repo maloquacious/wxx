@@ -51,22 +51,26 @@ func sameNumber(a, b string) bool {
 	return errA == nil && errB == nil && fa == fb
 }
 
-// spellingExempt are the attributes whose integer/decimal spelling this test
-// tolerates, pending issue #64.
+// spellingExempt is EMPTY, and its emptiness is the point (issue #64).
 //
-// Worldographer writes dropShadowRadius="0" where floats() writes "0.0". Whether
-// the application cares is unverified -- #64 settles it by experiment, since
-// only a person with Worldographer can answer it -- so this test refuses to
-// assert either spelling is correct while asserting that the VALUE is unchanged.
+// It used to hold dropShadowRadius and dropShadowSpread, because Worldographer
+// writes them "0" where this codec wrote "0.0" and nobody had established which
+// spelling the application required. The experiment settled it: the decimal
+// spelling is a hard load failure -- Integer.parseInt throws and the file does
+// not open -- so the codec now states them as integers and there is nothing left
+// to tolerate.
 //
-// The list is deliberately per-attribute and short. Anything not named here must
-// match byte for byte, so a new spelling drift elsewhere in <labelstyle> fails
-// rather than being waved through by a blanket numeric rule. When #64 lands, this
-// map empties and the test tightens on its own.
-var spellingExempt = map[string]bool{
-	"dropShadowRadius": true,
-	"dropShadowSpread": true,
-}
+// It is kept rather than deleted because the exemption mechanism is the honest
+// way to hold a test open over an unsettled question, and the next one will want
+// it. An entry here means "the values are equal and we have not established
+// which spelling is correct" -- never "this difference is acceptable". Anything
+// proven wrong gets fixed instead, and anything proven harmless gets its
+// justification written here beside it.
+//
+// TestW2025IntegerAttributeSpelling now covers the same ground far more widely:
+// every attribute any tracked document spells integrally, in every element, not
+// just the two named here.
+var spellingExempt = map[string]bool{}
 
 // TestW2025LabelStyleAttrsMatchSource asserts that the W2025 encoder writes back
 // every <labelstyle> attribute the source file stated, with the same names in

@@ -46,8 +46,8 @@ func decodeConfiguration(src Configuration_t, w *wxx.Map_t) error {
 				IsItalic:         mLabelStyle.IsItalic,
 				OutlineSize:      mLabelStyle.OutlineSize,
 				DropShadowColor:  mLabelStyle.DropShadowColor,
-				DropShadowRadius: mLabelStyle.DropShadowRadius,
-				DropShadowSpread: mLabelStyle.DropShadowSpread,
+				DropShadowRadius: float64(mLabelStyle.DropShadowRadius),
+				DropShadowSpread: float64(mLabelStyle.DropShadowSpread),
 			}
 			if wLabelStyle.Color, err = decodeRgba(mLabelStyle.Color); err != nil {
 				return fmt.Errorf("labelStyle.color: %w", err)
@@ -211,9 +211,20 @@ func encodeLabelStyle(labelStyle *wxx.LabelStyle_t, wb *bytes.Buffer) error {
 	// (ADR 0002: never emit what was not on input). Do not gate on the numeric
 	// fields: 0 is a legal radius/spread value.
 	if labelStyle.DropShadowColor != "" {
+		// The radius and spread are integers on disk, not floats: Worldographer
+		// reads them with Integer.parseInt and will not open a file that spells
+		// them "0.0" (issue #64; see Int_t).
+		radius, err := toInt("map/configuration/text-config/labelstyle/@dropShadowRadius", labelStyle.DropShadowRadius)
+		if err != nil {
+			return err
+		}
+		spread, err := toInt("map/configuration/text-config/labelstyle/@dropShadowSpread", labelStyle.DropShadowSpread)
+		if err != nil {
+			return err
+		}
 		wb.WriteString(fmt.Sprintf(" dropShadowColor=%q", labelStyle.DropShadowColor)) // nullable string ("null")
-		wb.WriteString(fmt.Sprintf(" dropShadowRadius=%q", floats(labelStyle.DropShadowRadius)))
-		wb.WriteString(fmt.Sprintf(" dropShadowSpread=%q", floats(labelStyle.DropShadowSpread)))
+		wb.WriteString(fmt.Sprintf(" dropShadowRadius=%q", radius.String()))
+		wb.WriteString(fmt.Sprintf(" dropShadowSpread=%q", spread.String()))
 	}
 	wb.WriteString(" />\n")
 	return nil
