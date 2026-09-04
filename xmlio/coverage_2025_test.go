@@ -397,3 +397,238 @@ func assertConfigSectionsEmpty(t *testing.T, label string, m *wxx.Map_t) {
 		}
 	}
 }
+
+// TestW2025LabelDropShadowRoundTrip pins issue #35: W2025 writes the drop-shadow
+// trio on the <label> element itself, and the codec dropped it on a SAME-release
+// 2.06 -> 2.06 round trip -- no downgrade involved. The layers fixture carries 3
+// labels, all with the trio, so re-encoding it must reproduce all 3.
+//
+// Every label in this fixture is a FEATURE label (<feature><label>), not a
+// standalone <labels><label> entry, so this exercises the features.go decode
+// path; the encode side is shared (encodeFeatureLabel delegates to encodeLabel).
+func TestW2025LabelDropShadowRoundTrip(t *testing.T) {
+	m1, err := decodeFile(t, sample2025_206Layers)
+	if err != nil {
+		t.Fatalf("decode %s: %v", sample2025_206Layers, err)
+	}
+
+	// Collect every Label_t the map carries, from both carriers.
+	var labels []*wxx.Label_t
+	labels = append(labels, m1.Labels...)
+	for _, f := range m1.Features {
+		if f.Label != nil {
+			labels = append(labels, f.Label)
+		}
+	}
+
+	// Guard against a vacuous pass: a loop over zero labels, or over labels that
+	// carry nothing, would pass while proving nothing.
+	if len(labels) == 0 {
+		t.Fatalf("%s: no labels decoded, so the round trip is not under test", sample2025_206Layers)
+	}
+	var carrying int
+	for _, l := range labels {
+		if l.DropShadowColor != "" {
+			carrying++
+		}
+	}
+	if carrying == 0 {
+		t.Fatalf("%s: decoded %d label(s) but none carried DropShadowColor; decode is dropping the trio",
+			sample2025_206Layers, len(labels))
+	}
+
+	out, err := v1_06.Encode(m1, m1.MetaData.Version.App.Raw)
+	if err != nil {
+		t.Fatalf("v1_06.Encode: %v", err)
+	}
+
+	// The fixture's labels all spell the trio the same way; assert the emitted
+	// bytes reproduce it once per carrying label. Scope the search to <label>
+	// start tags: a whole-document search would also match <labelstyle>, which
+	// carries a trio of its own (#11) and would mask a drop here.
+	const want = `dropShadowColor="null" dropShadowRadius="0.0" dropShadowSpread="0.0"`
+	tags := labelTags(out)
+	if len(tags) != len(labels) {
+		t.Fatalf("re-encode emitted %d <label> tags, want %d", len(tags), len(labels))
+	}
+	var emitted int
+	for _, tag := range tags {
+		if strings.Contains(tag, want) {
+			emitted++
+		}
+	}
+	if emitted != carrying {
+		t.Errorf("re-encode emitted the trio on %d of %d <label> tags, want %d (one per carrying label)\nfirst tag: %s",
+			emitted, len(tags), carrying, tags[0])
+	}
+
+	// And the trio must survive a decode of the re-encoded bytes, so the loss is
+	// pinned at the model level too, not just in the byte stream.
+	m2, err := v1_06.Decode(out)
+	if err != nil {
+		t.Fatalf("v1_06.Decode(re-encoded): %v", err)
+	}
+	var got2 int
+	for _, f := range m2.Features {
+		if f.Label != nil && f.Label.DropShadowColor != "" {
+			got2++
+		}
+	}
+	for _, l := range m2.Labels {
+		if l.DropShadowColor != "" {
+			got2++
+		}
+	}
+	if got2 != carrying {
+		t.Errorf("after round trip %d label(s) carry DropShadowColor, want %d", got2, carrying)
+	}
+}
+
+// TestW2025LabelDropShadowCarriesValues proves the encoder READS the trio from
+// the model rather than synthesizing it. Every label in the layers fixture spells
+// the trio with the "no shadow" DEFAULTS ("null" / 0.0 / 0.0), so a fixture-only
+// round trip would pass even against an encoder that hardcoded those defaults and
+// consulted the model not at all. This drives NON-DEFAULT values -- a real RGBA
+// colour and two distinct non-zero numerics -- so only a carried value can pass.
+func TestW2025LabelDropShadowCarriesValues(t *testing.T) {
+	label := &wxx.Label_t{
+		MapLayer:        "Features",
+		Style:           "City",
+		FontFace:        "Arial",
+		OutlineSize:     2.0,
+		Rotate:          0.0,
+		DropShadowColor: "0.25,0.5,0.75,1.0",
+		// Deliberately distinct from each other and from the defaults.
+		DropShadowRadius: 4.5,
+		DropShadowSpread: 12.25,
+		Location:         &wxx.LabelLocation_t{ViewLevel: "WORLD", X: 1.0, Y: 2.0, Scale: 1.0},
+	}
+	m := labelOnlyMap(t, label)
+
+	out, err := v1_06.Encode(m, m.MetaData.Version.App.Raw)
+	if err != nil {
+		t.Fatalf("v1_06.Encode: %v", err)
+	}
+
+	// Scope every assertion to the <label> tag: the blank fixture's text-config
+	// carries <labelstyle> elements whose own trio spells the defaults, so a
+	// whole-document search would find "null" no matter what the encoder did.
+	tag := onlyLabelTag(t, out)
+	const want = `dropShadowColor="0.25,0.5,0.75,1.0" dropShadowRadius="4.5" dropShadowSpread="12.25"`
+	if !strings.Contains(tag, want) {
+		t.Errorf("encoded <label> does not carry the model's drop shadow.\nwant substring: %s\ngot <label>: %s",
+			want, tag)
+	}
+
+	// The defaults must NOT appear on the label: their presence would mean the
+	// encoder wrote a synthesized shadow instead of the one the model holds.
+	if strings.Contains(tag, `dropShadowColor="null"`) {
+		t.Errorf("encoded <label> contains a synthesized default dropShadowColor=\"null\"; the model said %q\ngot <label>: %s",
+			label.DropShadowColor, tag)
+	}
+}
+
+// TestW2025LabelDropShadowGate guards the presence gate at the XML byte level,
+// which the Map_t round trip cannot catch: absent decodes to the same zero values
+// a symmetric drop would produce. The encoder keys the gate off DropShadowColor,
+// which is "null" or an RGBA string when present and never empty, so an empty one
+// models a source that carried no drop shadow and must suppress the whole trio.
+// Absent must stay absent -- never synthesize what was not on input.
+//
+// Note "" and "null" are different things: "" means the attribute was absent from
+// the source; "null" means it was present, spelled with the four characters null.
+func TestW2025LabelDropShadowGate(t *testing.T) {
+	// A label with no drop shadow at all: emit none of the trio.
+	label := &wxx.Label_t{
+		MapLayer:        "Features",
+		Style:           "City",
+		FontFace:        "Arial",
+		OutlineSize:     2.0,
+		DropShadowColor: "", // absent from the source
+		Location:        &wxx.LabelLocation_t{ViewLevel: "WORLD", X: 1.0, Y: 2.0, Scale: 1.0},
+	}
+	m := labelOnlyMap(t, label)
+
+	out, err := v1_06.Encode(m, m.MetaData.Version.App.Raw)
+	if err != nil {
+		t.Fatalf("v1_06.Encode: %v", err)
+	}
+	tag := onlyLabelTag(t, out)
+	for _, attr := range []string{"dropShadowColor", "dropShadowRadius", "dropShadowSpread"} {
+		if strings.Contains(tag, attr) {
+			t.Errorf("re-encode spuriously added %s to <label> (source had no drop shadow)\ngot <label>: %s",
+				attr, tag)
+		}
+	}
+
+	// The gate keys on the colour and never on the numerics: 0 is a legal radius
+	// and spread, so a present-but-zero shadow must still be emitted.
+	label.DropShadowColor, label.DropShadowRadius, label.DropShadowSpread = "null", 0, 0
+	out, err = v1_06.Encode(m, m.MetaData.Version.App.Raw)
+	if err != nil {
+		t.Fatalf("v1_06.Encode(zero-valued): %v", err)
+	}
+	const want = `dropShadowColor="null" dropShadowRadius="0.0" dropShadowSpread="0.0"`
+	if tag := onlyLabelTag(t, out); !strings.Contains(tag, want) {
+		t.Errorf("gate over-corrected: a present shadow with zero numerics was suppressed.\nwant substring: %s\ngot <label>: %s",
+			want, tag)
+	}
+}
+
+// labelOnlyMap builds the smallest encodable W2025 map carrying exactly one
+// standalone label, by starting from the blank fixture (so every unrelated
+// required field is real) and replacing its labels.
+func labelOnlyMap(t *testing.T, label *wxx.Label_t) *wxx.Map_t {
+	t.Helper()
+	m, err := decodeFile(t, sample2025_206)
+	if err != nil {
+		t.Fatalf("decode %s: %v", sample2025_206, err)
+	}
+	m.Labels = []*wxx.Label_t{label}
+	m.Features = nil
+	return m
+}
+
+// labelTags returns every <label ...> start tag in the encoded output.
+//
+// It anchors on the tag NAME being terminated by whitespace, so it matches
+// <label ...> but never <labelstyle ...> -- which carries a drop-shadow trio of
+// its own (#11). Searching the whole document for "dropShadowColor" would hit the
+// labelstyle trio and pass regardless of what the <label> encoder did, so every
+// assertion in these tests is scoped to what this returns.
+func labelTags(out []byte) []string {
+	var tags []string
+	for rest := out; ; {
+		i := bytes.Index(rest, []byte("<label"))
+		if i == -1 {
+			return tags
+		}
+		rest = rest[i:]
+		// The tag name must end here; "<labelstyle" must not match.
+		name := rest[len("<label"):]
+		if len(name) == 0 {
+			return tags
+		}
+		if c := name[0]; c != ' ' && c != '\t' && c != '\n' && c != '\r' {
+			rest = rest[len("<label"):]
+			continue
+		}
+		j := bytes.IndexByte(rest, '>')
+		if j == -1 {
+			return append(tags, string(rest))
+		}
+		tags = append(tags, string(rest[:j+1]))
+		rest = rest[j+1:]
+	}
+}
+
+// onlyLabelTag returns the single <label> start tag the synthesized one-label maps
+// are expected to produce, failing if there is not exactly one.
+func onlyLabelTag(t *testing.T, out []byte) string {
+	t.Helper()
+	tags := labelTags(out)
+	if len(tags) != 1 {
+		t.Fatalf("encoded output has %d <label> tags, want exactly 1", len(tags))
+	}
+	return tags[0]
+}

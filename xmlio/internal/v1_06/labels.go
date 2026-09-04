@@ -27,6 +27,10 @@ func decodeLabels(src Labels_t, w *wxx.Map_t) error {
 			IsProvince:  mLabel.IsProvince,
 			IsGMOnly:    mLabel.IsGMOnly,
 			Tags:        mLabel.Tags,
+
+			DropShadowColor:  mLabel.DropShadowColor,
+			DropShadowRadius: mLabel.DropShadowRadius,
+			DropShadowSpread: mLabel.DropShadowSpread,
 		}
 		if wLabel.Color, err = decodeRgba(mLabel.Color); err != nil {
 			return fmt.Errorf("label.color: %w", err)
@@ -76,6 +80,20 @@ func encodeLabel(label *wxx.Label_t, wb *bytes.Buffer) error {
 	}
 	wb.WriteString(fmt.Sprintf(" outlineColor=%q", rgbas(label.OutlineColor)))
 	wb.WriteString(fmt.Sprintf(" outlineSize=%q", floats(label.OutlineSize)))
+	// The W2025 drop-shadow trio is present all-or-none in real data;
+	// dropShadowColor is "null" or an RGBA string when present, never empty, so an
+	// empty DropShadowColor reliably means "absent from the source". Gate the whole
+	// group on that sentinel so a round-trip does not spuriously add the attributes
+	// (ADR 0002: never emit what was not on input). Do not gate on the numeric
+	// fields: 0 is a legal radius/spread value.
+	//
+	// The source writes the trio between outlineSize and rotate; emit it there so a
+	// round trip matches the source's attribute order.
+	if label.DropShadowColor != "" {
+		wb.WriteString(fmt.Sprintf(" dropShadowColor=%q", label.DropShadowColor)) // nullable string ("null")
+		wb.WriteString(fmt.Sprintf(" dropShadowRadius=%q", floats(label.DropShadowRadius)))
+		wb.WriteString(fmt.Sprintf(" dropShadowSpread=%q", floats(label.DropShadowSpread)))
+	}
 	wb.WriteString(fmt.Sprintf(" rotate=%q", floats(label.Rotate)))
 	wb.WriteString(fmt.Sprintf(" isBold=%q", bools(label.IsBold)))
 	wb.WriteString(fmt.Sprintf(" isItalic=%q", bools(label.IsItalic)))
