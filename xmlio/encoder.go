@@ -144,6 +144,22 @@ func (e *Encoder) Encode(w io.Writer, m *wxx.Map_t) error {
 	if err != nil {
 		return err
 	}
+
+	// Then the map. A Map_t whose fields contradict each other is not something
+	// this pipeline can write, and until issue #20 the pipeline found that out by
+	// panicking somewhere inside a codec -- a nil substructure dereferenced, or a
+	// tile grid indexed past its end after part of the document had been emitted.
+	// Validate is the whole of the check and it lives on Map_t, not here: it is a
+	// statement about the model, so a caller can ask it BEFORE building an encoder
+	// and get the same answer (issue #20).
+	//
+	// It runs before downgradeLoss, which walks the same map: the malformed map is
+	// rejected by the check written to describe it rather than by whatever the
+	// next reader trips over.
+	if err := m.Validate(); err != nil {
+		return err
+	}
+
 	// The codec's declaration is where every identity byte comes from, this file's
 	// XML declaration included (issue #45). Nothing is read from m: what wrote the
 	// input does not decide what we write.
@@ -290,6 +306,9 @@ func xmlHeaderFor(xmlVersion string) ([]byte, error) {
 func MarshalXML(m *wxx.Map_t, app string) ([]byte, error) {
 	c, err := codecFor(app)
 	if err != nil {
+		return nil, err
+	}
+	if err := m.Validate(); err != nil {
 		return nil, err
 	}
 	if _, err := downgradeLoss(m, c.AcceptedApps().Schema); err != nil {

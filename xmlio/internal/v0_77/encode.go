@@ -4,6 +4,7 @@ package v0_77
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"html"
 	"sort"
@@ -42,6 +43,9 @@ func Encode(w *wxx.Map_t, app string) ([]byte, error) {
 		// VerifyApp is what names the accepted set in the error text; App reports
 		// only that the lookup missed.
 		return nil, acceptedApps.VerifyApp(app)
+	}
+	if err := verifyOrientation(w); err != nil {
+		return nil, err
 	}
 	wb := &bytes.Buffer{}
 	if err := encodeMap(w, target, wb); err != nil {
@@ -218,6 +222,48 @@ func encodeMapLayer(mapLayer *wxx.MapLayer_t, wb *bytes.Buffer) error {
 	return nil
 }
 
+// verifyOrientation refuses a map this codec cannot write, before it writes any
+// of it (issue #20).
+//
+// Classic FILES do state hexOrientation="ROWS" -- testdata/2017-1.77-1.0-rows-blank.wxx
+// is one and decode.go reads it -- so this is a CODEC GAP and not a downgrade
+// loss: the format has room for the map, this encoder has never had the branch
+// that emits it, and classic is frozen so it is not getting one (COVERAGE.md).
+// That is why it is refused here and not in xmlio's downgradeLoss, which
+// inventories what a target FORMAT cannot express.
+//
+// It used to be `assert(orientation != "ROWS")`, returned from encodeTiles with
+// the <map> open tag, three child elements and the <tiles> open tag already in
+// the buffer. The buffer was discarded, so no wrong file was ever produced --
+// what was wrong was the report. A caller was handed an assertion's internal text,
+// which names a condition the codec expected rather than the problem the caller
+// has, and reads as a bug in wxx rather than as an answer about their map. The
+// check moved to the one place that can say something useful: before the encode
+// starts, where the whole map is in view and nothing has been emitted.
+//
+// The remedy in the message is verified, not offered on principle: the ROWS
+// fixture decodes, encodes to the 2.06 target, and re-decodes with its
+// orientation, its dimensions and every one of its tiles intact (v1_06 emits
+// both orientations -- see internal/v1_06/tiles.go and TestW2025RowsRoundTrip).
+// TestClassicRowsRefusedUpFront pins the claim so it cannot rot into an
+// unverified one.
+//
+// An orientation that is neither COLUMNS nor ROWS is a malformed map rather than
+// a codec gap, and gets ErrInvalidHexOrientation to say so. Map_t.Validate
+// catches it earlier for anyone entering through xmlio; this arm is what a test
+// unit calling the codec directly gets.
+func verifyOrientation(w *wxx.Map_t) error {
+	switch w.HexOrientation {
+	case "COLUMNS":
+		return nil
+	case "ROWS":
+		return errors.Join(wxx.ErrUnsupportedHexOrientation,
+			fmt.Errorf("map/@hexOrientation %q: the classic encoder writes %q only; this map can be written to the 2.06 target instead", w.HexOrientation, "COLUMNS"))
+	}
+	return errors.Join(wxx.ErrInvalidHexOrientation,
+		fmt.Errorf("map/@hexOrientation %q: want %q or %q", w.HexOrientation, "COLUMNS", "ROWS"))
+}
+
 func encodeTiles(tiles *wxx.Tiles_t, hexOrientation string, wb *bytes.Buffer) error {
 	// to: width is the number of columns, height is the number of rows. does that depend on the orientation?
 	wb.WriteString(fmt.Sprintf("<tiles"))
@@ -242,10 +288,16 @@ func encodeTiles(tiles *wxx.Tiles_t, hexOrientation string, wb *bytes.Buffer) er
 			}
 			wb.WriteString(fmt.Sprintf("</tilerow>\n"))
 		}
-	} else if hexOrientation == "ROWS" {
-		return fmt.Errorf("assert(orientation != %q)", hexOrientation)
 	} else {
-		return fmt.Errorf("assert(orientation != %q)", hexOrientation)
+		// Unreachable: Encode refuses every orientation but COLUMNS before this
+		// buffer exists (see verifyOrientation). It is kept as a refusal rather
+		// than deleted because the alternative -- falling through -- would close
+		// </tiles> over an empty element and write a map with no terrain in it,
+		// and a wrong file on disk is the worst outcome this codebase has
+		// (CONTRIBUTING, "what to work on next"). It is not an assert: a caller
+		// who somehow reaches it is told what is wrong with their map.
+		return errors.Join(wxx.ErrInvalidHexOrientation,
+			fmt.Errorf("map/@hexOrientation %q: want %q", hexOrientation, "COLUMNS"))
 	}
 	wb.WriteString(fmt.Sprintf("</tiles>\n"))
 	return nil

@@ -59,7 +59,7 @@ inspected by decompressing the gzip/UTF-16BE container to UTF-8 XML.
 | `<terrainmap>` | implemented | implemented | `decode.go:111-128`, `encode.go:147-158` | Tab-delimited name/slot table parsed into `TerrainMap_t`; re-emitted sorted by slot. |
 | `<maplayer>` (`name`, `isVisible`) | implemented | implemented | `decode.go:130-132`, `encode.go:161-176` | Classic `<maplayer>` has no `opacity` attr (confirmed by RelaxNG + samples), so nothing is dropped. |
 | `<tiles>`/`<tilerow>` — COLUMNS | implemented | implemented | `decode.go:151-245`, `encode.go:191-201` | COLUMNS (`OddQ`) grid fully round-trips. |
-| `<tiles>`/`<tilerow>` — ROWS | implemented | **unimplemented(dropped)** | decode `decode.go:146-163`; encode `encode.go:202-203` | **ROWS decode works** (`OddR` branch); **ROWS encode returns a hard error** `assert(orientation != "ROWS")`. `2017-1.77-1.0-rows-blank.wxx` decodes but cannot be re-encoded. This remains a **documented classic gap by decision** (issue B4): the corresponding gap in h2025 has been closed (h2025 ROWS encode is now implemented, guarded by `TestW2025RowsRoundTrip`), but classic ROWS encode is intentionally left unimplemented since classic is frozen. |
+| `<tiles>`/`<tilerow>` — ROWS | implemented | **unimplemented(refused)** | decode `decode.go:146-163`; encode `encode.go` `verifyOrientation` | **ROWS decode works** (`OddR` branch); **ROWS encode is refused up front** with `wxx.ErrUnsupportedHexOrientation`, before any byte of the document is built (issue #20). `2017-1.77-1.0-rows-blank.wxx` decodes but cannot be re-encoded as classic; the error names the caller's field and the 2.06 target that *can* write the map, a remedy `TestClassicRowsRefusedUpFront` verifies by round-tripping the fixture through it. This remains a **documented classic gap by decision** (issue B4): the corresponding gap in h2025 has been closed (h2025 ROWS encode is now implemented, guarded by `TestW2025RowsRoundTrip`), but classic ROWS encode is intentionally left unimplemented since classic is frozen. Until #20 the refusal was `assert(orientation != "ROWS")` returned from `encodeTiles` with a partly-built buffer — the same gap, reported as an assertion rather than as a statement about the caller's map. |
 | tile data (`terrain`, `elevation`, `isIcy`, `isGMOnly`, resources 6/7/11/12-col, `customBackgroundColor`) | implemented | implemented | `decode.go:166-244`, `encode.go:219-251` | `Z`-compressed and full 6-resource forms; optional trailing RGBA. Encoder auto-compresses when non-Animal resources are all zero. |
 | `<mapkey>` | implemented | **lossy (constant block)** | decode `decode.go:247-279`; encode `encode.go:253-258` | Decode reads every `mapkey` attribute into `Map_t.MapKey`. **Encode ignores `Map_t.MapKey` entirely and writes a hardcoded default `<mapkey ...>` string.** A decoded-then-encoded map key is not preserved. |
 | `<features>`/`<feature>` (+ `<location>`, inline `<label>`) | implemented | implemented | `decode.go:282-347`, `encode.go:261-321` | All feature attributes + nested location + inline label round-trip. Exercised by e.g. `2017-1.77-1.0-columns-blank.wxx` (4 features). |
@@ -104,7 +104,7 @@ returns an error; round trip impossible).
 | `map/informations/information` (+ nested `/information` to depth 2–3) | dropped | all 7 encodable fixtures | `encode.go:438-442` (`encodeInformations` emits only an empty `<informations>` wrapper) |
 | `map/configuration/text-config/labelstyle` | dropped | all 7 encodable fixtures | `encode.go:483-507` (`encodeLabelStyle` is a commented-out no-op; `<text-config>` wrapper still emitted, empty) |
 | `map/mapkey` `@viewlevel` (`"null"` → `"WORLD"`) | altered | `blank-1.73`, `blank-1.77`, `import`, `merge-01`, `merge-02` | `encode.go:253-258` (`encodeMapKey` writes a hardcoded constant `<mapkey>` block) |
-| `<tiles>`/`<tilerow>` (ROWS) | encode-hard-error | `2017-1.77-1.0-rows-blank.wxx` | `encode.go:202-203` (`assert(orientation != "ROWS")`) |
+| `<tiles>`/`<tilerow>` (ROWS) | encode-hard-error | `2017-1.77-1.0-rows-blank.wxx` | `encode.go` `verifyOrientation` (`wxx.ErrUnsupportedHexOrientation`, refused before the emit begins) |
 
 Notes on the observed set:
 
@@ -122,9 +122,10 @@ Notes on the observed set:
   they show **no `<mapkey>` drift at all**. The full constant-block override of
   the remaining attributes is real but **latent** (below).
 - **ROWS is a round-trip *failure*, not a silent drop.** The fixture decodes
-  successfully (asserted by `TestRoundTrip2017RowsHardError`), but re-encode
-  returns `assert(orientation != "ROWS")`, so no diff is possible. Classic ROWS
-  encode is intentionally left unimplemented (classic is frozen; issue B4).
+  successfully (asserted by `TestRoundTrip2017RowsHardError`), but re-encode is
+  refused with `wxx.ErrUnsupportedHexOrientation` before any output is built
+  (`TestClassicRowsRefusedUpFront`), so no diff is possible. Classic ROWS encode
+  is intentionally left unimplemented (classic is frozen; issue B4).
 
 ### Latent-by-code (encode gap is real, but no classic fixture exercises it)
 
