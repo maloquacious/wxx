@@ -52,7 +52,15 @@ func decodeConfiguration(src Configuration_t, w *wxx.Map_t) error {
 			if wLabelStyle.Color, err = decodeRgba(mLabelStyle.Color); err != nil {
 				return fmt.Errorf("labelStyle.color: %w", err)
 			}
-			if wLabelStyle.BackgroundColor, err = decodeRgba(mLabelStyle.BackgroundColor); err != nil {
+			// backgroundColor is "null" or an RGBA, and the two must not
+			// collapse (issue #62). decodeRgba maps BOTH "null" and
+			// "0.0,0.0,0.0,1.0" to nil, so it threw away which one the file
+			// said and the encoder had no way to write it back. Decoded the
+			// same way as outlineColor below, nil means "null" and nothing
+			// else, which is what lets rgbaOrNull spell it correctly.
+			if mLabelStyle.BackgroundColor == "null" {
+				wLabelStyle.BackgroundColor = nil
+			} else if wLabelStyle.BackgroundColor, err = decodeZeroableRgba(mLabelStyle.BackgroundColor); err != nil {
 				return fmt.Errorf("labelStyle.backgroundColor: %w", err)
 			}
 			if mLabelStyle.OutlineColor == "null" {
@@ -192,10 +200,10 @@ func encodeLabelStyle(labelStyle *wxx.LabelStyle_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(" scale=%q", floats(labelStyle.Scale)))
 	wb.WriteString(fmt.Sprintf(" isBold=%q", bools(labelStyle.IsBold)))
 	wb.WriteString(fmt.Sprintf(" isItalic=%q", bools(labelStyle.IsItalic)))
-	wb.WriteString(fmt.Sprintf(" color=%q", rgbas(labelStyle.Color)))                     // decodeRgba
-	wb.WriteString(fmt.Sprintf(" backgroundColor=%q", rgbas(labelStyle.BackgroundColor))) // decodeRgba
+	wb.WriteString(fmt.Sprintf(" color=%q", rgbas(labelStyle.Color)))                          // decodeRgba
+	wb.WriteString(fmt.Sprintf(" backgroundColor=%q", rgbaOrNull(labelStyle.BackgroundColor))) // "null" or decodeZeroableRgba
 	wb.WriteString(fmt.Sprintf(" outlineSize=%q", floats(labelStyle.OutlineSize)))
-	wb.WriteString(fmt.Sprintf(" outlineColor=%q", rgbans(labelStyle.OutlineColor))) // "null" or decodeZeroableRgba
+	wb.WriteString(fmt.Sprintf(" outlineColor=%q", rgbaOrNull(labelStyle.OutlineColor))) // "null" or decodeZeroableRgba
 	// The W2025 drop-shadow trio is present all-or-none in real data;
 	// dropShadowColor is "null" or an RGBA string when present, never empty, so an
 	// empty DropShadowColor reliably means "absent from the source". Gate the whole
