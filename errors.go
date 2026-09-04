@@ -48,6 +48,7 @@ const (
 	ErrUnknownVersion              = Error("unknown version")
 	ErrUnknownXMLHeader            = Error("unknown xml header")
 	ErrUnmodeledStubLoss           = Error("target cannot express an unmodeled stub")
+	ErrUnparsedDottedVersion       = Error("unparsed dotted version")
 	ErrUnsupportedMapMetadata      = Error("unsupported map metadata")
 	ErrUnsupportedMapVersion       = Error("unsupported map version")
 	ErrUnsupportedSchemaVersion    = Error("unsupported schema version")

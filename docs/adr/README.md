@@ -24,4 +24,4 @@ forced it, the options weighed, and the consequences.
 | [0001](0001-codec-file-organization.md) | Codec file organization: co-located per-element encode/decode | Proposed — gates task B3b |
 | [0002](0002-version-identity.md) | Version identity: `DataVersion` = `{familyYear, on-disk dotted revision}` | Superseded by 0004 (2026-07-15) |
 | [0003](0003-version-axes.md) | Application version and schema version are independent axes | Accepted (2026-07-15) |
-| [0004](0004-version-struct-and-release-registry.md) | Version identity: `{App, Schema}` plus a supported-release registry | Accepted (2026-07-15), Decision 3 amended by #45 |
+| [0004](0004-version-struct-and-release-registry.md) | Version identity: `{App, Schema}` plus a supported-release registry | Accepted (2026-07-15), Decision 3 amended by #45, Decision 1 amended by #38 |

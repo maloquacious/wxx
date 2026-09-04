@@ -73,6 +73,14 @@ whose components exist only to compare. `wxx` re-emits **verbatim** whatever it
 read; nothing is ever re-rendered from components. That — not any defect in the
 numbers — is why they are treated as opaque identifiers.
 
+A version that does not fit the dotted grammar still decodes, and `Raw` still
+carries its bytes — but it has no components at all, reports `Parsed() == false`,
+and `Compare`/`Less` return an error rather than ordering it. `ParseDotted` and
+`NewDotted` are the two constructors that produce a comparable value.
+`NewDotted` takes components, so it renders `"2.6"` and cannot express the padded
+`"2.06"`: use it to **order** versions, not to name one. See ADR 0004 Decision 1,
+as amended by [#38](https://github.com/maloquacious/wxx/issues/38).
+
 An earlier claim that the 2025 numbers are *buggy* (`1.x` written where `2.x` was
 intended) is **retired**: it does not survive the two-axis model, and
 [#13](https://github.com/maloquacious/wxx/issues/13) was closed as not planned
