@@ -40,8 +40,8 @@ type DecoderDiagnostics struct {
 	Raw          []byte // original input
 	Uncompressed []byte // input after running gunzip
 	Converted    []byte // input after converting UTF-16 to UTF-8
-	XMLHeader    []byte // XML header that was removed
-	XMLData      []byte
+	XMLHeader    []byte // the XML declaration that was removed, and only that
+	XMLData      []byte // everything after the declaration: the XML handed to the codec
 	MapElement   []byte
 	Schema       string
 }
@@ -188,12 +188,12 @@ func (d *Decoder) Decode(r io.Reader) (*wxx.Map_t, error) {
 		}
 		// consume the XML header since our unmarshal code expects only the XML data
 		data = data[len(xmlHeaders[xmlHeaderIndex].heading):]
-		if d.opts.diagnostics != nil {
-			d.opts.diagnostics.XMLHeader = bdup(data)
-		}
 	}
 
 	// data is now clean UTF‑8 XML data with no header
+	if d.opts.diagnostics != nil {
+		d.opts.diagnostics.XMLData = bdup(data)
+	}
 
 	// quick sanity check on the input
 	if !bytes.HasPrefix(data, []byte("<map ")) {
