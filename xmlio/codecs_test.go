@@ -165,7 +165,11 @@ func TestRegistryKeysOnRawNotComponents(t *testing.T) {
 	if a.Raw == b.Raw {
 		t.Fatalf("%q and %q are the same string, so Raw-vs-component keying is not under test", registered, unpadded)
 	}
-	if a.Compare(b) != 0 {
+	c, err := a.Compare(b)
+	if err != nil {
+		t.Fatalf("%q.Compare(%q): unexpected error: %v", registered, unpadded, err)
+	}
+	if c != 0 {
 		t.Fatalf("%q and %q have different components (%d.%d vs %d.%d), so component keying would miss anyway and this test proves nothing",
 			registered, unpadded, a.Major, a.Minor, b.Major, b.Minor)
 	}

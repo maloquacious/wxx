@@ -22,9 +22,14 @@ import (
 // revision shares. The nil Schema is what routes an encode back to this codec.
 //
 // It is best-effort by design: a malformed version keeps its bytes verbatim in
-// Dotted.Raw with zero components rather than raising an error, so nothing that
+// Dotted.Raw with no components rather than raising an error, so nothing that
 // decodes today starts failing. Raw is authoritative for output either way; the
 // components exist only to compare.
+//
+// The fallback value is unparsed by construction (issue #38): wxx.Dotted{Raw: version}
+// is a composite literal from outside package wxx, so it cannot set the flag that
+// makes a Dotted comparable, and wxx.Dotted.Compare reports an error on it rather
+// than ordering a version this decoder could not read.
 func classicVersionIdentity(version string) wxx.Version_t {
 	app, err := wxx.ParseDotted(version)
 	if err != nil {

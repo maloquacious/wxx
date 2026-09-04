@@ -15,14 +15,21 @@ import (
 )
 
 // dottedOrRaw parses an on-disk dotted version, falling back to a Dotted that
-// carries the verbatim bytes with zero components when the string does not fit
-// the dotted grammar.
+// carries the verbatim bytes and NO components when the string does not fit the
+// dotted grammar.
 //
 // The fallback is deliberate: modeling these values must not turn a file that
 // decodes today into one that errors, so this never adds an error path of its
 // own. Raw is authoritative for output and is preserved in every case; the
 // components exist only to compare. Validating an identity against the set of
 // supported releases is the registry's job, not the decoder's.
+//
+// The fallback value is unparsed by construction (issue #38): wxx.Dotted{Raw: s}
+// is a composite literal from outside package wxx, so it cannot set the flag
+// that makes a Dotted comparable, and wxx.Dotted.Compare reports an error on it
+// rather than ordering a version this decoder could not read. The zero
+// components it also carries are not an answer and nothing may read them as one
+// -- before #38 they were, and "garbage" ordered EQUAL to "0.0".
 func dottedOrRaw(s string) wxx.Dotted {
 	d, err := wxx.ParseDotted(s)
 	if err != nil {

@@ -10,6 +10,13 @@
   application version to one codec and holds nothing else. Decision 3's original
   text stands as the record of the decision taken. See *Amendment — 2026-07-15*
   at the end of this document.
+- **Amended:** 2026-09-03 — **Decision 1** is amended by
+  [#38](https://github.com/maloquacious/wxx/issues/38): `Dotted` gains an
+  unexported `parsed` flag and `Compare`/`Less` return an error, so a version a
+  decoder could not parse can no longer be ordered from components it does not
+  have, and `NewDotted` is added so a caller holding components rather than bytes
+  can still obtain one. Decision 1's original text stands as the record of the
+  decision taken. See *Amendment — 2026-09-03* at the end of this document.
 - **Date:** 2026-07-15
 - **Supersedes:** ADR 0002 (`0002-version-identity.md`, #12). Builds on ADR 0003
   (`0003-version-axes.md`, the two-axis model).
@@ -60,6 +67,14 @@ That is an accident worth making a rule.
 
    Anything written to disk comes from `Raw`. Never re-render a `Dotted` from
    its components.
+
+   > **Amended 2026-09-03 by [#38](https://github.com/maloquacious/wxx/issues/38).**
+   > The struct carries an unexported `parsed` flag and `Compare`/`Less` return an
+   > error. "Components for comparison only" is unchanged; what changed is that a
+   > `Dotted` a decoder could not parse now *says so* instead of presenting zero
+   > components as an ordinal. The text above is left as written, as the record of
+   > the decision that was taken. See **Amendment — 2026-09-03** at the end of this
+   > document.
 
 2. **`Version_t` models the two axes and nothing else.**
 
@@ -257,3 +272,85 @@ to decide *how* to emit a field; it must never emit the source's metadata.
 - **No file byte moved.** Every fixture encodes to identical bytes before and
   after (68/68 (fixture × application version) pairs), which is Decision 1 held to
   across the change rather than assumed.
+
+---
+
+## Amendment — 2026-09-03 ([#38](https://github.com/maloquacious/wxx/issues/38))
+
+**Amends Decision 1.** Decisions 2, 4, 5 and the 2026-07-15 amendment are
+untouched.
+
+### What this ADR got right, and the gap it left
+
+Decision 1 said the components "exist for comparison only" and left it there.
+That is true of a `Dotted` that was *parsed*. It says nothing about one that was
+not — and both decoders produce those, deliberately: a `map/@version` that does
+not fit the dotted grammar is carried verbatim rather than rejected, because
+modeling these values must not make decoding stricter than it was.
+
+Such a value had `Major: 0, Minor: 0`. Those zeroes are not a parse result, but
+`Compare` could not tell the difference, so it read them as an ordinal:
+`version="1.x"` compared **equal to `"0.0"`** and **less than every real
+version**. `Raw` was right; the components were a lie the type had no way to
+disown. Nothing in-tree compared a decoded `Dotted`, so this was a trap laid for
+the next caller rather than a live defect.
+
+### Decision
+
+**A `Dotted` that was not parsed cannot be ordered, and this is enforced by the
+type rather than documented.**
+
+- `Dotted` carries an **unexported `parsed` flag**, set only by `ParseDotted`.
+  Being unexported, no other package can set it: a composite literal from outside
+  `wxx` — which is exactly what the decoder fallbacks build — is unparsed by
+  construction, and so is the zero `Dotted`. `Parsed()` reports it.
+- **`Compare` returns `(int, error)` and `Less` returns `(bool, error)`**,
+  wrapping `ErrUnparsedDottedVersion` when either operand is unparsed. The
+  returned `int` is not an ordering and the returned `bool` is not one; there is
+  no ordering to report.
+- **Decoding is unchanged.** No file that decoded before this change fails after
+  it, and `Raw` is authoritative for output in every case, parsed or not.
+- **`NewDotted` builds a comparable `Dotted` from components**, so "comparable"
+  does not require a string to parse. See the consequence below for the padding it
+  cannot express, and why that is deliberate.
+
+`NewDotted` closes the gap this amendment first left open — a comparable `Dotted`
+was obtainable only by parsing a string — on the maintainer's call, within the
+same change rather than deferred to a follow-up.
+
+Options 1 ("hard-error on a malformed `@version`") and 3 ("document and leave")
+from #38 were both rejected. Option 1 is a real behavior change — files that
+decode today would start failing — which is the constraint #32 set. Option 3
+leaves the trap and relies on the next caller reading a comment.
+
+### Consequences
+
+- **The unrepresentable state is unrepresentable, not merely discouraged.** A
+  codec attempting `wxx.Dotted{Raw: s, Major: 2, Minor: 6, parsed: true}` does not
+  compile.
+- **Hand-built literals are unparsed too.** `Dotted{Raw: "2.06", Major: 2, Minor: 6}`
+  written outside `wxx` reports `Parsed() == false` and cannot be ordered. Its
+  components are unverified bytes rather than a parse result, and the type does
+  not distinguish an accurate hand-build from an inaccurate one.
+- **`NewDotted(major, minor int) (Dotted, error)` is the second constructor**, for
+  a caller that holds components rather than bytes — a threshold stated in code, a
+  version computed rather than read. It renders `Raw` as `"<major>.<minor>"`, sets
+  the flag, and rejects a negative component with the sentinels `ParseDotted` uses
+  for the same fact.
+
+  It therefore **cannot express padding**: `NewDotted(2, 6)` gives `Raw` `"2.6"`,
+  never `"2.06"`. This is a property, not a shortfall. A padded value is a string
+  the caller already has, and `ParseDotted` takes it; a `Raw` supplied *alongside*
+  components would be a second source for one fact, which is this amendment's own
+  defect class arriving from the constructor side. So a `Dotted` from `NewDotted`
+  is for **ordering** versions, not for **naming** one: its `Raw` passed as an
+  encode target names the unpadded string literally, which matches no supported
+  application version and misses the registry cleanly.
+
+  The invariant tying the two constructors together is that they are
+  interchangeable — `NewDotted(m, n)` and `ParseDotted(fmt.Sprintf("%d.%d", m, n))`
+  are identical under `==`, unexported flag included — and that a constructed `Raw`
+  always reparses to the value that produced it.
+- **No file byte moved.** Every fixture encodes to identical bytes before and
+  after (9 fixtures × 4 application versions), which is Decision 1's
+  verbatim-output guarantee held across the change rather than assumed.
