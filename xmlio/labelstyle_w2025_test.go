@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/maloquacious/wxx"
@@ -20,24 +19,76 @@ import (
 // enough and there is no need to parse the document.
 var attrPattern = regexp.MustCompile(`([A-Za-z][A-Za-z0-9_]*)="([^"]*)"`)
 
-// labelStyleAttrs extracts every <labelstyle> start tag from a UTF-8 XML
-// document as an ordered list of name/value pairs.
+// startTagAttrs extracts every start tag of the named element from a UTF-8 XML
+// document, in document order, each as an ordered list of name/value pairs.
 //
 // It reads the raw text rather than decoding the document, and that is the
-// point: encoding/xml would normalize away attribute ORDER, which is part of
-// what this comparison is about, and Go's decoder refuses the version="1.1"
+// point: encoding/xml would normalize away attribute ORDER, and cannot tell an
+// absent attribute from one stated as "" -- both of which are part of what these
+// comparisons are about. Go's decoder also refuses the version="1.1"
 // declaration every W2025 file opens with.
-func labelStyleAttrs(doc []byte) [][][2]string {
+//
+// It matches tags, not lines, because the encoder writes nested elements
+// back-to-back: every <information> detail shares a line with its parent.
+func startTagAttrs(doc []byte, element string) [][][2]string {
+	tag := regexp.MustCompile(`<` + regexp.QuoteMeta(element) + `(\s[^>]*)?/?>`)
 	var out [][][2]string
-	for _, line := range strings.Split(string(doc), "\n") {
-		if !strings.Contains(line, "<labelstyle") {
-			continue
-		}
-		var attrs [][2]string
-		for _, m := range attrPattern.FindAllStringSubmatch(line, -1) {
-			attrs = append(attrs, [2]string{m[1], m[2]})
+	for _, m := range tag.FindAllSubmatch(doc, -1) {
+		attrs := [][2]string{}
+		for _, a := range attrPattern.FindAllStringSubmatch(string(m[1]), -1) {
+			attrs = append(attrs, [2]string{a[1], a[2]})
 		}
 		out = append(out, attrs)
+	}
+	return out
+}
+
+// labelStyleAttrs extracts every <labelstyle> start tag; see startTagAttrs.
+func labelStyleAttrs(doc []byte) [][][2]string {
+	return startTagAttrs(doc, "labelstyle")
+}
+
+// compareStartTags reports, as test errors, every way the start tags the
+// encoder wrote differ from the source's: a different number of elements, of
+// attributes on an element, an attribute name or position, or a value. The
+// only tolerated difference is a spellingExempt attribute whose two spellings
+// are the same number.
+//
+// Inter-attribute whitespace is not compared, because it is not data; see
+// TestW2025LabelStyleAttrsMatchSource for why that is a deliberate choice.
+func compareStartTags(t *testing.T, fixture, element string, in, out [][][2]string) {
+	t.Helper()
+	if len(out) != len(in) {
+		t.Errorf("%s: wrote %d <%s> element(s), source has %d", fixture, len(out), element, len(in))
+		return
+	}
+	for i := range in {
+		if len(out[i]) != len(in[i]) {
+			t.Errorf("%s: <%s> %d has %d attribute(s) %v, source has %d %v", fixture, element, i, len(out[i]), names(out[i]), len(in[i]), names(in[i]))
+			continue
+		}
+		for j, want := range in[i] {
+			got := out[i][j]
+			if got[0] != want[0] {
+				t.Errorf("%s: <%s> %d attribute %d is %q, source has %q (order or name drift)", fixture, element, i, j, got[0], want[0])
+				continue
+			}
+			if got[1] == want[1] {
+				continue
+			}
+			if spellingExempt[want[0]] && sameNumber(want[1], got[1]) {
+				continue
+			}
+			t.Errorf("%s: <%s> %d @%s = %q, source has %q", fixture, element, i, want[0], got[1], want[1])
+		}
+	}
+}
+
+// names lists the attribute names of one start tag, for error messages.
+func names(attrs [][2]string) []string {
+	var out []string
+	for _, a := range attrs {
+		out = append(out, a[0])
 	}
 	return out
 }
@@ -130,32 +181,14 @@ func TestW2025LabelStyleAttrsMatchSource(t *testing.T) {
 			if len(in) == 0 {
 				t.Fatalf("%s: source carries no <labelstyle>; this fixture cannot evidence anything", fixture)
 			}
-			if len(out) != len(in) {
-				t.Fatalf("%s: wrote %d <labelstyle> element(s), source has %d", fixture, len(out), len(in))
-			}
+			compareStartTags(t, fixture, "labelstyle", in, out)
 
 			sawNull := false
-			for i := range in {
-				if len(out[i]) != len(in[i]) {
-					t.Errorf("%s: labelstyle %d has %d attribute(s), source has %d", fixture, i, len(out[i]), len(in[i]))
-					continue
-				}
-				for j, want := range in[i] {
-					got := out[i][j]
-					if got[0] != want[0] {
-						t.Errorf("%s: labelstyle %d attribute %d is %q, source has %q (order or name drift)", fixture, i, j, got[0], want[0])
-						continue
+			for _, style := range in {
+				for _, attr := range style {
+					if attr[0] == "backgroundColor" && attr[1] == "null" {
+						sawNull = true
 					}
-					if got[1] == want[1] {
-						if want[0] == "backgroundColor" && want[1] == "null" {
-							sawNull = true
-						}
-						continue
-					}
-					if spellingExempt[want[0]] && sameNumber(want[1], got[1]) {
-						continue
-					}
-					t.Errorf("%s: labelstyle %d @%s = %q, source has %q", fixture, i, want[0], got[1], want[1])
 				}
 			}
 

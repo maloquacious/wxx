@@ -170,19 +170,19 @@ type GridAndNumbering struct {
 
 type Information_t struct {
 	// attributes
-	Uuid       string `xml:"uuid,attr"`
-	Type       string `xml:"type,attr"`
-	Title      string `xml:"title,attr"`
-	Rulers     string `xml:"rulers,attr"`
-	Government string `xml:"government,attr"`
-	Cultures   string `xml:"cultures,attr"`
+	Uuid       string  `xml:"uuid,attr"`
+	Type       string  `xml:"type,attr"`
+	Title      string  `xml:"title,attr"`
+	Rulers     *string `xml:"rulers,attr"`
+	Government *string `xml:"government,attr"`
+	Cultures   *string `xml:"cultures,attr"`
 
-	Language string `xml:"language,attr"`
+	Language *string `xml:"language,attr"`
 
-	ReligionType string `xml:"religionType,attr"`
-	Culture      string `xml:"culture,attr"`
-	HolySymbol   string `xml:"holySymbol,attr"`
-	Domains      string `xml:"domains,attr"`
+	ReligionType *string `xml:"religionType,attr"`
+	Culture      *string `xml:"culture,attr"`
+	HolySymbol   *string `xml:"holySymbol,attr"`
+	Domains      *string `xml:"domains,attr"`
 
 	// elements
 	Details   []Information_t `xml:"information"`

@@ -227,18 +227,24 @@ type GridAndNumbering_t struct {
 	NumberSeparator             string  `json:"numberSeparator,omitempty"` // "." or free text?
 }
 
+// Information_t is one lore entry. The eight lore attributes (Rulers through
+// Domains) are pointers because a file may omit any of them and may also state
+// one as "": nil means the file states no such attribute, and a pointer to ""
+// means it states the attribute empty. Worldographer writes both -- an
+// "Information" entry carries none, a "Religion" entry carries domains="" --
+// and an encoder must reproduce whichever it was given (issue #66).
 type Information_t struct {
-	Uuid         string `json:"uuid,omitempty"`
-	Type         string `json:"type,omitempty"`
-	Title        string `json:"title,omitempty"`
-	Rulers       string `json:"rulers,omitempty"`
-	Government   string `json:"government,omitempty"`
-	Cultures     string `json:"cultures,omitempty"`
-	Language     string `json:"language,omitempty"`
-	ReligionType string `json:"religionType,omitempty"`
-	Culture      string `json:"culture,omitempty"`
-	HolySymbol   string `json:"holySymbol,omitempty"`
-	Domains      string `json:"domains,omitempty"`
+	Uuid         string  `json:"uuid,omitempty"`
+	Type         string  `json:"type,omitempty"`
+	Title        string  `json:"title,omitempty"`
+	Rulers       *string `json:"rulers,omitempty"`
+	Government   *string `json:"government,omitempty"`
+	Cultures     *string `json:"cultures,omitempty"`
+	Language     *string `json:"language,omitempty"`
+	ReligionType *string `json:"religionType,omitempty"`
+	Culture      *string `json:"culture,omitempty"`
+	HolySymbol   *string `json:"holySymbol,omitempty"`
+	Domains      *string `json:"domains,omitempty"`
 
 	Details   []*InformationDetail_t `json:"details,omitempty"`
 	InnerText string                 `json:"innerText,omitempty"`
@@ -249,18 +255,20 @@ type Informations_t struct {
 	InnerText    string           `json:"innerText,omitempty"`
 }
 
+// InformationDetail_t is a lore entry nested inside an Information_t. Its lore
+// attributes follow the same nil-means-absent rule as Information_t's.
 type InformationDetail_t struct {
-	Uuid         string `json:"uuid,omitempty"`
-	Type         string `json:"type,omitempty"`
-	Title        string `json:"title,omitempty"`
-	Rulers       string `json:"rulers,omitempty"`
-	Government   string `json:"government,omitempty"`
-	Cultures     string `json:"cultures,omitempty"`
-	Language     string `json:"language,omitempty"`
-	ReligionType string `json:"religionType,omitempty"`
-	Culture      string `json:"culture,omitempty"`
-	HolySymbol   string `json:"holySymbol,omitempty"`
-	Domains      string `json:"domains,omitempty"`
+	Uuid         string  `json:"uuid,omitempty"`
+	Type         string  `json:"type,omitempty"`
+	Title        string  `json:"title,omitempty"`
+	Rulers       *string `json:"rulers,omitempty"`
+	Government   *string `json:"government,omitempty"`
+	Cultures     *string `json:"cultures,omitempty"`
+	Language     *string `json:"language,omitempty"`
+	ReligionType *string `json:"religionType,omitempty"`
+	Culture      *string `json:"culture,omitempty"`
+	HolySymbol   *string `json:"holySymbol,omitempty"`
+	Domains      *string `json:"domains,omitempty"`
 
 	InnerText string `json:"innerText,omitempty"`
 }
