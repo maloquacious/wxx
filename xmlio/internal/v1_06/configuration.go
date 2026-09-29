@@ -195,15 +195,15 @@ func encodeTextConfig(textConfig *wxx.TextConfig_t, wb *bytes.Buffer) error {
 
 func encodeLabelStyle(labelStyle *wxx.LabelStyle_t, wb *bytes.Buffer) error {
 	wb.WriteString("<labelstyle")
-	wb.WriteString(fmt.Sprintf(" name=%q", labelStyle.Name))
-	wb.WriteString(fmt.Sprintf(" fontFace=%q", labelStyle.FontFace))
-	wb.WriteString(fmt.Sprintf(" scale=%q", floats(labelStyle.Scale)))
-	wb.WriteString(fmt.Sprintf(" isBold=%q", bools(labelStyle.IsBold)))
-	wb.WriteString(fmt.Sprintf(" isItalic=%q", bools(labelStyle.IsItalic)))
-	wb.WriteString(fmt.Sprintf(" color=%q", rgbas(labelStyle.Color)))                          // decodeRgba
-	wb.WriteString(fmt.Sprintf(" backgroundColor=%q", rgbaOrNull(labelStyle.BackgroundColor))) // "null" or decodeZeroableRgba
-	wb.WriteString(fmt.Sprintf(" outlineSize=%q", floats(labelStyle.OutlineSize)))
-	wb.WriteString(fmt.Sprintf(" outlineColor=%q", rgbaOrNull(labelStyle.OutlineColor))) // "null" or decodeZeroableRgba
+	wb.WriteString(fmt.Sprintf(" name=%s", xmlAttr(labelStyle.Name)))
+	wb.WriteString(fmt.Sprintf(" fontFace=%s", xmlAttr(labelStyle.FontFace)))
+	wb.WriteString(fmt.Sprintf(" scale=%s", xmlAttr(floats(labelStyle.Scale))))
+	wb.WriteString(fmt.Sprintf(" isBold=%s", xmlAttr(bools(labelStyle.IsBold))))
+	wb.WriteString(fmt.Sprintf(" isItalic=%s", xmlAttr(bools(labelStyle.IsItalic))))
+	wb.WriteString(fmt.Sprintf(" color=%s", xmlAttr(rgbas(labelStyle.Color))))                          // decodeRgba
+	wb.WriteString(fmt.Sprintf(" backgroundColor=%s", xmlAttr(rgbaOrNull(labelStyle.BackgroundColor)))) // "null" or decodeZeroableRgba
+	wb.WriteString(fmt.Sprintf(" outlineSize=%s", xmlAttr(floats(labelStyle.OutlineSize))))
+	wb.WriteString(fmt.Sprintf(" outlineColor=%s", xmlAttr(rgbaOrNull(labelStyle.OutlineColor)))) // "null" or decodeZeroableRgba
 	// The W2025 drop-shadow trio is present all-or-none in real data;
 	// dropShadowColor is "null" or an RGBA string when present, never empty, so an
 	// empty DropShadowColor reliably means "absent from the source". Gate the whole
@@ -222,9 +222,9 @@ func encodeLabelStyle(labelStyle *wxx.LabelStyle_t, wb *bytes.Buffer) error {
 		if err != nil {
 			return err
 		}
-		wb.WriteString(fmt.Sprintf(" dropShadowColor=%q", labelStyle.DropShadowColor)) // nullable string ("null")
-		wb.WriteString(fmt.Sprintf(" dropShadowRadius=%q", radius.String()))
-		wb.WriteString(fmt.Sprintf(" dropShadowSpread=%q", spread.String()))
+		wb.WriteString(fmt.Sprintf(" dropShadowColor=%s", xmlAttr(labelStyle.DropShadowColor))) // nullable string ("null")
+		wb.WriteString(fmt.Sprintf(" dropShadowRadius=%s", xmlAttr(radius.String())))
+		wb.WriteString(fmt.Sprintf(" dropShadowSpread=%s", xmlAttr(spread.String())))
 	}
 	wb.WriteString(" />\n")
 	return nil
@@ -243,35 +243,35 @@ func encodeShapeConfig(shapeConfig *wxx.ShapeConfig_t, wb *bytes.Buffer) error {
 
 func encodeShapeStyle(shapeStyle *wxx.ShapeStyle_t, wb *bytes.Buffer) error {
 	wb.WriteString("<shapestyle")
-	wb.WriteString(fmt.Sprintf(" name=%q", shapeStyle.Name))
-	wb.WriteString(fmt.Sprintf(" strokeType=%q", shapeStyle.StrokeType))
-	wb.WriteString(fmt.Sprintf(" isFractal=%q", bools(shapeStyle.IsFractal)))
-	wb.WriteString(fmt.Sprintf(" strokeWidth=%q", floats(shapeStyle.StrokeWidth)))
-	wb.WriteString(fmt.Sprintf(" opacity=%q", floats(shapeStyle.Opacity)))
-	wb.WriteString(fmt.Sprintf(" snapVertices=%q", bools(shapeStyle.SnapVertices)))
-	wb.WriteString(fmt.Sprintf(" tags=%q", shapeStyle.Tags))
-	wb.WriteString(fmt.Sprintf(" dropShadow=%q", bools(shapeStyle.DropShadow)))
-	wb.WriteString(fmt.Sprintf(" innerShadow=%q", bools(shapeStyle.InnerShadow)))
-	wb.WriteString(fmt.Sprintf(" boxBlur=%q", bools(shapeStyle.BoxBlur)))
-	wb.WriteString(fmt.Sprintf(" dsSpread=%q", floats(shapeStyle.DsSpread)))
-	wb.WriteString(fmt.Sprintf(" dsRadius=%q", floats(shapeStyle.DsRadius)))
-	wb.WriteString(fmt.Sprintf(" dsOffsetX=%q", floats(shapeStyle.DsOffsetX)))
-	wb.WriteString(fmt.Sprintf(" dsOffsetY=%q", floats(shapeStyle.DsOffsetY)))
-	wb.WriteString(fmt.Sprintf(" insChoke=%q", floats(shapeStyle.InsChoke)))
-	wb.WriteString(fmt.Sprintf(" insRadius=%q", floats(shapeStyle.InsRadius)))
-	wb.WriteString(fmt.Sprintf(" insOffsetX=%q", floats(shapeStyle.InsOffsetX)))
-	wb.WriteString(fmt.Sprintf(" insOffsetY=%q", floats(shapeStyle.InsOffsetY)))
-	wb.WriteString(fmt.Sprintf(" bbWidth=%q", floats(shapeStyle.BbWidth)))
-	wb.WriteString(fmt.Sprintf(" bbHeight=%q", floats(shapeStyle.BbHeight)))
-	wb.WriteString(fmt.Sprintf(" bbIterations=%q", ints(shapeStyle.BbIterations)))
-	wb.WriteString(fmt.Sprintf(" fillTexture=%q", shapeStyle.FillTexture))         // nullable
-	wb.WriteString(fmt.Sprintf(" strokeTexture=%q", shapeStyle.StrokeTexture))     // nullable
-	wb.WriteString(fmt.Sprintf("  strokePaint=%q", rgbas(shapeStyle.StrokePaint))) // not nullable
-	wb.WriteString(fmt.Sprintf("  fillPaint=%q", rgbans(shapeStyle.FillPaint)))    // nullable
-	wb.WriteString(fmt.Sprintf("  dscolor=%q", rgbans(shapeStyle.DsColor)))        // nullable
-	wb.WriteString(fmt.Sprintf("  insColor=%q", rgbans(shapeStyle.InsColor)))      // nullable
-	wb.WriteString(fmt.Sprintf(" lineCap=%q", shapeStyle.LineCap))
-	wb.WriteString(fmt.Sprintf(" lineJoin=%q", shapeStyle.LineJoin))
+	wb.WriteString(fmt.Sprintf(" name=%s", xmlAttr(shapeStyle.Name)))
+	wb.WriteString(fmt.Sprintf(" strokeType=%s", xmlAttr(shapeStyle.StrokeType)))
+	wb.WriteString(fmt.Sprintf(" isFractal=%s", xmlAttr(bools(shapeStyle.IsFractal))))
+	wb.WriteString(fmt.Sprintf(" strokeWidth=%s", xmlAttr(floats(shapeStyle.StrokeWidth))))
+	wb.WriteString(fmt.Sprintf(" opacity=%s", xmlAttr(floats(shapeStyle.Opacity))))
+	wb.WriteString(fmt.Sprintf(" snapVertices=%s", xmlAttr(bools(shapeStyle.SnapVertices))))
+	wb.WriteString(fmt.Sprintf(" tags=%s", xmlAttr(shapeStyle.Tags)))
+	wb.WriteString(fmt.Sprintf(" dropShadow=%s", xmlAttr(bools(shapeStyle.DropShadow))))
+	wb.WriteString(fmt.Sprintf(" innerShadow=%s", xmlAttr(bools(shapeStyle.InnerShadow))))
+	wb.WriteString(fmt.Sprintf(" boxBlur=%s", xmlAttr(bools(shapeStyle.BoxBlur))))
+	wb.WriteString(fmt.Sprintf(" dsSpread=%s", xmlAttr(floats(shapeStyle.DsSpread))))
+	wb.WriteString(fmt.Sprintf(" dsRadius=%s", xmlAttr(floats(shapeStyle.DsRadius))))
+	wb.WriteString(fmt.Sprintf(" dsOffsetX=%s", xmlAttr(floats(shapeStyle.DsOffsetX))))
+	wb.WriteString(fmt.Sprintf(" dsOffsetY=%s", xmlAttr(floats(shapeStyle.DsOffsetY))))
+	wb.WriteString(fmt.Sprintf(" insChoke=%s", xmlAttr(floats(shapeStyle.InsChoke))))
+	wb.WriteString(fmt.Sprintf(" insRadius=%s", xmlAttr(floats(shapeStyle.InsRadius))))
+	wb.WriteString(fmt.Sprintf(" insOffsetX=%s", xmlAttr(floats(shapeStyle.InsOffsetX))))
+	wb.WriteString(fmt.Sprintf(" insOffsetY=%s", xmlAttr(floats(shapeStyle.InsOffsetY))))
+	wb.WriteString(fmt.Sprintf(" bbWidth=%s", xmlAttr(floats(shapeStyle.BbWidth))))
+	wb.WriteString(fmt.Sprintf(" bbHeight=%s", xmlAttr(floats(shapeStyle.BbHeight))))
+	wb.WriteString(fmt.Sprintf(" bbIterations=%s", xmlAttr(ints(shapeStyle.BbIterations))))
+	wb.WriteString(fmt.Sprintf(" fillTexture=%s", xmlAttr(shapeStyle.FillTexture)))         // nullable
+	wb.WriteString(fmt.Sprintf(" strokeTexture=%s", xmlAttr(shapeStyle.StrokeTexture)))     // nullable
+	wb.WriteString(fmt.Sprintf("  strokePaint=%s", xmlAttr(rgbas(shapeStyle.StrokePaint)))) // not nullable
+	wb.WriteString(fmt.Sprintf("  fillPaint=%s", xmlAttr(rgbans(shapeStyle.FillPaint))))    // nullable
+	wb.WriteString(fmt.Sprintf("  dscolor=%s", xmlAttr(rgbans(shapeStyle.DsColor))))        // nullable
+	wb.WriteString(fmt.Sprintf("  insColor=%s", xmlAttr(rgbans(shapeStyle.InsColor))))      // nullable
+	wb.WriteString(fmt.Sprintf(" lineCap=%s", xmlAttr(shapeStyle.LineCap)))
+	wb.WriteString(fmt.Sprintf(" lineJoin=%s", xmlAttr(shapeStyle.LineJoin)))
 	wb.WriteString(" />\n")
 	return nil
 }

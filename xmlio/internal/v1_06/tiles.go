@@ -142,9 +142,9 @@ func decodeTiles(src Tiles_t, mapKeySrc MapKey_t, w *wxx.Map_t) error {
 func encodeTiles(tiles *wxx.Tiles_t, hexOrientation string, wb *bytes.Buffer) error {
 	// to: width is the number of columns, height is the number of rows. does that depend on the orientation?
 	wb.WriteString(fmt.Sprintf("<tiles"))
-	wb.WriteString(fmt.Sprintf(" viewLevel=%q", tiles.ViewLevel))
-	wb.WriteString(fmt.Sprintf(" tilesWide=%q", ints(tiles.TilesWide)))
-	wb.WriteString(fmt.Sprintf(" tilesHigh=%q", ints(tiles.TilesHigh)))
+	wb.WriteString(fmt.Sprintf(" viewLevel=%s", xmlAttr(tiles.ViewLevel)))
+	wb.WriteString(fmt.Sprintf(" tilesWide=%s", xmlAttr(ints(tiles.TilesWide))))
+	wb.WriteString(fmt.Sprintf(" tilesHigh=%s", xmlAttr(ints(tiles.TilesHigh))))
 	wb.WriteString(fmt.Sprintf(">\n"))
 
 	// generate the tile-row elements:

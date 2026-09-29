@@ -73,36 +73,36 @@ func Encode(w *wxx.Map_t, app string) ([]byte, error) {
 // "2.6" (ADR 0004 Decision 1).
 func encodeMap(w *wxx.Map_t, target appver.App_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf("<map"))
-	wb.WriteString(fmt.Sprintf(" type=%q", w.Type))
-	wb.WriteString(fmt.Sprintf(" version=%q", target.Version))
-	wb.WriteString(fmt.Sprintf(" lastViewLevel=%q", w.LastViewLevel))
-	wb.WriteString(fmt.Sprintf(" continentFactor=%q", ints(w.ContinentFactor)))
-	wb.WriteString(fmt.Sprintf(" kingdomFactor=%q", ints(w.KingdomFactor)))
-	wb.WriteString(fmt.Sprintf(" provinceFactor=%q", ints(w.ProvinceFactor)))
-	wb.WriteString(fmt.Sprintf(" worldToContinentHOffset=%q", floats(w.WorldToContinentHOffset)))
-	wb.WriteString(fmt.Sprintf(" continentToKingdomHOffset=%q", floats(w.ContinentToKingdomHOffset)))
-	wb.WriteString(fmt.Sprintf(" kingdomToProvinceHOffset=%q", floats(w.KingdomToProvinceHOffset)))
-	wb.WriteString(fmt.Sprintf(" worldToContinentVOffset=%q", floats(w.WorldToContinentVOffset)))
-	wb.WriteString(fmt.Sprintf(" continentToKingdomVOffset=%q", floats(w.ContinentToKingdomVOffset)))
-	wb.WriteString(fmt.Sprintf(" kingdomToProvinceVOffset=%q \n", floats(w.KingdomToProvinceVOffset)))
-	wb.WriteString(fmt.Sprintf("hexWidth=%q", floats(w.HexWidth)))
-	wb.WriteString(fmt.Sprintf(" hexHeight=%q", floats(w.HexHeight)))
-	wb.WriteString(fmt.Sprintf(" hexOrientation=%q", w.HexOrientation))
+	wb.WriteString(fmt.Sprintf(" type=%s", xmlAttr(w.Type)))
+	wb.WriteString(fmt.Sprintf(" version=%s", xmlAttr(target.Version)))
+	wb.WriteString(fmt.Sprintf(" lastViewLevel=%s", xmlAttr(w.LastViewLevel)))
+	wb.WriteString(fmt.Sprintf(" continentFactor=%s", xmlAttr(ints(w.ContinentFactor))))
+	wb.WriteString(fmt.Sprintf(" kingdomFactor=%s", xmlAttr(ints(w.KingdomFactor))))
+	wb.WriteString(fmt.Sprintf(" provinceFactor=%s", xmlAttr(ints(w.ProvinceFactor))))
+	wb.WriteString(fmt.Sprintf(" worldToContinentHOffset=%s", xmlAttr(floats(w.WorldToContinentHOffset))))
+	wb.WriteString(fmt.Sprintf(" continentToKingdomHOffset=%s", xmlAttr(floats(w.ContinentToKingdomHOffset))))
+	wb.WriteString(fmt.Sprintf(" kingdomToProvinceHOffset=%s", xmlAttr(floats(w.KingdomToProvinceHOffset))))
+	wb.WriteString(fmt.Sprintf(" worldToContinentVOffset=%s", xmlAttr(floats(w.WorldToContinentVOffset))))
+	wb.WriteString(fmt.Sprintf(" continentToKingdomVOffset=%s", xmlAttr(floats(w.ContinentToKingdomVOffset))))
+	wb.WriteString(fmt.Sprintf(" kingdomToProvinceVOffset=%s \n", xmlAttr(floats(w.KingdomToProvinceVOffset))))
+	wb.WriteString(fmt.Sprintf("hexWidth=%s", xmlAttr(floats(w.HexWidth))))
+	wb.WriteString(fmt.Sprintf(" hexHeight=%s", xmlAttr(floats(w.HexHeight))))
+	wb.WriteString(fmt.Sprintf(" hexOrientation=%s", xmlAttr(w.HexOrientation)))
 	if w.MapProjection == wxx.FLAT {
-		wb.WriteString(fmt.Sprintf(" mapProjection=%q", "FLAT"))
+		wb.WriteString(fmt.Sprintf(" mapProjection=%s", xmlAttr("FLAT")))
 	} else if w.MapProjection == wxx.ICOSAHEDRAL {
-		wb.WriteString(fmt.Sprintf(" mapProjection=%q", "ICOSAHEDRAL"))
+		wb.WriteString(fmt.Sprintf(" mapProjection=%s", xmlAttr("ICOSAHEDRAL")))
 	} else {
 		return fmt.Errorf("assert(map.projection != %q)", w.MapProjection)
 	}
-	wb.WriteString(fmt.Sprintf(" showNotes=%q", bools(w.ShowNotes)))
-	wb.WriteString(fmt.Sprintf(" showGMOnly=%q", bools(w.ShowGMOnly)))
-	wb.WriteString(fmt.Sprintf(" showGMOnlyGlow=%q", bools(w.ShowGMOnlyGlow)))
-	wb.WriteString(fmt.Sprintf(" showFeatureLabels=%q", bools(w.ShowFeatureLabels)))
-	wb.WriteString(fmt.Sprintf(" showGrid=%q", bools(w.ShowGrid)))
-	wb.WriteString(fmt.Sprintf(" showGridNumbers=%q", bools(w.ShowGridNumbers)))
-	wb.WriteString(fmt.Sprintf(" showShadows=%q", bools(w.ShowShadows)))
-	wb.WriteString(fmt.Sprintf("  triangleSize=%q", ints(w.TriangleSize)))
+	wb.WriteString(fmt.Sprintf(" showNotes=%s", xmlAttr(bools(w.ShowNotes))))
+	wb.WriteString(fmt.Sprintf(" showGMOnly=%s", xmlAttr(bools(w.ShowGMOnly))))
+	wb.WriteString(fmt.Sprintf(" showGMOnlyGlow=%s", xmlAttr(bools(w.ShowGMOnlyGlow))))
+	wb.WriteString(fmt.Sprintf(" showFeatureLabels=%s", xmlAttr(bools(w.ShowFeatureLabels))))
+	wb.WriteString(fmt.Sprintf(" showGrid=%s", xmlAttr(bools(w.ShowGrid))))
+	wb.WriteString(fmt.Sprintf(" showGridNumbers=%s", xmlAttr(bools(w.ShowGridNumbers))))
+	wb.WriteString(fmt.Sprintf(" showShadows=%s", xmlAttr(bools(w.ShowShadows))))
+	wb.WriteString(fmt.Sprintf("  triangleSize=%s", xmlAttr(ints(w.TriangleSize))))
 	wb.WriteString(fmt.Sprintf(">\n"))
 
 	if err := encodeGridAndNumbering(w.GridAndNumbering, wb); err != nil {
@@ -156,37 +156,37 @@ func encodeMap(w *wxx.Map_t, target appver.App_t, wb *bytes.Buffer) error {
 
 func encodeGridAndNumbering(gridAndNumbering *wxx.GridAndNumbering_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(`<gridandnumbering`))
-	wb.WriteString(fmt.Sprintf(" color0=%q", gridAndNumbering.Color0))
-	wb.WriteString(fmt.Sprintf(" color1=%q", gridAndNumbering.Color1))
-	wb.WriteString(fmt.Sprintf(" color2=%q", gridAndNumbering.Color2))
-	wb.WriteString(fmt.Sprintf(" color3=%q", gridAndNumbering.Color3))
-	wb.WriteString(fmt.Sprintf(" color4=%q", gridAndNumbering.Color4))
-	wb.WriteString(fmt.Sprintf(" width0=%q", floats(gridAndNumbering.Width0)))
-	wb.WriteString(fmt.Sprintf(" width1=%q", floats(gridAndNumbering.Width1)))
-	wb.WriteString(fmt.Sprintf(" width2=%q", floats(gridAndNumbering.Width2)))
-	wb.WriteString(fmt.Sprintf(" width3=%q", floats(gridAndNumbering.Width3)))
-	wb.WriteString(fmt.Sprintf(" width4=%q", floats(gridAndNumbering.Width4)))
-	wb.WriteString(fmt.Sprintf(" gridOffsetContinentKingdomX=%q", floats(gridAndNumbering.GridOffsetContinentKingdomX)))
-	wb.WriteString(fmt.Sprintf(" gridOffsetContinentKingdomY=%q", floats(gridAndNumbering.GridOffsetContinentKingdomY)))
-	wb.WriteString(fmt.Sprintf(" gridOffsetWorldContinentX=%q", floats(gridAndNumbering.GridOffsetWorldContinentX)))
-	wb.WriteString(fmt.Sprintf(" gridOffsetWorldContinentY=%q", floats(gridAndNumbering.GridOffsetWorldContinentY)))
-	wb.WriteString(fmt.Sprintf(" gridOffsetWorldKingdomX=%q", floats(gridAndNumbering.GridOffsetWorldKingdomX)))
-	wb.WriteString(fmt.Sprintf(" gridOffsetWorldKingdomY=%q", floats(gridAndNumbering.GridOffsetWorldKingdomY)))
-	wb.WriteString(fmt.Sprintf(" gridSquare=%q", ints(gridAndNumbering.GridSquare)))
-	wb.WriteString(fmt.Sprintf(" gridSquareHeight=%q", floats(gridAndNumbering.GridSquareHeight)))
-	wb.WriteString(fmt.Sprintf(" gridSquareWidth=%q", floats(gridAndNumbering.GridSquareWidth)))
-	wb.WriteString(fmt.Sprintf(" gridOffsetX=%q", floats(gridAndNumbering.GridOffsetX)))
-	wb.WriteString(fmt.Sprintf(" gridOffsetY=%q", floats(gridAndNumbering.GridOffsetY)))
-	wb.WriteString(fmt.Sprintf(" numberFont=%q", gridAndNumbering.NumberFont))
-	wb.WriteString(fmt.Sprintf(" numberColor=%q", gridAndNumbering.NumberColor))
-	wb.WriteString(fmt.Sprintf(" numberSize=%q", ints(gridAndNumbering.NumberSize)))
-	wb.WriteString(fmt.Sprintf(" numberStyle=%q", gridAndNumbering.NumberStyle))
-	wb.WriteString(fmt.Sprintf(" numberFirstCol=%q", ints(gridAndNumbering.NumberFirstCol)))
-	wb.WriteString(fmt.Sprintf(" numberFirstRow=%q", ints(gridAndNumbering.NumberFirstRow)))
-	wb.WriteString(fmt.Sprintf(" numberOrder=%q", gridAndNumbering.NumberOrder))
-	wb.WriteString(fmt.Sprintf(" numberPosition=%q", gridAndNumbering.NumberPosition))
-	wb.WriteString(fmt.Sprintf(" numberPrePad=%q", gridAndNumbering.NumberPrePad))
-	wb.WriteString(fmt.Sprintf(" numberSeparator=%q", gridAndNumbering.NumberSeparator))
+	wb.WriteString(fmt.Sprintf(" color0=%s", xmlAttr(gridAndNumbering.Color0)))
+	wb.WriteString(fmt.Sprintf(" color1=%s", xmlAttr(gridAndNumbering.Color1)))
+	wb.WriteString(fmt.Sprintf(" color2=%s", xmlAttr(gridAndNumbering.Color2)))
+	wb.WriteString(fmt.Sprintf(" color3=%s", xmlAttr(gridAndNumbering.Color3)))
+	wb.WriteString(fmt.Sprintf(" color4=%s", xmlAttr(gridAndNumbering.Color4)))
+	wb.WriteString(fmt.Sprintf(" width0=%s", xmlAttr(floats(gridAndNumbering.Width0))))
+	wb.WriteString(fmt.Sprintf(" width1=%s", xmlAttr(floats(gridAndNumbering.Width1))))
+	wb.WriteString(fmt.Sprintf(" width2=%s", xmlAttr(floats(gridAndNumbering.Width2))))
+	wb.WriteString(fmt.Sprintf(" width3=%s", xmlAttr(floats(gridAndNumbering.Width3))))
+	wb.WriteString(fmt.Sprintf(" width4=%s", xmlAttr(floats(gridAndNumbering.Width4))))
+	wb.WriteString(fmt.Sprintf(" gridOffsetContinentKingdomX=%s", xmlAttr(floats(gridAndNumbering.GridOffsetContinentKingdomX))))
+	wb.WriteString(fmt.Sprintf(" gridOffsetContinentKingdomY=%s", xmlAttr(floats(gridAndNumbering.GridOffsetContinentKingdomY))))
+	wb.WriteString(fmt.Sprintf(" gridOffsetWorldContinentX=%s", xmlAttr(floats(gridAndNumbering.GridOffsetWorldContinentX))))
+	wb.WriteString(fmt.Sprintf(" gridOffsetWorldContinentY=%s", xmlAttr(floats(gridAndNumbering.GridOffsetWorldContinentY))))
+	wb.WriteString(fmt.Sprintf(" gridOffsetWorldKingdomX=%s", xmlAttr(floats(gridAndNumbering.GridOffsetWorldKingdomX))))
+	wb.WriteString(fmt.Sprintf(" gridOffsetWorldKingdomY=%s", xmlAttr(floats(gridAndNumbering.GridOffsetWorldKingdomY))))
+	wb.WriteString(fmt.Sprintf(" gridSquare=%s", xmlAttr(ints(gridAndNumbering.GridSquare))))
+	wb.WriteString(fmt.Sprintf(" gridSquareHeight=%s", xmlAttr(floats(gridAndNumbering.GridSquareHeight))))
+	wb.WriteString(fmt.Sprintf(" gridSquareWidth=%s", xmlAttr(floats(gridAndNumbering.GridSquareWidth))))
+	wb.WriteString(fmt.Sprintf(" gridOffsetX=%s", xmlAttr(floats(gridAndNumbering.GridOffsetX))))
+	wb.WriteString(fmt.Sprintf(" gridOffsetY=%s", xmlAttr(floats(gridAndNumbering.GridOffsetY))))
+	wb.WriteString(fmt.Sprintf(" numberFont=%s", xmlAttr(gridAndNumbering.NumberFont)))
+	wb.WriteString(fmt.Sprintf(" numberColor=%s", xmlAttr(gridAndNumbering.NumberColor)))
+	wb.WriteString(fmt.Sprintf(" numberSize=%s", xmlAttr(ints(gridAndNumbering.NumberSize))))
+	wb.WriteString(fmt.Sprintf(" numberStyle=%s", xmlAttr(gridAndNumbering.NumberStyle)))
+	wb.WriteString(fmt.Sprintf(" numberFirstCol=%s", xmlAttr(ints(gridAndNumbering.NumberFirstCol))))
+	wb.WriteString(fmt.Sprintf(" numberFirstRow=%s", xmlAttr(ints(gridAndNumbering.NumberFirstRow))))
+	wb.WriteString(fmt.Sprintf(" numberOrder=%s", xmlAttr(gridAndNumbering.NumberOrder)))
+	wb.WriteString(fmt.Sprintf(" numberPosition=%s", xmlAttr(gridAndNumbering.NumberPosition)))
+	wb.WriteString(fmt.Sprintf(" numberPrePad=%s", xmlAttr(gridAndNumbering.NumberPrePad)))
+	wb.WriteString(fmt.Sprintf(" numberSeparator=%s", xmlAttr(gridAndNumbering.NumberSeparator)))
 	wb.WriteString(fmt.Sprintf(" />\n"))
 	return nil
 }
@@ -216,8 +216,8 @@ func encodeMapLayers(mapLayers []*wxx.MapLayer_t, wb *bytes.Buffer) error {
 
 func encodeMapLayer(mapLayer *wxx.MapLayer_t, wb *bytes.Buffer) error {
 	wb.WriteString("<maplayer")
-	wb.WriteString(fmt.Sprintf(" name=%q", mapLayer.Name))
-	wb.WriteString(fmt.Sprintf(" isVisible=%q", bools(mapLayer.IsVisible)))
+	wb.WriteString(fmt.Sprintf(" name=%s", xmlAttr(mapLayer.Name)))
+	wb.WriteString(fmt.Sprintf(" isVisible=%s", xmlAttr(bools(mapLayer.IsVisible))))
 	wb.WriteString("/>\n")
 	return nil
 }
@@ -267,9 +267,9 @@ func verifyOrientation(w *wxx.Map_t) error {
 func encodeTiles(tiles *wxx.Tiles_t, hexOrientation string, wb *bytes.Buffer) error {
 	// to: width is the number of columns, height is the number of rows. does that depend on the orientation?
 	wb.WriteString(fmt.Sprintf("<tiles"))
-	wb.WriteString(fmt.Sprintf(" viewLevel=%q", tiles.ViewLevel))
-	wb.WriteString(fmt.Sprintf(" tilesWide=%q", ints(tiles.TilesWide)))
-	wb.WriteString(fmt.Sprintf(" tilesHigh=%q", ints(tiles.TilesHigh)))
+	wb.WriteString(fmt.Sprintf(" viewLevel=%s", xmlAttr(tiles.ViewLevel)))
+	wb.WriteString(fmt.Sprintf(" tilesWide=%s", xmlAttr(ints(tiles.TilesWide))))
+	wb.WriteString(fmt.Sprintf(" tilesHigh=%s", xmlAttr(ints(tiles.TilesHigh))))
 	wb.WriteString(fmt.Sprintf(">\n"))
 
 	// generate the tile-row elements:
@@ -366,27 +366,27 @@ func encodeFeatures(features []*wxx.Feature_t, wb *bytes.Buffer) error {
 
 func encodeFeature(feature *wxx.Feature_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf("<feature"))
-	wb.WriteString(fmt.Sprintf(" type=%q", feature.Type))
-	wb.WriteString(fmt.Sprintf(" rotate=%q", floats(feature.Rotate)))
-	wb.WriteString(fmt.Sprintf(" uuid=%q", feature.Uuid))
-	wb.WriteString(fmt.Sprintf(" mapLayer=%q", feature.MapLayer))
-	wb.WriteString(fmt.Sprintf(" isFlipHorizontal=%q", bools(feature.IsFlipHorizontal)))
-	wb.WriteString(fmt.Sprintf(" isFlipVertical=%q", bools(feature.IsFlipVertical)))
-	wb.WriteString(fmt.Sprintf(" scale=%q", floats(feature.Scale)))
-	wb.WriteString(fmt.Sprintf(" scaleHt=%q", floats(feature.ScaleHt)))
-	wb.WriteString(fmt.Sprintf(" tags=%q", feature.Tags))
-	wb.WriteString(fmt.Sprintf(" color=%q", rgbans(feature.Color))) // nullable
-	wb.WriteString(fmt.Sprintf(" ringcolor=%q", rgbans(feature.RingColor)))
-	wb.WriteString(fmt.Sprintf(" isGMOnly=%q", bools(feature.IsGMOnly)))
-	wb.WriteString(fmt.Sprintf(" isPlaceFreely=%q", bools(feature.IsPlaceFreely)))
-	wb.WriteString(fmt.Sprintf(" labelPosition=%q", feature.LabelPosition))
-	wb.WriteString(fmt.Sprintf(" labelDistance=%q", ints(feature.LabelDistance)))
-	wb.WriteString(fmt.Sprintf(" isWorld=%q", bools(feature.IsWorld)))
-	wb.WriteString(fmt.Sprintf(" isContinent=%q", bools(feature.IsContinent)))
-	wb.WriteString(fmt.Sprintf(" isKingdom=%q", bools(feature.IsKingdom)))
-	wb.WriteString(fmt.Sprintf(" isProvince=%q", bools(feature.IsProvince)))
-	wb.WriteString(fmt.Sprintf(" isFillHexBottom=%q", bools(feature.IsFillHexBottom)))
-	wb.WriteString(fmt.Sprintf(" isHideTerrainIcon=%q", bools(feature.IsHideTerrainIcon)))
+	wb.WriteString(fmt.Sprintf(" type=%s", xmlAttr(feature.Type)))
+	wb.WriteString(fmt.Sprintf(" rotate=%s", xmlAttr(floats(feature.Rotate))))
+	wb.WriteString(fmt.Sprintf(" uuid=%s", xmlAttr(feature.Uuid)))
+	wb.WriteString(fmt.Sprintf(" mapLayer=%s", xmlAttr(feature.MapLayer)))
+	wb.WriteString(fmt.Sprintf(" isFlipHorizontal=%s", xmlAttr(bools(feature.IsFlipHorizontal))))
+	wb.WriteString(fmt.Sprintf(" isFlipVertical=%s", xmlAttr(bools(feature.IsFlipVertical))))
+	wb.WriteString(fmt.Sprintf(" scale=%s", xmlAttr(floats(feature.Scale))))
+	wb.WriteString(fmt.Sprintf(" scaleHt=%s", xmlAttr(floats(feature.ScaleHt))))
+	wb.WriteString(fmt.Sprintf(" tags=%s", xmlAttr(feature.Tags)))
+	wb.WriteString(fmt.Sprintf(" color=%s", xmlAttr(rgbans(feature.Color)))) // nullable
+	wb.WriteString(fmt.Sprintf(" ringcolor=%s", xmlAttr(rgbans(feature.RingColor))))
+	wb.WriteString(fmt.Sprintf(" isGMOnly=%s", xmlAttr(bools(feature.IsGMOnly))))
+	wb.WriteString(fmt.Sprintf(" isPlaceFreely=%s", xmlAttr(bools(feature.IsPlaceFreely))))
+	wb.WriteString(fmt.Sprintf(" labelPosition=%s", xmlAttr(feature.LabelPosition)))
+	wb.WriteString(fmt.Sprintf(" labelDistance=%s", xmlAttr(ints(feature.LabelDistance))))
+	wb.WriteString(fmt.Sprintf(" isWorld=%s", xmlAttr(bools(feature.IsWorld))))
+	wb.WriteString(fmt.Sprintf(" isContinent=%s", xmlAttr(bools(feature.IsContinent))))
+	wb.WriteString(fmt.Sprintf(" isKingdom=%s", xmlAttr(bools(feature.IsKingdom))))
+	wb.WriteString(fmt.Sprintf(" isProvince=%s", xmlAttr(bools(feature.IsProvince))))
+	wb.WriteString(fmt.Sprintf(" isFillHexBottom=%s", xmlAttr(bools(feature.IsFillHexBottom))))
+	wb.WriteString(fmt.Sprintf(" isHideTerrainIcon=%s", xmlAttr(bools(feature.IsHideTerrainIcon))))
 	wb.WriteString(">")
 	if feature.Location != nil {
 		if err := encodeFeatureLocation(feature.Location, wb); err != nil {
@@ -404,9 +404,9 @@ func encodeFeature(feature *wxx.Feature_t, wb *bytes.Buffer) error {
 
 func encodeFeatureLocation(location *wxx.FeatureLocation_t, wb *bytes.Buffer) error {
 	wb.WriteString("<location")
-	wb.WriteString(fmt.Sprintf(" viewLevel=%q", location.ViewLevel))
-	wb.WriteString(fmt.Sprintf(" x=%q", floats(location.X)))
-	wb.WriteString(fmt.Sprintf(" y=%q", floats(location.Y)))
+	wb.WriteString(fmt.Sprintf(" viewLevel=%s", xmlAttr(location.ViewLevel)))
+	wb.WriteString(fmt.Sprintf(" x=%s", xmlAttr(floats(location.X))))
+	wb.WriteString(fmt.Sprintf(" y=%s", xmlAttr(floats(location.Y))))
 	wb.WriteString(" />")
 	return nil
 }
@@ -428,27 +428,27 @@ func encodeLabels(labels []*wxx.Label_t, wb *bytes.Buffer) error {
 
 func encodeLabel(label *wxx.Label_t, wb *bytes.Buffer) error {
 	wb.WriteString("<label")
-	wb.WriteString(fmt.Sprintf("  mapLayer=%q", label.MapLayer))
-	wb.WriteString(fmt.Sprintf(" style=%q", label.Style))       // can be null!
-	wb.WriteString(fmt.Sprintf(" fontFace=%q", label.FontFace)) // can be null!
-	wb.WriteString(fmt.Sprintf(" color=%q", rgbas(label.Color)))
+	wb.WriteString(fmt.Sprintf("  mapLayer=%s", xmlAttr(label.MapLayer)))
+	wb.WriteString(fmt.Sprintf(" style=%s", xmlAttr(label.Style)))       // can be null!
+	wb.WriteString(fmt.Sprintf(" fontFace=%s", xmlAttr(label.FontFace))) // can be null!
+	wb.WriteString(fmt.Sprintf(" color=%s", xmlAttr(rgbas(label.Color))))
 	// todo: backgroundColor is sometimes not displayed when its value is "0.0,0.0,0.0,1.0".
 	// I may need to ask on the Inkwell Discord about this; I can't figure out the pattern.
 	// Until then, seems to be no harm in excluding it (other than noise in the diff).
 	if attr := rgbas(label.BackgroundColor); attr != "0.0,0.0,0.0,1.0" { // do not include if null
-		wb.WriteString(fmt.Sprintf(" backgroundColor=%q", attr))
+		wb.WriteString(fmt.Sprintf(" backgroundColor=%s", xmlAttr(attr)))
 	}
-	wb.WriteString(fmt.Sprintf(" outlineColor=%q", rgbas(label.OutlineColor)))
-	wb.WriteString(fmt.Sprintf(" outlineSize=%q", floats(label.OutlineSize)))
-	wb.WriteString(fmt.Sprintf(" rotate=%q", floats(label.Rotate)))
-	wb.WriteString(fmt.Sprintf(" isBold=%q", bools(label.IsBold)))
-	wb.WriteString(fmt.Sprintf(" isItalic=%q", bools(label.IsItalic)))
-	wb.WriteString(fmt.Sprintf(" isWorld=%q", bools(label.IsWorld)))
-	wb.WriteString(fmt.Sprintf(" isContinent=%q", bools(label.IsContinent)))
-	wb.WriteString(fmt.Sprintf(" isKingdom=%q", bools(label.IsKingdom)))
-	wb.WriteString(fmt.Sprintf(" isProvince=%q", bools(label.IsProvince)))
-	wb.WriteString(fmt.Sprintf(" isGMOnly=%q", bools(label.IsGMOnly)))
-	wb.WriteString(fmt.Sprintf(" tags=%q", label.Tags))
+	wb.WriteString(fmt.Sprintf(" outlineColor=%s", xmlAttr(rgbas(label.OutlineColor))))
+	wb.WriteString(fmt.Sprintf(" outlineSize=%s", xmlAttr(floats(label.OutlineSize))))
+	wb.WriteString(fmt.Sprintf(" rotate=%s", xmlAttr(floats(label.Rotate))))
+	wb.WriteString(fmt.Sprintf(" isBold=%s", xmlAttr(bools(label.IsBold))))
+	wb.WriteString(fmt.Sprintf(" isItalic=%s", xmlAttr(bools(label.IsItalic))))
+	wb.WriteString(fmt.Sprintf(" isWorld=%s", xmlAttr(bools(label.IsWorld))))
+	wb.WriteString(fmt.Sprintf(" isContinent=%s", xmlAttr(bools(label.IsContinent))))
+	wb.WriteString(fmt.Sprintf(" isKingdom=%s", xmlAttr(bools(label.IsKingdom))))
+	wb.WriteString(fmt.Sprintf(" isProvince=%s", xmlAttr(bools(label.IsProvince))))
+	wb.WriteString(fmt.Sprintf(" isGMOnly=%s", xmlAttr(bools(label.IsGMOnly))))
+	wb.WriteString(fmt.Sprintf(" tags=%s", xmlAttr(label.Tags)))
 	wb.WriteString(">")
 	if err := encodeLabelLocation(label.Location, wb); err != nil {
 		return err
@@ -462,10 +462,10 @@ func encodeLabel(label *wxx.Label_t, wb *bytes.Buffer) error {
 
 func encodeLabelLocation(location *wxx.LabelLocation_t, wb *bytes.Buffer) error {
 	wb.WriteString("<location")
-	wb.WriteString(fmt.Sprintf(" viewLevel=%q", location.ViewLevel))
-	wb.WriteString(fmt.Sprintf(" x=%q", floats(location.X)))
-	wb.WriteString(fmt.Sprintf(" y=%q", floats(location.Y)))
-	wb.WriteString(fmt.Sprintf(" scale=%q", floats(location.Scale)))
+	wb.WriteString(fmt.Sprintf(" viewLevel=%s", xmlAttr(location.ViewLevel)))
+	wb.WriteString(fmt.Sprintf(" x=%s", xmlAttr(floats(location.X))))
+	wb.WriteString(fmt.Sprintf(" y=%s", xmlAttr(floats(location.Y))))
+	wb.WriteString(fmt.Sprintf(" scale=%s", xmlAttr(floats(location.Scale))))
 	wb.WriteString(" />")
 	return nil
 }
@@ -626,15 +626,15 @@ func encodeTextConfig(textConfig *wxx.TextConfig_t, wb *bytes.Buffer) error {
 // classicDowngradeLoss.
 func encodeLabelStyle(labelStyle *wxx.LabelStyle_t, wb *bytes.Buffer) error {
 	wb.WriteString("<labelstyle")
-	wb.WriteString(fmt.Sprintf(" name=%q", labelStyle.Name))
-	wb.WriteString(fmt.Sprintf(" fontFace=%q", labelStyle.FontFace))
-	wb.WriteString(fmt.Sprintf(" scale=%q", floats(labelStyle.Scale)))
-	wb.WriteString(fmt.Sprintf(" isBold=%q", bools(labelStyle.IsBold)))
-	wb.WriteString(fmt.Sprintf(" isItalic=%q", bools(labelStyle.IsItalic)))
-	wb.WriteString(fmt.Sprintf("  color=%q", rgbas(labelStyle.Color)))                      // not nullable
-	wb.WriteString(fmt.Sprintf("  backgroundColor=%q", rgbans(labelStyle.BackgroundColor))) // nullable
-	wb.WriteString(fmt.Sprintf("  outlineSize=%q", floats(labelStyle.OutlineSize)))
-	wb.WriteString(fmt.Sprintf(" outlineColor=%q", rgbans(labelStyle.OutlineColor))) // nullable
+	wb.WriteString(fmt.Sprintf(" name=%s", xmlAttr(labelStyle.Name)))
+	wb.WriteString(fmt.Sprintf(" fontFace=%s", xmlAttr(labelStyle.FontFace)))
+	wb.WriteString(fmt.Sprintf(" scale=%s", xmlAttr(floats(labelStyle.Scale))))
+	wb.WriteString(fmt.Sprintf(" isBold=%s", xmlAttr(bools(labelStyle.IsBold))))
+	wb.WriteString(fmt.Sprintf(" isItalic=%s", xmlAttr(bools(labelStyle.IsItalic))))
+	wb.WriteString(fmt.Sprintf("  color=%s", xmlAttr(rgbas(labelStyle.Color))))                      // not nullable
+	wb.WriteString(fmt.Sprintf("  backgroundColor=%s", xmlAttr(rgbans(labelStyle.BackgroundColor)))) // nullable
+	wb.WriteString(fmt.Sprintf("  outlineSize=%s", xmlAttr(floats(labelStyle.OutlineSize))))
+	wb.WriteString(fmt.Sprintf(" outlineColor=%s", xmlAttr(rgbans(labelStyle.OutlineColor)))) // nullable
 	wb.WriteString(" />\n")
 	return nil
 }
@@ -652,33 +652,33 @@ func encodeShapeConfig(shapeConfig *wxx.ShapeConfig_t, wb *bytes.Buffer) error {
 
 func encodeShapeStyle(shapeStyle *wxx.ShapeStyle_t, wb *bytes.Buffer) error {
 	wb.WriteString("<shapestyle")
-	wb.WriteString(fmt.Sprintf(" name=%q", shapeStyle.Name))
-	wb.WriteString(fmt.Sprintf(" strokeType=%q", shapeStyle.StrokeType))
-	wb.WriteString(fmt.Sprintf(" isFractal=%q", bools(shapeStyle.IsFractal)))
-	wb.WriteString(fmt.Sprintf(" strokeWidth=%q", floats(shapeStyle.StrokeWidth)))
-	wb.WriteString(fmt.Sprintf(" opacity=%q", floats(shapeStyle.Opacity)))
-	wb.WriteString(fmt.Sprintf(" snapVertices=%q", bools(shapeStyle.SnapVertices)))
-	wb.WriteString(fmt.Sprintf(" tags=%q", shapeStyle.Tags))
-	wb.WriteString(fmt.Sprintf(" dropShadow=%q", bools(shapeStyle.DropShadow)))
-	wb.WriteString(fmt.Sprintf(" innerShadow=%q", bools(shapeStyle.InnerShadow)))
-	wb.WriteString(fmt.Sprintf(" boxBlur=%q", bools(shapeStyle.BoxBlur)))
-	wb.WriteString(fmt.Sprintf(" dsSpread=%q", floats(shapeStyle.DsSpread)))
-	wb.WriteString(fmt.Sprintf(" dsRadius=%q", floats(shapeStyle.DsRadius)))
-	wb.WriteString(fmt.Sprintf(" dsOffsetX=%q", floats(shapeStyle.DsOffsetX)))
-	wb.WriteString(fmt.Sprintf(" dsOffsetY=%q", floats(shapeStyle.DsOffsetY)))
-	wb.WriteString(fmt.Sprintf(" insChoke=%q", floats(shapeStyle.InsChoke)))
-	wb.WriteString(fmt.Sprintf(" insRadius=%q", floats(shapeStyle.InsRadius)))
-	wb.WriteString(fmt.Sprintf(" insOffsetX=%q", floats(shapeStyle.InsOffsetX)))
-	wb.WriteString(fmt.Sprintf(" insOffsetY=%q", floats(shapeStyle.InsOffsetY)))
-	wb.WriteString(fmt.Sprintf(" bbWidth=%q", floats(shapeStyle.BbWidth)))
-	wb.WriteString(fmt.Sprintf(" bbHeight=%q", floats(shapeStyle.BbHeight)))
-	wb.WriteString(fmt.Sprintf(" bbIterations=%q", ints(shapeStyle.BbIterations)))
-	wb.WriteString(fmt.Sprintf(" fillTexture=%q", shapeStyle.FillTexture))         // nullable
-	wb.WriteString(fmt.Sprintf(" strokeTexture=%q", shapeStyle.StrokeTexture))     // nullable
-	wb.WriteString(fmt.Sprintf("  strokePaint=%q", rgbas(shapeStyle.StrokePaint))) // not nullable
-	wb.WriteString(fmt.Sprintf("  fillPaint=%q", rgbans(shapeStyle.FillPaint)))    // nullable
-	wb.WriteString(fmt.Sprintf("  dscolor=%q", rgbans(shapeStyle.DsColor)))        // nullable
-	wb.WriteString(fmt.Sprintf("  insColor=%q", rgbans(shapeStyle.InsColor)))      // nullable
+	wb.WriteString(fmt.Sprintf(" name=%s", xmlAttr(shapeStyle.Name)))
+	wb.WriteString(fmt.Sprintf(" strokeType=%s", xmlAttr(shapeStyle.StrokeType)))
+	wb.WriteString(fmt.Sprintf(" isFractal=%s", xmlAttr(bools(shapeStyle.IsFractal))))
+	wb.WriteString(fmt.Sprintf(" strokeWidth=%s", xmlAttr(floats(shapeStyle.StrokeWidth))))
+	wb.WriteString(fmt.Sprintf(" opacity=%s", xmlAttr(floats(shapeStyle.Opacity))))
+	wb.WriteString(fmt.Sprintf(" snapVertices=%s", xmlAttr(bools(shapeStyle.SnapVertices))))
+	wb.WriteString(fmt.Sprintf(" tags=%s", xmlAttr(shapeStyle.Tags)))
+	wb.WriteString(fmt.Sprintf(" dropShadow=%s", xmlAttr(bools(shapeStyle.DropShadow))))
+	wb.WriteString(fmt.Sprintf(" innerShadow=%s", xmlAttr(bools(shapeStyle.InnerShadow))))
+	wb.WriteString(fmt.Sprintf(" boxBlur=%s", xmlAttr(bools(shapeStyle.BoxBlur))))
+	wb.WriteString(fmt.Sprintf(" dsSpread=%s", xmlAttr(floats(shapeStyle.DsSpread))))
+	wb.WriteString(fmt.Sprintf(" dsRadius=%s", xmlAttr(floats(shapeStyle.DsRadius))))
+	wb.WriteString(fmt.Sprintf(" dsOffsetX=%s", xmlAttr(floats(shapeStyle.DsOffsetX))))
+	wb.WriteString(fmt.Sprintf(" dsOffsetY=%s", xmlAttr(floats(shapeStyle.DsOffsetY))))
+	wb.WriteString(fmt.Sprintf(" insChoke=%s", xmlAttr(floats(shapeStyle.InsChoke))))
+	wb.WriteString(fmt.Sprintf(" insRadius=%s", xmlAttr(floats(shapeStyle.InsRadius))))
+	wb.WriteString(fmt.Sprintf(" insOffsetX=%s", xmlAttr(floats(shapeStyle.InsOffsetX))))
+	wb.WriteString(fmt.Sprintf(" insOffsetY=%s", xmlAttr(floats(shapeStyle.InsOffsetY))))
+	wb.WriteString(fmt.Sprintf(" bbWidth=%s", xmlAttr(floats(shapeStyle.BbWidth))))
+	wb.WriteString(fmt.Sprintf(" bbHeight=%s", xmlAttr(floats(shapeStyle.BbHeight))))
+	wb.WriteString(fmt.Sprintf(" bbIterations=%s", xmlAttr(ints(shapeStyle.BbIterations))))
+	wb.WriteString(fmt.Sprintf(" fillTexture=%s", xmlAttr(shapeStyle.FillTexture)))         // nullable
+	wb.WriteString(fmt.Sprintf(" strokeTexture=%s", xmlAttr(shapeStyle.StrokeTexture)))     // nullable
+	wb.WriteString(fmt.Sprintf("  strokePaint=%s", xmlAttr(rgbas(shapeStyle.StrokePaint)))) // not nullable
+	wb.WriteString(fmt.Sprintf("  fillPaint=%s", xmlAttr(rgbans(shapeStyle.FillPaint))))    // nullable
+	wb.WriteString(fmt.Sprintf("  dscolor=%s", xmlAttr(rgbans(shapeStyle.DsColor))))        // nullable
+	wb.WriteString(fmt.Sprintf("  insColor=%s", xmlAttr(rgbans(shapeStyle.InsColor))))      // nullable
 	wb.WriteString(" />\n")
 	return nil
 }
@@ -816,4 +816,49 @@ func terrainMapToSlice(data map[string]int) []string {
 func encodeInnerText(input string) string {
 	escaped := html.EscapeString(input) // Escapes < > & "
 	return strings.ReplaceAll(escaped, "\n", "&#10;")
+}
+
+// xmlAttr renders s as a double-quoted XML attribute value (issue #71).
+//
+// Every attribute the encoder writes goes through this. It replaced fmt's %q,
+// which produces a Go string literal, not XML: it wrote & and < raw, which is
+// not well-formed, and " as \", which ends the attribute early, so any user
+// text containing them made a file that was not XML. It also wrote tab and
+// newline as the two characters \t and \n, silently changing the value.
+//
+// The five markup characters are written as entities, and tab, newline and
+// carriage return as character references, because a parser normalizes those
+// characters to a space when it reads them raw from an attribute value.
+//
+// Unlike the W2025 codec's xmlAttr, every character above ASCII is also written
+// as a decimal character reference, because that is what classic Worldographer
+// does: every non-ASCII attribute character in the classic samples is spelled
+// that way (title="Ur&#250;vion", "Fabi&#225;n") and none is written raw.
+//
+// Known limit: classic files declare XML 1.0, which has no representation at
+// all for the other C0 control characters. They are written as character
+// references anyway, which an XML 1.0 parser rejects; there is no correct
+// spelling to choose, and user text that contains them is not expected.
+func xmlAttr(s string) string {
+	var b strings.Builder
+	b.Grow(len(s) + 2)
+	b.WriteByte('"')
+	for _, r := range s {
+		switch {
+		case r == '&':
+			b.WriteString("&amp;")
+		case r == '<':
+			b.WriteString("&lt;")
+		case r == '>':
+			b.WriteString("&gt;")
+		case r == '"':
+			b.WriteString("&quot;")
+		case r < 0x20 || r >= 0x7f:
+			fmt.Fprintf(&b, "&#%d;", r)
+		default:
+			b.WriteRune(r)
+		}
+	}
+	b.WriteByte('"')
+	return b.String()
 }

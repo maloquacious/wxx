@@ -105,27 +105,27 @@ func encodeFeatures(features []*wxx.Feature_t, wb *bytes.Buffer) error {
 
 func encodeFeature(feature *wxx.Feature_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf("<feature"))
-	wb.WriteString(fmt.Sprintf(" type=%q", feature.Type))
-	wb.WriteString(fmt.Sprintf(" rotate=%q", floats(feature.Rotate)))
-	wb.WriteString(fmt.Sprintf(" uuid=%q", feature.Uuid))
-	wb.WriteString(fmt.Sprintf(" mapLayer=%q", feature.MapLayer))
-	wb.WriteString(fmt.Sprintf(" isFlipHorizontal=%q", bools(feature.IsFlipHorizontal)))
-	wb.WriteString(fmt.Sprintf(" isFlipVertical=%q", bools(feature.IsFlipVertical)))
-	wb.WriteString(fmt.Sprintf(" scale=%q", floats(feature.Scale)))
-	wb.WriteString(fmt.Sprintf(" scaleHt=%q", floats(feature.ScaleHt)))
-	wb.WriteString(fmt.Sprintf(" tags=%q", feature.Tags))
-	wb.WriteString(fmt.Sprintf(" color=%q", rgbans(feature.Color))) // nullable
-	wb.WriteString(fmt.Sprintf(" ringcolor=%q", rgbans(feature.RingColor)))
-	wb.WriteString(fmt.Sprintf(" isGMOnly=%q", bools(feature.IsGMOnly)))
-	wb.WriteString(fmt.Sprintf(" isPlaceFreely=%q", bools(feature.IsPlaceFreely)))
-	wb.WriteString(fmt.Sprintf(" labelPosition=%q", feature.LabelPosition))
-	wb.WriteString(fmt.Sprintf(" labelDistance=%q", ints(feature.LabelDistance)))
-	wb.WriteString(fmt.Sprintf(" isWorld=%q", bools(feature.IsWorld)))
-	wb.WriteString(fmt.Sprintf(" isContinent=%q", bools(feature.IsContinent)))
-	wb.WriteString(fmt.Sprintf(" isKingdom=%q", bools(feature.IsKingdom)))
-	wb.WriteString(fmt.Sprintf(" isProvince=%q", bools(feature.IsProvince)))
-	wb.WriteString(fmt.Sprintf(" isFillHexBottom=%q", bools(feature.IsFillHexBottom)))
-	wb.WriteString(fmt.Sprintf(" isHideTerrainIcon=%q", bools(feature.IsHideTerrainIcon)))
+	wb.WriteString(fmt.Sprintf(" type=%s", xmlAttr(feature.Type)))
+	wb.WriteString(fmt.Sprintf(" rotate=%s", xmlAttr(floats(feature.Rotate))))
+	wb.WriteString(fmt.Sprintf(" uuid=%s", xmlAttr(feature.Uuid)))
+	wb.WriteString(fmt.Sprintf(" mapLayer=%s", xmlAttr(feature.MapLayer)))
+	wb.WriteString(fmt.Sprintf(" isFlipHorizontal=%s", xmlAttr(bools(feature.IsFlipHorizontal))))
+	wb.WriteString(fmt.Sprintf(" isFlipVertical=%s", xmlAttr(bools(feature.IsFlipVertical))))
+	wb.WriteString(fmt.Sprintf(" scale=%s", xmlAttr(floats(feature.Scale))))
+	wb.WriteString(fmt.Sprintf(" scaleHt=%s", xmlAttr(floats(feature.ScaleHt))))
+	wb.WriteString(fmt.Sprintf(" tags=%s", xmlAttr(feature.Tags)))
+	wb.WriteString(fmt.Sprintf(" color=%s", xmlAttr(rgbans(feature.Color)))) // nullable
+	wb.WriteString(fmt.Sprintf(" ringcolor=%s", xmlAttr(rgbans(feature.RingColor))))
+	wb.WriteString(fmt.Sprintf(" isGMOnly=%s", xmlAttr(bools(feature.IsGMOnly))))
+	wb.WriteString(fmt.Sprintf(" isPlaceFreely=%s", xmlAttr(bools(feature.IsPlaceFreely))))
+	wb.WriteString(fmt.Sprintf(" labelPosition=%s", xmlAttr(feature.LabelPosition)))
+	wb.WriteString(fmt.Sprintf(" labelDistance=%s", xmlAttr(ints(feature.LabelDistance))))
+	wb.WriteString(fmt.Sprintf(" isWorld=%s", xmlAttr(bools(feature.IsWorld))))
+	wb.WriteString(fmt.Sprintf(" isContinent=%s", xmlAttr(bools(feature.IsContinent))))
+	wb.WriteString(fmt.Sprintf(" isKingdom=%s", xmlAttr(bools(feature.IsKingdom))))
+	wb.WriteString(fmt.Sprintf(" isProvince=%s", xmlAttr(bools(feature.IsProvince))))
+	wb.WriteString(fmt.Sprintf(" isFillHexBottom=%s", xmlAttr(bools(feature.IsFillHexBottom))))
+	wb.WriteString(fmt.Sprintf(" isHideTerrainIcon=%s", xmlAttr(bools(feature.IsHideTerrainIcon))))
 	wb.WriteString(">")
 	if feature.Location != nil {
 		if err := encodeFeatureLocation(feature.Location, wb); err != nil {
@@ -143,9 +143,9 @@ func encodeFeature(feature *wxx.Feature_t, wb *bytes.Buffer) error {
 
 func encodeFeatureLocation(location *wxx.FeatureLocation_t, wb *bytes.Buffer) error {
 	wb.WriteString("<location")
-	wb.WriteString(fmt.Sprintf(" viewLevel=%q", location.ViewLevel))
-	wb.WriteString(fmt.Sprintf(" x=%q", floats(location.X)))
-	wb.WriteString(fmt.Sprintf(" y=%q", floats(location.Y)))
+	wb.WriteString(fmt.Sprintf(" viewLevel=%s", xmlAttr(location.ViewLevel)))
+	wb.WriteString(fmt.Sprintf(" x=%s", xmlAttr(floats(location.X))))
+	wb.WriteString(fmt.Sprintf(" y=%s", xmlAttr(floats(location.Y))))
 	wb.WriteString(" />")
 	return nil
 }

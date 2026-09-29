@@ -33,12 +33,12 @@ func encodeBlurTerrainBG(blurTerrainBG *wxx.BlurTerrainBG_t, wb *bytes.Buffer) e
 		return nil
 	}
 	wb.WriteString("<blurTerrainBG")
-	wb.WriteString(fmt.Sprintf(" blur=%q", bools(blurTerrainBG.Blur)))
-	wb.WriteString(fmt.Sprintf(" topBleed=%q", floats(blurTerrainBG.TopBleed)))
-	wb.WriteString(fmt.Sprintf(" bottomBleed=%q", floats(blurTerrainBG.BottomBleed)))
-	wb.WriteString(fmt.Sprintf(" randomness=%q", floats(blurTerrainBG.Randomness)))
-	wb.WriteString(fmt.Sprintf(" blurStart=%q", floats(blurTerrainBG.BlurStart)))
-	wb.WriteString(fmt.Sprintf(" blurEnd=%q", floats(blurTerrainBG.BlurEnd)))
+	wb.WriteString(fmt.Sprintf(" blur=%s", xmlAttr(bools(blurTerrainBG.Blur))))
+	wb.WriteString(fmt.Sprintf(" topBleed=%s", xmlAttr(floats(blurTerrainBG.TopBleed))))
+	wb.WriteString(fmt.Sprintf(" bottomBleed=%s", xmlAttr(floats(blurTerrainBG.BottomBleed))))
+	wb.WriteString(fmt.Sprintf(" randomness=%s", xmlAttr(floats(blurTerrainBG.Randomness))))
+	wb.WriteString(fmt.Sprintf(" blurStart=%s", xmlAttr(floats(blurTerrainBG.BlurStart))))
+	wb.WriteString(fmt.Sprintf(" blurEnd=%s", xmlAttr(floats(blurTerrainBG.BlurEnd))))
 	wb.WriteString("/>\n")
 	return nil
 }
