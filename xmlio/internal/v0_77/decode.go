@@ -481,40 +481,7 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 
 	w.Informations = &wxx.Informations_t{}
 	for _, info := range m.Informations.Informations {
-		wInfo := &wxx.Information_t{
-			Uuid:         info.Uuid,
-			Type:         info.Type,
-			Title:        info.Title,
-			Rulers:       info.Rulers,
-			Government:   info.Government,
-			Cultures:     info.Cultures,
-			Language:     info.Language,
-			ReligionType: info.ReligionType,
-			Culture:      info.Culture,
-			HolySymbol:   info.HolySymbol,
-			Domains:      info.Domains,
-			InnerText:    info.InnerText,
-		}
-
-		for _, detail := range info.Details {
-			wDetail := &wxx.InformationDetail_t{
-				Uuid:         detail.Uuid,
-				Type:         detail.Type,
-				Title:        detail.Title,
-				Rulers:       detail.Rulers,
-				Government:   detail.Government,
-				Cultures:     detail.Cultures,
-				Language:     detail.Language,
-				ReligionType: detail.ReligionType,
-				Culture:      detail.Culture,
-				HolySymbol:   detail.HolySymbol,
-				Domains:      detail.Domains,
-				InnerText:    detail.InnerText,
-			}
-			wInfo.Details = append(wInfo.Details, wDetail)
-		}
-
-		w.Informations.Informations = append(w.Informations.Informations, wInfo)
+		w.Informations.Informations = append(w.Informations.Informations, decodeInformation(info))
 	}
 	w.Informations.InnerText = m.Informations.InnerText
 
@@ -609,4 +576,30 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	}
 
 	return w, nil
+}
+
+// decodeInformation copies one <information> and, recursively, every entry
+// nested inside it (issue #69). The classic encoder does not write the lore
+// tree yet (COVERAGE.md), but the decoder should not cap its depth: classic
+// samples nest it three deep, and a two-level copy would silently lose the
+// third level the day the encoder learns to write it.
+func decodeInformation(info Information_t) *wxx.Information_t {
+	wInfo := &wxx.Information_t{
+		Uuid:         info.Uuid,
+		Type:         info.Type,
+		Title:        info.Title,
+		Rulers:       info.Rulers,
+		Government:   info.Government,
+		Cultures:     info.Cultures,
+		Language:     info.Language,
+		ReligionType: info.ReligionType,
+		Culture:      info.Culture,
+		HolySymbol:   info.HolySymbol,
+		Domains:      info.Domains,
+		InnerText:    info.InnerText,
+	}
+	for _, detail := range info.Details {
+		wInfo.Details = append(wInfo.Details, decodeInformation(detail))
+	}
+	return wInfo
 }

@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
-	"regexp"
 	"testing"
 
 	"github.com/maloquacious/wxx/xmlio"
@@ -20,48 +19,6 @@ import (
 var loreAttrs = map[string]bool{
 	"rulers": true, "government": true, "cultures": true, "language": true,
 	"religionType": true, "culture": true, "holySymbol": true, "domains": true,
-}
-
-// informationTag matches an <information> start tag, an end tag, or an empty
-// element, so shallowInformation can track nesting depth.
-var informationTag = regexp.MustCompile(`<(/?)information(\s[^>]*)?(/?)>`)
-
-// shallowInformation returns doc with every <information> element nested deeper
-// than maxDepth removed, start tag through end tag.
-//
-// It exists only because of issue #69: Map_t models two levels of <information>
-// and real files carry three, so the third level is lost on decode. This test
-// is about #66, which is attributes, not depth; it compares the levels Map_t
-// models and leaves the missing level to #69. Fixing #69 means deleting this
-// function and its two calls, and the test must then still pass.
-func shallowInformation(doc []byte, maxDepth int) []byte {
-	var out []byte
-	depth, last, cutFrom := 0, 0, -1
-	for _, loc := range informationTag.FindAllSubmatchIndex(doc, -1) {
-		closing := loc[3] > loc[2]
-		empty := loc[7] > loc[6]
-		switch {
-		case closing:
-			if depth == maxDepth+1 && cutFrom >= 0 {
-				out = append(out, doc[last:cutFrom]...)
-				last, cutFrom = loc[1], -1
-			}
-			depth--
-		default:
-			depth++
-			if depth == maxDepth+1 && cutFrom < 0 {
-				cutFrom = loc[0]
-			}
-			if empty {
-				if depth == maxDepth+1 {
-					out = append(out, doc[last:cutFrom]...)
-					last, cutFrom = loc[1], -1
-				}
-				depth--
-			}
-		}
-	}
-	return append(out, doc[last:]...)
 }
 
 // TestW2025InformationAttrsMatchSource asserts that the W2025 encoder writes
@@ -79,8 +36,9 @@ func shallowInformation(doc []byte, maxDepth int) []byte {
 // fixtures state both shapes, and the vacuity checks at the bottom insist they
 // keep doing so.
 //
-// Only the first two levels of nesting are compared, until issue #69 is fixed;
-// see shallowInformation.
+// Every <information> is compared, at every depth. Real files nest three deep,
+// and until issue #69 the third level was lost on decode; the element-count
+// check in compareStartTags is what holds that fixed.
 func TestW2025InformationAttrsMatchSource(t *testing.T) {
 	type pair struct{ in, out []byte }
 	cases := map[string]func(t *testing.T) pair{}
@@ -128,8 +86,8 @@ func TestW2025InformationAttrsMatchSource(t *testing.T) {
 	for name, load := range cases {
 		t.Run(name, func(t *testing.T) {
 			docs := load(t)
-			in := startTagAttrs(shallowInformation(docs.in, 2), "information")
-			out := startTagAttrs(shallowInformation(docs.out, 2), "information")
+			in := startTagAttrs(docs.in, "information")
+			out := startTagAttrs(docs.out, "information")
 			compareStartTags(t, name, "information", in, out)
 
 			// The regression is pinned only if the fixture states both shapes.

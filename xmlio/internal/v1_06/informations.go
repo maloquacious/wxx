@@ -9,47 +9,38 @@ import (
 	"github.com/maloquacious/wxx"
 )
 
-// decodeInformations copies the <informations> tree (including nested
-// <information> detail children) into the domain map.
+// decodeInformations copies the <informations> tree into the domain map,
+// every level of nested <information> included.
 func decodeInformations(src Informations_t, w *wxx.Map_t) {
 	w.Informations = &wxx.Informations_t{}
 	for _, info := range src.Informations {
-		wInfo := &wxx.Information_t{
-			Uuid:         info.Uuid,
-			Type:         info.Type,
-			Title:        info.Title,
-			Rulers:       info.Rulers,
-			Government:   info.Government,
-			Cultures:     info.Cultures,
-			Language:     info.Language,
-			ReligionType: info.ReligionType,
-			Culture:      info.Culture,
-			HolySymbol:   info.HolySymbol,
-			Domains:      info.Domains,
-			InnerText:    info.InnerText,
-		}
-
-		for _, detail := range info.Details {
-			wDetail := &wxx.InformationDetail_t{
-				Uuid:         detail.Uuid,
-				Type:         detail.Type,
-				Title:        detail.Title,
-				Rulers:       detail.Rulers,
-				Government:   detail.Government,
-				Cultures:     detail.Cultures,
-				Language:     detail.Language,
-				ReligionType: detail.ReligionType,
-				Culture:      detail.Culture,
-				HolySymbol:   detail.HolySymbol,
-				Domains:      detail.Domains,
-				InnerText:    detail.InnerText,
-			}
-			wInfo.Details = append(wInfo.Details, wDetail)
-		}
-
-		w.Informations.Informations = append(w.Informations.Informations, wInfo)
+		w.Informations.Informations = append(w.Informations.Informations, decodeInformation(info))
 	}
 	w.Informations.InnerText = src.InnerText
+}
+
+// decodeInformation copies one <information> and, recursively, every entry
+// nested inside it. It used to copy two levels and stop, which dropped the
+// third level -- every god in every pantheon -- on decode (issue #69).
+func decodeInformation(info Information_t) *wxx.Information_t {
+	wInfo := &wxx.Information_t{
+		Uuid:         info.Uuid,
+		Type:         info.Type,
+		Title:        info.Title,
+		Rulers:       info.Rulers,
+		Government:   info.Government,
+		Cultures:     info.Cultures,
+		Language:     info.Language,
+		ReligionType: info.ReligionType,
+		Culture:      info.Culture,
+		HolySymbol:   info.HolySymbol,
+		Domains:      info.Domains,
+		InnerText:    info.InnerText,
+	}
+	for _, detail := range info.Details {
+		wInfo.Details = append(wInfo.Details, decodeInformation(detail))
+	}
+	return wInfo
 }
 
 func encodeInformations(informations *wxx.Informations_t, wb *bytes.Buffer) error {
@@ -82,34 +73,16 @@ func encodeInformation(information *wxx.Information_t, wb *bytes.Buffer) error {
 	encodeLoreAttr(wb, "holySymbol", information.HolySymbol)
 	encodeLoreAttr(wb, "domains", information.Domains)
 	wb.WriteString(">")
-	// Emit this element's chardata first, then its <information> detail children
+	// Emit this element's chardata first, then its nested <information> children
 	// back-to-back with no surrounding whitespace, so on re-decode this element's
-	// chardata is exactly information.InnerText.
+	// chardata is exactly information.InnerText. The children are written by this
+	// same function, so the tree is written to whatever depth it has.
 	wb.WriteString(encodeInnerText(information.InnerText))
 	for _, detail := range information.Details {
-		if err := encodeInformationDetail(detail, wb); err != nil {
+		if err := encodeInformation(detail, wb); err != nil {
 			return err
 		}
 	}
-	wb.WriteString("</information>")
-	return nil
-}
-
-func encodeInformationDetail(detail *wxx.InformationDetail_t, wb *bytes.Buffer) error {
-	wb.WriteString("<information")
-	wb.WriteString(fmt.Sprintf(" uuid=%s", xmlAttr(detail.Uuid)))
-	wb.WriteString(fmt.Sprintf(" type=%s", xmlAttr(detail.Type)))
-	wb.WriteString(fmt.Sprintf(" title=%s", xmlAttr(detail.Title)))
-	encodeLoreAttr(wb, "rulers", detail.Rulers)
-	encodeLoreAttr(wb, "government", detail.Government)
-	encodeLoreAttr(wb, "cultures", detail.Cultures)
-	encodeLoreAttr(wb, "language", detail.Language)
-	encodeLoreAttr(wb, "religionType", detail.ReligionType)
-	encodeLoreAttr(wb, "culture", detail.Culture)
-	encodeLoreAttr(wb, "holySymbol", detail.HolySymbol)
-	encodeLoreAttr(wb, "domains", detail.Domains)
-	wb.WriteString(">")
-	wb.WriteString(encodeInnerText(detail.InnerText))
 	wb.WriteString("</information>")
 	return nil
 }
