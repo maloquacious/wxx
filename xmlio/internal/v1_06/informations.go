@@ -73,14 +73,14 @@ func encodeInformation(information *wxx.Information_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(" uuid=%q", information.Uuid))
 	wb.WriteString(fmt.Sprintf(" type=%q", information.Type))
 	wb.WriteString(fmt.Sprintf(" title=%q", information.Title))
-	wb.WriteString(fmt.Sprintf(" rulers=%q", information.Rulers))
-	wb.WriteString(fmt.Sprintf(" government=%q", information.Government))
-	wb.WriteString(fmt.Sprintf(" cultures=%q", information.Cultures))
-	wb.WriteString(fmt.Sprintf(" language=%q", information.Language))
-	wb.WriteString(fmt.Sprintf(" religionType=%q", information.ReligionType))
-	wb.WriteString(fmt.Sprintf(" culture=%q", information.Culture))
-	wb.WriteString(fmt.Sprintf(" holySymbol=%q", information.HolySymbol))
-	wb.WriteString(fmt.Sprintf(" domains=%q", information.Domains))
+	encodeLoreAttr(wb, "rulers", information.Rulers)
+	encodeLoreAttr(wb, "government", information.Government)
+	encodeLoreAttr(wb, "cultures", information.Cultures)
+	encodeLoreAttr(wb, "language", information.Language)
+	encodeLoreAttr(wb, "religionType", information.ReligionType)
+	encodeLoreAttr(wb, "culture", information.Culture)
+	encodeLoreAttr(wb, "holySymbol", information.HolySymbol)
+	encodeLoreAttr(wb, "domains", information.Domains)
 	wb.WriteString(">")
 	// Emit this element's chardata first, then its <information> detail children
 	// back-to-back with no surrounding whitespace, so on re-decode this element's
@@ -100,16 +100,28 @@ func encodeInformationDetail(detail *wxx.InformationDetail_t, wb *bytes.Buffer) 
 	wb.WriteString(fmt.Sprintf(" uuid=%q", detail.Uuid))
 	wb.WriteString(fmt.Sprintf(" type=%q", detail.Type))
 	wb.WriteString(fmt.Sprintf(" title=%q", detail.Title))
-	wb.WriteString(fmt.Sprintf(" rulers=%q", detail.Rulers))
-	wb.WriteString(fmt.Sprintf(" government=%q", detail.Government))
-	wb.WriteString(fmt.Sprintf(" cultures=%q", detail.Cultures))
-	wb.WriteString(fmt.Sprintf(" language=%q", detail.Language))
-	wb.WriteString(fmt.Sprintf(" religionType=%q", detail.ReligionType))
-	wb.WriteString(fmt.Sprintf(" culture=%q", detail.Culture))
-	wb.WriteString(fmt.Sprintf(" holySymbol=%q", detail.HolySymbol))
-	wb.WriteString(fmt.Sprintf(" domains=%q", detail.Domains))
+	encodeLoreAttr(wb, "rulers", detail.Rulers)
+	encodeLoreAttr(wb, "government", detail.Government)
+	encodeLoreAttr(wb, "cultures", detail.Cultures)
+	encodeLoreAttr(wb, "language", detail.Language)
+	encodeLoreAttr(wb, "religionType", detail.ReligionType)
+	encodeLoreAttr(wb, "culture", detail.Culture)
+	encodeLoreAttr(wb, "holySymbol", detail.HolySymbol)
+	encodeLoreAttr(wb, "domains", detail.Domains)
 	wb.WriteString(">")
 	wb.WriteString(encodeInnerText(detail.InnerText))
 	wb.WriteString("</information>")
 	return nil
+}
+
+// encodeLoreAttr writes one of the eight optional lore attributes, and only if
+// the source stated it (issue #66). nil means the source did not; a pointer to
+// "" means it stated the attribute empty, and that is written back as "".
+// Gating on the value instead would drop the domains="" Worldographer writes on
+// every Religion entry.
+func encodeLoreAttr(wb *bytes.Buffer, name string, value *string) {
+	if value == nil {
+		return
+	}
+	wb.WriteString(fmt.Sprintf(" %s=%q", name, *value))
 }
