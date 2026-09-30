@@ -104,13 +104,18 @@ func decodeConfiguration(src Configuration_t, w *wxx.Map_t) error {
 			if wShapeStyle.StrokePaint, err = decodeRgba(mShapeStyle.StrokePaint); err != nil {
 				return fmt.Errorf("shapeStyle.strokePaint: %w", err)
 			}
-			if wShapeStyle.FillPaint, err = decodeRgba(mShapeStyle.FillPaint); err != nil {
+			// fillPaint, dscolor and insColor are "null" or an RGBA, and an
+			// opaque black must not come back as "null" (issue #99), so they
+			// decode like labelstyle's backgroundColor and encode with
+			// rgbaOrNull. strokePaint is never "null" and keeps decodeRgba:
+			// rgbas writes its nil back as black, so the fold is lossless there.
+			if wShapeStyle.FillPaint, err = decodeZeroableRgba(mShapeStyle.FillPaint); err != nil {
 				return fmt.Errorf("shapeStyle.fillPaint: %w", err)
 			}
-			if wShapeStyle.DsColor, err = decodeRgba(mShapeStyle.Dscolor); err != nil {
+			if wShapeStyle.DsColor, err = decodeZeroableRgba(mShapeStyle.Dscolor); err != nil {
 				return fmt.Errorf("shapeStyle.dsColor: %w", err)
 			}
-			if wShapeStyle.InsColor, err = decodeRgba(mShapeStyle.InsColor); err != nil {
+			if wShapeStyle.InsColor, err = decodeZeroableRgba(mShapeStyle.InsColor); err != nil {
 				return fmt.Errorf("shapeStyle.insColor: %w", err)
 			}
 			w.Configuration.ShapeConfig.ShapeStyles = append(w.Configuration.ShapeConfig.ShapeStyles, wShapeStyle)
@@ -268,12 +273,12 @@ func encodeShapeStyle(shapeStyle *wxx.ShapeStyle_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(" bbWidth=%s", xmlAttr(floats(shapeStyle.BbWidth))))
 	wb.WriteString(fmt.Sprintf(" bbHeight=%s", xmlAttr(floats(shapeStyle.BbHeight))))
 	wb.WriteString(fmt.Sprintf(" bbIterations=%s", xmlAttr(ints(shapeStyle.BbIterations))))
-	wb.WriteString(fmt.Sprintf(" fillTexture=%s", xmlAttr(shapeStyle.FillTexture)))         // nullable
-	wb.WriteString(fmt.Sprintf(" strokeTexture=%s", xmlAttr(shapeStyle.StrokeTexture)))     // nullable
-	wb.WriteString(fmt.Sprintf("  strokePaint=%s", xmlAttr(rgbas(shapeStyle.StrokePaint)))) // not nullable
-	wb.WriteString(fmt.Sprintf("  fillPaint=%s", xmlAttr(rgbans(shapeStyle.FillPaint))))    // nullable
-	wb.WriteString(fmt.Sprintf("  dscolor=%s", xmlAttr(rgbans(shapeStyle.DsColor))))        // nullable
-	wb.WriteString(fmt.Sprintf("  insColor=%s", xmlAttr(rgbans(shapeStyle.InsColor))))      // nullable
+	wb.WriteString(fmt.Sprintf(" fillTexture=%s", xmlAttr(shapeStyle.FillTexture)))          // nullable
+	wb.WriteString(fmt.Sprintf(" strokeTexture=%s", xmlAttr(shapeStyle.StrokeTexture)))      // nullable
+	wb.WriteString(fmt.Sprintf("  strokePaint=%s", xmlAttr(rgbas(shapeStyle.StrokePaint))))  // not nullable
+	wb.WriteString(fmt.Sprintf("  fillPaint=%s", xmlAttr(rgbaOrNull(shapeStyle.FillPaint)))) // nullable
+	wb.WriteString(fmt.Sprintf("  dscolor=%s", xmlAttr(rgbaOrNull(shapeStyle.DsColor))))     // nullable
+	wb.WriteString(fmt.Sprintf("  insColor=%s", xmlAttr(rgbaOrNull(shapeStyle.InsColor))))   // nullable
 	wb.WriteString(fmt.Sprintf(" lineCap=%s", xmlAttr(shapeStyle.LineCap)))
 	wb.WriteString(fmt.Sprintf(" lineJoin=%s", xmlAttr(shapeStyle.LineJoin)))
 	wb.WriteString(" />\n")

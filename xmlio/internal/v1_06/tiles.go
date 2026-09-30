@@ -129,8 +129,10 @@ func decodeTiles(src Tiles_t, mapKeySrc MapKey_t, w *wxx.Map_t) error {
 				}
 			}
 			if len(values) == 7 || len(values) == 12 {
-				// split rgba
-				if t.CustomBackgroundColor, err = decodeRgba(values[len(values)-1]); err != nil {
+				// split rgba. The column is present only when the tile has a
+				// custom background, so an opaque black here is a colour; nil
+				// would drop the column on encode (issue #99).
+				if t.CustomBackgroundColor, err = decodeZeroableRgba(values[len(values)-1]); err != nil {
 					return fmt.Errorf("value: rgba: %w", err)
 				}
 			}

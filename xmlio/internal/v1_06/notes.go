@@ -37,7 +37,8 @@ func decodeNotes(src Notes_t, w *wxx.Map_t) error {
 			Title:             note.Title,
 			NoteText:          note.NoteText,
 		}
-		if wNote.Color, err = decodeRgba(note.Color); err != nil {
+		// Opaque black is a colour, not "null" (issue #99); see decodeFeatures.
+		if wNote.Color, err = decodeZeroableRgba(note.Color); err != nil {
 			return fmt.Errorf("note.color: %w", err)
 		}
 		if note.Location != nil {
@@ -106,7 +107,7 @@ func encodeNote(note *wxx.Note_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(" originalViewLevel=%s", xmlAttr(note.OriginalViewLevel)))
 	wb.WriteString(fmt.Sprintf(" filename=%s", xmlAttr(note.Filename)))
 	wb.WriteString(fmt.Sprintf(" parent=%s", xmlAttr(note.Parent)))
-	wb.WriteString(fmt.Sprintf(" color=%s", xmlAttr(rgbans(note.Color)))) // decodeRgba
+	wb.WriteString(fmt.Sprintf(" color=%s", xmlAttr(rgbaOrNull(note.Color)))) // decodeZeroableRgba
 	wb.WriteString(fmt.Sprintf(" isWorld=%s", xmlAttr(bools(note.IsWorld))))
 	wb.WriteString(fmt.Sprintf(" isContinent=%s", xmlAttr(bools(note.IsContinent))))
 	wb.WriteString(fmt.Sprintf(" isKingdom=%s", xmlAttr(bools(note.IsKingdom))))
