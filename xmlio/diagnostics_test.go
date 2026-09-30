@@ -32,7 +32,7 @@ func TestDecoderDiagnostics_HeaderAndDataSplit(t *testing.T) {
 		path string
 	}{
 		// Both codecs, because #51 reproduced identically on each.
-		{"w2025 2.06 layers", "../testdata/2025-2.06-13x11-941577-layers.wxx"},
+		{"w2025 2.06 layers beta", "../testdata/2025-2.06-13x11-941577-layers-beta.wxx"},
 		{"classic 1.77 blank", "../testdata/blank-2017-1.77-1.0.wxx"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

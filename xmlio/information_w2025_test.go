@@ -45,7 +45,7 @@ func TestW2025InformationAttrsMatchSource(t *testing.T) {
 
 	for _, fixture := range []string{
 		"2025-2.06-13x11-941577-blank.wxx",
-		"2025-2.06-13x11-941577-layers.wxx",
+		"2025-2.06-13x11-941577-layers-beta.wxx",
 	} {
 		cases[fixture] = func(t *testing.T) pair {
 			path := filepath.Join("..", "testdata", fixture)

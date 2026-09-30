@@ -29,12 +29,19 @@ var extraTerrainElement = regexp.MustCompile(`(?s)<extraTerrain>.*?</extraTerrai
 // encoder's layout together lose nothing -- names, order, values, spelling
 // ("225.0,150.0", "Z", "false") and whitespace. Byte equality is affordable here
 // because every sample lays the element out the same way.
+//
+// Every sample is encoded as 2.06, including the 2.07 and 2.08 ones: 2.06 is
+// the only W2025 target registered until issue #73 adds theirs. All three write
+// <extraTerrain> the same way, so the comparison still holds.
 func TestW2025ExtraTerrainMatchesSource(t *testing.T) {
 	type pair struct{ in, out []byte }
 	cases := map[string]func(t *testing.T) pair{}
 	for _, fixture := range []string{
 		"2025-2.06-13x11-941577-blank.wxx",
+		"2025-2.06-13x11-941577-layers-beta.wxx",
 		"2025-2.06-13x11-941577-layers.wxx",
+		"2025-2.07-13x11-941577-layers.wxx",
+		"2025-2.08-13x11-941577-layers.wxx",
 	} {
 		cases[fixture] = func(t *testing.T) pair {
 			f, err := os.Open(filepath.Join("..", "testdata", fixture))
@@ -179,7 +186,7 @@ func TestW2025ExtraTerrainFractionalElevationRefused(t *testing.T) {
 // too. Each document is doctored from the layers fixture, so the only thing
 // wrong with it is the change under test.
 func TestW2025ExtraTerrainDecodeRefusals(t *testing.T) {
-	f, err := os.Open(sample2025_206Layers)
+	f, err := os.Open(sample2025_206LayersBeta)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}

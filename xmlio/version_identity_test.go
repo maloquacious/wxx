@@ -30,7 +30,7 @@ var versionIdentitySamples = []struct {
 	{"classic 1.74", "../testdata/blank-2017-1.74-1.0.wxx", "1.74", 1, 74, ""},
 	{"classic 1.77", "../testdata/blank-2017-1.77-1.0.wxx", "1.77", 1, 77, ""},
 	{"w2025 2.06 blank", sample2025_206, "2.06", 2, 6, "1.06"},
-	{"w2025 2.06 layers", sample2025_206Layers, "2.06", 2, 6, "1.06"},
+	{"w2025 2.06 layers beta", sample2025_206LayersBeta, "2.06", 2, 6, "1.06"},
 }
 
 // TestVersionIdentity asserts that decoding populates MetaData.Version with the
@@ -113,7 +113,7 @@ func TestVersionIdentityPaddingSurvivesDecode(t *testing.T) {
 		path string
 	}{
 		{"2.06/1.06 blank", sample2025_206},
-		{"2.06/1.06 layers", sample2025_206Layers},
+		{"2.06/1.06 layers", sample2025_206LayersBeta},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			m, err := decodeFile(t, tc.path)
