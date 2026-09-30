@@ -321,3 +321,98 @@ func TestW2025DecodeRejectsDecimalInIntegerAttribute(t *testing.T) {
 		t.Errorf("v1_06.Decode: err = %q, want it to name the attribute and the value", got)
 	}
 }
+
+// TestClassicIntegerAttributeSpelling is TestW2025IntegerAttributeSpelling for
+// the classic codec (issue #67): every attribute a classic fixture always spells
+// without a decimal point must come back without one.
+//
+// Today it passes by construction for the five <mapkey> attributes, because the
+// classic encoder writes <mapkey> as a hard-coded constant transcribed from a
+// real file. That is the point of having it now: it is the guard that must
+// already exist on the day someone replaces the constant with Map_t's float64
+// fields, which is the change that caused #64 in the W2025 codec.
+//
+// The survey behind #67 found 17 such attributes across the 8 classic fixtures.
+// The ROWS fixture is left out because the classic encoder refuses to write it
+// (#20); it contributes no attribute the others lack.
+func TestClassicIntegerAttributeSpelling(t *testing.T) {
+	total := 0
+	for _, fixture := range []string{
+		"../testdata/blank-2017-1.73-1.0.wxx",
+		"../testdata/blank-2017-1.74-1.0.wxx",
+		"../testdata/blank-2017-1.77-1.0.wxx",
+		"../testdata/2017-1.77-1.0-columns-blank.wxx",
+		"../testdata/2017-1.77-1.0-import.wxx",
+		"../testdata/2017-1.77-1.0-merge-01.wxx",
+		"../testdata/2017-1.77-1.0-merge-02.wxx",
+	} {
+		t.Run(fixture, func(t *testing.T) {
+			f, err := os.Open(fixture)
+			if err != nil {
+				t.Fatalf("open %s: %v", fixture, err)
+			}
+			defer f.Close()
+
+			var dd xmlio.DecoderDiagnostics
+			m, err := xmlio.NewDecoder(xmlio.WithDecoderDiagnostics(&dd)).Decode(f)
+			if err != nil {
+				t.Fatalf("decode %s: %v", fixture, err)
+			}
+			app := m.MetaData.Version.App.Raw
+			var ed xmlio.EncoderDiagnostics
+			var buf bytes.Buffer
+			if err := xmlio.NewEncoder(app, xmlio.WithEncoderDiagnostics(&ed)).Encode(&buf, m); err != nil {
+				t.Fatalf("encode %s to %s: %v", fixture, app, err)
+			}
+			total += auditIntegerSpelling(t, fixture, dd.Converted, ed.Utf8Encoded)
+		})
+	}
+
+	// Each fixture carries at least the 16 attributes every classic sample
+	// states (feature/@labelDistance appears in only five), so seven fixtures
+	// audit over a hundred. The floor catches an audit that silently stops
+	// covering them, without becoming a number to update after every change.
+	const floor = 7 * 12
+	if total < floor {
+		t.Errorf("audited only %d integer attribute(s) across all fixtures, want at least %d -- the audit is not covering what it claims to", total, floor)
+	}
+	t.Logf("audited %d integer attribute occurrence(s) across 7 documents", total)
+}
+
+// TestClassicDecodeRejectsDecimalInIntegerAttribute pins the classic decode
+// half (issue #67): a decimal point in one of the five <mapkey> integer
+// attributes is refused with an error naming the attribute, as it is for W2025.
+// Before #67 the classic schema declared them float64 and read "-1.0" without
+// complaint.
+//
+// The document is doctored from a real fixture, so the only thing wrong with it
+// is the spelling under test.
+func TestClassicDecodeRejectsDecimalInIntegerAttribute(t *testing.T) {
+	f, err := os.Open("../testdata/blank-2017-1.77-1.0.wxx")
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer f.Close()
+
+	var dd xmlio.DecoderDiagnostics
+	if _, err := xmlio.NewDecoder(xmlio.WithDecoderDiagnostics(&dd)).Decode(f); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+
+	const good, bad = `height="-1"`, `height="-1.0"`
+	if !bytes.Contains(dd.Converted, []byte(good)) {
+		t.Fatalf("fixture does not state %s; this test is doctoring the wrong attribute", good)
+	}
+	doctored := bytes.Replace(dd.Converted, []byte(good), []byte(bad), 1)
+
+	_, err = xmlio.NewDecoder(xmlio.WithSkipUncompress(), xmlio.WithUTF16BEInput(false)).Decode(bytes.NewReader(doctored))
+	if err == nil {
+		t.Fatalf("decode: want an error for %s, got nil", bad)
+	}
+	if !errors.Is(err, wxx.ErrInvalidIntegerAttribute) {
+		t.Errorf("decode: err = %v, want errors.Is(err, %v)", err, wxx.ErrInvalidIntegerAttribute)
+	}
+	if got := err.Error(); !strings.Contains(got, "height") || !strings.Contains(got, "-1.0") {
+		t.Errorf("decode: err = %q, want it to name the attribute and the value", got)
+	}
+}

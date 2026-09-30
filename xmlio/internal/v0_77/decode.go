@@ -282,12 +282,12 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 			PositionX: m.MapKey.PositionX,
 			PositionY: m.MapKey.PositionY,
 			Viewlevel: m.MapKey.Viewlevel,
-			Height:    m.MapKey.Height,
+			Height:    float64(m.MapKey.Height),
 		}
 		if w.MapKey.BackgroundColor, err = decodeRgba(m.MapKey.BackgroundColor); err != nil {
 			return w, fmt.Errorf("mapkey.backgroundcolor: %w", err)
 		}
-		w.MapKey.BackgroundOpacity = m.MapKey.BackgroundOpacity
+		w.MapKey.BackgroundOpacity = float64(m.MapKey.BackgroundOpacity)
 		w.MapKey.TitleText = m.MapKey.TitleText
 		w.MapKey.TitleFontFace = m.MapKey.TitleFontFace
 		if w.MapKey.TitleFontColor, err = decodeRgba(m.MapKey.TitleFontColor); err != nil {
@@ -295,7 +295,7 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 		}
 		w.MapKey.TitleFontBold = m.MapKey.TitleFontBold
 		w.MapKey.TitleFontItalic = m.MapKey.TitleFontItalic
-		w.MapKey.TitleScale = m.MapKey.TitleScale
+		w.MapKey.TitleScale = float64(m.MapKey.TitleScale)
 		w.MapKey.ScaleText = m.MapKey.ScaleText
 		w.MapKey.ScaleFontFace = m.MapKey.ScaleFontFace
 		if w.MapKey.ScaleFontColor, err = decodeRgba(m.MapKey.ScaleFontColor); err != nil {
@@ -303,14 +303,14 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 		}
 		w.MapKey.ScaleFontBold = m.MapKey.ScaleFontBold
 		w.MapKey.ScaleFontItalic = m.MapKey.ScaleFontItalic
-		w.MapKey.ScaleScale = m.MapKey.ScaleScale
+		w.MapKey.ScaleScale = float64(m.MapKey.ScaleScale)
 		w.MapKey.EntryFontFace = m.MapKey.EntryFontFace
 		if w.MapKey.EntryFontColor, err = decodeRgba(m.MapKey.EntryFontColor); err != nil {
 			return w, fmt.Errorf("mapkey.entryFontColor: %w", err)
 		}
 		w.MapKey.EntryFontBold = m.MapKey.EntryFontBold
 		w.MapKey.EntryFontItalic = m.MapKey.EntryFontItalic
-		w.MapKey.EntryScale = m.MapKey.EntryScale
+		w.MapKey.EntryScale = float64(m.MapKey.EntryScale)
 	}
 
 	for _, mFeature := range m.Features.Features {
