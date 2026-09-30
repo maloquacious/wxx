@@ -18,7 +18,31 @@ what the application reported, so the name always matches the contents.
 Recording width, height, seed and terrain in the name makes a sample
 reproducible from its filename alone.
 
-## New Worldographer Versions
+## Saving a fixture
+
+Every recipe below ends with a save. Worldographer changes a map's contents
+when you touch it again, so follow these rules for every fixture:
+
+- Do not scroll or resize the map before you save it.
+- Save only once. A second save, even Save As from the same window, changes
+  the file: `mapkey/@viewlevel` goes from `"null"` to `"WORLD"`, every religion
+  in `<informations>` gets a new `uuid`, and the `<extraTerrain>` layers are
+  reordered.
+- Never open the map file again. Doing so may change the contents.
+
+Worldographer writes a `*-autosave.wxx` alongside the map and deletes it on a
+clean exit. Autosaves are transient and are git-ignored; never commit one.
+
+## Inspecting a fixture
+
+To read a sample as UTF-8 XML (the output is a scratch artifact, not
+committed):
+
+    go run ./cmd/wxx export testdata/2025-2.06-13x11-941577-blank.wxx --utf-8 scratch/2025-2.06-13x11-941577-blank.utf8
+
+## Blank
+
+A quick way to view the metadata on new versions.
 
 File > New World/Kingdom map
 
@@ -37,18 +61,7 @@ All one terrain: Blank
 
 Generate Map
 
-Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-TERRAIN.wxx
-
-Do not scroll or resize the map before you save it!
-Never open the map file again. Doing so may change the contents.
-
-Worldographer writes a `*-autosave.wxx` alongside the map and deletes it on a
-clean exit. Autosaves are transient and are git-ignored; never commit one.
-
-To inspect a sample as UTF-8 XML (the output is a scratch artifact, not
-committed):
-
-$ go run ./cmd/wxx export testdata/2025-2.06-13x11-941577-blank.wxx --utf-8 2025-2.06-13x11-941577-blank.utf8
+Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-blank.wxx
 
 ## Layers
 
@@ -92,9 +105,6 @@ Before saving, ensure all layers are visible, GM Only: Show is checked, Grid: Sh
 
 Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-layers.wxx
 
-Do not scroll or resize the map before you save it!
-Never open the map file again. Doing so may change the contents.
-
 ## Rows
 
 File > New World/Kingdom map
@@ -124,9 +134,6 @@ Open the Terrain tab and:
 Before saving, ensure all layers are visible, GM Only: Show is checked, Grid: Show/Numbers/Shadows are checked.
 
 Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-rows.wxx
-
-Do not scroll or resize the map before you save it!
-Never open the map file again. Doing so may change the contents.
 
 ## Resources
 
@@ -166,9 +173,6 @@ that produced the 2.07 and 2.08 fixtures.
 Before saving, ensure all layers are visible, GM Only: Show is checked, Grid: Show/Numbers/Shadows are checked.
 
 Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-resources.wxx
-
-Do not scroll or resize the map before you save it!
-Never open the map file again. Doing so may change the contents.
 
 ## Notes and Shapes
 
@@ -272,6 +276,3 @@ Generate Map
 Before saving, ensure all layers are visible, GM Only: Show is checked, Grid: Show/Numbers/Shadows are checked.
 
 Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-notes-shapes.wxx
-
-Do not scroll or resize the map before you save it!
-Never open the map file again. Doing so may change the contents.
