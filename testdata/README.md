@@ -276,3 +276,21 @@ Generate Map
 Before saving, ensure all layers are visible, GM Only: Show is checked, Grid: Show/Numbers/Shadows are checked.
 
 Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-notes-shapes.wxx
+
+## Populated
+
+Tests 
+- a feature with a non-black colour
+- a feature with an opaque black colour
+- a feature with no label
+- a note with a title
+- a curved shape variants
+- a standalone <labels> entry
+
+  1. Flood fill the Terrain Land layer with Flat Farmland.
+  2. Hex (0,0) Features: click Building Cathedral on Features tab, leave Label empty, add feature, click Select
+  3. Hex (1,0) Features: click Building Cathedral on Features tab, check Override Color and Add Ring, set both to White, add feature, click Select
+  4. Hex (2,1) Features: click Building Cathedral on Features tab, check Override Color and Add Ring, set both to Black, add feature, click Select
+  5. Hex (3,1) Features: click Building Pyramid on Features tab, add feature, click Select, select the feature, add a note with "Title (3,1)" body "Body (3,1)" color Magenta and click Save
+  6. Hex (4,2) Labels: Set Text "Label (4,2)", click New Label, click in the center of the hex, then click De-select
+  7. Curve: Set the color to Red then add a curve by clicking in (7,6), (10,6), (10,8), and (8,9), then click De-select

@@ -62,18 +62,6 @@ func TestW2025ExtraTerrainMatchesSource(t *testing.T) {
 			return pair{dd.Converted, ed.Utf8Encoded}
 		}
 	}
-	cases[filepath.Base(populatedFixture)] = func(t *testing.T) pair {
-		raw, err := os.ReadFile(populatedFixture)
-		if err != nil {
-			t.Fatalf("read %s: %v", populatedFixture, err)
-		}
-		out, err := v1_06.Encode(decodeFixture(t, populatedFixture), "2.06")
-		if err != nil {
-			t.Fatalf("encode %s: %v", populatedFixture, err)
-		}
-		return pair{raw, out}
-	}
-
 	sawPlacement := false
 	for name, load := range cases {
 		t.Run(name, func(t *testing.T) {

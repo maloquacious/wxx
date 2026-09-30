@@ -166,7 +166,9 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 		return w, err
 	}
 
-	decodeShapes(m.Shapes, w)
+	if err := decodeShapes(m.Shapes, w); err != nil {
+		return w, err
+	}
 
 	if err := decodeNotes(m.Notes, w); err != nil {
 		return w, err

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -166,15 +167,29 @@ func auditIntegerSpelling(t *testing.T, label string, source, output []byte) int
 func TestW2025IntegerAttributeSpelling(t *testing.T) {
 	total := 0
 
-	// The two .wxx fixtures, through the full public pipeline.
-	for _, fixture := range []string{
-		"../testdata/2025-2.06-13x11-941577-blank.wxx",
-		"../testdata/2025-2.06-13x11-941577-layers-beta.wxx",
-	} {
+	// Every fixture goes through the full public pipeline. The 2.07
+	// notes-shapes map carries elements the blank samples do not -- features,
+	// labels, shapes, notes -- so it is the only source for several integer
+	// attributes. requiredIntegerAttrs names two of them; if the fixture ever
+	// stops stating them as integers, the audit no longer covers them and the
+	// test says so.
+	requiredIntegerAttrs := map[string][]string{
+		"2025-2.07-13x11-941577-notes-shapes.wxx": {
+			"map/features/feature@labelDistance",
+			"map/shapes/shape@bbIterations",
+		},
+	}
+	fixtures := []string{
+		"2025-2.06-13x11-941577-blank.wxx",
+		"2025-2.06-13x11-941577-layers-beta.wxx",
+		"2025-2.07-13x11-941577-notes-shapes.wxx",
+	}
+	for _, fixture := range fixtures {
 		t.Run(fixture, func(t *testing.T) {
-			f, err := os.Open(fixture)
+			path := filepath.Join("..", "testdata", fixture)
+			f, err := os.Open(path)
 			if err != nil {
-				t.Fatalf("open %s: %v", fixture, err)
+				t.Fatalf("open %s: %v", path, err)
 			}
 			defer f.Close()
 
@@ -182,6 +197,13 @@ func TestW2025IntegerAttributeSpelling(t *testing.T) {
 			m, err := xmlio.NewDecoder(xmlio.WithDecoderDiagnostics(&dd)).Decode(f)
 			if err != nil {
 				t.Fatalf("decode %s: %v", fixture, err)
+			}
+			for _, required := range requiredIntegerAttrs[fixture] {
+				elem, attr, _ := strings.Cut(required, "@")
+				vals := rawAttrValues(t, fixture+" (source)", dd.Converted)[elem][attr]
+				if len(vals) == 0 || !integerAttribute(vals) {
+					t.Fatalf("%s: source does not state %s as an integer, so the audit does not cover it", fixture, required)
+				}
 			}
 			var ed xmlio.EncoderDiagnostics
 			var buf bytes.Buffer
@@ -192,27 +214,6 @@ func TestW2025IntegerAttributeSpelling(t *testing.T) {
 		})
 	}
 
-	// The populated fixture is raw UTF-8 XML and carries elements the two .wxx
-	// samples do not -- features, labels, shapes, notes -- so it is the only
-	// source for several integer attributes (feature/@labelDistance,
-	// shape/@bbIterations). It goes through the codec directly, which is how the
-	// rest of the suite reads it.
-	t.Run(populatedFixture, func(t *testing.T) {
-		source, err := os.ReadFile(populatedFixture)
-		if err != nil {
-			t.Fatalf("read %s: %v", populatedFixture, err)
-		}
-		m, err := v1_06.Decode(source)
-		if err != nil {
-			t.Fatalf("v1_06.Decode(%s): %v", populatedFixture, err)
-		}
-		output, err := v1_06.Encode(m, "2.06")
-		if err != nil {
-			t.Fatalf("v1_06.Encode(%s): %v", populatedFixture, err)
-		}
-		total += auditIntegerSpelling(t, populatedFixture, source, output)
-	})
-
 	// A spelling audit that audited nothing would pass in silence, which is the
 	// failure mode of every fixture-driven test. The floor is deliberately well
 	// below the 22 attributes the survey found, so that removing a fixture is
@@ -221,7 +222,7 @@ func TestW2025IntegerAttributeSpelling(t *testing.T) {
 	if total < floor {
 		t.Errorf("audited only %d integer attribute(s) across all fixtures, want at least %d -- the audit is not covering what it claims to", total, floor)
 	}
-	t.Logf("audited %d integer attribute occurrence(s) across %d document(s)", total, 3)
+	t.Logf("audited %d integer attribute occurrence(s) across %d document(s)", total, len(fixtures))
 }
 
 // TestW2025NonIntegralValueRefused covers the state the fix leaves open by

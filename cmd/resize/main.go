@@ -11,8 +11,6 @@ import (
 	"math"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
 
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/hexg"
@@ -406,20 +404,16 @@ func shiftMapContent(m *wxx.Map_t, g geometry_t, dCols, dRows int) {
 
 	var notes []*wxx.Note_t
 	for _, note := range m.Notes {
-		// the key is the note's position when it has one: 2.08 states the
-		// position only there, so its notes decode with X and Y zero.
-		x, y := note.X, note.Y
-		if level, kx, ky, ok := parseNoteKey(note.Key); ok {
-			x, y = kx+dx, ky+dy
-			note.Key = level + "," + keyFloat(x) + "," + keyFloat(y)
-		} else {
-			x, y = x+dx, y+dy
+		// a note's @key is derived from its Location when it is written, so
+		// moving the Location moves the key too.
+		if note.Location != nil {
+			note.Location.X += dx
+			note.Location.Y += dy
+			if !onMap(note.Location.X, note.Location.Y) {
+				continue
+			}
 		}
-		note.X += dx
-		note.Y += dy
-		if onMap(x, y) {
-			notes = append(notes, note)
-		}
+		notes = append(notes, note)
 	}
 	m.Notes = notes
 
@@ -429,6 +423,17 @@ func shiftMapContent(m *wxx.Map_t, g geometry_t, dCols, dRows int) {
 		for _, p := range shape.Points {
 			p.X += dx
 			p.Y += dy
+			// dx and dy are whole multiples of the hex steps, so a point
+			// spelled as integers stays integral. Should that ever change,
+			// spell the moved point as a decimal rather than have the
+			// encoder refuse it (issue #94).
+			p.IntegerXY = p.IntegerXY && p.X == math.Trunc(p.X) && p.Y == math.Trunc(p.Y)
+			if c := p.Control; c != nil {
+				c.CX1 += dx
+				c.CY1 += dy
+				c.CX2 += dx
+				c.CY2 += dy
+			}
 			keep = keep || onMap(p.X, p.Y)
 		}
 		if keep {
@@ -451,31 +456,4 @@ func shiftMapContent(m *wxx.Map_t, g geometry_t, dCols, dRows int) {
 			layer.Terrain = placements
 		}
 	}
-}
-
-// parseNoteKey reads a note key in Worldographer's "<viewLevel>,<x>,<y>" form.
-//
-// 2.06 writes the position twice, in the key and in @x/@y. 2.08 writes it only
-// in the key (its <note> has no @x or @y), so the key is the position that
-// counts. A key not in this form reports ok = false and is left alone.
-func parseNoteKey(key string) (level string, x, y float64, ok bool) {
-	parts := strings.Split(key, ",")
-	if len(parts) != 3 {
-		return "", 0, 0, false
-	}
-	x, errX := strconv.ParseFloat(parts[1], 64)
-	y, errY := strconv.ParseFloat(parts[2], 64)
-	if errX != nil || errY != nil {
-		return "", 0, 0, false
-	}
-	return parts[0], x, y, true
-}
-
-// keyFloat spells a coordinate the way note keys do: "100.0", "2343.75".
-func keyFloat(f float64) string {
-	s := strconv.FormatFloat(f, 'f', -1, 64)
-	if !strings.Contains(s, ".") {
-		s += ".0"
-	}
-	return s
 }

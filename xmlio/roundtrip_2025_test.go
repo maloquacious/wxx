@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
@@ -26,6 +27,17 @@ const (
 	// labels, locations, map layers and terrain-and-location entries, including
 	// the "Terrain Layer" map layer, which no production build ships.
 	sample2025_206LayersBeta = "../testdata/2025-2.06-13x11-941577-layers-beta.wxx" // release=2025 version=2.06 schema=1.06
+	// sample2025_207Blank is a blank 13x11 map saved by 2.07, the first stable
+	// release of the W2025 schema.
+	sample2025_207Blank = "../testdata/2025-2.07-13x11-941577-blank.wxx" // release=2025 version=2.07 schema=1.06
+	// sample2025_207NotesShapes is the richest app-saved map (#93): features
+	// with inline labels, shapes with points, notes, and <extraTerrain>
+	// placements on three layers.
+	sample2025_207NotesShapes = "../testdata/2025-2.07-13x11-941577-notes-shapes.wxx" // release=2025 version=2.07 schema=1.06
+
+	// w2025Target is the application version the tests encode 2.07 maps as:
+	// 2.06 is the only W2025 release registered until issue #92 adds 2.07.
+	w2025Target = "2.06"
 )
 
 // TestW2025Decode_BothSamples documents that the public decoder accepts both
@@ -113,100 +125,24 @@ func TestW2025PublicRoundTrip(t *testing.T) {
 	compareGroups(t, m1, m2)
 }
 
-// populatedFixture is a UTF-8 W2025 map that fills the elements the blank
-// sample leaves empty (features with and without labels, shapes with points,
-// and notes). It is a raw .xml file, so it is decoded with v1_06.Decode
-// directly rather than through the full gunzip/UTF-16 public pipeline.
-const populatedFixture = "../testdata/w2025-populated.xml"
-
-// decodeFixture reads a raw UTF-8 XML W2025 map and decodes it with the
-// schema-specific decoder (v1_06.Decode), bypassing the gunzip/UTF-16
-// transport that decodeFile applies to .wxx files.
-func decodeFixture(t *testing.T, path string) *wxx.Map_t {
-	t.Helper()
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read %s: %v", path, err)
-	}
-	m, err := v1_06.Decode(raw)
-	if err != nil {
-		t.Fatalf("v1_06.Decode(%s): %v", path, err)
-	}
-	return m
-}
-
-// TestW2025DecodePopulated asserts that the decoder materializes the populated
-// fixture's content into Map_t using only fields that exist today. It guards
-// against decode-side loss that a symmetric round-trip cannot catch.
-func TestW2025DecodePopulated(t *testing.T) {
-	m := decodeFixture(t, populatedFixture)
-
-	// Shapes: both fixture shapes and their points must survive decode.
-	if got, want := len(m.Shapes), 2; got != want {
-		t.Fatalf("len(Shapes) = %d, want %d", got, want)
-	}
-	if len(m.Shapes[0].Points) == 0 {
-		t.Fatalf("Shapes[0].Points is empty, want non-empty")
-	}
-	if got := m.Shapes[0].Points[0]; got.X != 148.0 || got.Y != 149.0 {
-		t.Errorf("Shapes[0].Points[0] = (%v,%v), want (148,149)", got.X, got.Y)
-	}
-
-	// Notes: both fixture notes and their attributes/content must survive decode.
-	if got, want := len(m.Notes), 2; got != want {
-		t.Fatalf("len(Notes) = %d, want %d", got, want)
-	}
-	if got, want := m.Notes[0].Key, "WORLD,2343.75,3112.5"; got != want {
-		t.Errorf("Notes[0].Key = %q, want %q", got, want)
-	}
-	if got, want := m.Notes[0].Title, "Units"; got != want {
-		t.Errorf("Notes[0].Title = %q, want %q", got, want)
-	}
-	if got, want := "First note paragraph.", m.Notes[0].NoteText; !strings.Contains(m.Notes[0].NoteText, got) {
-		t.Errorf("Notes[0].NoteText = %q, want it to contain %q", want, got)
-	}
-	if got, want := m.Notes[1].Key, "WORLD,100.0,200.0"; got != want {
-		t.Errorf("Notes[1].Key = %q, want %q", got, want)
-	}
-	if got, want := m.Notes[1].Title, "Landmark"; got != want {
-		t.Errorf("Notes[1].Title = %q, want %q", got, want)
-	}
-	if !m.Notes[1].IsGMOnly {
-		t.Errorf("Notes[1].IsGMOnly = false, want true")
-	}
-	if !strings.Contains(m.Notes[1].NoteText, "Second note paragraph.") {
-		t.Errorf("Notes[1].NoteText = %q, want it to contain %q", m.Notes[1].NoteText, "Second note paragraph.")
-	}
-
-	// Features: fixture has exactly two, [0] labeled, [1] labelless.
-	if got, want := len(m.Features), 2; got != want {
-		t.Fatalf("len(Features) = %d, want %d", got, want)
-	}
-	// The opaque-black feature color folds to nil (decodeRgba contract).
-	if m.Features[0].Color != nil {
-		t.Errorf("Features[0].Color = %+v, want nil (opaque black folds to nil)", m.Features[0].Color)
-	}
-	// The labelless feature must decode with a nil Label.
-	if m.Features[1].Label != nil {
-		t.Errorf("Features[1].Label = %+v, want nil (feature has no <label> child)", m.Features[1].Label)
-	}
-}
-
-// TestW2025PopulatedRoundTrip drives the in-memory XML codec over the populated
-// fixture: decode -> encode -> decode, then compares the two Map_t values group
-// by group. Any encoder that drops content (shapes, notes) surfaces as a
-// per-group mismatch naming the exact field.
-func TestW2025PopulatedRoundTrip(t *testing.T) {
-	raw, err := os.ReadFile(populatedFixture)
-	if err != nil {
-		t.Fatalf("read %s: %v", populatedFixture, err)
-	}
-	m1, err := v1_06.Decode(raw)
+// TestW2025NotesShapesRoundTrip drives the in-memory XML codec over the
+// richest app-saved 2.07 map: decode -> encode -> decode, then compares the two
+// Map_t values group by group. The blank sample TestW2025RoundTrip reads has
+// no features, labels, shapes or notes and an empty <extraTerrain>; this one
+// has all of them, so an encoder that drops content from any of those groups
+// surfaces here as a per-group mismatch naming the exact field.
+//
+// It is encoded as 2.06, the only W2025 release registered until issue #92
+// adds 2.07, so the identity the file states legitimately changes and the
+// MetaData group is not compared. Identity is xmlio/chimera_test.go's concern.
+func TestW2025NotesShapesRoundTrip(t *testing.T) {
+	m1, err := decodeFile(t, sample2025_207NotesShapes)
 	if err != nil {
 		t.Fatalf("initial decode: %v", err)
 	}
+	requireNotesShapesContent(t, m1)
 
-	xmlBytes, err := v1_06.Encode(m1, m1.MetaData.Version.App.Raw)
+	xmlBytes, err := v1_06.Encode(m1, w2025Target)
 	if err != nil {
 		t.Fatalf("v1_06.Encode: %v", err)
 	}
@@ -218,25 +154,31 @@ func TestW2025PopulatedRoundTrip(t *testing.T) {
 
 	normalizeVolatile(m1)
 	normalizeVolatile(m2)
+	m2.MetaData = m1.MetaData
+	sortTerrainList(m1)
+	sortTerrainList(m2)
 
 	compareGroups(t, m1, m2)
 }
 
-// TestW2025PopulatedPublicRoundTrip drives the ENTIRE public pipeline over the
-// populated fixture's content: decode the fixture, then encode through
-// xmlio.NewEncoder().Encode (XML + header + UTF-16BE + gzip) and decode those
-// bytes back with xmlio.NewDecoder().Decode. Unlike TestW2025PopulatedRoundTrip
-// (which drives only the in-memory XML codec), this proves the gzip/UTF-16/header
-// transport layers round-trip populated shapes/notes/features/labels too -- the
-// "full public pipeline" half of the issue's definition of done.
-func TestW2025PopulatedPublicRoundTrip(t *testing.T) {
-	m1 := decodeFixture(t, populatedFixture)
+// TestW2025NotesShapesPublicRoundTrip drives the ENTIRE public pipeline over
+// the same 2.07 map: encode through xmlio.NewEncoder().Encode (XML + header +
+// UTF-16BE + gzip) and decode those bytes back with xmlio.NewDecoder().Decode.
+// Unlike TestW2025NotesShapesRoundTrip (which drives only the in-memory XML
+// codec), this proves the gzip/UTF-16/header transport layers round-trip
+// shapes, notes, features and labels too.
+func TestW2025NotesShapesPublicRoundTrip(t *testing.T) {
+	m1, err := decodeFile(t, sample2025_207NotesShapes)
+	if err != nil {
+		t.Fatalf("initial decode: %v", err)
+	}
+	requireNotesShapesContent(t, m1)
 
-	// The target is the version the fixture states: a round trip writes back what
-	// it read. Since issue #45 the caller says so rather than the encoder assuming
-	// it -- reading provenance and choosing a target is a CLIENT's job.
+	// The target is named by the caller (issue #45). It is 2.06 rather than the
+	// 2.07 the fixture states because 2.06 is the only W2025 release registered
+	// until issue #92, so MetaData is not compared.
 	var buf bytes.Buffer
-	if err := xmlio.NewEncoder(m1.MetaData.Version.App.Raw).Encode(&buf, m1); err != nil {
+	if err := xmlio.NewEncoder(w2025Target).Encode(&buf, m1); err != nil {
 		t.Fatalf("public Encode: %v", err)
 	}
 
@@ -247,8 +189,51 @@ func TestW2025PopulatedPublicRoundTrip(t *testing.T) {
 
 	normalizeVolatile(m1)
 	normalizeVolatile(m2)
+	m2.MetaData = m1.MetaData
+	sortTerrainList(m1)
+	sortTerrainList(m2)
 
 	compareGroups(t, m1, m2)
+}
+
+// sortTerrainList puts TerrainMap.List in index order.
+//
+// Worldographer 2.07 saved the notes-shapes fixture's <terrainmap> out of
+// index order ("Blank 0", "Classic/Water Sea 2", "Classic/Flat Farmland 1"),
+// and the encoder writes the table in index order (issue #87), so the decoded
+// List comes back reordered. The index each name maps to is unchanged, and
+// that mapping is what these round trips compare. Whether the reordering
+// matters to Worldographer has not been tested in the app.
+func sortTerrainList(m *wxx.Map_t) {
+	if m.TerrainMap == nil {
+		return
+	}
+	slices.SortStableFunc(m.TerrainMap.List, func(a, b *wxx.Terrain_t) int {
+		return a.Index - b.Index
+	})
+}
+
+// requireNotesShapesContent fails the test when the notes-shapes fixture stops
+// carrying the groups the round trips above exist to exercise. Without it, an
+// empty group on both sides compares equal and the test passes having tested
+// nothing.
+func requireNotesShapesContent(t *testing.T, m *wxx.Map_t) {
+	t.Helper()
+	if len(m.Features) == 0 {
+		t.Fatalf("%s: no features decoded", sample2025_207NotesShapes)
+	}
+	if m.Features[0].Label == nil {
+		t.Fatalf("%s: Features[0] has no label", sample2025_207NotesShapes)
+	}
+	if len(m.Shapes) == 0 || len(m.Shapes[0].Points) == 0 {
+		t.Fatalf("%s: no shape with points decoded", sample2025_207NotesShapes)
+	}
+	if len(m.Notes) == 0 {
+		t.Fatalf("%s: no notes decoded", sample2025_207NotesShapes)
+	}
+	if m.ExtraTerrain == nil || len(m.ExtraTerrain.MapLayers) == 0 {
+		t.Fatalf("%s: no <extraTerrain> layers decoded", sample2025_207NotesShapes)
+	}
 }
 
 // TestW2025ConfigSectionsEmpty guards the intentional no-op encoders for the
@@ -257,8 +242,8 @@ func TestW2025PopulatedPublicRoundTrip(t *testing.T) {
 // xmlio/internal/v1_06/encode.go). Those encoders emit an empty wrapper and drop their
 // decoded content; that is only lossless because real W2025 maps leave these
 // sections empty. This test documents-in-code that invariant by asserting that
-// every decoded config entry carries no non-whitespace content, for BOTH the
-// populated fixture and the real .wxx sample. If a future fixture ever populates
+// every decoded config entry carries no non-whitespace content, for both the
+// 2.06 blank sample and the 2.07 notes-shapes map. If a future fixture ever populates
 // one of these sections, this test fails loudly, signaling that the encoders
 // (and the corresponding schema.go `xml:",chardata"` fields) must be upgraded to
 // preserve inner XML.
@@ -267,12 +252,16 @@ func TestW2025ConfigSectionsEmpty(t *testing.T) {
 	if err != nil {
 		t.Fatalf("decode %s: %v", sample2025_206, err)
 	}
+	notesShapesMap, err := decodeFile(t, sample2025_207NotesShapes)
+	if err != nil {
+		t.Fatalf("decode %s: %v", sample2025_207NotesShapes, err)
+	}
 
 	for _, tc := range []struct {
 		name string
 		m    *wxx.Map_t
 	}{
-		{"populated-fixture", decodeFixture(t, populatedFixture)},
+		{"2.07-notes-shapes", notesShapesMap},
 		{"real-sample", sampleMap},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

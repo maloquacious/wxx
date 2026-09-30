@@ -125,11 +125,12 @@ func positionedMap(t *testing.T) string {
 		Type: "Polygon", MapLayer: "Above Terrain", CreationType: "BASIC",
 		IsWorld: true, HighestViewLevel: "WORLD", CurrentShapeViewLevel: "WORLD",
 		StrokeColor: "1.0,1.0,1.0,1.0", DsColor: "null", InsColor: "null", StrokeType: "SIMPLE", Opacity: 1,
-		Points: []*wxx.Point_t{{X: 1000, Y: 700}, {X: 1100, Y: 700}, {X: 1050, Y: 800}},
+		Points: []*wxx.Point_t{{X: 1000, Y: 700, IntegerXY: true}, {X: 1100, Y: 700, IntegerXY: true,
+			Type: "c", Control: &wxx.CurveControl_t{CX1: 1020, CY1: 650, CX2: 1080, CY2: 0}}, {X: 1050, Y: 800, IntegerXY: true}},
 	}}
 	m.Notes = []*wxx.Note_t{{
-		Key: "WORLD,1050.0,750.0", ViewLevel: "WORLD", X: 1050, Y: 750,
-		Color: &wxx.RGBA_t{R: 1, G: 1, A: 1}, Title: "Here",
+		Location: &wxx.NoteLocation_t{ViewLevel: "WORLD", X: 1050, Y: 750},
+		Color:    &wxx.RGBA_t{R: 1, G: 1, A: 1}, Title: "Here",
 	}}
 	path := filepath.Join(t.TempDir(), "positioned.wxx")
 	if err := xmlio.WriteFile(path, m, "2.06"); err != nil {
@@ -171,17 +172,25 @@ func TestResizeMovesEverything(t *testing.T) {
 		if got := [2]float64{p.X, p.Y}; got != want {
 			t.Errorf("shape point %d at %v, want %v", i, got, want)
 		}
+		// integer-spelled points move by whole hex steps and stay so (#94)
+		if !p.IntegerXY {
+			t.Errorf("shape point %d: IntegerXY lost in the move", i)
+		}
+	}
+	// a curve point's control points move with it (#94)
+	if c := m.Shapes[0].Points[1].Control; c == nil || *c != (wxx.CurveControl_t{CX1: 1020 + dx, CY1: 650 + dy, CX2: 1080 + dx, CY2: 0 + dy}) {
+		t.Errorf("control points = %+v, want moved by (%v,%v)", c, dx, dy)
 	}
 
 	if len(m.Notes) != 1 {
 		t.Fatalf("%d note(s), want 1", len(m.Notes))
 	}
+	// The on-disk @key repeats the position; ReadFile refuses a key that
+	// disagrees with the <location>, so reading the output at all shows the
+	// key moved with it.
 	n := m.Notes[0]
-	if n.X != 1050+dx || n.Y != 750+dy {
-		t.Errorf("note at (%v,%v), want (%v,%v)", n.X, n.Y, 1050+dx, 750+dy)
-	}
-	if want := "WORLD,1500.0,1050.0"; n.Key != want {
-		t.Errorf("note key = %q, want %q: the key repeats the position and must move with it", n.Key, want)
+	if n.Location == nil || n.Location.X != 1050+dx || n.Location.Y != 750+dy {
+		t.Errorf("note at %+v, want (%v,%v)", n.Location, 1050+dx, 750+dy)
 	}
 }
 
@@ -209,7 +218,7 @@ func TestResizeCropDropsWhatFallsOff(t *testing.T) {
 	if len(m.Shapes) != 1 || m.Shapes[0].Points[0].X != 1000-450 {
 		t.Errorf("shape not kept and moved: %d shape(s)", len(m.Shapes))
 	}
-	if len(m.Notes) != 1 || m.Notes[0].X != 1050-450 {
+	if len(m.Notes) != 1 || m.Notes[0].Location.X != 1050-450 {
 		t.Errorf("note not kept and moved: %d note(s)", len(m.Notes))
 	}
 
@@ -227,59 +236,6 @@ func TestResizeCropDropsWhatFallsOff(t *testing.T) {
 	}
 	if len(m2.Shapes) != 0 || len(m2.Notes) != 0 {
 		t.Errorf("%d shape(s) and %d note(s) survive off the map, want 0", len(m2.Shapes), len(m2.Notes))
-	}
-}
-
-// TestParseNoteKey: a key in Worldographer's "<level>,<x>,<y>" form is read as
-// the note's position; anything else is not.
-func TestParseNoteKey(t *testing.T) {
-	for _, tc := range []struct {
-		key   string
-		ok    bool
-		level string
-		x, y  float64
-	}{
-		{"WORLD,100.0,200.0", true, "WORLD", 100, 200},
-		{"WORLD,2343.75,3112.5", true, "WORLD", 2343.75, 3112.5},
-		{"custom", false, "", 0, 0},
-		{"WORLD,x,200.0", false, "", 0, 0},
-	} {
-		level, x, y, ok := parseNoteKey(tc.key)
-		if ok != tc.ok || level != tc.level || x != tc.x || y != tc.y {
-			t.Errorf("parseNoteKey(%q) = %q, %v, %v, %v; want %q, %v, %v, %v", tc.key, level, x, y, ok, tc.level, tc.x, tc.y, tc.ok)
-		}
-	}
-}
-
-// TestResizeMovesKeyOnlyNote: a 2.08 note states its position only in its
-// key, so it decodes with X and Y zero. Resizing must move it by the key and
-// keep it, not treat (0,0) as off the map and delete it.
-func TestResizeMovesKeyOnlyNote(t *testing.T) {
-	m, err := xmlio.ReadFile(positionedMap(t))
-	if err != nil {
-		t.Fatalf("read source: %v", err)
-	}
-	m.Notes[0].X, m.Notes[0].Y = 0, 0 // as a 2.08 note decodes
-	src := filepath.Join(t.TempDir(), "keyonly.wxx")
-	if err := xmlio.WriteFile(src, m, "2.06"); err != nil {
-		t.Fatalf("write source: %v", err)
-	}
-	out := filepath.Join(t.TempDir(), "out.wxx")
-	// A crop, because that is where zero X/Y goes wrong: cropping 2 columns
-	// takes them to -450, off the map, while the key's position (1050,750),
-	// hex (4,2), moves to (600,750), hex (2,2), still on it.
-	if code, stderr := resize(t, "-input", src, "-output", out, "-left", "-2"); code != 0 {
-		t.Fatalf("exit %d; stderr:\n%s", code, stderr)
-	}
-	got, err := xmlio.ReadFile(out)
-	if err != nil {
-		t.Fatalf("read output: %v", err)
-	}
-	if len(got.Notes) != 1 {
-		t.Fatalf("%d note(s), want 1: the note was deleted because its X/Y are zero", len(got.Notes))
-	}
-	if want := "WORLD,600.0,750.0"; got.Notes[0].Key != want {
-		t.Errorf("note key = %q, want %q", got.Notes[0].Key, want)
 	}
 }
 
@@ -336,7 +292,7 @@ func rowsMap(t *testing.T) string {
 		StrokeColor: "1.0,1.0,1.0,1.0", DsColor: "null", InsColor: "null", StrokeType: "SIMPLE", Opacity: 1,
 		Points: []*wxx.Point_t{{X: 1000, Y: 1000}, {X: 1100, Y: 1000}, {X: 1050, Y: 1100}},
 	}}
-	m.Notes = []*wxx.Note_t{{Key: "WORLD,1050.0,1050.0", ViewLevel: "WORLD", X: 1050, Y: 1050,
+	m.Notes = []*wxx.Note_t{{Location: &wxx.NoteLocation_t{ViewLevel: "WORLD", X: 1050, Y: 1050},
 		Color: &wxx.RGBA_t{R: 1, G: 1, A: 1}, Title: "Hex 3,4"}}
 	m.ExtraTerrain = &wxx.ExtraTerrain_t{MapLayers: []*wxx.ExtraTerrainLayer_t{{
 		Name:    "Below All",
@@ -375,8 +331,8 @@ func TestResizeRows(t *testing.T) {
 	if p := m.Shapes[0].Points[0]; p.X != 1000+dx || p.Y != 1000+dy {
 		t.Errorf("shape point at (%v,%v), want (%v,%v)", p.X, p.Y, 1000+dx, 1000+dy)
 	}
-	if want := "WORLD,1650.0,1500.0"; m.Notes[0].Key != want {
-		t.Errorf("note key %q, want %q", m.Notes[0].Key, want)
+	if loc := m.Notes[0].Location; loc == nil || loc.X != 1050+dx || loc.Y != 1050+dy {
+		t.Errorf("note at %+v, want (1650,1500)", loc)
 	}
 	tl := m.ExtraTerrain.MapLayers[0].Terrain
 	if len(tl) != 1 || tl[0].X != 750+dx || tl[0].Y != 225+dy {

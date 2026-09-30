@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/maloquacious/wxx/xmlio"
-	"github.com/maloquacious/wxx/xmlio/internal/v1_06"
 )
 
 // loreAttrs are the eight optional attributes an <information> element may
@@ -43,9 +42,13 @@ func TestW2025InformationAttrsMatchSource(t *testing.T) {
 	type pair struct{ in, out []byte }
 	cases := map[string]func(t *testing.T) pair{}
 
+	// Each fixture nests Nation and Culture entries as details of an
+	// "Information" entry, and Religion entries a level deeper. 2.07 is listed
+	// because it is the first stable release of the W2025 schema.
 	for _, fixture := range []string{
 		"2025-2.06-13x11-941577-blank.wxx",
 		"2025-2.06-13x11-941577-layers-beta.wxx",
+		"2025-2.07-13x11-941577-blank.wxx",
 	} {
 		cases[fixture] = func(t *testing.T) pair {
 			path := filepath.Join("..", "testdata", fixture)
@@ -68,21 +71,6 @@ func TestW2025InformationAttrsMatchSource(t *testing.T) {
 		}
 	}
 
-	// The populated sample is the only fixture with Nation and Culture entries
-	// nested as details. It is raw XML, so it bypasses the transport stages.
-	cases[filepath.Base(populatedFixture)] = func(t *testing.T) pair {
-		raw, err := os.ReadFile(populatedFixture)
-		if err != nil {
-			t.Fatalf("read %s: %v", populatedFixture, err)
-		}
-		m := decodeFixture(t, populatedFixture)
-		out, err := v1_06.Encode(m, "2.06")
-		if err != nil {
-			t.Fatalf("encode %s: %v", populatedFixture, err)
-		}
-		return pair{raw, out}
-	}
-
 	for name, load := range cases {
 		t.Run(name, func(t *testing.T) {
 			docs := load(t)
@@ -92,9 +80,16 @@ func TestW2025InformationAttrsMatchSource(t *testing.T) {
 
 			// The regression is pinned only if the fixture states both shapes.
 			sawNone, sawEmpty := false, false
+			sawNation, sawCulture := false, false
 			for _, attrs := range in {
 				stated := 0
 				for _, attr := range attrs {
+					switch {
+					case attr[0] == "type" && attr[1] == "Nation":
+						sawNation = true
+					case attr[0] == "type" && attr[1] == "Culture":
+						sawCulture = true
+					}
 					if loreAttrs[attr[0]] {
 						stated++
 						if attr[1] == "" {
@@ -111,6 +106,9 @@ func TestW2025InformationAttrsMatchSource(t *testing.T) {
 			}
 			if !sawEmpty {
 				t.Errorf("%s: no <information> states a lore attribute as \"\", so the value-gating regression is untested here", name)
+			}
+			if !sawNation || !sawCulture {
+				t.Errorf("%s: Nation entry present = %v, Culture entry present = %v; want both, so their lore attributes are under test", name, sawNation, sawCulture)
 			}
 		})
 	}
