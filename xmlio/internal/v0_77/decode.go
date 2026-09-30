@@ -189,11 +189,15 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 			if len(line) == 0 { // ignore blank lines
 				continue
 			}
-			t := &wxx.Tile_t{Row: x, Column: y}
+			// x is the <tilerow> index and y the entry within it. Each
+			// <tilerow> is one column in both orientations (issue #85): every
+			// sample has tilesWide tilerows of tilesHigh entries, and hexg's
+			// offset coordinates take (col, row).
+			t := &wxx.Tile_t{Column: x, Row: y}
 			if w.GridOrientation == hexg.OddQ {
-				t.Coords = hexg.NewOddQCoord(y, x).ToCube()
+				t.Coords = hexg.NewOddQCoord(x, y).ToCube()
 			} else if w.GridOrientation == hexg.OddR {
-				t.Coords = hexg.NewOddRCoord(y, x).ToCube()
+				t.Coords = hexg.NewOddRCoord(x, y).ToCube()
 			}
 			w.Tiles.Tiles[x][y] = t
 			y++
