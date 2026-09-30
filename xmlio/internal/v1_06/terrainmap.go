@@ -37,9 +37,9 @@ func decodeTerrainMap(src TerrainMap_t, w *wxx.Map_t) error {
 	return nil
 }
 
-func encodeTerrainMap(terrainMap *wxx.TerrainMap_t, wb *bytes.Buffer) error {
+func encodeTerrainMap(names []string, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf("<terrainmap>"))
-	for k, v := range terrainMapToSlice(terrainMap.Data) {
+	for k, v := range names {
 		if k == 0 {
 			wb.WriteString(fmt.Sprintf("%s\t%d", v, k))
 		} else {

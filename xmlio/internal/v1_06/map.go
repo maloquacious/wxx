@@ -285,7 +285,11 @@ func encodeMap(w *wxx.Map_t, target appver.App_t, schema string, wb *bytes.Buffe
 		return err
 	}
 
-	if err := encodeTerrainMap(w.TerrainMap, wb); err != nil {
+	terrainNames, terrainRemap, err := terrainTable(w.TerrainMap.Data)
+	if err != nil {
+		return err
+	}
+	if err := encodeTerrainMap(terrainNames, wb); err != nil {
 		return err
 	}
 
@@ -293,7 +297,7 @@ func encodeMap(w *wxx.Map_t, target appver.App_t, schema string, wb *bytes.Buffe
 		return err
 	}
 
-	if err := encodeTiles(w.Tiles, w.HexOrientation, wb); err != nil {
+	if err := encodeTiles(w.Tiles, w.HexOrientation, terrainRemap, wb); err != nil {
 		return err
 	}
 

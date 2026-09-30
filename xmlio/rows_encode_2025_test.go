@@ -3,6 +3,7 @@
 package xmlio_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/maloquacious/wxx"
@@ -52,9 +53,13 @@ func newRowsMap() *wxx.Map_t {
 		TextConfig:  &wxx.TextConfig_t{},
 		ShapeConfig: &wxx.ShapeConfig_t{},
 	}
-	m.TerrainMap = &wxx.TerrainMap_t{
-		Data: map[string]int{"Blank": 0, "Water": 1},
-		List: []*wxx.Terrain_t{{Index: 0, Label: "Blank"}, {Index: 1, Label: "Water"}},
+	// Every tile has its own terrain (see the loop below), and the table must
+	// list each one: a tile using an unlisted index is refused (issue #87).
+	m.TerrainMap = &wxx.TerrainMap_t{Data: map[string]int{}}
+	for i := 0; i < tilesWide*tilesHigh; i++ {
+		name := fmt.Sprintf("Terrain %d", i)
+		m.TerrainMap.Data[name] = i
+		m.TerrainMap.List = append(m.TerrainMap.List, &wxx.Terrain_t{Index: i, Label: name})
 	}
 
 	m.Tiles = &wxx.Tiles_t{
@@ -72,7 +77,7 @@ func newRowsMap() *wxx.Map_t {
 				Row:       x,
 				Column:    y,
 				Coords:    hexg.NewOddRCoord(y, x).ToCube(),
-				Terrain:   10*x + y, // distinct, position-sensitive
+				Terrain:   x*tilesHigh + y, // distinct, position-sensitive, and listed
 				Elevation: float64(100*x + y),
 				IsIcy:     (x+y)%2 == 0,
 				IsGMOnly:  x == 1,
