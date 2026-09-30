@@ -8,8 +8,11 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/hexg"
@@ -230,48 +233,9 @@ func main() {
 	inputMap.ColumnsWide = outputTiles.TilesWide
 	inputMap.Tiles = outputTiles
 
-	// translate feature and label coordinates. the constants (225 and 300)
-	// are used because Worldographer uses an "ideal" hex size for coordinates
-	// in the file; it translates them to the actual hex size when rendering.
-	// we must use the ideal when translating the coordinates.
-	translatedX := float64(numberOfColumnsToAddToLeft) * 225.0
-	translatedY := float64(numberOfRowsToAddToTop) * 300.0
-
-	// update feature locations, culling anything that is off the map
-	var outputFeatures []*wxx.Feature_t
-	for _, feature := range inputMap.Features {
-		if feature.Location != nil {
-			feature.Location.X += translatedX
-			feature.Location.Y += translatedY
-			if feature.Location.X <= 0 || feature.Location.Y <= 0 {
-				continue // off the map, so ignore it
-			}
-		}
-		// update feature label location if it exists
-		if feature.Label != nil && feature.Label.Location != nil {
-			feature.Label.Location.X += translatedX
-			feature.Label.Location.Y += translatedY
-			if feature.Label.Location.X <= 1.0 || feature.Label.Location.Y <= 1.0 {
-				continue // off the map, so ignore it
-			}
-		}
-		outputFeatures = append(outputFeatures, feature)
-	}
-	inputMap.Features = outputFeatures
-
-	// update standalone label locations
-	var outputLabels []*wxx.Label_t
-	for _, label := range inputMap.Labels {
-		if label.Location != nil {
-			label.Location.X += translatedX
-			label.Location.Y += translatedY
-			if label.Location.X <= 1.0 || label.Location.Y <= 1.0 {
-				continue // off the map, so ignore it
-			}
-		}
-		outputLabels = append(outputLabels, label)
-	}
-	inputMap.Labels = outputLabels
+	// move everything that carries a map position by the same amount the tiles
+	// moved, and drop what falls off the map (issue #79).
+	shiftMapContent(inputMap, columnsGeometry, numberOfColumnsToAddToLeft, numberOfRowsToAddToTop)
 
 	// Write to the output file, as the application version the INPUT states.
 	//
@@ -298,4 +262,161 @@ func main() {
 	}
 
 	log.Printf("%s: resized to %s\n", inputFile, outputFile)
+}
+
+// geometry_t is how a map's drawing coordinates relate to its hexes.
+//
+// Worldographer stores positions in an "ideal" coordinate space and scales them
+// to the actual hex size when rendering, so moving content by whole hexes means
+// moving it by these ideal amounts.
+type geometry_t struct {
+	colStep   float64 // x distance between adjacent columns
+	rowStep   float64 // y distance between adjacent rows
+	oddOffset float64 // y offset of odd columns
+	extraX    float64 // how far the last column reaches past its step
+}
+
+// columnsGeometry is COLUMNS (flat-top) hexes: 300 x 300 ideal, columns 225
+// apart, rows 300 apart, odd columns 150 lower. Hex (col,row) has its center
+// at (150 + 225*col, 150 + 300*row + 150*odd(col)), and an <extraTerrain>
+// placement is stated at the hex's corner, (225*col, 300*row + 150*odd(col)).
+// Both fit every sample.
+var columnsGeometry = geometry_t{colStep: 225, rowStep: 300, oddOffset: 150, extraX: 75}
+
+// extent is the map's size in drawing coordinates.
+func (g geometry_t) extent(width, height int) (float64, float64) {
+	return g.colStep*float64(width) + g.extraX, g.rowStep*float64(height) + g.oddOffset
+}
+
+// placementHex is the hex an <extraTerrain> placement's location names.
+func (g geometry_t) placementHex(x, y float64) (col, row int) {
+	col = int(math.Round(x / g.colStep))
+	if col%2 != 0 {
+		y -= g.oddOffset
+	}
+	return col, int(math.Round(y / g.rowStep))
+}
+
+// shiftMapContent moves every positioned element of m by dCols columns and
+// dRows rows, and drops what the resized map no longer covers. m.Tiles must
+// already hold the resized tiles.
+//
+// Features, labels, notes and shapes are points in drawing coordinates. Each
+// is kept if it lies inside the map; a shape is kept if any of its points
+// does. <extraTerrain> placements name a hex, so each is kept if its hex is on
+// the map: its location is the hex's corner, and the first column's corner is
+// x = 0, which a point test would reject.
+func shiftMapContent(m *wxx.Map_t, g geometry_t, dCols, dRows int) {
+	dx, dy := float64(dCols)*g.colStep, float64(dRows)*g.rowStep
+	maxX, maxY := g.extent(m.Tiles.TilesWide, m.Tiles.TilesHigh)
+	onMap := func(x, y float64) bool {
+		return 0 < x && x < maxX && 0 < y && y < maxY
+	}
+
+	var features []*wxx.Feature_t
+	for _, feature := range m.Features {
+		keep := true
+		if feature.Location != nil {
+			feature.Location.X += dx
+			feature.Location.Y += dy
+			keep = onMap(feature.Location.X, feature.Location.Y)
+		}
+		if feature.Label != nil && feature.Label.Location != nil {
+			feature.Label.Location.X += dx
+			feature.Label.Location.Y += dy
+			keep = keep && onMap(feature.Label.Location.X, feature.Label.Location.Y)
+		}
+		if keep {
+			features = append(features, feature)
+		}
+	}
+	m.Features = features
+
+	var labels []*wxx.Label_t
+	for _, label := range m.Labels {
+		if label.Location != nil {
+			label.Location.X += dx
+			label.Location.Y += dy
+			if !onMap(label.Location.X, label.Location.Y) {
+				continue
+			}
+		}
+		labels = append(labels, label)
+	}
+	m.Labels = labels
+
+	var notes []*wxx.Note_t
+	for _, note := range m.Notes {
+		// the key is the note's position when it has one: 2.08 states the
+		// position only there, so its notes decode with X and Y zero.
+		x, y := note.X, note.Y
+		if level, kx, ky, ok := parseNoteKey(note.Key); ok {
+			x, y = kx+dx, ky+dy
+			note.Key = level + "," + keyFloat(x) + "," + keyFloat(y)
+		} else {
+			x, y = x+dx, y+dy
+		}
+		note.X += dx
+		note.Y += dy
+		if onMap(x, y) {
+			notes = append(notes, note)
+		}
+	}
+	m.Notes = notes
+
+	var shapes []*wxx.Shape_t
+	for _, shape := range m.Shapes {
+		keep := len(shape.Points) == 0
+		for _, p := range shape.Points {
+			p.X += dx
+			p.Y += dy
+			keep = keep || onMap(p.X, p.Y)
+		}
+		if keep {
+			shapes = append(shapes, shape)
+		}
+	}
+	m.Shapes = shapes
+
+	if m.ExtraTerrain != nil {
+		for _, layer := range m.ExtraTerrain.MapLayers {
+			var placements []*wxx.TerrainAndLocation_t
+			for _, tl := range layer.Terrain {
+				tl.X += dx
+				tl.Y += dy
+				col, row := g.placementHex(tl.X, tl.Y)
+				if 0 <= col && col < m.Tiles.TilesWide && 0 <= row && row < m.Tiles.TilesHigh {
+					placements = append(placements, tl)
+				}
+			}
+			layer.Terrain = placements
+		}
+	}
+}
+
+// parseNoteKey reads a note key in Worldographer's "<viewLevel>,<x>,<y>" form.
+//
+// 2.06 writes the position twice, in the key and in @x/@y. 2.08 writes it only
+// in the key (its <note> has no @x or @y), so the key is the position that
+// counts. A key not in this form reports ok = false and is left alone.
+func parseNoteKey(key string) (level string, x, y float64, ok bool) {
+	parts := strings.Split(key, ",")
+	if len(parts) != 3 {
+		return "", 0, 0, false
+	}
+	x, errX := strconv.ParseFloat(parts[1], 64)
+	y, errY := strconv.ParseFloat(parts[2], 64)
+	if errX != nil || errY != nil {
+		return "", 0, 0, false
+	}
+	return parts[0], x, y, true
+}
+
+// keyFloat spells a coordinate the way note keys do: "100.0", "2343.75".
+func keyFloat(f float64) string {
+	s := strconv.FormatFloat(f, 'f', -1, 64)
+	if !strings.Contains(s, ".") {
+		s += ".0"
+	}
+	return s
 }
