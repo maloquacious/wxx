@@ -318,7 +318,7 @@ var registryFixtureSamples = []struct {
 	{"classic 1.77 columns", "../testdata/2017-1.77-1.0-columns-blank.wxx", "1.77", v0_77.Codec_t{}, "", ""},
 	{"classic 1.77 rows", "../testdata/2017-1.77-1.0-rows-blank.wxx", "1.77", v0_77.Codec_t{}, "", ""},
 	{"w2025 2.06 blank", sample2025_206, "2.06", v1_06.Codec_t{}, "2025", "1.06"},
-	{"w2025 2.06 layers", sample2025_206Layers, "2.06", v1_06.Codec_t{}, "2025", "1.06"},
+	{"w2025 2.06 layers beta", sample2025_206LayersBeta, "2.06", v1_06.Codec_t{}, "2025", "1.06"},
 }
 
 // TestRegistryMatchesFixtures grounds the registry in the files on disk rather

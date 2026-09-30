@@ -407,9 +407,9 @@ func assertConfigSectionsEmpty(t *testing.T, label string, m *wxx.Map_t) {
 // standalone <labels><label> entry, so this exercises the features.go decode
 // path; the encode side is shared (encodeFeatureLabel delegates to encodeLabel).
 func TestW2025LabelDropShadowRoundTrip(t *testing.T) {
-	m1, err := decodeFile(t, sample2025_206Layers)
+	m1, err := decodeFile(t, sample2025_206LayersBeta)
 	if err != nil {
-		t.Fatalf("decode %s: %v", sample2025_206Layers, err)
+		t.Fatalf("decode %s: %v", sample2025_206LayersBeta, err)
 	}
 
 	// Collect every Label_t the map carries, from both carriers.
@@ -424,7 +424,7 @@ func TestW2025LabelDropShadowRoundTrip(t *testing.T) {
 	// Guard against a vacuous pass: a loop over zero labels, or over labels that
 	// carry nothing, would pass while proving nothing.
 	if len(labels) == 0 {
-		t.Fatalf("%s: no labels decoded, so the round trip is not under test", sample2025_206Layers)
+		t.Fatalf("%s: no labels decoded, so the round trip is not under test", sample2025_206LayersBeta)
 	}
 	var carrying int
 	for _, l := range labels {
@@ -434,7 +434,7 @@ func TestW2025LabelDropShadowRoundTrip(t *testing.T) {
 	}
 	if carrying == 0 {
 		t.Fatalf("%s: decoded %d label(s) but none carried DropShadowColor; decode is dropping the trio",
-			sample2025_206Layers, len(labels))
+			sample2025_206LayersBeta, len(labels))
 	}
 
 	out, err := v1_06.Encode(m1, m1.MetaData.Version.App.Raw)

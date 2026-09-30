@@ -169,7 +169,7 @@ func TestW2025IntegerAttributeSpelling(t *testing.T) {
 	// The two .wxx fixtures, through the full public pipeline.
 	for _, fixture := range []string{
 		"../testdata/2025-2.06-13x11-941577-blank.wxx",
-		"../testdata/2025-2.06-13x11-941577-layers.wxx",
+		"../testdata/2025-2.06-13x11-941577-layers-beta.wxx",
 	} {
 		t.Run(fixture, func(t *testing.T) {
 			f, err := os.Open(fixture)

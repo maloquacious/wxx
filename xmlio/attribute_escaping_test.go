@@ -46,7 +46,7 @@ func TestAttributeEscaping(t *testing.T) {
 		// encoder does not yet (v0_77/COVERAGE.md).
 		lore bool
 	}{
-		{fixture: "2025-2.06-13x11-941577-layers.wxx", app: "2.06", nonASCII: "café", lore: true},
+		{fixture: "2025-2.06-13x11-941577-layers-beta.wxx", app: "2.06", nonASCII: "café", lore: true},
 		{fixture: "2017-1.77-1.0-columns-blank.wxx", app: "1.77", nonASCII: "caf&#233;"},
 	} {
 		t.Run(tc.fixture, func(t *testing.T) {

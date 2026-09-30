@@ -320,7 +320,7 @@ func rowsMap(t *testing.T) string {
 	if err != nil {
 		t.Fatalf("read fixture: %v", err)
 	}
-	layers, err := xmlio.ReadFile(filepath.Join("..", "..", "testdata", "2025-2.06-13x11-941577-layers.wxx"))
+	layers, err := xmlio.ReadFile(filepath.Join("..", "..", "testdata", "2025-2.06-13x11-941577-layers-beta.wxx"))
 	if err != nil {
 		t.Fatalf("read fixture: %v", err)
 	}

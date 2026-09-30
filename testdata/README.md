@@ -48,4 +48,124 @@ clean exit. Autosaves are transient and are git-ignored; never commit one.
 To inspect a sample as UTF-8 XML (the output is a scratch artifact, not
 committed):
 
-$ go run cmd/wxx export testdata/2025-2.06-13x11-941577-blank.wxx --utf-8 2025-2.06-13x11-941577-blank.utf8
+$ go run ./cmd/wxx export testdata/2025-2.06-13x11-941577-blank.wxx --utf-8 2025-2.06-13x11-941577-blank.utf8
+
+## Layers
+
+File > New World/Kingdom map
+
+Hex Orientation: Columns Line Up
+Map Projection: Flat
+  Hexes Wide: 13
+  Hexes High: 11
+
+Initial View Level: WORLD
+
+[x] Use suggested pixel sizes
+
+Random Seed: 941577
+
+All one terrain: Blank
+
+Generate Map
+
+### Add Terrain
+Open the Terrain tab and:
+
+1. Select Below All from the dropdown, disable terrain fill, and add Mountain Volcano to (11,9), (12,9), (9,10), (10,10), (11,10) and (12,10).
+2. Select Terrain Water from the dropdown, disable terrain fill, and add Water Sea to (11,9) and (12,9).
+3. Select Terrain Land from the dropdown, enable terrain fill, and fill the layer with Farmland by clicking in (1,0).
+4. Select Above Terrain from the dropdown, disable terrain fill, and add Flat Snowfields to (12,8) and (12,9).
+
+### Add Features
+Open the Features tab, select Building Cathedral and:
+
+1. Select the Features layer, and click on (0,0).
+2. Select the Below All layer, and click on (11,10).
+3. Select the Terrain Water layer, and click on (11,9).
+4. Select the Terrain Land layer, and click on (10,9).
+5. Select the Above Terrain layer, and click on (12,9).
+
+### Save
+
+Before saving, ensure all layers are visible, GM Only: Show is checked, Grid: Show/Numbers/Shadows are checked.
+
+Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-layers.wxx
+
+Do not scroll or resize the map before you save it!
+Never open the map file again. Doing so may change the contents.
+
+## Rows
+
+File > New World/Kingdom map
+
+Hex Orientation: Rows Line Up
+Map Projection: Flat
+  Hexes Wide: 13
+  Hexes High: 11
+
+Initial View Level: WORLD
+
+[x] Use suggested pixel sizes
+
+Random Seed: 941577
+
+All one terrain: Blank
+
+Generate Map
+
+### Add Terrain
+Open the Terrain tab and:
+
+1. Select Terrain Water from the dropdown, disable terrain fill, and add Water Sea to (0,0), (0,1), (1,2), (1,3) and (2,3).
+
+### Save
+
+Before saving, ensure all layers are visible, GM Only: Show is checked, Grid: Show/Numbers/Shadows are checked.
+
+Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-rows.wxx
+
+Do not scroll or resize the map before you save it!
+Never open the map file again. Doing so may change the contents.
+
+## Resources
+
+Painting Farmland makes Worldographer write each tile's resources out in
+full (11 fields per tile, where a Blank or Sea tile has 6), so this map
+carries tiles with uncompressed resources.
+
+File > New World/Kingdom map
+
+Hex Orientation: Columns Line Up
+Map Projection: Flat
+  Hexes Wide: 13
+  Hexes High: 11
+
+Initial View Level: WORLD
+
+[x] Use suggested pixel sizes
+
+Random Seed: 941577
+
+All one terrain: Blank
+
+Generate Map
+
+### Add Terrain
+Open the Terrain tab and:
+
+1. Select Terrain Land from the dropdown, enable terrain fill, and fill the layer with Farmland by clicking in (1,0).
+2. Disable terrain fill, select Terrain Water from the dropdown, and add Water Sea to (11,9), (12,9), (9,10), (10,10), (11,10) and (12,10).
+
+Keep this order. Painting Sea on Terrain Water after the Farmland fill trips a
+Worldographer UI bug, but the saved data is consistent, and this is the order
+that produced the 2.07 and 2.08 fixtures.
+
+### Save
+
+Before saving, ensure all layers are visible, GM Only: Show is checked, Grid: Show/Numbers/Shadows are checked.
+
+Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-resources.wxx
+
+Do not scroll or resize the map before you save it!
+Never open the map file again. Doing so may change the contents.

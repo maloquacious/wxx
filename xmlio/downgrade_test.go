@@ -75,7 +75,7 @@ func TestClassicDowngradeExtraTerrain(t *testing.T) {
 	}{
 		{
 			name:       "layers: one placement on one layer is reported",
-			fixture:    sample2025_206Layers,
+			fixture:    sample2025_206LayersBeta,
 			wantDetail: `1 terrain placement(s) on 1 layer(s) are dropped ("Terrain Layer": 1)`,
 		},
 		{
@@ -278,7 +278,7 @@ func TestNoLossOnSameReleaseTargets(t *testing.T) {
 		// target reports as lost. Targeted at its OWN release it must report
 		// nothing: the loss is a property of the target's expressiveness, not of
 		// the content being unusual.
-		{"w2025 2.06 layers", sample2025_206Layers},
+		{"w2025 2.06 layers beta", sample2025_206LayersBeta},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			m := decodeW2025(t, tc.fixture)
@@ -343,8 +343,8 @@ func TestClassicDowngradeLossInventory(t *testing.T) {
 			"element-dropped\tmap/extraTerrain": "empty container: no children, no text, nothing to lose",
 		}, nil)
 	})
-	t.Run(sample2025_206Layers, func(t *testing.T) {
-		checkClassicDowngradeInventory(t, sample2025_206Layers, nil, map[string]string{
+	t.Run(sample2025_206LayersBeta, func(t *testing.T) {
+		checkClassicDowngradeInventory(t, sample2025_206LayersBeta, nil, map[string]string{
 			"element-dropped\tmap/extraTerrain":                             "map/extraTerrain",
 			"element-dropped\tmap/extraTerrain/mapLayer":                    "map/extraTerrain",
 			"element-dropped\tmap/extraTerrain/mapLayer/terrainAndLocation": "map/extraTerrain",

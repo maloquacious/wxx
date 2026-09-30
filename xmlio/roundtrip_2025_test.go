@@ -22,9 +22,10 @@ import (
 const (
 	// sample2025_206 is the baseline: a blank 13x11 map.
 	sample2025_206 = "../testdata/2025-2.06-13x11-941577-blank.wxx" // release=2025 version=2.06 schema=1.06
-	// sample2025_206Layers is the same build carrying labels, locations,
-	// map layers and terrain-and-location entries.
-	sample2025_206Layers = "../testdata/2025-2.06-13x11-941577-layers.wxx" // release=2025 version=2.06 schema=1.06
+	// sample2025_206LayersBeta was written by a beta build of 2.06. It carries
+	// labels, locations, map layers and terrain-and-location entries, including
+	// the "Terrain Layer" map layer, which no production build ships.
+	sample2025_206LayersBeta = "../testdata/2025-2.06-13x11-941577-layers-beta.wxx" // release=2025 version=2.06 schema=1.06
 )
 
 // TestW2025Decode_BothSamples documents that the public decoder accepts both
@@ -35,7 +36,7 @@ func TestW2025Decode_BothSamples(t *testing.T) {
 		path string
 	}{
 		{"2.06/1.06 blank", sample2025_206},
-		{"2.06/1.06 layers", sample2025_206Layers},
+		{"2.06/1.06 layers beta", sample2025_206LayersBeta},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			m, err := decodeFile(t, tc.path)
