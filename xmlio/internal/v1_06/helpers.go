@@ -176,3 +176,43 @@ func encodeInnerText(input string) string {
 	escaped := html.EscapeString(input) // Escapes < > & "
 	return strings.ReplaceAll(escaped, "\n", "&#10;")
 }
+
+// xmlAttr renders s as a double-quoted XML attribute value (issue #71).
+//
+// Every attribute the encoder writes goes through this. It replaced fmt's %q,
+// which produces a Go string literal, not XML: it wrote & and < raw, which is
+// not well-formed, and " as \", which ends the attribute early, so any user
+// text containing them made a file that was not XML. It also wrote tab and
+// newline as the two characters \t and \n, silently changing the value.
+//
+// The five markup characters are written as entities. Tab, newline and
+// carriage return are written as character references, because a parser
+// normalizes those characters to a space when it reads them raw from an
+// attribute value. Every other control character is also written as a
+// character reference, which XML 1.1 -- the version every W2025 file declares
+// -- permits. Anything else, non-ASCII included, is written as is: the document
+// is UTF-8 until the transport stage converts it to UTF-16, and no W2025 sample
+// shows Worldographer escaping non-ASCII.
+func xmlAttr(s string) string {
+	var b strings.Builder
+	b.Grow(len(s) + 2)
+	b.WriteByte('"')
+	for _, r := range s {
+		switch {
+		case r == '&':
+			b.WriteString("&amp;")
+		case r == '<':
+			b.WriteString("&lt;")
+		case r == '>':
+			b.WriteString("&gt;")
+		case r == '"':
+			b.WriteString("&quot;")
+		case r < 0x20 || r == 0x7f:
+			fmt.Fprintf(&b, "&#%d;", r)
+		default:
+			b.WriteRune(r)
+		}
+	}
+	b.WriteByte('"')
+	return b.String()
+}

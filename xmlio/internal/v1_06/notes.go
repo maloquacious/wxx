@@ -46,15 +46,15 @@ func encodeNotes(notes []*wxx.Note_t, wb *bytes.Buffer) error {
 
 func encodeNote(note *wxx.Note_t, wb *bytes.Buffer) error {
 	wb.WriteString("<note")
-	wb.WriteString(fmt.Sprintf(" key=%q", note.Key))
-	wb.WriteString(fmt.Sprintf(" viewLevel=%q", note.ViewLevel))
-	wb.WriteString(fmt.Sprintf(" x=%q", floats(note.X)))
-	wb.WriteString(fmt.Sprintf(" y=%q", floats(note.Y)))
-	wb.WriteString(fmt.Sprintf(" filename=%q", note.Filename))
-	wb.WriteString(fmt.Sprintf(" parent=%q", note.Parent))
-	wb.WriteString(fmt.Sprintf(" color=%q", rgbans(note.Color))) // decodeRgba
-	wb.WriteString(fmt.Sprintf(" title=%q", note.Title))
-	wb.WriteString(fmt.Sprintf(" isGMOnly=%q", bools(note.IsGMOnly)))
+	wb.WriteString(fmt.Sprintf(" key=%s", xmlAttr(note.Key)))
+	wb.WriteString(fmt.Sprintf(" viewLevel=%s", xmlAttr(note.ViewLevel)))
+	wb.WriteString(fmt.Sprintf(" x=%s", xmlAttr(floats(note.X))))
+	wb.WriteString(fmt.Sprintf(" y=%s", xmlAttr(floats(note.Y))))
+	wb.WriteString(fmt.Sprintf(" filename=%s", xmlAttr(note.Filename)))
+	wb.WriteString(fmt.Sprintf(" parent=%s", xmlAttr(note.Parent)))
+	wb.WriteString(fmt.Sprintf(" color=%s", xmlAttr(rgbans(note.Color)))) // decodeRgba
+	wb.WriteString(fmt.Sprintf(" title=%s", xmlAttr(note.Title)))
+	wb.WriteString(fmt.Sprintf(" isGMOnly=%s", xmlAttr(bools(note.IsGMOnly))))
 	wb.WriteString(">")
 	// notetext is CDATA HTML; emit it verbatim so the round-trip preserves it.
 	wb.WriteString("<notetext><![CDATA[")

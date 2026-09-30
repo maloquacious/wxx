@@ -48,10 +48,10 @@ type Int_t int
 
 // String renders the value as the file must state it.
 //
-// Note for callers: fmt's %q does NOT call this -- on an integer %q produces a
-// character literal -- so emit code must pass s.String() explicitly. The
-// encoders here write attributes through fmt.Sprintf(" name=%q", ...), so this
-// is a live trap rather than a hypothetical one.
+// Note for callers: emit code must pass s.String() explicitly. Attributes are
+// written through xmlAttr, which takes a string, so passing an Int_t directly
+// does not compile. That is deliberate: under the fmt %q the encoders used
+// before issue #71, an integer compiled and came out as a character literal.
 func (v Int_t) String() string {
 	return strconv.Itoa(int(v))
 }

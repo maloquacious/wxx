@@ -29,9 +29,9 @@ func encodeMapLayers(mapLayers []*wxx.MapLayer_t, wb *bytes.Buffer) error {
 
 func encodeMapLayer(mapLayer *wxx.MapLayer_t, wb *bytes.Buffer) error {
 	wb.WriteString("<maplayer")
-	wb.WriteString(fmt.Sprintf(" name=%q", mapLayer.Name))
-	wb.WriteString(fmt.Sprintf(" isVisible=%q", bools(mapLayer.IsVisible)))
-	wb.WriteString(fmt.Sprintf(" opacity=%q", floats(mapLayer.Opacity)))
+	wb.WriteString(fmt.Sprintf(" name=%s", xmlAttr(mapLayer.Name)))
+	wb.WriteString(fmt.Sprintf(" isVisible=%s", xmlAttr(bools(mapLayer.IsVisible))))
+	wb.WriteString(fmt.Sprintf(" opacity=%s", xmlAttr(floats(mapLayer.Opacity))))
 	wb.WriteString("/>\n")
 	return nil
 }

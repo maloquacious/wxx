@@ -81,29 +81,29 @@ func encodeMapKey(mapKey *wxx.MapKey_t, wb *bytes.Buffer) error {
 	}
 
 	wb.WriteString("<mapkey")
-	wb.WriteString(fmt.Sprintf(" positionx=%q", floats(mapKey.PositionX)))
-	wb.WriteString(fmt.Sprintf(" positiony=%q", floats(mapKey.PositionY)))
-	wb.WriteString(fmt.Sprintf(" viewlevel=%q", mapKey.Viewlevel))
-	wb.WriteString(fmt.Sprintf(" height=%q", height.String()))
-	wb.WriteString(fmt.Sprintf(" backgroundcolor=%q", rgbas(mapKey.BackgroundColor))) // decodeRgba
-	wb.WriteString(fmt.Sprintf(" backgroundopacity=%q", backgroundOpacity.String()))
-	wb.WriteString(fmt.Sprintf(" titleText=%q", mapKey.TitleText))
-	wb.WriteString(fmt.Sprintf(" titleFontFace=%q", mapKey.TitleFontFace))
-	wb.WriteString(fmt.Sprintf(" titleFontColor=%q", rgbas(mapKey.TitleFontColor))) // decodeRgba
-	wb.WriteString(fmt.Sprintf(" titleFontBold=%q", bools(mapKey.TitleFontBold)))
-	wb.WriteString(fmt.Sprintf(" titleFontItalic=%q", bools(mapKey.TitleFontItalic)))
-	wb.WriteString(fmt.Sprintf(" titleScale=%q", titleScale.String()))
-	wb.WriteString(fmt.Sprintf(" scaleText=%q", mapKey.ScaleText))
-	wb.WriteString(fmt.Sprintf(" scaleFontFace=%q", mapKey.ScaleFontFace))
-	wb.WriteString(fmt.Sprintf(" scaleFontColor=%q", rgbas(mapKey.ScaleFontColor))) // decodeRgba
-	wb.WriteString(fmt.Sprintf(" scaleFontBold=%q", bools(mapKey.ScaleFontBold)))
-	wb.WriteString(fmt.Sprintf(" scaleFontItalic=%q", bools(mapKey.ScaleFontItalic)))
-	wb.WriteString(fmt.Sprintf(" scaleScale=%q", scaleScale.String()))
-	wb.WriteString(fmt.Sprintf(" entryFontFace=%q", mapKey.EntryFontFace))
-	wb.WriteString(fmt.Sprintf(" entryFontColor=%q", rgbas(mapKey.EntryFontColor))) // decodeRgba
-	wb.WriteString(fmt.Sprintf(" entryFontBold=%q", bools(mapKey.EntryFontBold)))
-	wb.WriteString(fmt.Sprintf(" entryFontItalic=%q", bools(mapKey.EntryFontItalic)))
-	wb.WriteString(fmt.Sprintf(" entryScale=%q", entryScale.String()))
+	wb.WriteString(fmt.Sprintf(" positionx=%s", xmlAttr(floats(mapKey.PositionX))))
+	wb.WriteString(fmt.Sprintf(" positiony=%s", xmlAttr(floats(mapKey.PositionY))))
+	wb.WriteString(fmt.Sprintf(" viewlevel=%s", xmlAttr(mapKey.Viewlevel)))
+	wb.WriteString(fmt.Sprintf(" height=%s", xmlAttr(height.String())))
+	wb.WriteString(fmt.Sprintf(" backgroundcolor=%s", xmlAttr(rgbas(mapKey.BackgroundColor)))) // decodeRgba
+	wb.WriteString(fmt.Sprintf(" backgroundopacity=%s", xmlAttr(backgroundOpacity.String())))
+	wb.WriteString(fmt.Sprintf(" titleText=%s", xmlAttr(mapKey.TitleText)))
+	wb.WriteString(fmt.Sprintf(" titleFontFace=%s", xmlAttr(mapKey.TitleFontFace)))
+	wb.WriteString(fmt.Sprintf(" titleFontColor=%s", xmlAttr(rgbas(mapKey.TitleFontColor)))) // decodeRgba
+	wb.WriteString(fmt.Sprintf(" titleFontBold=%s", xmlAttr(bools(mapKey.TitleFontBold))))
+	wb.WriteString(fmt.Sprintf(" titleFontItalic=%s", xmlAttr(bools(mapKey.TitleFontItalic))))
+	wb.WriteString(fmt.Sprintf(" titleScale=%s", xmlAttr(titleScale.String())))
+	wb.WriteString(fmt.Sprintf(" scaleText=%s", xmlAttr(mapKey.ScaleText)))
+	wb.WriteString(fmt.Sprintf(" scaleFontFace=%s", xmlAttr(mapKey.ScaleFontFace)))
+	wb.WriteString(fmt.Sprintf(" scaleFontColor=%s", xmlAttr(rgbas(mapKey.ScaleFontColor)))) // decodeRgba
+	wb.WriteString(fmt.Sprintf(" scaleFontBold=%s", xmlAttr(bools(mapKey.ScaleFontBold))))
+	wb.WriteString(fmt.Sprintf(" scaleFontItalic=%s", xmlAttr(bools(mapKey.ScaleFontItalic))))
+	wb.WriteString(fmt.Sprintf(" scaleScale=%s", xmlAttr(scaleScale.String())))
+	wb.WriteString(fmt.Sprintf(" entryFontFace=%s", xmlAttr(mapKey.EntryFontFace)))
+	wb.WriteString(fmt.Sprintf(" entryFontColor=%s", xmlAttr(rgbas(mapKey.EntryFontColor)))) // decodeRgba
+	wb.WriteString(fmt.Sprintf(" entryFontBold=%s", xmlAttr(bools(mapKey.EntryFontBold))))
+	wb.WriteString(fmt.Sprintf(" entryFontItalic=%s", xmlAttr(bools(mapKey.EntryFontItalic))))
+	wb.WriteString(fmt.Sprintf(" entryScale=%s", xmlAttr(entryScale.String())))
 	wb.WriteString(">\n")
 	wb.WriteString("</mapkey>\n")
 	return nil

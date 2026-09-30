@@ -70,9 +70,9 @@ func encodeInformations(informations *wxx.Informations_t, wb *bytes.Buffer) erro
 
 func encodeInformation(information *wxx.Information_t, wb *bytes.Buffer) error {
 	wb.WriteString("<information")
-	wb.WriteString(fmt.Sprintf(" uuid=%q", information.Uuid))
-	wb.WriteString(fmt.Sprintf(" type=%q", information.Type))
-	wb.WriteString(fmt.Sprintf(" title=%q", information.Title))
+	wb.WriteString(fmt.Sprintf(" uuid=%s", xmlAttr(information.Uuid)))
+	wb.WriteString(fmt.Sprintf(" type=%s", xmlAttr(information.Type)))
+	wb.WriteString(fmt.Sprintf(" title=%s", xmlAttr(information.Title)))
 	encodeLoreAttr(wb, "rulers", information.Rulers)
 	encodeLoreAttr(wb, "government", information.Government)
 	encodeLoreAttr(wb, "cultures", information.Cultures)
@@ -97,9 +97,9 @@ func encodeInformation(information *wxx.Information_t, wb *bytes.Buffer) error {
 
 func encodeInformationDetail(detail *wxx.InformationDetail_t, wb *bytes.Buffer) error {
 	wb.WriteString("<information")
-	wb.WriteString(fmt.Sprintf(" uuid=%q", detail.Uuid))
-	wb.WriteString(fmt.Sprintf(" type=%q", detail.Type))
-	wb.WriteString(fmt.Sprintf(" title=%q", detail.Title))
+	wb.WriteString(fmt.Sprintf(" uuid=%s", xmlAttr(detail.Uuid)))
+	wb.WriteString(fmt.Sprintf(" type=%s", xmlAttr(detail.Type)))
+	wb.WriteString(fmt.Sprintf(" title=%s", xmlAttr(detail.Title)))
 	encodeLoreAttr(wb, "rulers", detail.Rulers)
 	encodeLoreAttr(wb, "government", detail.Government)
 	encodeLoreAttr(wb, "cultures", detail.Cultures)
@@ -123,5 +123,5 @@ func encodeLoreAttr(wb *bytes.Buffer, name string, value *string) {
 	if value == nil {
 		return
 	}
-	wb.WriteString(fmt.Sprintf(" %s=%q", name, *value))
+	wb.WriteString(fmt.Sprintf(" %s=%s", name, xmlAttr(*value)))
 }

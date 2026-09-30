@@ -68,18 +68,18 @@ func encodeLabels(labels []*wxx.Label_t, wb *bytes.Buffer) error {
 
 func encodeLabel(label *wxx.Label_t, wb *bytes.Buffer) error {
 	wb.WriteString("<label")
-	wb.WriteString(fmt.Sprintf("  mapLayer=%q", label.MapLayer))
-	wb.WriteString(fmt.Sprintf(" style=%q", label.Style))       // can be null!
-	wb.WriteString(fmt.Sprintf(" fontFace=%q", label.FontFace)) // can be null!
-	wb.WriteString(fmt.Sprintf(" color=%q", rgbas(label.Color)))
+	wb.WriteString(fmt.Sprintf("  mapLayer=%s", xmlAttr(label.MapLayer)))
+	wb.WriteString(fmt.Sprintf(" style=%s", xmlAttr(label.Style)))       // can be null!
+	wb.WriteString(fmt.Sprintf(" fontFace=%s", xmlAttr(label.FontFace))) // can be null!
+	wb.WriteString(fmt.Sprintf(" color=%s", xmlAttr(rgbas(label.Color))))
 	// todo: backgroundColor is sometimes not displayed when its value is "0.0,0.0,0.0,1.0".
 	// I may need to ask on the Inkwell Discord about this; I can't figure out the pattern.
 	// Until then, seems to be no harm in excluding it (other than noise in the diff).
 	if attr := rgbas(label.BackgroundColor); attr != "0.0,0.0,0.0,1.0" { // do not include if null
-		wb.WriteString(fmt.Sprintf(" backgroundColor=%q", attr))
+		wb.WriteString(fmt.Sprintf(" backgroundColor=%s", xmlAttr(attr)))
 	}
-	wb.WriteString(fmt.Sprintf(" outlineColor=%q", rgbas(label.OutlineColor)))
-	wb.WriteString(fmt.Sprintf(" outlineSize=%q", floats(label.OutlineSize)))
+	wb.WriteString(fmt.Sprintf(" outlineColor=%s", xmlAttr(rgbas(label.OutlineColor))))
+	wb.WriteString(fmt.Sprintf(" outlineSize=%s", xmlAttr(floats(label.OutlineSize))))
 	// The W2025 drop-shadow trio is present all-or-none in real data;
 	// dropShadowColor is "null" or an RGBA string when present, never empty, so an
 	// empty DropShadowColor reliably means "absent from the source". Gate the whole
@@ -90,19 +90,19 @@ func encodeLabel(label *wxx.Label_t, wb *bytes.Buffer) error {
 	// The source writes the trio between outlineSize and rotate; emit it there so a
 	// round trip matches the source's attribute order.
 	if label.DropShadowColor != "" {
-		wb.WriteString(fmt.Sprintf(" dropShadowColor=%q", label.DropShadowColor)) // nullable string ("null")
-		wb.WriteString(fmt.Sprintf(" dropShadowRadius=%q", floats(label.DropShadowRadius)))
-		wb.WriteString(fmt.Sprintf(" dropShadowSpread=%q", floats(label.DropShadowSpread)))
+		wb.WriteString(fmt.Sprintf(" dropShadowColor=%s", xmlAttr(label.DropShadowColor))) // nullable string ("null")
+		wb.WriteString(fmt.Sprintf(" dropShadowRadius=%s", xmlAttr(floats(label.DropShadowRadius))))
+		wb.WriteString(fmt.Sprintf(" dropShadowSpread=%s", xmlAttr(floats(label.DropShadowSpread))))
 	}
-	wb.WriteString(fmt.Sprintf(" rotate=%q", floats(label.Rotate)))
-	wb.WriteString(fmt.Sprintf(" isBold=%q", bools(label.IsBold)))
-	wb.WriteString(fmt.Sprintf(" isItalic=%q", bools(label.IsItalic)))
-	wb.WriteString(fmt.Sprintf(" isWorld=%q", bools(label.IsWorld)))
-	wb.WriteString(fmt.Sprintf(" isContinent=%q", bools(label.IsContinent)))
-	wb.WriteString(fmt.Sprintf(" isKingdom=%q", bools(label.IsKingdom)))
-	wb.WriteString(fmt.Sprintf(" isProvince=%q", bools(label.IsProvince)))
-	wb.WriteString(fmt.Sprintf(" isGMOnly=%q", bools(label.IsGMOnly)))
-	wb.WriteString(fmt.Sprintf(" tags=%q", label.Tags))
+	wb.WriteString(fmt.Sprintf(" rotate=%s", xmlAttr(floats(label.Rotate))))
+	wb.WriteString(fmt.Sprintf(" isBold=%s", xmlAttr(bools(label.IsBold))))
+	wb.WriteString(fmt.Sprintf(" isItalic=%s", xmlAttr(bools(label.IsItalic))))
+	wb.WriteString(fmt.Sprintf(" isWorld=%s", xmlAttr(bools(label.IsWorld))))
+	wb.WriteString(fmt.Sprintf(" isContinent=%s", xmlAttr(bools(label.IsContinent))))
+	wb.WriteString(fmt.Sprintf(" isKingdom=%s", xmlAttr(bools(label.IsKingdom))))
+	wb.WriteString(fmt.Sprintf(" isProvince=%s", xmlAttr(bools(label.IsProvince))))
+	wb.WriteString(fmt.Sprintf(" isGMOnly=%s", xmlAttr(bools(label.IsGMOnly))))
+	wb.WriteString(fmt.Sprintf(" tags=%s", xmlAttr(label.Tags)))
 	wb.WriteString(">")
 	if err := encodeLabelLocation(label.Location, wb); err != nil {
 		return err
@@ -116,10 +116,10 @@ func encodeLabel(label *wxx.Label_t, wb *bytes.Buffer) error {
 
 func encodeLabelLocation(location *wxx.LabelLocation_t, wb *bytes.Buffer) error {
 	wb.WriteString("<location")
-	wb.WriteString(fmt.Sprintf(" viewLevel=%q", location.ViewLevel))
-	wb.WriteString(fmt.Sprintf(" x=%q", floats(location.X)))
-	wb.WriteString(fmt.Sprintf(" y=%q", floats(location.Y)))
-	wb.WriteString(fmt.Sprintf(" scale=%q", floats(location.Scale)))
+	wb.WriteString(fmt.Sprintf(" viewLevel=%s", xmlAttr(location.ViewLevel)))
+	wb.WriteString(fmt.Sprintf(" x=%s", xmlAttr(floats(location.X))))
+	wb.WriteString(fmt.Sprintf(" y=%s", xmlAttr(floats(location.Y))))
+	wb.WriteString(fmt.Sprintf(" scale=%s", xmlAttr(floats(location.Scale))))
 	wb.WriteString(" />")
 	return nil
 }
