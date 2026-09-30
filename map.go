@@ -233,6 +233,11 @@ type GridAndNumbering_t struct {
 // means it states the attribute empty. Worldographer writes both -- an
 // "Information" entry carries none, a "Religion" entry carries domains="" --
 // and an encoder must reproduce whichever it was given (issue #66).
+//
+// Details holds the entries nested inside this one, each itself an
+// Information_t, to any depth. Real files nest three deep -- Information >
+// Religion (a pantheon) > Religion (each god) -- and nothing in the format
+// suggests a limit, so the model imposes none (issue #69).
 type Information_t struct {
 	Uuid         string  `json:"uuid,omitempty"`
 	Type         string  `json:"type,omitempty"`
@@ -246,31 +251,13 @@ type Information_t struct {
 	HolySymbol   *string `json:"holySymbol,omitempty"`
 	Domains      *string `json:"domains,omitempty"`
 
-	Details   []*InformationDetail_t `json:"details,omitempty"`
-	InnerText string                 `json:"innerText,omitempty"`
+	Details   []*Information_t `json:"details,omitempty"`
+	InnerText string           `json:"innerText,omitempty"`
 }
 
 type Informations_t struct {
 	Informations []*Information_t `json:"informations,omitempty"`
 	InnerText    string           `json:"innerText,omitempty"`
-}
-
-// InformationDetail_t is a lore entry nested inside an Information_t. Its lore
-// attributes follow the same nil-means-absent rule as Information_t's.
-type InformationDetail_t struct {
-	Uuid         string  `json:"uuid,omitempty"`
-	Type         string  `json:"type,omitempty"`
-	Title        string  `json:"title,omitempty"`
-	Rulers       *string `json:"rulers,omitempty"`
-	Government   *string `json:"government,omitempty"`
-	Cultures     *string `json:"cultures,omitempty"`
-	Language     *string `json:"language,omitempty"`
-	ReligionType *string `json:"religionType,omitempty"`
-	Culture      *string `json:"culture,omitempty"`
-	HolySymbol   *string `json:"holySymbol,omitempty"`
-	Domains      *string `json:"domains,omitempty"`
-
-	InnerText string `json:"innerText,omitempty"`
 }
 
 type Label_t struct {
