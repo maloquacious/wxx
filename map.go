@@ -88,7 +88,8 @@ type Map_t struct {
 	BlurTerrainBG *BlurTerrainBG_t `json:"blurTerrainBG,omitempty"`
 
 	// ExtraTerrain is a W2025 top-level element; nil means absent from the file.
-	// Its content is opaque -- see ExtraTerrain_t.
+	// It holds terrain placed on layers other than the base tile -- see
+	// ExtraTerrain_t.
 	ExtraTerrain *ExtraTerrain_t `json:"extraTerrain,omitempty"`
 
 	// TerrainMap assigns numbers to each terrain type.
@@ -173,24 +174,44 @@ type FeatureLocation_t struct {
 	Y         float64 `json:"y,omitempty"`
 }
 
-// ExtraTerrain models the W2025 top-level <extraTerrain> element. It is a
+// ExtraTerrain_t models the W2025 top-level <extraTerrain> element: terrain
+// placed on a map layer other than a hex's base tile (issue #34). It is a
 // pointer on Map_t so nil distinguishes absent from present-but-empty.
 //
-// The two tracked 2.06 fixtures show both shapes it takes:
-// 2025-2.06-13x11-941577-blank.wxx carries an EMPTY container (InnerXML is "\n",
-// the pretty-printer's newline), while 2025-2.06-13x11-941577-layers.wxx carries
-// 183 bytes of real content -- a <mapLayer name="Terrain Layer"> holding a
-// <terrainAndLocation> that binds one hex's terrain to that layer.
-//
-// InnerXML captures whatever is between the tags VERBATIM, and that is the
-// element's entire modeling: nothing here understands a mapLayer or a
-// terrainAndLocation. The bytes round-trip 2025 -> 2025 intact, but the model
-// cannot answer a question about them, which is why encoding a populated
-// <extraTerrain> to a target that has no such element is an error rather than a
-// reported loss (#34 tracks modeling it; xmlio's downgradeLoss holds the
-// contract).
+// Each hex's base terrain lives in Tiles, one per hex, and carries no layer.
+// Samples suggest that is the terrain's default layer -- "Terrain Land" for land,
+// "Terrain Water" for water -- and that only terrain the user places on another
+// layer is written here. That is inferred from two 2.08 samples, not confirmed.
+// One hex may appear in several layers, and more than once in one layer, so
+// this is a list per layer, not a map keyed by hex.
 type ExtraTerrain_t struct {
-	InnerXML string `json:"innerXML,omitempty"`
+	MapLayers []*ExtraTerrainLayer_t `json:"mapLayers,omitempty"`
+}
+
+// ExtraTerrainLayer_t is one <mapLayer> inside <extraTerrain>. Name refers to
+// one of Map_t.MapLayers by name; nothing checks that it does.
+type ExtraTerrainLayer_t struct {
+	Name    string                  `json:"name"`
+	Terrain []*TerrainAndLocation_t `json:"terrain,omitempty"`
+}
+
+// TerrainAndLocation_t is one terrain placed on a layer (<terrainAndLocation>).
+//
+// Terrain is the terrain's NAME (on disk, @name), e.g. "Classic/Flat Beach" --
+// not the Tiles_t index into TerrainMap that a base tile uses.
+//
+// X and Y are the on-disk @location: a point in the map's drawing coordinates,
+// not a hex. They are kept as written, because the mapping to a hex is inferred
+// (on the COLUMNS samples, x = 225*col and y = 300*row + 150 for odd columns)
+// and unconfirmed for ROWS maps or other hex sizes; see #34.
+type TerrainAndLocation_t struct {
+	Terrain   string      `json:"terrain"`
+	Elevation float64     `json:"elevation"`
+	IsIcy     bool        `json:"isIcy,omitempty"`
+	IsGMOnly  bool        `json:"isGMOnly,omitempty"`
+	Resources Resources_t `json:"resources"`
+	X         float64     `json:"x"`
+	Y         float64     `json:"y"`
 }
 
 type GridAndNumbering_t struct {

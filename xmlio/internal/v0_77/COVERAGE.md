@@ -181,7 +181,8 @@ tracks the one stub this rule currently bites), its error becomes a diagnostic.
 | `map/configuration/shape-config/shapestyle/@lineJoin` | modeled → diagnostic | harness: `attr-dropped …/shapestyle lineJoin` (`ROUND`) | as above (line 158) |
 | `map/blurTerrainBG` | modeled → diagnostic | harness: `element-dropped map/blurTerrainBG`; 6 real attrs | classic defines no `<blurTerrainBG>` |
 | `map/@hScrollbarPos`, `map/@vScrollbarPos` | modeled → diagnostic, **latent** | harness shows both `attr-dropped`, but **both fixtures carry `0.0`** | classic `<map>` states no scrollbar position |
-| `map/extraTerrain` | **unmodeled stub → hard ERROR** | `…-layers.wxx` carries 183 bytes (`<mapLayer name="Terrain Layer">`/`<terrainAndLocation>`); `…-blank.wxx` carries `"\n"` | classic defines no `<extraTerrain>`; classic binds `mapLayer` to features/labels/shapes but **never to tiles**, so per-hex layer assignment collapses (ADR 0004) |
+| `map/extraTerrain` | modeled → diagnostic (#34) | harness on `…-layers.wxx`: `element-dropped` for `map/extraTerrain`, `…/mapLayer`, `…/mapLayer/terrainAndLocation`; the Detail counts placements per layer | classic defines no `<extraTerrain>`; classic binds `mapLayer` to features/labels/shapes but **never to tiles**, so per-hex layer assignment collapses (ADR 0004). Until #34 this was an unmodeled stub and a hard ERROR. |
+| `map/features/feature/label/@dropShadow*`, `map/labels/label/@dropShadow*` | modeled → diagnostic (#34) | harness on `…-layers.wxx`: `attr-dropped …/feature/label` for all three attributes; top-level `<labels>` is **latent** (no tracked `.wxx` has one) and synthesized by `TestClassicDowngradeLabelDropShadowLatent` | RelaxNG `label` has sixteen attributes, no `@dropShadow*` (lines 233-252) |
 
 Notes:
 
@@ -191,15 +192,18 @@ Notes:
   demonstrates it; `TestClassicDowngradeScrollbarLatent` **synthesizes** a
   non-zero source rather than pretending one does, mirroring
   `TestW2025LabelStyleDropShadowGate`.
-- **`<extraTerrain>` emptiness.** The error fires on non-whitespace `InnerXML`
-  only. `…-blank.wxx`'s container holds `"\n"` — pretty-printer whitespace, in
-  which no element, attribute, or text node can hide — so it loses nothing and
-  must not error.
-- **Not in this table, deliberately.** `map/features/feature/label/@dropShadow*`
-  is dropped on a **2.06 → 2.06** trip too (`Map_t.Label_t` models no drop
-  shadow; the trio lives on `LabelStyle_t`), so it is an **h2025 codec gap**, not
-  a downgrade loss. `map/@version` altered and `map/@release`/`@schema` dropped
-  are **target identity** (`Release_t.identify`), not loss.
+- **`<extraTerrain>` emptiness.** An empty container (present, no layers) loses
+  nothing and is not reported. `…-blank.wxx` carries one, and
+  `TestClassicDowngradeExtraTerrain` requires it to report nothing.
+- **Found by #34: the label drop-shadow loss.** No test downgraded the
+  `…-layers.wxx` fixture until #34, because its `<extraTerrain>` stub failed
+  the whole encode. Once it succeeded, the harness showed the feature labels'
+  drop-shadow trio dropped with nothing reporting it. #35 had already modeled
+  the trio on `Label_t`, which made this a true downgrade loss. It is reported
+  now, and `TestClassicDowngradeLossInventory` runs on both W2025 fixtures.
+- **Not in this table, deliberately.** `map/@version` altered and
+  `map/@release`/`@schema` dropped are **target identity**
+  (`Release_t.identify`), not loss.
 - **Unmasked, and now claimed (issue #36).** Classic `<labelstyle>` has no
   `@dropShadow*` (RelaxNG lines 181-190). That was true before and could not be
   *demonstrated*: the classic encoder dropped the entire `<labelstyle>` element

@@ -73,10 +73,44 @@ type BlurTerrainBG_t struct {
 	BlurEnd     float64 `xml:"blurEnd,attr"`
 }
 
-// ExtraTerrain_t is the on-disk <extraTerrain> element (W2025-native). It is an
-// empty container in observed samples; InnerXML preserves any inner content.
+// ExtraTerrain_t is the on-disk <extraTerrain> element (W2025-native): terrain
+// placed on map layers other than the base tile (issue #34).
+//
+// Other captures any child element this schema does not model, and each level
+// also captures unmodeled attributes. Decode refuses a document where either is
+// non-empty: before #34 this element was preserved verbatim, so modeling it must
+// not start silently dropping content the model does not understand.
 type ExtraTerrain_t struct {
-	InnerXML string `xml:",innerxml"`
+	MapLayers []ExtraTerrainLayer_t `xml:"mapLayer"`
+	Other     []unmodeledElement_t  `xml:",any"`
+}
+
+// ExtraTerrainLayer_t is <extraTerrain>/<mapLayer name="...">.
+type ExtraTerrainLayer_t struct {
+	Name       string                 `xml:"name,attr"`
+	Terrain    []TerrainAndLocation_t `xml:"terrainAndLocation"`
+	OtherAttrs []xml.Attr             `xml:",any,attr"`
+	Other      []unmodeledElement_t   `xml:",any"`
+}
+
+// TerrainAndLocation_t is <mapLayer>/<terrainAndLocation>. Resources and
+// Location are compound values ("Z" or seven comma-separated integers; "x,y"),
+// parsed by the decoder rather than here.
+type TerrainAndLocation_t struct {
+	Name       string               `xml:"name,attr"`
+	Elevation  Int_t                `xml:"elevation,attr"`
+	Icy        bool                 `xml:"icy,attr"`
+	GmOnly     bool                 `xml:"gmOnly,attr"`
+	Resources  string               `xml:"resources,attr"`
+	Location   string               `xml:"location,attr"`
+	OtherAttrs []xml.Attr           `xml:",any,attr"`
+	Other      []unmodeledElement_t `xml:",any"`
+}
+
+// unmodeledElement_t records only the name of a child element a schema struct
+// does not model, so a decoder can refuse it by name.
+type unmodeledElement_t struct {
+	XMLName xml.Name
 }
 
 type Configuration_t struct {
