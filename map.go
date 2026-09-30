@@ -514,6 +514,39 @@ type TerrainMap_t struct {
 	List []*Terrain_t   `json:"list,omitempty"`
 }
 
+// BlankTerrain is the terrain Worldographer treats as always available.
+const BlankTerrain = "Blank"
+
+// EnsureTerrain returns the index of the named terrain, adding it at the next
+// free index if the table does not list it (issue #81).
+//
+// Worldographer lists only the terrains a map uses, so a fully painted map has
+// no "Blank" entry, yet Blank is always available to it. The maintainer's rule
+// is that no wxx operation may lose Blank. An operation that writes a tile
+// with a terrain the table might not list -- resize filling the hexes it adds
+// with Blank -- takes its index from here instead of refusing the map.
+// Worldographer 2.08 opens a map whose table gained an entry this way.
+//
+// The next free index is one past the highest, so a table numbered 0..n-1
+// stays contiguous (see #87 for why that matters to the encoders).
+func (tm *TerrainMap_t) EnsureTerrain(name string) int {
+	if index, ok := tm.Data[name]; ok {
+		return index
+	}
+	next := 0
+	for _, index := range tm.Data {
+		if index >= next {
+			next = index + 1
+		}
+	}
+	if tm.Data == nil {
+		tm.Data = map[string]int{}
+	}
+	tm.Data[name] = next
+	tm.List = append(tm.List, &Terrain_t{Index: next, Label: name})
+	return next
+}
+
 type TextConfig_t struct {
 	LabelStyles []*LabelStyle_t `json:"labelStyles,omitempty"`
 	InnerText   string          `json:"innerText,omitempty"`
