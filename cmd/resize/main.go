@@ -61,10 +61,6 @@ func main() {
 		_, _ = fmt.Fprintf(os.Stderr, "error: missing output file name\n")
 		foundErrors = true
 	}
-	if numberOfColumnsToAddToLeft%2 != 0 {
-		_, _ = fmt.Fprintf(os.Stderr, "error: left columns must be even\n")
-		foundErrors = true
-	}
 	if zoomLevel < 1 || zoomLevel > 8 {
 		_, _ = fmt.Fprintf(os.Stderr, "error: zoom level must be between 1 and 8")
 	}
@@ -125,12 +121,27 @@ func main() {
 		log.Printf("input  %6d      x %6d\n", len(inputMap.Tiles.Tiles), len(inputMap.Tiles.Tiles[0]))
 	}
 
+	// everything that depends on how the hexes are laid out comes from the
+	// orientation the map states (issue #80).
+	geometry, err := geometryFor(inputMap.HexOrientation)
+	if err != nil {
+		log.Fatalf("error: %v\n", err)
+	}
+	// the hex stagger is per column in COLUMNS and per row in ROWS, so adding
+	// or removing an odd number at the start of that axis would shift every hex
+	// half a step.
+	if geometry.staggeredRows && numberOfRowsToAddToTop%2 != 0 {
+		log.Fatalf("error: %s map: top rows must be even\n", inputMap.HexOrientation)
+	} else if !geometry.staggeredRows && numberOfColumnsToAddToLeft%2 != 0 {
+		log.Fatalf("error: %s map: left columns must be even\n", inputMap.HexOrientation)
+	}
+
 	blankTerrainSlot, ok := inputMap.TerrainMap.Data["Blank"]
 	if !ok {
 		log.Fatalf("error: file doesn't have a \"Blank\" terrain slot\n")
 	}
 
-	inputMap.HexWidth, inputMap.HexHeight = 46.18*float64(zoomLevel), 40.0*float64(zoomLevel)
+	inputMap.HexWidth, inputMap.HexHeight = geometry.hexWidth*float64(zoomLevel), geometry.hexHeight*float64(zoomLevel)
 
 	// warning: map tiles are indexed [column][row], not [row][column]
 	//
@@ -171,7 +182,7 @@ func main() {
 		for row := 0; row < height; row++ {
 			tile := &wxx.Tile_t{
 				Terrain: blankTerrainSlot,
-				Coords:  hexg.NewOddQCoord(col, row).ToCube(),
+				Coords:  geometry.coords(col, row),
 			}
 			outputTiles.Tiles[col][row] = tile
 		}
@@ -235,7 +246,7 @@ func main() {
 
 	// move everything that carries a map position by the same amount the tiles
 	// moved, and drop what falls off the map (issue #79).
-	shiftMapContent(inputMap, columnsGeometry, numberOfColumnsToAddToLeft, numberOfRowsToAddToTop)
+	shiftMapContent(inputMap, geometry, numberOfColumnsToAddToLeft, numberOfRowsToAddToTop)
 
 	// Write to the output file, as the application version the INPUT states.
 	//
@@ -270,31 +281,80 @@ func main() {
 // to the actual hex size when rendering, so moving content by whole hexes means
 // moving it by these ideal amounts.
 type geometry_t struct {
-	colStep   float64 // x distance between adjacent columns
-	rowStep   float64 // y distance between adjacent rows
-	oddOffset float64 // y offset of odd columns
-	extraX    float64 // how far the last column reaches past its step
+	colStep       float64 // x distance between adjacent columns
+	rowStep       float64 // y distance between adjacent rows
+	stagger       float64 // offset of the staggered hexes: odd columns down, or odd rows right
+	staggeredRows bool    // ROWS: odd rows are staggered; COLUMNS: odd columns
+	extraX        float64 // how far the map reaches past colStep*width
+	extraY        float64 // how far the map reaches past rowStep*height
+
+	// the hex size a zoom-1 map states, which resize writes
+	hexWidth, hexHeight float64
 }
 
 // columnsGeometry is COLUMNS (flat-top) hexes: 300 x 300 ideal, columns 225
 // apart, rows 300 apart, odd columns 150 lower. Hex (col,row) has its center
 // at (150 + 225*col, 150 + 300*row + 150*odd(col)), and an <extraTerrain>
 // placement is stated at the hex's corner, (225*col, 300*row + 150*odd(col)).
-// Both fit every sample.
-var columnsGeometry = geometry_t{colStep: 225, rowStep: 300, oddOffset: 150, extraX: 75}
+// Both fit every sample. Worldographer states the hex as 46.18 wide, 40 high.
+var columnsGeometry = geometry_t{
+	colStep: 225, rowStep: 300, stagger: 150, extraX: 75, extraY: 150,
+	hexWidth: 46.18, hexHeight: 40,
+}
+
+// rowsGeometry is ROWS (pointy-top) hexes, the same hex turned a quarter:
+// columns 300 apart, rows 225 apart, odd rows 150 to the right. Hex (col,row)
+// has its center at (150 + 300*col + 150*odd(row), 150 + 225*row): confirmed in
+// Worldographer on the maintainer's 2.08 ROWS sample, where a feature at
+// (1050,1050) sits on hex (3,4), and a hand-shifted -left 2 -top 2 resize put
+// it on (5,6) and a polygon from (5,4) on (7,6) (#80). The hex is stated 40
+// wide, 46.18 high. Inferred and not yet seen in a sample: that a ROWS
+// <extraTerrain> placement is stated at the hex's corner, (300*col +
+// 150*odd(row), 225*row), mirroring COLUMNS.
+var rowsGeometry = geometry_t{
+	colStep: 300, rowStep: 225, stagger: 150, staggeredRows: true, extraX: 150, extraY: 75,
+	hexWidth: 40, hexHeight: 46.18,
+}
+
+// geometryFor returns the geometry of a map's stated orientation.
+func geometryFor(hexOrientation string) (geometry_t, error) {
+	switch hexOrientation {
+	case "COLUMNS":
+		return columnsGeometry, nil
+	case "ROWS":
+		return rowsGeometry, nil
+	}
+	return geometry_t{}, fmt.Errorf("map/@hexOrientation %q: want COLUMNS or ROWS", hexOrientation)
+}
 
 // extent is the map's size in drawing coordinates.
 func (g geometry_t) extent(width, height int) (float64, float64) {
-	return g.colStep*float64(width) + g.extraX, g.rowStep*float64(height) + g.oddOffset
+	return g.colStep*float64(width) + g.extraX, g.rowStep*float64(height) + g.extraY
 }
 
 // placementHex is the hex an <extraTerrain> placement's location names.
 func (g geometry_t) placementHex(x, y float64) (col, row int) {
+	if g.staggeredRows {
+		row = int(math.Round(y / g.rowStep))
+		if row%2 != 0 {
+			x -= g.stagger
+		}
+		return int(math.Round(x / g.colStep)), row
+	}
 	col = int(math.Round(x / g.colStep))
 	if col%2 != 0 {
-		y -= g.oddOffset
+		y -= g.stagger
 	}
 	return col, int(math.Round(y / g.rowStep))
+}
+
+// coords is a hex's cube coordinates in the hexg convention the decoders use
+// for this orientation: odd-q for COLUMNS, odd-r for ROWS.
+func (g geometry_t) coords(col, row int) hexg.CubeCoord {
+	if g.staggeredRows {
+		return hexg.NewOddRCoord(col, row).ToCube()
+	}
+	return hexg.NewOddQCoord(col, row).ToCube()
 }
 
 // shiftMapContent moves every positioned element of m by dCols columns and
