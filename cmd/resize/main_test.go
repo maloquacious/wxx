@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/maloquacious/wxx"
+	"github.com/maloquacious/wxx/hexg"
 	"github.com/maloquacious/wxx/xmlio"
 )
 
@@ -301,5 +302,111 @@ func TestResizeKeepsFirstColumnPlacement(t *testing.T) {
 	}
 	if got := [2]float64{placements[1].X, placements[1].Y}; got != [2]float64{0, 300} {
 		t.Errorf("column-0 placement at %v, want [0 300]", got)
+	}
+}
+
+// rowsMap writes a 13 x 11 ROWS map carrying a feature on hex (3,4), a
+// triangle and a note around it, and a layered-terrain placement on hex (2,1),
+// and returns its path. It is the 2.06 blank fixture turned to ROWS, laid out
+// as the maintainer's 2.08 ROWS sample is: hexes 40 wide and 46.18 high,
+// columns 300 apart, rows 225 apart, odd rows 150 to the right.
+//
+// Hex (3,4) has its center at (150+300*3, 150+225*4) = (1050,1050), which is
+// where the maintainer's sample states its cathedral. Hex (2,1)'s corner, where
+// a placement is stated, is (300*2+150, 225*1) = (750,225).
+func rowsMap(t *testing.T) string {
+	t.Helper()
+	m, err := xmlio.ReadFile(filepath.Join("..", "..", "testdata", "2025-2.06-13x11-941577-blank.wxx"))
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+	layers, err := xmlio.ReadFile(filepath.Join("..", "..", "testdata", "2025-2.06-13x11-941577-layers.wxx"))
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+	m.HexOrientation, m.GridOrientation = "ROWS", hexg.OddR
+	m.HexWidth, m.HexHeight = 40, 46.18
+	feature := layers.Features[0]
+	feature.Location.X, feature.Location.Y = 1050, 1050
+	feature.Label = nil
+	m.Features = []*wxx.Feature_t{feature}
+	m.Shapes = []*wxx.Shape_t{{
+		Type: "Polygon", MapLayer: "Above Terrain", CreationType: "BASIC",
+		IsWorld: true, HighestViewLevel: "WORLD", CurrentShapeViewLevel: "WORLD",
+		StrokeColor: "1.0,1.0,1.0,1.0", DsColor: "null", InsColor: "null", StrokeType: "SIMPLE", Opacity: 1,
+		Points: []*wxx.Point_t{{X: 1000, Y: 1000}, {X: 1100, Y: 1000}, {X: 1050, Y: 1100}},
+	}}
+	m.Notes = []*wxx.Note_t{{Key: "WORLD,1050.0,1050.0", ViewLevel: "WORLD", X: 1050, Y: 1050,
+		Color: &wxx.RGBA_t{R: 1, G: 1, A: 1}, Title: "Hex 3,4"}}
+	m.ExtraTerrain = &wxx.ExtraTerrain_t{MapLayers: []*wxx.ExtraTerrainLayer_t{{
+		Name:    "Below All",
+		Terrain: []*wxx.TerrainAndLocation_t{{Terrain: "Classic/Flat Beach", Elevation: 1, X: 750, Y: 225}},
+	}}}
+	path := filepath.Join(t.TempDir(), "rows.wxx")
+	if err := xmlio.WriteFile(path, m, "2.06"); err != nil {
+		t.Fatalf("write source: %v", err)
+	}
+	return path
+}
+
+// TestResizeRows: on a ROWS map, -left 2 -top 2 moves everything by ROWS
+// distances, 300 per column and 225 per row, so each element stays on its hex
+// two columns right and two rows down (issue #80). The maintainer confirmed
+// this in Worldographer: the cathedral on (3,4) lands on (5,6), at
+// (1650,1500). The old COLUMNS distances put it at (1500,1650), which the app
+// showed on (4,7). The hex size must stay ROWS-shaped; resize used to write the
+// COLUMNS size, which skewed every hex.
+func TestResizeRows(t *testing.T) {
+	out := filepath.Join(t.TempDir(), "out.wxx")
+	if code, stderr := resize(t, "-input", rowsMap(t), "-output", out, "-left", "2", "-top", "2"); code != 0 {
+		t.Fatalf("exit %d; stderr:\n%s", code, stderr)
+	}
+	m, err := xmlio.ReadFile(out)
+	if err != nil {
+		t.Fatalf("read output: %v", err)
+	}
+	const dx, dy = 600, 450
+	if m.HexOrientation != "ROWS" || m.HexWidth != 40 || m.HexHeight != 46.18 {
+		t.Errorf("output is %s with hexes %v x %v, want ROWS 40 x 46.18", m.HexOrientation, m.HexWidth, m.HexHeight)
+	}
+	if got := [2]float64{m.Features[0].Location.X, m.Features[0].Location.Y}; got != [2]float64{1650, 1500} {
+		t.Errorf("feature at %v, want [1650 1500], the center of hex (5,6)", got)
+	}
+	if p := m.Shapes[0].Points[0]; p.X != 1000+dx || p.Y != 1000+dy {
+		t.Errorf("shape point at (%v,%v), want (%v,%v)", p.X, p.Y, 1000+dx, 1000+dy)
+	}
+	if want := "WORLD,1650.0,1500.0"; m.Notes[0].Key != want {
+		t.Errorf("note key %q, want %q", m.Notes[0].Key, want)
+	}
+	tl := m.ExtraTerrain.MapLayers[0].Terrain
+	if len(tl) != 1 || tl[0].X != 750+dx || tl[0].Y != 225+dy {
+		t.Errorf("placement not moved to hex (4,3)'s corner (1350,675): %d placement(s)", len(tl))
+	}
+}
+
+// TestResizeRowsParity: the stagger that must be preserved is per row in ROWS
+// and per column in COLUMNS, so an odd number of top rows is refused on a ROWS
+// map and allowed on a COLUMNS one, and the reverse for left columns (#80).
+func TestResizeRowsParity(t *testing.T) {
+	columns := filepath.Join("..", "..", "testdata", "2025-2.06-13x11-941577-blank.wxx")
+	rows := rowsMap(t)
+	for _, tc := range []struct {
+		name, input, flag string
+		wantOK            bool
+	}{
+		{"ROWS, odd top", rows, "-top", false},
+		{"ROWS, odd left", rows, "-left", true},
+		{"COLUMNS, odd left", columns, "-left", false},
+		{"COLUMNS, odd top", columns, "-top", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			code, stderr := resize(t, "-input", tc.input, "-output", filepath.Join(t.TempDir(), "out.wxx"), tc.flag, "1")
+			if ok := code == 0; ok != tc.wantOK {
+				t.Errorf("exit %d, want success=%v; stderr:\n%s", code, tc.wantOK, stderr)
+			}
+			if !tc.wantOK && !strings.Contains(stderr, "must be even") {
+				t.Errorf("stderr does not explain the refusal:\n%s", stderr)
+			}
+		})
 	}
 }
