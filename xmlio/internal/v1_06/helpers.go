@@ -85,27 +85,17 @@ func ints(i int) string {
 	return fmt.Sprintf("%d", i)
 }
 
-// rgbans converts an RGBA_t to a nullable string.
-// It uses the rgbas function to format the RGBA_t
-func rgbans(rgba *wxx.RGBA_t) string {
-	s := rgbas(rgba)
-	if s == "0.0,0.0,0.0,1.0" {
-		s = "null"
-	}
-	return s
-}
-
 // rgbaOrNull renders a nullable colour: the literal "null" for nil, and the
 // colour itself otherwise (issue #62).
 //
-// It exists because neither rgbas nor rgbans can do this. rgbas renders nil as
-// "0.0,0.0,0.0,1.0", so a file that said "null" came back claiming an opaque
-// black -- that is the bug #62 reports, and it was live on every <labelstyle>
-// this codec wrote. rgbans goes the other way: it renders nil as "null", but it
-// decides by comparing the FORMATTED STRING, so a genuine opaque black is
-// laundered into "null" as well. Both answers are wrong for one of the two
-// inputs; this one is wrong for neither, because it asks the pointer rather
-// than the string.
+// rgbas cannot do this: it renders nil as "0.0,0.0,0.0,1.0", so a file that
+// said "null" came back claiming an opaque black -- that is the bug #62
+// reports, and it was live on every <labelstyle> this codec wrote. The old
+// rgbans helper went the other way: it rendered nil as "null", but it decided
+// by comparing the FORMATTED STRING, so a genuine opaque black was laundered
+// into "null" as well -- a feature coloured Black came back uncoloured (issue
+// #99). This one is wrong for neither input, because it asks the pointer
+// rather than the string.
 //
 // That only works where nil means "null" and nothing else, so the decode half
 // has to reserve it: decodeZeroableRgba maps "" and "null" to nil and leaves
@@ -115,10 +105,10 @@ func rgbans(rgba *wxx.RGBA_t) string {
 // helper did. See the labelstyle decode in configuration.go, which was moved to
 // decodeZeroableRgba for exactly this reason.
 //
-// rgbans keeps its callers: the shape colours (dscolor, fillPaint, insColor)
-// decode through decodeRgba, so nil there is ambiguous and this helper would be
-// no more correct than what they do today. Whether those fields should also
-// stop collapsing is a bigger question than #62 and is not answered here.
+// Every nullable RGBA attribute now pairs decodeZeroableRgba with this
+// helper (issue #99): feature @color and @ringColor, note @color, and
+// shapestyle @fillPaint, @dscolor and @insColor, as well as the two labelstyle
+// colours.
 func rgbaOrNull(rgba *wxx.RGBA_t) string {
 	if rgba == nil {
 		return "null"

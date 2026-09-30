@@ -505,23 +505,14 @@ type TileRow_t struct {
 }
 
 // decodeRgba parses a Worldographer float-RGBA attribute ("r,g,b,a"). It folds
-// "", "null", and the literal opaque black "0.0,0.0,0.0,1.0" all to nil.
+// "", "null", and opaque black all to nil.
 //
-// Latent fidelity risk: this fold assumes opaque black always means "absent".
-// That round-trips losslessly only for fields the encoder re-emits with rgbas
-// (which writes nil back as "0.0,0.0,0.0,1.0"). For fields that instead OMIT
-// when nil (tile CustomBackgroundColor) or emit "null" via rgbans (feature
-// Color/RingColor, some shapeStyle colors), a genuinely opaque-black on-disk
-// value changes byte form across a round-trip.
-//
-// No app-saved fixture exercises this: every feature in the tracked W2025
-// fixtures states color="null", which decodes to nil without exercising the opaque-black fold.
-// Were a feature to state "0.0,0.0,0.0,1.0", it would decode here to nil and
-// encodeFeature would re-emit it via rgbans as "null", so at the Map_t level it
-// would round-trip (nil both passes) while the on-disk byte form shifts. Whether
-// Worldographer treats the two spellings the same has not been tested in the
-// app, and a map that truly needs opaque black distinct from "null" is still
-// unresolved, so the fold is left as-is.
+// Use it only for a field the encoder writes back with rgbas, which renders nil
+// as "0.0,0.0,0.0,1.0": the fold is lossless there, and nothing else is. A
+// field that is "null" or a colour, or that is omitted when nil, must use
+// decodeZeroableRgba instead, or an opaque black is lost. Issue #99 was that
+// loss on feature @color: the app writes "0.0,0.0,0.0,1.0" for a feature
+// coloured Black, and wxx wrote it back as "null".
 func decodeRgba(s string) (rgba *wxx.RGBA_t, err error) {
 	if s == "" || s == "null" || s == "0.0,0.0,0.0,1.0" {
 		return nil, nil

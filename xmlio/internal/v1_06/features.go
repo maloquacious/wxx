@@ -25,10 +25,14 @@ func decodeFeatures(src Features, w *wxx.Map_t) error {
 		f.Scale = mFeature.Scale
 		f.ScaleHt = mFeature.ScaleHt
 		f.Tags = mFeature.Tags
-		if f.Color, err = decodeRgba(mFeature.Color); err != nil {
+		// color and ringColor are "null" or an RGBA, and opaque black is a
+		// colour the app writes when Override Color is set to Black (issue
+		// #99). decodeZeroableRgba keeps black, so nil means "null" and
+		// nothing else, and rgbaOrNull writes each back as the file spelled it.
+		if f.Color, err = decodeZeroableRgba(mFeature.Color); err != nil {
 			return fmt.Errorf("feature.Color: %w", err)
 		}
-		if f.RingColor, err = decodeRgba(mFeature.RingColor); err != nil {
+		if f.RingColor, err = decodeZeroableRgba(mFeature.RingColor); err != nil {
 			return fmt.Errorf("feature.RingColor: %w", err)
 		}
 		f.IsGMOnly = mFeature.IsGMOnly
@@ -114,8 +118,8 @@ func encodeFeature(feature *wxx.Feature_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(" scale=%s", xmlAttr(floats(feature.Scale))))
 	wb.WriteString(fmt.Sprintf(" scaleHt=%s", xmlAttr(floats(feature.ScaleHt))))
 	wb.WriteString(fmt.Sprintf(" tags=%s", xmlAttr(feature.Tags)))
-	wb.WriteString(fmt.Sprintf(" color=%s", xmlAttr(rgbans(feature.Color)))) // nullable
-	wb.WriteString(fmt.Sprintf(" ringcolor=%s", xmlAttr(rgbans(feature.RingColor))))
+	wb.WriteString(fmt.Sprintf(" color=%s", xmlAttr(rgbaOrNull(feature.Color)))) // nullable
+	wb.WriteString(fmt.Sprintf(" ringcolor=%s", xmlAttr(rgbaOrNull(feature.RingColor))))
 	wb.WriteString(fmt.Sprintf(" isGMOnly=%s", xmlAttr(bools(feature.IsGMOnly))))
 	wb.WriteString(fmt.Sprintf(" isPlaceFreely=%s", xmlAttr(bools(feature.IsPlaceFreely))))
 	wb.WriteString(fmt.Sprintf(" labelPosition=%s", xmlAttr(feature.LabelPosition)))
