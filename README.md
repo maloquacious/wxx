@@ -12,7 +12,7 @@ The name comes from `.wxx`, Worldographer’s default file extension.
 
 * A Go API for working with Worldographer data
 * Reading and writing `.wxx` files
-* Inspecting maps, and modifying them (crop, resize, copy)
+* Inspecting maps, and modifying them (resize or crop, copy)
 * A `wxx export` subcommand, plus a set of separate single-purpose binaries
 
 **Planned — not built yet:**
@@ -150,8 +150,9 @@ go build -o dist/local/info ./cmd/info
 dist/local/info world.wxx
 ```
 
-The full set is `bounds`, `copy`, `crop`, `import`, `info`, `merge`, `resize`,
-`schema`, `server` and `version`. `import` and `merge` are works in progress.
+The full set is `bounds`, `copy`, `import`, `info`, `merge`, `resize`,
+`schema`, `server` and `version`. To crop a map, use `resize` with negative
+`-top`, `-bottom`, `-left` or `-right`. `import` and `merge` are works in progress.
 
 ### Where this is going *(planned)*
 
