@@ -169,3 +169,109 @@ Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-resources.wxx
 
 Do not scroll or resize the map before you save it!
 Never open the map file again. Doing so may change the contents.
+
+## Notes and Shapes
+
+Verify the shape and contents of Notes.
+
+File > New World/Kingdom map
+
+Hex Orientation: Columns Line Up
+Map Projection: Flat
+  Hexes Wide: 13
+  Hexes High: 11
+
+Initial View Level: WORLD
+
+[x] Use suggested pixel sizes
+
+Random Seed: 941577
+
+All one terrain: Blank
+
+Generate Map
+
+### Add Terrain, Shapes, Features and Notes
+
+"Row N" means every hex in row N.
+
+1. Desert Cold on Below All
+
+   - Hex (0,0) Terrain: check Icy, check GM Only, Below All layer, Desert Cold
+   - Hex (0,1) Terrain: check Icy, uncheck GM Only, Below All layer, Desert Cold
+   - Hex (0,2) Terrain: uncheck Icy, check GM Only, Below All layer, Desert Cold
+   - Hex (0,3) Terrain: uncheck Icy, uncheck GM Only, Below All layer, Desert Cold
+   - Row 10 Terrain: uncheck Icy, uncheck GM Only, Below All layer, Desert Cold
+
+2. Water Sea on Terrain Water
+
+   - Hex (1,0) Terrain: check Icy, check GM Only, Terrain Water layer, Water Sea
+   - Hex (1,1) Terrain: check Icy, uncheck GM Only, Terrain Water layer, Water Sea
+   - Hex (1,2) Terrain: uncheck Icy, check GM Only, Terrain Water layer, Water Sea
+   - Hex (1,3) Terrain: uncheck Icy, uncheck GM Only, Terrain Water layer, Water Sea
+   - Hex (1,10) Terrain: uncheck Icy, uncheck GM Only, Terrain Water layer, Water Sea
+   - Row 9 Terrain: uncheck Icy, uncheck GM Only, Terrain Water layer, Water Sea
+
+3. Water Shoals on Above Water
+
+   - Hex (2,0) Terrain: check Icy, check GM Only, Above Water layer, Water Shoals
+   - Hex (2,1) Terrain: check Icy, uncheck GM Only, Above Water layer, Water Shoals
+   - Hex (2,2) Terrain: uncheck Icy, check GM Only, Above Water layer, Water Shoals
+   - Hex (2,3) Terrain: uncheck Icy, uncheck GM Only, Above Water layer, Water Shoals
+   - Hex (2,9) Terrain: uncheck Icy, uncheck GM Only, Above Water layer, Water Shoals
+   - Hex (2,10) Terrain: uncheck Icy, uncheck GM Only, Above Water layer, Water Shoals
+   - Row 8 Terrain: uncheck Icy, uncheck GM Only, Above Water layer, Water Shoals
+
+4. Flat Farmland on Terrain Land
+
+   - Hex (3,0) Terrain: check Icy, check GM Only, Terrain Land layer, Flat Farmland
+   - Hex (3,1) Terrain: check Icy, uncheck GM Only, Terrain Land layer, Flat Farmland
+   - Hex (3,2) Terrain: uncheck Icy, check GM Only, Terrain Land layer, Flat Farmland
+   - Hex (3,3) Terrain: uncheck Icy, uncheck GM Only, Terrain Land layer, Flat Farmland
+   - Hex (3,8) Terrain: uncheck Icy, uncheck GM Only, Terrain Land layer, Flat Farmland
+   - Hex (3,9) Terrain: uncheck Icy, uncheck GM Only, Terrain Land layer, Flat Farmland
+   - Hex (3,10) Terrain: uncheck Icy, uncheck GM Only, Terrain Land layer, Flat Farmland
+   - Row 7 Terrain: uncheck Icy, uncheck GM Only, Terrain Land layer, Flat Farmland
+
+5. Flat Snowfields on Above Terrain
+
+   - Hex (4,0) Terrain: check Icy, check GM Only, Above Terrain layer, Flat Snowfields
+   - Hex (4,1) Terrain: check Icy, uncheck GM Only, Above Terrain layer, Flat Snowfields
+   - Hex (4,2) Terrain: uncheck Icy, check GM Only, Above Terrain layer, Flat Snowfields
+   - Hex (4,3) Terrain: uncheck Icy, uncheck GM Only, Above Terrain layer, Flat Snowfields
+   - Hex (4,7) Terrain: uncheck Icy, uncheck GM Only, Above Terrain layer, Flat Snowfields
+   - Hex (4,8) Terrain: uncheck Icy, uncheck GM Only, Above Terrain layer, Flat Snowfields
+   - Hex (4,9) Terrain: uncheck Icy, uncheck GM Only, Above Terrain layer, Flat Snowfields
+   - Hex (4,10) Terrain: uncheck Icy, uncheck GM Only, Above Terrain layer, Flat Snowfields
+   - Row 6 Terrain: uncheck Icy, uncheck GM Only, Above Terrain layer, Flat Snowfields
+
+6. Shapes
+
+   - Hex (12,0) Polygon: Above Terrain layer on Shapes tab, color White, check GM Only, check Add Tile Border, and add a polygon, click De-select
+   - Hex (10,0) Polygon: Terrain Land layer on Shapes tab, color Green, uncheck GM Only, check Add Tile Border, and add a polygon, click De-select
+   - Hex (8,0) Polygon: Below All layer on Shapes tab, color Magenta, uncheck GM Only, check Add Tile Border, and add a polygon, click De-select
+   - Column 8 Line: Terrain Water layer on Shapes tab, color Blue, uncheck GM Only, check Snap Points to Grid, uncheck Add Tile Border, and draw a line from the centre of (8,1) to the centre of (8,4), click De-select
+
+     The endpoints are best effort. The dark UI hides hex borders on a blank
+     map, and Snap Points to Grid moves the points; the 2.06 sample's line runs
+     from (1950,525) to (1950,1200).
+
+7. Features
+
+   - Hex (0,3) Features: click Building Cathedral on Features tab, select Features layer, uncheck GM Only, set Label to "(0,3)", add feature, click Select
+   - Hex (1,3) Features: click Building Cathedral on Features tab, select Terrain Land layer, check GM Only, set Label to "(1,3) GM", add feature, click Select
+   - Hex (12,6) Features: click Building Cathedral on Features tab, select Below All layer, check GM Only, set Label to "(12,6) GM", add feature, click Select
+
+8. Notes
+
+   - Hex (1,3) Features: click Select, select the feature, add note "Note on (1,3)", Save, click Select
+   - Hex (12,6) Features: click Select, select the feature, add note "Note on (12,6)", Save, click Select
+
+### Save
+
+Before saving, ensure all layers are visible, GM Only: Show is checked, Grid: Show/Numbers/Shadows are checked.
+
+Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-notes-shapes.wxx
+
+Do not scroll or resize the map before you save it!
+Never open the map file again. Doing so may change the contents.
