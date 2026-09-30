@@ -92,7 +92,6 @@ wxx/
 ├── cmd/                # CLI tools (each has its own main.go)
 │   ├── bounds/         # Extract map dimensions
 │   ├── copy/           # Copy WXX files with optional transformations
-│   ├── crop/           # Crop WXX map edges
 │   ├── import/         # Import terrain layers (WIP)
 │   ├── info/           # Display WXX file information
 │   ├── merge/          # Merge multiple maps (WIP)

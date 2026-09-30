@@ -146,17 +146,20 @@ func main() {
 	// calculate the size of the resized map
 	height := inputMap.Tiles.TilesHigh + numberOfRowsToAddToTop + numberOfRowsToAddToBottom
 	width := inputMap.Tiles.TilesWide + numberOfColumnsToAddToLeft + numberOfColumnsToAddToRight
+
+	// we can't make a tiny map. This must run before the allocation below: a
+	// crop larger than the map makes width negative, and make() panics on it
+	// (issue #61).
+	if height < 2 || width < 2 {
+		log.Fatalf("error: we can't create a map smaller than 2 x 2 (this resize gives %d x %d)\n", width, height)
+	}
+
 	// allocate a new Tiles_t to hold the resized map
 	outputTiles := &wxx.Tiles_t{
 		ViewLevel: inputMap.Tiles.ViewLevel,
 		TilesHigh: height,
 		TilesWide: width,
 		Tiles:     make([][]*wxx.Tile_t, width),
-	}
-
-	// we can't make a tiny map
-	if height < 2 || width < 2 {
-		log.Fatalf("error: we can't create a map smaller than 2 x 2\n")
 	}
 
 	// fill it with blank tiles that have the new coordinates

@@ -31,7 +31,7 @@ documentation is sparse.
   - `xmlio/internal/v1_06/` — H2025 decoder (encoder pending).
 - `hexg/` — hex-grid math (cube/offset/doubled coordinates, layouts,
   orientations, TribeNet adapter). See [hexg/HEXES.md](./hexg/HEXES.md).
-- `cmd/` — CLI tools used to exercise the package: `bounds`, `copy`, `crop`,
+- `cmd/` — CLI tools used to exercise the package: `bounds`, `copy`,
   `import`, `info`, `merge`, `resize`, `schema`, `server`, `version`, and
   the umbrella `wxx` tool (subcommands: `export`).
 - `testdata/` — every fixture the test harness reads, flat in the root
