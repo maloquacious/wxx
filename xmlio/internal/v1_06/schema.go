@@ -323,31 +323,53 @@ type MapLayer_t struct {
 	Opacity   float64 `xml:"opacity,attr"`
 }
 
+// Note_t is <note> as Worldographer 2.06, 2.07 and 2.08 write it (issue #94).
+// @key repeats the <location> as "<viewLevel>,<x>,<y>".
 type Note_t struct {
 	// attributes
-	Key       string  `xml:"key,attr"`
+	Key               string `xml:"key,attr"`
+	OriginalViewLevel string `xml:"originalViewLevel,attr"`
+	Filename          string `xml:"filename,attr"`
+	Parent            string `xml:"parent,attr"`
+	Color             string `xml:"color,attr"`
+	IsWorld           bool   `xml:"isWorld,attr"`
+	IsContinent       bool   `xml:"isContinent,attr"`
+	IsKingdom         bool   `xml:"isKingdom,attr"`
+	IsProvince        bool   `xml:"isProvince,attr"`
+	Title             string `xml:"title,attr"`
+
+	// elements
+	NoteText string          `xml:"notetext"`
+	Location *NoteLocation_t `xml:"location"`
+}
+
+// NoteLocation_t is <note>/<location>. Unlike a label's, it has no @scale.
+type NoteLocation_t struct {
 	ViewLevel string  `xml:"viewLevel,attr"`
 	X         float64 `xml:"x,attr"`
 	Y         float64 `xml:"y,attr"`
-	Filename  string  `xml:"filename,attr"`
-	Parent    string  `xml:"parent,attr"`
-	Color     string  `xml:"color,attr"`
-	Title     string  `xml:"title,attr"`
-	IsGMOnly  bool    `xml:"isGMOnly,attr"`
-
-	// elements
-	NoteText string `xml:"notetext"`
 }
 
 type Notes_t struct {
 	Notes []Note_t `xml:"note"`
 }
 
+// Point_t is <shape>/<p>. The coordinates are kept as the file spells them,
+// because the spelling is part of what a same-version round trip must keep:
+// 2.06, 2.07 and 2.08 write a tile-border polygon's points as integers
+// (x="2700") and a path's with a decimal point (x="1950.0"). decodeShapes
+// parses them and records the spelling in wxx.Point_t.IntegerXY (issue #94).
 type Point_t struct {
 	// attributes
-	Type string  `xml:"type,attr"`
-	X    float64 `xml:"x,attr"`
-	Y    float64 `xml:"y,attr"`
+	Type string `xml:"type,attr"`
+	X    string `xml:"x,attr"`
+	Y    string `xml:"y,attr"`
+	// The curve control points, on a type="c" point (2.08). Pointers, so that
+	// decode can tell an absent attribute from one stating 0.
+	CX1 *float64 `xml:"cx1,attr"`
+	CY1 *float64 `xml:"cy1,attr"`
+	CX2 *float64 `xml:"cx2,attr"`
+	CY2 *float64 `xml:"cy2,attr"`
 }
 
 type Shape_t struct {
@@ -362,6 +384,10 @@ type Shape_t struct {
 	DsOffsetY             float64 `xml:"dsOffsetY,attr"`
 	DsRadius              float64 `xml:"dsRadius,attr"`
 	DsSpread              float64 `xml:"dsSpread,attr"`
+	ExtraLineDistance     float64 `xml:"extraLineDistance,attr"`
+	ExtraLineLength       float64 `xml:"extraLineLength,attr"`
+	ExtraLineWidth        float64 `xml:"extraLineWidth,attr"`
+	ExtraLineSeparation   float64 `xml:"extraLineSeparation,attr"`
 	FillRule              string  `xml:"fillRule,attr"`
 	FillTexture           string  `xml:"fillTexture,attr"`
 	HighestViewLevel      string  `xml:"highestViewLevel,attr"`
@@ -488,14 +514,14 @@ type TileRow_t struct {
 // Color/RingColor, some shapeStyle colors), a genuinely opaque-black on-disk
 // value changes byte form across a round-trip.
 //
-// This IS now exercised by testdata/w2025-populated.xml: Features[0].Color
-// = "0.0,0.0,0.0,1.0" decodes here to nil, and encodeFeature re-emits it via
-// rgbans as "null"; re-decoding "null" also yields nil. So at the Map_t level it
-// round-trips losslessly (nil both passes), and only the on-disk byte form shifts
-// "0.0,0.0,0.0,1.0" -> "null" — lossless under Worldographer's semantics where
-// both spellings mean "no color". The remaining on-disk ambiguity (a map that
-// truly needs opaque-black distinct from "null") is still unresolved, so the fold
-// is left as-is.
+// No app-saved fixture exercises this: every feature in the tracked W2025
+// fixtures states color="null", which decodes to nil without exercising the opaque-black fold.
+// Were a feature to state "0.0,0.0,0.0,1.0", it would decode here to nil and
+// encodeFeature would re-emit it via rgbans as "null", so at the Map_t level it
+// would round-trip (nil both passes) while the on-disk byte form shifts. Whether
+// Worldographer treats the two spellings the same has not been tested in the
+// app, and a map that truly needs opaque black distinct from "null" is still
+// unresolved, so the fold is left as-is.
 func decodeRgba(s string) (rgba *wxx.RGBA_t, err error) {
 	if s == "" || s == "null" || s == "0.0,0.0,0.0,1.0" {
 		return nil, nil

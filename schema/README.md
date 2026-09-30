@@ -64,6 +64,26 @@ NOT covered:
   `mapkey/@backgroundopacity`, `shape/@opacity`, `shapestyle/@opacity`.)
 - `blurTerrainBG` — a W2025 tile-background control; not present.
 - `extraTerrain` — a W2025 addition; not present.
+- `shape/@extraLineDistance`, `@extraLineLength`, `@extraLineWidth`,
+  `@extraLineSeparation` — observed on every `<shape>` in
+  `testdata/2025-{2.06,2.07,2.08}-13x11-941577-notes-shapes.wxx` (issue #94);
+  this schema's `<shape>` has none of them.
+
+Two differences in `<shape>` and `<p>` that are not additions, also observed in
+those three fixtures (issue #94):
+
+- `shape/@fillRule` is required here, but W2025 tile-border polygons
+  (`isMatchTileBorders="true"`) state none; the paths state
+  `fillRule="NON_ZERO"`.
+- `p/@x` and `p/@y` are `xsd:decimal` here, which admits both spellings the
+  fixtures use: integers on tile-border polygon points (`x="2700"`) and decimals
+  on path points (`x="1950.0"`). `p/@type` is optional here, and in the
+  notes-shapes fixtures appears only as `type="m"` on a path's first point.
+- Curve control points, observed in 2.08 in
+  `testdata/2025-2.08-13x11-941577-populated.wxx`: the point after `type="m"`
+  on a curved path (`isCurve="true"`) is `type="c"` and states `@cx1 @cy1 @cx2
+  @cy2`, all decimal-spelled (`cx1="2390.6453009961024"`). This schema's `<p>`
+  has none of them.
 
 Anyone using this as a checklist for W2025 codec coverage must layer those known
 additions on top. For the W2025 shape of the format, see the `wog` V2025 structs noted

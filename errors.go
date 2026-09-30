@@ -44,6 +44,8 @@ const (
 	ErrMissingWxxExtension         = Error("missing .wxx extension")
 	ErrMissingXMLHeader            = Error("missing xml header")
 	ErrNilMap                      = Error("nil map")
+	ErrNoteKeyMismatch             = Error("note key disagrees with its location")
+	ErrNoteWithoutLocation         = Error("note without location")
 	ErrNotBigEndianUTF16Encoded    = Error("not big-endian utf-16 encoded")
 	ErrNotCompressed               = Error("not compressed")
 	ErrNotExists                   = Error("not exists")

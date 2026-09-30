@@ -367,28 +367,87 @@ type MapLayer_t struct {
 	Opacity   float64 `json:"opacity,omitempty"`
 }
 
+// Note_t is a note pinned to a point on the map.
+//
+// InnerText is the classic (H2017) codec's view of a note: the element's text,
+// and nothing else. The remaining fields are the W2025 spelling that 2.06,
+// 2.07 and 2.08 write (issue #94).
+//
+// There is no Key field. On disk, @key is "<viewLevel>,<x>,<y>" of the note's
+// <location>: the same position stated twice. The encoder derives @key from
+// Location, so the two cannot disagree in a file this package writes, and a
+// caller who moves a note moves only Location.
 type Note_t struct {
 	InnerText string `json:"innerText,omitempty"`
 
 	// attributes
-	Key       string  `json:"key,omitempty"`
-	ViewLevel string  `json:"viewLevel,omitempty"`
-	X         float64 `json:"x,omitempty"`
-	Y         float64 `json:"y,omitempty"`
-	Filename  string  `json:"filename,omitempty"`
-	Parent    string  `json:"parent,omitempty"`
-	Color     *RGBA_t `json:"color,omitempty"`
-	Title     string  `json:"title,omitempty"`
-	IsGMOnly  bool    `json:"isGMOnly,omitempty"`
+	OriginalViewLevel string  `json:"originalViewLevel,omitempty"`
+	Filename          string  `json:"filename,omitempty"`
+	Parent            string  `json:"parent,omitempty"`
+	Color             *RGBA_t `json:"color,omitempty"`
+	IsWorld           bool    `json:"isWorld,omitempty"`
+	IsContinent       bool    `json:"isContinent,omitempty"`
+	IsKingdom         bool    `json:"isKingdom,omitempty"`
+	IsProvince        bool    `json:"isProvince,omitempty"`
+	Title             string  `json:"title,omitempty"`
 
 	// notetext CDATA body
 	NoteText string `json:"notetext,omitempty"`
+
+	// Location is the note's position. The W2025 encoder refuses a note
+	// without one rather than writing it at 0,0.
+	Location *NoteLocation_t `json:"location,omitempty"`
 }
 
+// NoteLocation_t is a note's <location>.
+type NoteLocation_t struct {
+	ViewLevel string  `json:"viewLevel,omitempty"`
+	X         float64 `json:"x,omitempty"`
+	Y         float64 `json:"y,omitempty"`
+}
+
+// Point_t is one <p> vertex of a shape.
+//
+// Type is the point's @type ("m" on the first point of a path in the samples),
+// and "" when the file states none. The W2025 encoder writes @type only when it
+// is not empty, so a point that stated none is written without one.
 type Point_t struct {
 	Type string  `json:"type,omitempty"`
 	X    float64 `json:"x,omitempty"`
 	Y    float64 `json:"y,omitempty"`
+
+	// IntegerXY records that the file spelled both coordinates as integers,
+	// with no decimal point and no exponent: x="2700" y="150" rather than
+	// x="2700.0" y="150.0" (issue #94). Worldographer 2.06, 2.07 and 2.08
+	// spell a tile-border polygon's points this way and a path's with a
+	// decimal point; the W2025 decoder records which spelling it read, and the
+	// W2025 encoder writes it back, so a same-version round trip keeps it.
+	//
+	// It is a fact about spelling, not about value: the two spellings of 2700
+	// are the same number. A point whose coordinates are spelled one each way
+	// decodes with IntegerXY false, and is written back with both decimal.
+	//
+	// A caller who sets IntegerXY, or moves such a point, must keep both
+	// coordinates whole numbers: the W2025 encoder refuses to write a point
+	// with IntegerXY set and a fractional coordinate rather than round it.
+	// The classic codec neither sets nor reads it.
+	IntegerXY bool `json:"integerXY,omitempty"`
+
+	// Control holds a curve point's two Bezier control points, the W2025
+	// @cx1 @cy1 @cx2 @cy2, and is nil when the point states none (issue #94).
+	// Worldographer 2.08 writes them on a curved path's type="c" points; the
+	// W2025 encoder writes all four when Control is set and none when it is
+	// nil, so a control point at 0,0 is kept. The classic codec ignores it.
+	Control *CurveControl_t `json:"control,omitempty"`
+}
+
+// CurveControl_t is the pair of control points on a <p type="c">. The values
+// are written with a decimal point, as every sample spells them.
+type CurveControl_t struct {
+	CX1 float64 `json:"cx1"`
+	CY1 float64 `json:"cy1"`
+	CX2 float64 `json:"cx2"`
+	CY2 float64 `json:"cy2"`
 }
 
 type Projection_e int
@@ -428,35 +487,46 @@ type Shape_t struct {
 	DsOffsetY             float64 `json:"dsOffsetY,omitempty"`
 	DsRadius              float64 `json:"dsRadius,omitempty"`
 	DsSpread              float64 `json:"dsSpread,omitempty"`
-	FillRule              string  `json:"fillRule,omitempty"`
-	FillTexture           string  `json:"fillTexture,omitempty"`
-	HighestViewLevel      string  `json:"highestViewLevel,omitempty"`
-	InsChoke              float64 `json:"insChoke,omitempty"`
-	InsColor              string  `json:"insColor,omitempty"`
-	InsOffsetX            float64 `json:"insOffsetX,omitempty"`
-	InsOffsetY            float64 `json:"insOffsetY,omitempty"`
-	InsRadius             float64 `json:"insRadius,omitempty"`
-	IsBoxBlur             bool    `json:"isBoxBlur,omitempty"`
-	IsContinent           bool    `json:"isContinent,omitempty"`
-	IsCurve               bool    `json:"isCurve,omitempty"`
-	IsDropShadow          bool    `json:"isDropShadow,omitempty"`
-	IsGMOnly              bool    `json:"isGMOnly,omitempty"`
-	IsInnerShadow         bool    `json:"isInnerShadow,omitempty"`
-	IsKingdom             bool    `json:"isKingdom,omitempty"`
-	IsMatchTileBorders    bool    `json:"isMatchTileBorders,omitempty"`
-	IsProvince            bool    `json:"isProvince,omitempty"`
-	IsSnapVertices        bool    `json:"isSnapVertices,omitempty"`
-	IsWorld               bool    `json:"isWorld,omitempty"`
-	LineCap               string  `json:"lineCap,omitempty"`
-	LineJoin              string  `json:"lineJoin,omitempty"`
-	MapLayer              string  `json:"mapLayer,omitempty"`
-	Opacity               float64 `json:"opacity,omitempty"`
-	StrokeColor           string  `json:"strokeColor,omitempty"`
-	StrokeTexture         string  `json:"strokeTexture,omitempty"`
-	StrokeType            string  `json:"strokeType,omitempty"`
-	StrokeWidth           float64 `json:"strokeWidth,omitempty"`
-	Tags                  string  `json:"tags,omitempty"`
-	Type                  string  `json:"type,omitempty"`
+	// ExtraLineDistance, ExtraLineLength, ExtraLineWidth and
+	// ExtraLineSeparation are the W2025 @extraLine* attributes, which 2.06,
+	// 2.07 and 2.08 write on every shape (issue #94). The classic format has
+	// none of them, so a classic-decoded shape holds all four at zero, and the
+	// W2025 encoder writes none of them when all four are zero.
+	ExtraLineDistance   float64 `json:"extraLineDistance,omitempty"`
+	ExtraLineLength     float64 `json:"extraLineLength,omitempty"`
+	ExtraLineWidth      float64 `json:"extraLineWidth,omitempty"`
+	ExtraLineSeparation float64 `json:"extraLineSeparation,omitempty"`
+	// FillRule is "" when the file states no @fillRule, and the W2025 encoder
+	// then writes none.
+	FillRule           string  `json:"fillRule,omitempty"`
+	FillTexture        string  `json:"fillTexture,omitempty"`
+	HighestViewLevel   string  `json:"highestViewLevel,omitempty"`
+	InsChoke           float64 `json:"insChoke,omitempty"`
+	InsColor           string  `json:"insColor,omitempty"`
+	InsOffsetX         float64 `json:"insOffsetX,omitempty"`
+	InsOffsetY         float64 `json:"insOffsetY,omitempty"`
+	InsRadius          float64 `json:"insRadius,omitempty"`
+	IsBoxBlur          bool    `json:"isBoxBlur,omitempty"`
+	IsContinent        bool    `json:"isContinent,omitempty"`
+	IsCurve            bool    `json:"isCurve,omitempty"`
+	IsDropShadow       bool    `json:"isDropShadow,omitempty"`
+	IsGMOnly           bool    `json:"isGMOnly,omitempty"`
+	IsInnerShadow      bool    `json:"isInnerShadow,omitempty"`
+	IsKingdom          bool    `json:"isKingdom,omitempty"`
+	IsMatchTileBorders bool    `json:"isMatchTileBorders,omitempty"`
+	IsProvince         bool    `json:"isProvince,omitempty"`
+	IsSnapVertices     bool    `json:"isSnapVertices,omitempty"`
+	IsWorld            bool    `json:"isWorld,omitempty"`
+	LineCap            string  `json:"lineCap,omitempty"`
+	LineJoin           string  `json:"lineJoin,omitempty"`
+	MapLayer           string  `json:"mapLayer,omitempty"`
+	Opacity            float64 `json:"opacity,omitempty"`
+	StrokeColor        string  `json:"strokeColor,omitempty"`
+	StrokeTexture      string  `json:"strokeTexture,omitempty"`
+	StrokeType         string  `json:"strokeType,omitempty"`
+	StrokeWidth        float64 `json:"strokeWidth,omitempty"`
+	Tags               string  `json:"tags,omitempty"`
+	Type               string  `json:"type,omitempty"`
 
 	Points []*Point_t `json:"points,omitempty"`
 }

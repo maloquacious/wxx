@@ -4,20 +4,24 @@ package xmlio_test
 
 import (
 	"bytes"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/maloquacious/wxx"
+	"github.com/maloquacious/wxx/xmlio"
 	"github.com/maloquacious/wxx/xmlio/internal/v1_06"
 )
 
 // w2025Recode drives the in-memory XML codec once: encode m1 with v1_06.Encode
-// then decode those bytes with v1_06.Decode, returning the round-tripped model.
+// as app, then decode those bytes with v1_06.Decode, returning the round-tripped
+// model.
 // It is the mechanism the coverage assertions below use to prove that what decode
 // read, encode wrote, and decode read back again.
 //
-// The map is encoded as the application version it already states, so this
-// exercises the codec and not the app-version gate.
+// A 2.06 map is encoded as the application version it already states, so this
+// exercises the codec and not the app-version gate. A 2.07 map is encoded as
+// w2025Target, because 2.07 is not registered until issue #92.
 // TestCodecRejectsUnacceptedAppVersion covers the gate.
 //
 // Naming that version explicitly is the ONLY way to encode since issue #45: the
@@ -36,9 +40,9 @@ import (
 // a second copy of the same provenance, sitting among the fields an encoder reads,
 // and it is deleted. Raw is verbatim -- "2.06", never a re-rendered "2.6" (ADR
 // 0004 Decision 1).
-func w2025Recode(t *testing.T, m1 *wxx.Map_t) *wxx.Map_t {
+func w2025Recode(t *testing.T, m1 *wxx.Map_t, app string) *wxx.Map_t {
 	t.Helper()
-	xmlBytes, err := v1_06.Encode(m1, m1.MetaData.Version.App.Raw)
+	xmlBytes, err := v1_06.Encode(m1, app)
 	if err != nil {
 		t.Fatalf("v1_06.Encode: %v", err)
 	}
@@ -60,173 +64,191 @@ func w2025Recode(t *testing.T, m1 *wxx.Map_t) *wxx.Map_t {
 // vScrollbarPos, blurTerrainBG, extraTerrain) are modeled and wired through both
 // decode and encode; this test now asserts each survives the 2025 round trip.
 func TestW2025CoverageMatrix(t *testing.T) {
-	// ---- Populated fixture: exercises features/labels/shapes/notes ----
-	p1 := decodeFixture(t, populatedFixture)
-	p2 := w2025Recode(t, p1)
+	// ---- 2.07 notes-shapes: exercises features/labels/shapes/notes ----
+	//
+	// Every value asserted below is read from the fixture. Each group is
+	// guarded with t.Fatalf on its count, so a fixture that stops carrying the
+	// element fails rather than passing having tested nothing.
+	const ns = "2.07 notes-shapes"
+	p1, err := decodeFile(t, sample2025_207NotesShapes)
+	if err != nil {
+		t.Fatalf("decode %s: %v", sample2025_207NotesShapes, err)
+	}
+	p2 := w2025Recode(t, p1, w2025Target)
 
 	// features / feature / location / inline label (COVERAGE: implemented)
-	if got, want := len(p2.Features), 2; got != want {
-		t.Fatalf("populated: len(Features) = %d, want %d", got, want)
+	if got, want := len(p1.Features), 3; got != want {
+		t.Fatalf("%s: source len(Features) = %d, want %d", ns, got, want)
 	}
-	if got, want := len(p1.Features), len(p2.Features); got != want {
-		t.Errorf("populated: Features count drifted across round-trip: %d -> %d", got, want)
+	if got, want := len(p2.Features), len(p1.Features); got != want {
+		t.Fatalf("%s: Features count drifted across round-trip: %d -> %d", ns, want, got)
 	}
-	if got, want := p2.Features[0].Type, "City"; got != want {
-		t.Errorf("populated: Features[0].Type = %q, want %q", got, want)
+	if got, want := p2.Features[0].Type, "Classic/Building Cathedral"; got != want {
+		t.Errorf("%s: Features[0].Type = %q, want %q", ns, got, want)
 	}
 	if p2.Features[0].Location == nil {
-		t.Fatalf("populated: Features[0].Location = nil, want non-nil")
+		t.Fatalf("%s: Features[0].Location = nil, want non-nil", ns)
 	}
-	if got := p2.Features[0].Location; got.X != 100.0 || got.Y != 200.0 {
-		t.Errorf("populated: Features[0].Location = (%v,%v), want (100,200)", got.X, got.Y)
+	if got := p2.Features[0].Location; got.X != 150.0 || got.Y != 1050.0 {
+		t.Errorf("%s: Features[0].Location = (%v,%v), want (150,1050)", ns, got.X, got.Y)
 	}
-	// Feature[0] carries an inline <label>; Feature[1] is labelless.
 	if p2.Features[0].Label == nil {
-		t.Fatalf("populated: Features[0].Label = nil, want non-nil (inline label present)")
+		t.Fatalf("%s: Features[0].Label = nil, want non-nil (inline label present)", ns)
 	}
-	if got, want := p2.Features[0].Label.InnerText, "Rivertown"; got != want {
-		t.Errorf("populated: Features[0].Label.InnerText = %q, want %q", got, want)
+	if got, want := p2.Features[0].Label.InnerText, "(0,3)"; got != want {
+		t.Errorf("%s: Features[0].Label.InnerText = %q, want %q", ns, got, want)
 	}
 	if p2.Features[0].Label.Location == nil {
-		t.Fatalf("populated: Features[0].Label.Location = nil, want non-nil")
+		t.Fatalf("%s: Features[0].Label.Location = nil, want non-nil", ns)
 	}
-	if got, want := p2.Features[0].Label.Location.Scale, 33.0; got != want {
-		t.Errorf("populated: Features[0].Label.Location.Scale = %v, want %v", got, want)
+	if got, want := p2.Features[0].Label.Location.Scale, 25.0; got != want {
+		t.Errorf("%s: Features[0].Label.Location.Scale = %v, want %v", ns, got, want)
 	}
-	if got, want := p2.Features[1].Type, "Forest"; got != want {
-		t.Errorf("populated: Features[1].Type = %q, want %q", got, want)
-	}
-	if p2.Features[1].Label != nil {
-		t.Errorf("populated: Features[1].Label = %+v, want nil (labelless feature)", p2.Features[1].Label)
-	}
-	// Forest color "0.13,0.55,0.13,1.0" is a real non-black color and must survive.
-	if p2.Features[1].Color == nil {
-		t.Fatalf("populated: Features[1].Color = nil, want non-nil (0.13,0.55,0.13,1.0)")
-	}
-	if got := p2.Features[1].Color; got.R != 0.13 || got.G != 0.55 || got.B != 0.13 || got.A != 1.0 {
-		t.Errorf("populated: Features[1].Color = %+v, want (0.13,0.55,0.13,1.0)", got)
+	if got, want := p2.Features[1].IsGMOnly, true; got != want {
+		t.Errorf("%s: Features[1].IsGMOnly = %v, want %v", ns, got, want)
 	}
 
 	// labels (standalone): empty in this fixture; must stay empty (implemented).
 	if got, want := len(p2.Labels), 0; got != want {
-		t.Errorf("populated: len(Labels) = %d, want %d", got, want)
+		t.Errorf("%s: len(Labels) = %d, want %d", ns, got, want)
 	}
 
 	// shapes / shape / points (COVERAGE: implemented)
-	if got, want := len(p2.Shapes), 2; got != want {
-		t.Fatalf("populated: len(Shapes) = %d, want %d", got, want)
+	if got, want := len(p1.Shapes), 4; got != want {
+		t.Fatalf("%s: source len(Shapes) = %d, want %d", ns, got, want)
 	}
-	if got, want := len(p1.Shapes), len(p2.Shapes); got != want {
-		t.Errorf("populated: Shapes count drifted across round-trip: %d -> %d", got, want)
+	if got, want := len(p2.Shapes), len(p1.Shapes); got != want {
+		t.Fatalf("%s: Shapes count drifted across round-trip: %d -> %d", ns, want, got)
 	}
-	if len(p2.Shapes[0].Points) == 0 {
-		t.Fatalf("populated: Shapes[0].Points empty, want non-empty")
+	if got, want := len(p2.Shapes[0].Points), 6; got != want {
+		t.Fatalf("%s: len(Shapes[0].Points) = %d, want %d", ns, got, want)
 	}
-	if got := p2.Shapes[0].Points[0]; got.X != 148.0 || got.Y != 149.0 {
-		t.Errorf("populated: Shapes[0].Points[0] = (%v,%v), want (148,149)", got.X, got.Y)
+	if got := p2.Shapes[0].Points[0]; got.X != 2700.0 || got.Y != 150.0 {
+		t.Errorf("%s: Shapes[0].Points[0] = (%v,%v), want (2700,150)", ns, got.X, got.Y)
 	}
 
-	// notes / note / notetext (COVERAGE: implemented)
-	if got, want := len(p2.Notes), 2; got != want {
-		t.Fatalf("populated: len(Notes) = %d, want %d", got, want)
+	// notes / note / notetext / location (COVERAGE: implemented)
+	if got, want := len(p1.Notes), 2; got != want {
+		t.Fatalf("%s: source len(Notes) = %d, want %d", ns, got, want)
 	}
-	if got, want := p2.Notes[0].Title, "Units"; got != want {
-		t.Errorf("populated: Notes[0].Title = %q, want %q", got, want)
+	if got, want := len(p2.Notes), len(p1.Notes); got != want {
+		t.Fatalf("%s: Notes count drifted across round-trip: %d -> %d", ns, want, got)
 	}
-	if got, want := p2.Notes[0].Key, "WORLD,2343.75,3112.5"; got != want {
-		t.Errorf("populated: Notes[0].Key = %q, want %q", got, want)
+	if !strings.Contains(p2.Notes[0].NoteText, "Note on (1,3)") {
+		t.Errorf("%s: Notes[0].NoteText = %q, want it to contain %q", ns, p2.Notes[0].NoteText, "Note on (1,3)")
 	}
-	if !strings.Contains(p2.Notes[0].NoteText, "First note paragraph.") {
-		t.Errorf("populated: Notes[0].NoteText = %q, want it to contain %q", p2.Notes[0].NoteText, "First note paragraph.")
+	if !strings.Contains(p2.Notes[1].NoteText, "Note on (12,6)") {
+		t.Errorf("%s: Notes[1].NoteText = %q, want it to contain %q", ns, p2.Notes[1].NoteText, "Note on (12,6)")
 	}
-	if !p2.Notes[1].IsGMOnly {
-		t.Errorf("populated: Notes[1].IsGMOnly = false, want true")
+	if p2.Notes[0].Location == nil {
+		t.Fatalf("%s: Notes[0].Location = nil, want non-nil", ns)
 	}
-	if !strings.Contains(p2.Notes[1].NoteText, "Second note paragraph.") {
-		t.Errorf("populated: Notes[1].NoteText = %q, want it to contain %q", p2.Notes[1].NoteText, "Second note paragraph.")
+	if got := p2.Notes[0].Location; got.X != 375.0 || got.Y != 1200.0 {
+		t.Errorf("%s: Notes[0].Location = (%v,%v), want (375,1200)", ns, got.X, got.Y)
 	}
 
 	// ---- #11: the six formerly un-modeled W2025-native fields ----
 
 	// maplayer/@opacity (now modeled): the first layer ("Labels") is opacity 1.0.
 	if len(p2.MapLayers) == 0 {
-		t.Fatalf("populated: len(MapLayers) = 0, want non-empty")
+		t.Fatalf("%s: len(MapLayers) = 0, want non-empty", ns)
 	}
 	if got, want := len(p1.MapLayers), len(p2.MapLayers); got != want {
-		t.Errorf("populated: MapLayers count drifted across round-trip: %d -> %d", got, want)
+		t.Errorf("%s: MapLayers count drifted across round-trip: %d -> %d", ns, got, want)
+	}
+	if got, want := p2.MapLayers[0].Name, "Labels"; got != want {
+		t.Errorf("%s: MapLayers[0].Name = %q, want %q", ns, got, want)
 	}
 	if got, want := p2.MapLayers[0].Opacity, 1.0; got != want {
-		t.Errorf("populated: MapLayers[0].Opacity = %v, want %v", got, want)
+		t.Errorf("%s: MapLayers[0].Opacity = %v, want %v", ns, got, want)
 	}
 
 	// labelstyle dropShadow* (now modeled): Nation carries dropShadowColor="null"
 	// (nullable string spelled "null") plus zero radius/spread.
 	if p2.Configuration == nil || p2.Configuration.TextConfig == nil || len(p2.Configuration.TextConfig.LabelStyles) == 0 {
-		t.Fatalf("populated: TextConfig.LabelStyles empty, want non-empty")
+		t.Fatalf("%s: TextConfig.LabelStyles empty, want non-empty", ns)
 	}
 	ls0 := p2.Configuration.TextConfig.LabelStyles[0]
+	if got, want := ls0.Name, "Nation"; got != want {
+		t.Errorf("%s: LabelStyles[0].Name = %q, want %q", ns, got, want)
+	}
 	if got, want := ls0.DropShadowColor, "null"; got != want {
-		t.Errorf("populated: LabelStyles[0].DropShadowColor = %q, want %q", got, want)
+		t.Errorf("%s: LabelStyles[0].DropShadowColor = %q, want %q", ns, got, want)
 	}
 	if got, want := ls0.DropShadowRadius, 0.0; got != want {
-		t.Errorf("populated: LabelStyles[0].DropShadowRadius = %v, want %v", got, want)
+		t.Errorf("%s: LabelStyles[0].DropShadowRadius = %v, want %v", ns, got, want)
 	}
 	if got, want := ls0.DropShadowSpread, 0.0; got != want {
-		t.Errorf("populated: LabelStyles[0].DropShadowSpread = %v, want %v", got, want)
+		t.Errorf("%s: LabelStyles[0].DropShadowSpread = %v, want %v", ns, got, want)
 	}
 
 	// shapestyle lineCap/lineJoin (now modeled): Trail is lineCap="SQUARE"
 	// lineJoin="ROUND".
 	if p2.Configuration.ShapeConfig == nil || len(p2.Configuration.ShapeConfig.ShapeStyles) == 0 {
-		t.Fatalf("populated: ShapeConfig.ShapeStyles empty, want non-empty")
+		t.Fatalf("%s: ShapeConfig.ShapeStyles empty, want non-empty", ns)
 	}
 	ss0 := p2.Configuration.ShapeConfig.ShapeStyles[0]
+	if got, want := ss0.Name, "Trail"; got != want {
+		t.Errorf("%s: ShapeStyles[0].Name = %q, want %q", ns, got, want)
+	}
 	if got, want := ss0.LineCap, "SQUARE"; got != want {
-		t.Errorf("populated: ShapeStyles[0].LineCap = %q, want %q", got, want)
+		t.Errorf("%s: ShapeStyles[0].LineCap = %q, want %q", ns, got, want)
 	}
 	if got, want := ss0.LineJoin, "ROUND"; got != want {
-		t.Errorf("populated: ShapeStyles[0].LineJoin = %q, want %q", got, want)
+		t.Errorf("%s: ShapeStyles[0].LineJoin = %q, want %q", ns, got, want)
 	}
 
 	// map hScrollbarPos/vScrollbarPos (now modeled): 0.0 in the fixture, and must
 	// not drift across the round-trip.
 	if got, want := p2.HScrollbarPos, 0.0; got != want {
-		t.Errorf("populated: HScrollbarPos = %v, want %v", got, want)
+		t.Errorf("%s: HScrollbarPos = %v, want %v", ns, got, want)
 	}
 	if got, want := p2.VScrollbarPos, 0.0; got != want {
-		t.Errorf("populated: VScrollbarPos = %v, want %v", got, want)
+		t.Errorf("%s: VScrollbarPos = %v, want %v", ns, got, want)
 	}
 	if p1.HScrollbarPos != p2.HScrollbarPos || p1.VScrollbarPos != p2.VScrollbarPos {
-		t.Errorf("populated: scrollbar positions drifted across round-trip: (%v,%v) -> (%v,%v)",
-			p1.HScrollbarPos, p1.VScrollbarPos, p2.HScrollbarPos, p2.VScrollbarPos)
+		t.Errorf("%s: scrollbar positions drifted across round-trip: (%v,%v) -> (%v,%v)",
+			ns, p1.HScrollbarPos, p1.VScrollbarPos, p2.HScrollbarPos, p2.VScrollbarPos)
 	}
 
 	// blurTerrainBG (now modeled): present in the fixture, must be non-nil after
 	// round-trip with its attributes preserved.
 	if p2.BlurTerrainBG == nil {
-		t.Fatalf("populated: BlurTerrainBG = nil, want non-nil (present in fixture)")
+		t.Fatalf("%s: BlurTerrainBG = nil, want non-nil (present in fixture)", ns)
 	}
 	if got := p2.BlurTerrainBG; got.Blur != false ||
 		got.TopBleed != 0.33 || got.BottomBleed != 0.65 || got.Randomness != 0.1 ||
 		got.BlurStart != 0.4 || got.BlurEnd != 0.95 {
-		t.Errorf("populated: BlurTerrainBG = %+v, want {Blur:false TopBleed:0.33 BottomBleed:0.65 Randomness:0.1 BlurStart:0.4 BlurEnd:0.95}", got)
+		t.Errorf("%s: BlurTerrainBG = %+v, want {Blur:false TopBleed:0.33 BottomBleed:0.65 Randomness:0.1 BlurStart:0.4 BlurEnd:0.95}", ns, got)
 	}
 
-	// extraTerrain (now modeled): present-but-empty in the fixture, must be
-	// non-nil after round-trip.
+	// extraTerrain (now modeled): three layers in the fixture, the first
+	// ("Above Water") holding placements; all must survive the round-trip.
 	if p2.ExtraTerrain == nil {
-		t.Fatalf("populated: ExtraTerrain = nil, want non-nil (present in fixture)")
+		t.Fatalf("%s: ExtraTerrain = nil, want non-nil (present in fixture)", ns)
+	}
+	if got, want := len(p2.ExtraTerrain.MapLayers), 3; got != want {
+		t.Fatalf("%s: len(ExtraTerrain.MapLayers) = %d, want %d", ns, got, want)
+	}
+	if got, want := p2.ExtraTerrain.MapLayers[0].Name, "Above Water"; got != want {
+		t.Errorf("%s: ExtraTerrain.MapLayers[0].Name = %q, want %q", ns, got, want)
+	}
+	if len(p2.ExtraTerrain.MapLayers[0].Terrain) == 0 {
+		t.Fatalf("%s: ExtraTerrain.MapLayers[0] has no placements, want non-empty", ns)
+	}
+	if got, want := len(p2.ExtraTerrain.MapLayers[0].Terrain), len(p1.ExtraTerrain.MapLayers[0].Terrain); got != want {
+		t.Errorf("%s: ExtraTerrain.MapLayers[0] placement count drifted across round-trip: %d -> %d", ns, want, got)
 	}
 
 	// config no-op(intentional) sub-sections must stay empty after round-trip.
-	assertConfigSectionsEmpty(t, "populated", p2)
+	assertConfigSectionsEmpty(t, ns, p2)
 
 	// ---- Real sample: exercises the blank-but-rich elements ----
 	s1, err := decodeFile(t, sample2025_206)
 	if err != nil {
 		t.Fatalf("decode %s: %v", sample2025_206, err)
 	}
-	s2 := w2025Recode(t, s1)
+	s2 := w2025Recode(t, s1, s1.MetaData.Version.App.Raw)
 
 	// gridandnumbering (implemented)
 	if s2.GridAndNumbering == nil {
@@ -325,7 +347,7 @@ func TestW2025CoverageMatrix(t *testing.T) {
 // symmetric drop would produce). The encoder keys the gate off DropShadowColor,
 // which is "null" or an RGBA string when present and never empty, so clearing it
 // models a source that carried no drop shadow and must suppress the trio; the
-// populated fixture DOES carry them, so re-encoding it must preserve them.
+// 2.07 blank map DOES carry them, so re-encoding it must preserve them.
 //
 // The negative case is synthesized rather than read from a fixture: every
 // supported W2025 build (2.06 and later) writes the trio, so no sample supplies
@@ -360,15 +382,42 @@ func TestW2025LabelStyleDropShadowGate(t *testing.T) {
 		t.Errorf("re-encode spuriously added dropShadowColor (source had none)")
 	}
 
-	// Populated fixture: source has dropShadowColor -> output must preserve it.
-	p1 := decodeFixture(t, populatedFixture)
-	popBytes, err := v1_06.Encode(p1, p1.MetaData.Version.App.Raw)
+	// 2.07 blank: every <labelstyle> states the trio -> output must preserve it.
+	// The check is confined to <text-config>, because a feature's inline
+	// <label> also carries the trio (issue #35) and would satisfy a whole-
+	// document search even if the labelstyle gate over-corrected.
+	f, err := os.Open(sample2025_207Blank)
 	if err != nil {
-		t.Fatalf("v1_06.Encode(populated): %v", err)
+		t.Fatalf("open %s: %v", sample2025_207Blank, err)
 	}
-	if !bytes.Contains(popBytes, []byte("dropShadowColor")) {
-		t.Errorf("populated re-encode dropped dropShadowColor (source had it); gate over-corrected")
+	defer f.Close()
+	var dd xmlio.DecoderDiagnostics
+	p1, err := xmlio.NewDecoder(xmlio.WithDecoderDiagnostics(&dd)).Decode(f)
+	if err != nil {
+		t.Fatalf("decode %s: %v", sample2025_207Blank, err)
 	}
+	if !bytes.Contains(textConfig(t, "source", dd.Converted), []byte("dropShadowColor")) {
+		t.Fatalf("%s: no <labelstyle> states dropShadowColor, so preservation is not under test", sample2025_207Blank)
+	}
+	outBytes, err := v1_06.Encode(p1, w2025Target)
+	if err != nil {
+		t.Fatalf("v1_06.Encode(%s): %v", sample2025_207Blank, err)
+	}
+	if !bytes.Contains(textConfig(t, "output", outBytes), []byte("dropShadowColor")) {
+		t.Errorf("2.07 blank re-encode dropped labelstyle dropShadowColor (source had it); gate over-corrected")
+	}
+}
+
+// textConfig returns the <text-config> element of an XML document, failing the
+// test if there is none.
+func textConfig(t *testing.T, label string, doc []byte) []byte {
+	t.Helper()
+	start := bytes.Index(doc, []byte("<text-config>"))
+	end := bytes.Index(doc, []byte("</text-config>"))
+	if start < 0 || end < start {
+		t.Fatalf("%s: no <text-config>...</text-config> element", label)
+	}
+	return doc[start:end]
 }
 
 // assertConfigSectionsEmpty mirrors TestW2025ConfigSectionsEmpty's intent: the

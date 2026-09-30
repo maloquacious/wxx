@@ -65,7 +65,7 @@ func decodeW2025(t *testing.T, path string) *wxx.Map_t {
 //
 // The two tracked 2.06 fixtures differ in exactly the way the report turns on:
 // `layers` places one terrain on "Terrain Layer", `blank` carries an empty
-// container. If only the populated fixture were tested, an encoder that
+// container. If only the fixture with a placement were tested, an encoder that
 // reported <extraTerrain> for EVERY W2025 downgrade would pass.
 func TestClassicDowngradeExtraTerrain(t *testing.T) {
 	for _, tc := range []struct {
