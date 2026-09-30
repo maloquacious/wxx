@@ -136,10 +136,9 @@ func main() {
 		log.Fatalf("error: %s map: left columns must be even\n", inputMap.HexOrientation)
 	}
 
-	blankTerrainSlot, ok := inputMap.TerrainMap.Data["Blank"]
-	if !ok {
-		log.Fatalf("error: file doesn't have a \"Blank\" terrain slot\n")
-	}
+	// the hexes resize adds are Blank. A fully painted map does not list Blank,
+	// because Worldographer lists only terrains in use, so it is added (#81).
+	blankTerrainSlot := inputMap.TerrainMap.EnsureTerrain(wxx.BlankTerrain)
 
 	inputMap.HexWidth, inputMap.HexHeight = geometry.hexWidth*float64(zoomLevel), geometry.hexHeight*float64(zoomLevel)
 

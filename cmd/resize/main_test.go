@@ -410,3 +410,66 @@ func TestResizeRowsParity(t *testing.T) {
 		})
 	}
 }
+
+// TestResizeFullyPaintedMap: a map with no blank hex has no "Blank" entry,
+// because Worldographer lists only terrains in use. Resize used to refuse it;
+// now it adds the entry and fills the new hexes with it, leaving the painted
+// ones alone (issue #81). Worldographer 2.08 opened a map whose table gained
+// Blank this way, and a resize of it.
+func TestResizeFullyPaintedMap(t *testing.T) {
+	m, err := xmlio.ReadFile(filepath.Join("..", "..", "testdata", "2025-2.06-13x11-941577-blank.wxx"))
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+	const farmland = "Classic/Flat Farmland"
+	m.TerrainMap.Data = map[string]int{farmland: 0}
+	m.TerrainMap.List = []*wxx.Terrain_t{{Index: 0, Label: farmland}}
+	for _, column := range m.Tiles.Tiles {
+		for _, tile := range column {
+			tile.Terrain = 0
+		}
+	}
+	src := filepath.Join(t.TempDir(), "painted.wxx")
+	if err := xmlio.WriteFile(src, m, "2.06"); err != nil {
+		t.Fatalf("write source: %v", err)
+	}
+	// A plain decode and encode must leave the table as it is: only an
+	// operation that writes a Blank tile adds the entry.
+	if back, err := xmlio.ReadFile(src); err != nil {
+		t.Fatalf("read source: %v", err)
+	} else if _, ok := back.TerrainMap.Data[wxx.BlankTerrain]; ok || len(back.TerrainMap.Data) != 1 {
+		t.Fatalf("a round trip changed the table to %v; want only %s", back.TerrainMap.Data, farmland)
+	}
+
+	out := filepath.Join(t.TempDir(), "out.wxx")
+	if code, stderr := resize(t, "-input", src, "-output", out, "-left", "2", "-top", "1"); code != 0 {
+		t.Fatalf("exit %d; stderr:\n%s", code, stderr)
+	}
+	got, err := xmlio.ReadFile(out)
+	if err != nil {
+		t.Fatalf("read output: %v", err)
+	}
+	blank, ok := got.TerrainMap.Data[wxx.BlankTerrain]
+	if !ok {
+		t.Fatalf("output table %v has no Blank entry", got.TerrainMap.Data)
+	}
+	if got.TerrainMap.Data[farmland] != 0 || blank != 1 {
+		t.Errorf("table = %v, want farmland 0 and Blank 1", got.TerrainMap.Data)
+	}
+	counts := map[int]int{}
+	for c, column := range got.Tiles.Tiles {
+		for r, tile := range column {
+			counts[tile.Terrain]++
+			added := c < 2 || r < 1
+			if added && tile.Terrain != blank {
+				t.Fatalf("added hex (%d,%d) is terrain %d, want Blank (%d)", c, r, tile.Terrain, blank)
+			} else if !added && tile.Terrain != 0 {
+				t.Fatalf("painted hex (%d,%d) is terrain %d, want farmland (0)", c, r, tile.Terrain)
+			}
+		}
+	}
+	// 15 x 12 = 180 hexes, 143 of them painted.
+	if counts[0] != 143 || counts[blank] != 37 {
+		t.Errorf("terrain counts = %v, want 143 farmland and 37 Blank", counts)
+	}
+}
