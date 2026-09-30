@@ -90,7 +90,11 @@ func encodeLabel(label *wxx.Label_t, wb *bytes.Buffer) error {
 	// The source writes the trio between outlineSize and rotate; emit it there so a
 	// round trip matches the source's attribute order.
 	if label.DropShadowColor != "" {
-		wb.WriteString(fmt.Sprintf(" dropShadowColor=%s", xmlAttr(label.DropShadowColor))) // nullable string ("null")
+		color, err := rgbaAttr("map/labels/label/@dropShadowColor", label.DropShadowColor, true)
+		if err != nil {
+			return err
+		}
+		wb.WriteString(fmt.Sprintf(" dropShadowColor=%s", xmlAttr(color))) // nullable string ("null")
 		wb.WriteString(fmt.Sprintf(" dropShadowRadius=%s", xmlAttr(floats(label.DropShadowRadius))))
 		wb.WriteString(fmt.Sprintf(" dropShadowSpread=%s", xmlAttr(floats(label.DropShadowSpread))))
 	}

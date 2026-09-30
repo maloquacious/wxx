@@ -79,6 +79,25 @@ func encodeShapes(shapes []*wxx.Shape_t, wb *bytes.Buffer) error {
 }
 
 func encodeShape(shape *wxx.Shape_t, wb *bytes.Buffer) error {
+	// The three colors are strings written verbatim, so a zero value or a typo
+	// would reach the file; they are checked before anything is written (#83).
+	dsColor, err := rgbaAttr("map/shapes/shape/@dsColor", shape.DsColor, true)
+	if err != nil {
+		return err
+	}
+	insColor, err := rgbaAttr("map/shapes/shape/@insColor", shape.InsColor, true)
+	if err != nil {
+		return err
+	}
+	// strokeColor "" means the shape has none, and the attribute is omitted:
+	// Worldographer 2.08 reads strokeColor="null" as no stroke and saves such a
+	// shape with no strokeColor at all, which decodes to "" (#83).
+	strokeColor := shape.StrokeColor
+	if strokeColor != "" {
+		if strokeColor, err = rgbaAttr("map/shapes/shape/@strokeColor", shape.StrokeColor, true); err != nil {
+			return err
+		}
+	}
 	wb.WriteString("<shape")
 	wb.WriteString(fmt.Sprintf(" type=%s", xmlAttr(shape.Type)))
 	wb.WriteString(fmt.Sprintf(" creationType=%s", xmlAttr(shape.CreationType)))
@@ -97,12 +116,12 @@ func encodeShape(shape *wxx.Shape_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(" dsOffsetY=%s", xmlAttr(floats(shape.DsOffsetY))))
 	wb.WriteString(fmt.Sprintf(" dsRadius=%s", xmlAttr(floats(shape.DsRadius))))
 	wb.WriteString(fmt.Sprintf(" dsSpread=%s", xmlAttr(floats(shape.DsSpread))))
-	wb.WriteString(fmt.Sprintf(" dsColor=%s", xmlAttr(shape.DsColor)))
+	wb.WriteString(fmt.Sprintf(" dsColor=%s", xmlAttr(dsColor)))
 	wb.WriteString(fmt.Sprintf(" insOffsetX=%s", xmlAttr(floats(shape.InsOffsetX))))
 	wb.WriteString(fmt.Sprintf(" insOffsetY=%s", xmlAttr(floats(shape.InsOffsetY))))
 	wb.WriteString(fmt.Sprintf(" insRadius=%s", xmlAttr(floats(shape.InsRadius))))
 	wb.WriteString(fmt.Sprintf(" insChoke=%s", xmlAttr(floats(shape.InsChoke))))
-	wb.WriteString(fmt.Sprintf(" insColor=%s", xmlAttr(shape.InsColor)))
+	wb.WriteString(fmt.Sprintf(" insColor=%s", xmlAttr(insColor)))
 	wb.WriteString(fmt.Sprintf(" bbWidth=%s", xmlAttr(floats(shape.BbWidth))))
 	wb.WriteString(fmt.Sprintf(" bbHeight=%s", xmlAttr(floats(shape.BbHeight))))
 	wb.WriteString(fmt.Sprintf(" bbIterations=%s", xmlAttr(ints(shape.BbIterations))))
@@ -116,7 +135,9 @@ func encodeShape(shape *wxx.Shape_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(" lineCap=%s", xmlAttr(shape.LineCap)))
 	wb.WriteString(fmt.Sprintf(" lineJoin=%s", xmlAttr(shape.LineJoin)))
 	wb.WriteString(fmt.Sprintf(" opacity=%s", xmlAttr(floats(shape.Opacity))))
-	wb.WriteString(fmt.Sprintf(" strokeColor=%s", xmlAttr(shape.StrokeColor)))
+	if strokeColor != "" {
+		wb.WriteString(fmt.Sprintf(" strokeColor=%s", xmlAttr(strokeColor)))
+	}
 	wb.WriteString(fmt.Sprintf(" strokeWidth=%s", xmlAttr(floats(shape.StrokeWidth))))
 	wb.WriteString(fmt.Sprintf(" tags=%s", xmlAttr(shape.Tags)))
 	wb.WriteString(">\n")

@@ -42,7 +42,10 @@ func newRowsMap() *wxx.Map_t {
 	m.GridOrientation = hexg.OddR
 
 	// Required non-nil substructures so the encoder does not nil-deref.
-	m.GridAndNumbering = &wxx.GridAndNumbering_t{}
+	// The grid colors are the samples' value: the encoder refuses a color it
+	// cannot vouch for, and "" is not one (issue #83).
+	const gridColor = "0x00000040"
+	m.GridAndNumbering = &wxx.GridAndNumbering_t{Color0: gridColor, Color1: gridColor, Color2: gridColor, Color3: gridColor, Color4: gridColor}
 	m.MapKey = &wxx.MapKey_t{}
 	m.Informations = &wxx.Informations_t{}
 	m.Configuration = &wxx.Configuration_t{

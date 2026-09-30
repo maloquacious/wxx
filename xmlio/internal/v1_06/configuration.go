@@ -222,7 +222,11 @@ func encodeLabelStyle(labelStyle *wxx.LabelStyle_t, wb *bytes.Buffer) error {
 		if err != nil {
 			return err
 		}
-		wb.WriteString(fmt.Sprintf(" dropShadowColor=%s", xmlAttr(labelStyle.DropShadowColor))) // nullable string ("null")
+		color, err := rgbaAttr("map/configuration/text-config/labelstyle/@dropShadowColor", labelStyle.DropShadowColor, true)
+		if err != nil {
+			return err
+		}
+		wb.WriteString(fmt.Sprintf(" dropShadowColor=%s", xmlAttr(color))) // nullable string ("null")
 		wb.WriteString(fmt.Sprintf(" dropShadowRadius=%s", xmlAttr(radius.String())))
 		wb.WriteString(fmt.Sprintf(" dropShadowSpread=%s", xmlAttr(spread.String())))
 	}
