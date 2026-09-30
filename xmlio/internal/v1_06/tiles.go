@@ -139,7 +139,7 @@ func decodeTiles(src Tiles_t, mapKeySrc MapKey_t, w *wxx.Map_t) error {
 	return nil
 }
 
-func encodeTiles(tiles *wxx.Tiles_t, hexOrientation string, wb *bytes.Buffer) error {
+func encodeTiles(tiles *wxx.Tiles_t, hexOrientation string, terrainRemap map[int]int, wb *bytes.Buffer) error {
 	// to: width is the number of columns, height is the number of rows. does that depend on the orientation?
 	wb.WriteString(fmt.Sprintf("<tiles"))
 	wb.WriteString(fmt.Sprintf(" viewLevel=%s", xmlAttr(tiles.ViewLevel)))
@@ -166,7 +166,7 @@ func encodeTiles(tiles *wxx.Tiles_t, hexOrientation string, wb *bytes.Buffer) er
 			wb.WriteString("<tilerow>\n")
 			for y := 0; y < tiles.TilesHigh; y++ {
 				tile := tiles.Tiles[x][y]
-				if err := encodeTile(tile, wb); err != nil {
+				if err := encodeTile(tile, terrainRemap, wb); err != nil {
 					return err
 				}
 			}
@@ -195,9 +195,12 @@ func encodeTiles(tiles *wxx.Tiles_t, hexOrientation string, wb *bytes.Buffer) er
 // * field after resource.animal is "Z" if remaining resources are all 0
 // * otherwise we have brick, crops, gems, lumber, metals, rock
 // * customBackgroundColor is an RGBA that is optional
-func encodeTile(tile *wxx.Tile_t, wb *bytes.Buffer) error {
-	// todo: implement this
-	wb.WriteString(fmt.Sprintf("%d", tile.Terrain))
+func encodeTile(tile *wxx.Tile_t, terrainRemap map[int]int, wb *bytes.Buffer) error {
+	terrain, err := tileTerrain(terrainRemap, tile)
+	if err != nil {
+		return err
+	}
+	wb.WriteString(fmt.Sprintf("%d", terrain))
 	wb.WriteString(fmt.Sprintf("\t%d", floatd(tile.Elevation)))
 	wb.WriteString(fmt.Sprintf("\t%d", boold(tile.IsIcy)))
 	wb.WriteString(fmt.Sprintf("\t%d", boold(tile.IsGMOnly)))

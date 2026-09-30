@@ -110,7 +110,11 @@ func encodeMap(w *wxx.Map_t, target appver.App_t, wb *bytes.Buffer) error {
 		return err
 	}
 
-	if err := encodeTerrainMap(w.TerrainMap, wb); err != nil {
+	terrainNames, terrainRemap, err := terrainTable(w.TerrainMap.Data)
+	if err != nil {
+		return err
+	}
+	if err := encodeTerrainMap(terrainNames, wb); err != nil {
 		return err
 	}
 
@@ -118,7 +122,7 @@ func encodeMap(w *wxx.Map_t, target appver.App_t, wb *bytes.Buffer) error {
 		return err
 	}
 
-	if err := encodeTiles(w.Tiles, w.HexOrientation, wb); err != nil {
+	if err := encodeTiles(w.Tiles, w.HexOrientation, terrainRemap, wb); err != nil {
 		return err
 	}
 
@@ -201,9 +205,9 @@ func encodeGridAndNumbering(gridAndNumbering *wxx.GridAndNumbering_t, wb *bytes.
 	return nil
 }
 
-func encodeTerrainMap(terrainMap *wxx.TerrainMap_t, wb *bytes.Buffer) error {
+func encodeTerrainMap(names []string, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf("<terrainmap>"))
-	for k, v := range terrainMapToSlice(terrainMap.Data) {
+	for k, v := range names {
 		if k == 0 {
 			wb.WriteString(fmt.Sprintf("%s\t%d", v, k))
 		} else {
@@ -274,7 +278,7 @@ func verifyOrientation(w *wxx.Map_t) error {
 		fmt.Errorf("map/@hexOrientation %q: want %q or %q", w.HexOrientation, "COLUMNS", "ROWS"))
 }
 
-func encodeTiles(tiles *wxx.Tiles_t, hexOrientation string, wb *bytes.Buffer) error {
+func encodeTiles(tiles *wxx.Tiles_t, hexOrientation string, terrainRemap map[int]int, wb *bytes.Buffer) error {
 	// to: width is the number of columns, height is the number of rows. does that depend on the orientation?
 	wb.WriteString(fmt.Sprintf("<tiles"))
 	wb.WriteString(fmt.Sprintf(" viewLevel=%s", xmlAttr(tiles.ViewLevel)))
@@ -292,7 +296,7 @@ func encodeTiles(tiles *wxx.Tiles_t, hexOrientation string, wb *bytes.Buffer) er
 			wb.WriteString("<tilerow>\n")
 			for y := 0; y < tiles.TilesHigh; y++ {
 				tile := tiles.Tiles[x][y]
-				if err := encodeTile(tile, wb); err != nil {
+				if err := encodeTile(tile, terrainRemap, wb); err != nil {
 					return err
 				}
 			}
@@ -321,9 +325,12 @@ func encodeTiles(tiles *wxx.Tiles_t, hexOrientation string, wb *bytes.Buffer) er
 // * field after resource.animal is "Z" if remaining resources are all 0
 // * otherwise we have brick, crops, gems, lumber, metals, rock
 // * customBackgroundColor is an RGBA that is optional
-func encodeTile(tile *wxx.Tile_t, wb *bytes.Buffer) error {
-	// todo: implement this
-	wb.WriteString(fmt.Sprintf("%d", tile.Terrain))
+func encodeTile(tile *wxx.Tile_t, terrainRemap map[int]int, wb *bytes.Buffer) error {
+	terrain, err := tileTerrain(terrainRemap, tile)
+	if err != nil {
+		return err
+	}
+	wb.WriteString(fmt.Sprintf("%d", terrain))
 	wb.WriteString(fmt.Sprintf("\t%d", floatd(tile.Elevation)))
 	wb.WriteString(fmt.Sprintf("\t%d", boold(tile.IsIcy)))
 	wb.WriteString(fmt.Sprintf("\t%d", boold(tile.IsGMOnly)))
@@ -798,29 +805,56 @@ func rgbas(rgba *wxx.RGBA_t) string {
 		floats(rgba.A))
 }
 
-// terrainMapToSlice converts a map of terrain names and slot into a list
-// of strings for the xml map.terrainmap element.
-func terrainMapToSlice(data map[string]int) []string {
-	type terrain_t struct {
-		slot int
-		name string
+// terrainTable is the <terrainmap> the encoder writes and how tiles refer to
+// it (issue #87).
+//
+// Worldographer numbers the table 0..n-1 and renumbers it on every save, so an
+// index carries no meaning beyond linking a tile to a terrain. The table is
+// written in index order, numbered by position, and remap takes each Map_t
+// index to the position it is written at. Tiles are written through remap, so
+// a table with gaps -- a map built or edited in code -- is renumbered together
+// with every tile that uses it, and each tile keeps its terrain. For a decoded
+// map the table is already 0..n-1 and remap is the identity.
+//
+// Two terrains sharing an index have no correct renumbering, so they are
+// refused.
+func terrainTable(data map[string]int) (names []string, remap map[int]int, err error) {
+	type entry struct {
+		index int
+		name  string
 	}
-	list := []*terrain_t{}
-	for k, v := range data {
-		list = append(list, &terrain_t{
-			slot: v,
-			name: k,
-		})
+	var entries []entry
+	for name, index := range data {
+		entries = append(entries, entry{index, name})
 	}
-	// list must be sorted
-	sort.Slice(list, func(i, j int) bool {
-		return list[i].slot < list[j].slot
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].index != entries[j].index {
+			return entries[i].index < entries[j].index
+		}
+		return entries[i].name < entries[j].name
 	})
-	var s []string
-	for _, v := range list {
-		s = append(s, v.name)
+	remap = map[int]int{}
+	for i, e := range entries {
+		if i > 0 && entries[i-1].index == e.index {
+			return nil, nil, errors.Join(wxx.ErrInvalidTerrainMap, fmt.Errorf(
+				"<terrainmap>: %q and %q both have index %d; a tile using it could mean either (issue #87)", entries[i-1].name, e.name, e.index))
+		}
+		names = append(names, e.name)
+		remap[e.index] = i
 	}
-	return s
+	return names, remap, nil
+}
+
+// tileTerrain is the index a tile is written with: its terrain's position in
+// the written table. A tile whose terrain the table does not list is refused;
+// Worldographer would have no terrain to draw.
+func tileTerrain(remap map[int]int, tile *wxx.Tile_t) (int, error) {
+	index, ok := remap[tile.Terrain]
+	if !ok {
+		return 0, errors.Join(wxx.ErrInvalidTileGrid, fmt.Errorf(
+			"map/tiles: hex (%d,%d) uses terrain index %d, which <terrainmap> does not list (issue #87)", tile.Column, tile.Row, tile.Terrain))
+	}
+	return index, nil
 }
 
 func encodeInnerText(input string) string {

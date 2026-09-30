@@ -28,6 +28,7 @@ const (
 	ErrInvalidIntegerAttribute     = Error("invalid integer attribute")
 	ErrInvalidMapMetadata          = Error("invalid <map> metadata")
 	ErrInvalidTerrainMapFieldCount = Error("invalid terrain map field count")
+	ErrInvalidTerrainMap           = Error("invalid terrain map")
 	ErrInvalidTileGrid             = Error("invalid tile grid")
 	ErrInvalidUTF16                = Error("invalid utf-16")
 	ErrInvalidUTF8                 = Error("invalid utf-8")
