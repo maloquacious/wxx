@@ -124,17 +124,21 @@ type Configuration_t struct {
 
 type Feature struct {
 	// attributes
-	Type              string  `xml:"type,attr"`
-	Rotate            float64 `xml:"rotate,attr"`
-	Uuid              string  `xml:"uuid,attr"`
-	MapLayer          string  `xml:"mapLayer,attr"`
-	IsFlipHorizontal  bool    `xml:"isFlipHorizontal,attr"`
-	IsFlipVertical    bool    `xml:"isFlipVertical,attr"`
-	Scale             float64 `xml:"scale,attr"`
-	ScaleHt           float64 `xml:"scaleHt,attr"`
-	Tags              string  `xml:"tags,attr"`
-	Color             string  `xml:"color,attr"`
-	RingColor         string  `xml:"ringcolor,attr"`
+	Type             string  `xml:"type,attr"`
+	Rotate           float64 `xml:"rotate,attr"`
+	Uuid             string  `xml:"uuid,attr"`
+	MapLayer         string  `xml:"mapLayer,attr"`
+	IsFlipHorizontal bool    `xml:"isFlipHorizontal,attr"`
+	IsFlipVertical   bool    `xml:"isFlipVertical,attr"`
+	Scale            float64 `xml:"scale,attr"`
+	ScaleHt          float64 `xml:"scaleHt,attr"`
+	Tags             string  `xml:"tags,attr"`
+	Color            string  `xml:"color,attr"`
+	// The app spells the ring colour two ways (issue #100): ringcolor="null"
+	// when none is set, and ringColor="r,g,b,a" when one is. Both are read;
+	// pointers, so a feature stating both can be refused rather than resolved.
+	RingColor         *string `xml:"ringcolor,attr"`
+	RingColorCamel    *string `xml:"ringColor,attr"`
 	IsGMOnly          bool    `xml:"isGMOnly,attr"`
 	IsPlaceFreely     bool    `xml:"isPlaceFreely,attr"`
 	LabelPosition     string  `xml:"labelPosition,attr"`

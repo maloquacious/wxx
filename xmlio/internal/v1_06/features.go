@@ -4,6 +4,7 @@ package v1_06
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 
 	"github.com/maloquacious/wxx"
@@ -28,12 +29,22 @@ func decodeFeatures(src Features, w *wxx.Map_t) error {
 		// color and ringColor are "null" or an RGBA, and opaque black is a
 		// colour the app writes when Override Color is set to Black (issue
 		// #99). decodeZeroableRgba keeps black, so nil means "null" and
-		// nothing else, and rgbaOrNull writes each back as the file spelled it.
+		// nothing else. rgbaOrNull writes color back as the file spelled it;
+		// ringColor has a spelling of its own for each case, below.
 		if f.Color, err = decodeZeroableRgba(mFeature.Color); err != nil {
 			return fmt.Errorf("feature.Color: %w", err)
 		}
-		if f.RingColor, err = decodeZeroableRgba(mFeature.RingColor); err != nil {
-			return fmt.Errorf("feature.RingColor: %w", err)
+		ringColor := mFeature.RingColorCamel
+		if ringColor == nil {
+			ringColor = mFeature.RingColor
+		} else if mFeature.RingColor != nil {
+			return errors.Join(wxx.ErrAttributeSpelledTwice,
+				fmt.Errorf("map/features/feature (uuid %q): ringcolor=%q and ringColor=%q", mFeature.Uuid, *mFeature.RingColor, *mFeature.RingColorCamel))
+		}
+		if ringColor != nil {
+			if f.RingColor, err = decodeZeroableRgba(*ringColor); err != nil {
+				return fmt.Errorf("feature.RingColor: %w", err)
+			}
 		}
 		f.IsGMOnly = mFeature.IsGMOnly
 		f.IsPlaceFreely = mFeature.IsPlaceFreely
@@ -119,7 +130,13 @@ func encodeFeature(feature *wxx.Feature_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(" scaleHt=%s", xmlAttr(floats(feature.ScaleHt))))
 	wb.WriteString(fmt.Sprintf(" tags=%s", xmlAttr(feature.Tags)))
 	wb.WriteString(fmt.Sprintf(" color=%s", xmlAttr(rgbaOrNull(feature.Color)))) // nullable
-	wb.WriteString(fmt.Sprintf(" ringcolor=%s", xmlAttr(rgbaOrNull(feature.RingColor))))
+	// The app writes ringcolor="null" when no ring colour is set and
+	// ringColor when one is (issue #100; observed in 2.08).
+	if feature.RingColor == nil {
+		wb.WriteString(fmt.Sprintf(" ringcolor=%s", xmlAttr("null")))
+	} else {
+		wb.WriteString(fmt.Sprintf(" ringColor=%s", xmlAttr(rgbas(feature.RingColor))))
+	}
 	wb.WriteString(fmt.Sprintf(" isGMOnly=%s", xmlAttr(bools(feature.IsGMOnly))))
 	wb.WriteString(fmt.Sprintf(" isPlaceFreely=%s", xmlAttr(bools(feature.IsPlaceFreely))))
 	wb.WriteString(fmt.Sprintf(" labelPosition=%s", xmlAttr(feature.LabelPosition)))

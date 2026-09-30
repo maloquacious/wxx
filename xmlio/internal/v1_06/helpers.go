@@ -106,9 +106,10 @@ func ints(i int) string {
 // decodeZeroableRgba for exactly this reason.
 //
 // Every nullable RGBA attribute now pairs decodeZeroableRgba with this
-// helper (issue #99): feature @color and @ringColor, note @color, and
+// helper (issue #99): feature @color, note @color, and
 // shapestyle @fillPaint, @dscolor and @insColor, as well as the two labelstyle
-// colours.
+// colours. Feature @ringColor decodes the same way, but encodes by hand: its
+// attribute name changes with its value (issue #100).
 func rgbaOrNull(rgba *wxx.RGBA_t) string {
 	if rgba == nil {
 		return "null"

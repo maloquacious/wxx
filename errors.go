@@ -12,6 +12,7 @@ func (e Error) Error() string {
 
 const (
 	ErrAmbiguousAppCodec           = Error("ambiguous application version codec")
+	ErrAttributeSpelledTwice       = Error("attribute stated in two spellings")
 	ErrFSError                     = Error("file-system")
 	ErrGUnZipFailed                = Error("gunzip failed")
 	ErrGZipFailed                  = Error("gzip failed")

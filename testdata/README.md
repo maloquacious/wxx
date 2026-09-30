@@ -294,3 +294,9 @@ Tests
   5. Hex (3,1) Features: click Building Pyramid on Features tab, add feature, click Select, select the feature, add a note with "Title (3,1)" body "Body (3,1)" color Magenta and click Save
   6. Hex (4,2) Labels: Set Text "Label (4,2)", click New Label, click in the center of the hex, then click De-select
   7. Curve: Set the color to Red then add a curve by clicking in (7,6), (10,6), (10,8), and (8,9), then click De-select
+
+### Save
+
+Before saving, ensure all layers are visible, GM Only: Show is checked, Grid: Show/Numbers/Shadows are checked.
+
+Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-populated.wxx
