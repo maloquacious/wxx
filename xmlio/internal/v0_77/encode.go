@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"html"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/maloquacious/wxx"
@@ -155,12 +156,21 @@ func encodeMap(w *wxx.Map_t, target appver.App_t, wb *bytes.Buffer) error {
 }
 
 func encodeGridAndNumbering(gridAndNumbering *wxx.GridAndNumbering_t, wb *bytes.Buffer) error {
+	// The five grid colors are strings written verbatim; check them before
+	// anything is written (#83).
+	var colors [5]string
+	for i, c := range []string{gridAndNumbering.Color0, gridAndNumbering.Color1, gridAndNumbering.Color2, gridAndNumbering.Color3, gridAndNumbering.Color4} {
+		var err error
+		if colors[i], err = hexColorAttr(fmt.Sprintf("map/gridandnumbering/@color%d", i), c); err != nil {
+			return err
+		}
+	}
 	wb.WriteString(fmt.Sprintf(`<gridandnumbering`))
-	wb.WriteString(fmt.Sprintf(" color0=%s", xmlAttr(gridAndNumbering.Color0)))
-	wb.WriteString(fmt.Sprintf(" color1=%s", xmlAttr(gridAndNumbering.Color1)))
-	wb.WriteString(fmt.Sprintf(" color2=%s", xmlAttr(gridAndNumbering.Color2)))
-	wb.WriteString(fmt.Sprintf(" color3=%s", xmlAttr(gridAndNumbering.Color3)))
-	wb.WriteString(fmt.Sprintf(" color4=%s", xmlAttr(gridAndNumbering.Color4)))
+	wb.WriteString(fmt.Sprintf(" color0=%s", xmlAttr(colors[0])))
+	wb.WriteString(fmt.Sprintf(" color1=%s", xmlAttr(colors[1])))
+	wb.WriteString(fmt.Sprintf(" color2=%s", xmlAttr(colors[2])))
+	wb.WriteString(fmt.Sprintf(" color3=%s", xmlAttr(colors[3])))
+	wb.WriteString(fmt.Sprintf(" color4=%s", xmlAttr(colors[4])))
 	wb.WriteString(fmt.Sprintf(" width0=%s", xmlAttr(floats(gridAndNumbering.Width0))))
 	wb.WriteString(fmt.Sprintf(" width1=%s", xmlAttr(floats(gridAndNumbering.Width1))))
 	wb.WriteString(fmt.Sprintf(" width2=%s", xmlAttr(floats(gridAndNumbering.Width2))))
@@ -861,4 +871,24 @@ func xmlAttr(s string) string {
 	}
 	b.WriteByte('"')
 	return b.String()
+}
+
+// hexColorAttr checks a <gridandnumbering> color, which the samples spell as
+// "0x" and eight hex digits (RRGGBBAA), and returns it unchanged if it has that
+// form (issue #83). It is the classic twin of v1_06's.
+//
+// "null" and "" are accepted too. No sample states either, but Worldographer
+// 2.08 opens a file with color0="" and saves it back as color0="null"
+// (maintainer's app check, #83), so both are colors it reads as "none".
+func hexColorAttr(path, s string) (string, error) {
+	if s == "null" || s == "" {
+		return s, nil
+	}
+	if len(s) == 10 && strings.HasPrefix(s, "0x") {
+		if _, err := strconv.ParseUint(s[2:], 16, 32); err == nil {
+			return s, nil
+		}
+	}
+	return "", errors.Join(wxx.ErrInvalidColorAttribute, fmt.Errorf(
+		`%s = %q: want "0x" and eight hex digits, e.g. "0x00000040", or "null" (issue #83)`, path, s))
 }

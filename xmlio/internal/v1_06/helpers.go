@@ -3,9 +3,11 @@
 package v1_06
 
 import (
+	"errors"
 	"fmt"
 	"html"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/maloquacious/wxx"
@@ -215,4 +217,64 @@ func xmlAttr(s string) string {
 	}
 	b.WriteByte('"')
 	return b.String()
+}
+
+// rgbaAttr checks a color attribute the model holds as a string and writes
+// verbatim, and returns it unchanged if Worldographer can read it (issue #83).
+//
+// The spelling is "r,g,b,a": four decimal numbers from 0 to 1, as every sample
+// writes them. With nullable, the literal "null" is accepted too, as the
+// samples write it for an absent shadow color. Anything else is refused before
+// a byte is written. An empty string, which is what a field left at its zero
+// value holds, makes Worldographer fail to open the file:
+//
+//	java.lang.NumberFormatException: empty String
+//	    at java.base/java.lang.Double.parseDouble(Unknown Source)
+//	    at com.inkwellideas.ographer.task.LoadMapTask.readShapes(LoadMapTask.java:784)
+//
+// The 0-to-1 range is confirmed in the app: dsColor="255,0,0,1" fails with
+// "Color's red value (255.0) must be in the range 0.0-1.0" from JavaFX's Color
+// constructor (maintainer's app check, #83).
+func rgbaAttr(path, s string, nullable bool) (string, error) {
+	if nullable && s == "null" {
+		return s, nil
+	}
+	parts := strings.Split(s, ",")
+	ok := len(parts) == 4
+	for _, p := range parts {
+		if !ok {
+			break
+		}
+		f, err := strconv.ParseFloat(p, 64)
+		ok = err == nil && 0 <= f && f <= 1
+	}
+	if !ok {
+		want := `four comma-separated numbers from 0 to 1, e.g. "1.0,1.0,1.0,1.0"`
+		if nullable {
+			want += `, or "null"`
+		}
+		return "", errors.Join(wxx.ErrInvalidColorAttribute, fmt.Errorf(
+			"%s = %q: want %s; Worldographer will not open a file with anything else here (issue #83)", path, s, want))
+	}
+	return s, nil
+}
+
+// hexColorAttr checks a <gridandnumbering> color, which the samples spell as
+// "0x" and eight hex digits (RRGGBBAA), and returns it unchanged if it has that
+// form (issue #83).
+//
+// "null" and "" are accepted too. No sample states either, but Worldographer
+// 2.08 opens a file with color0="" and saves it back as color0="null"
+// (maintainer's app check, #83), so both are colors it reads as "none".
+func hexColorAttr(path, s string) (string, error) {
+	if s == "null" || s == "" {
+		return s, nil
+	}
+	if len(s) == 10 && strings.HasPrefix(s, "0x") {
+		if _, err := strconv.ParseUint(s[2:], 16, 32); err == nil {
+			return s, nil
+		}
+	}
+	return "", errors.Join(wxx.ErrInvalidColorAttribute, fmt.Errorf(
+		`%s = %q: want "0x" and eight hex digits, e.g. "0x00000040", or "null" (issue #83)`, path, s))
 }

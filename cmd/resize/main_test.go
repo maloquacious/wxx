@@ -123,7 +123,7 @@ func positionedMap(t *testing.T) string {
 	m.Shapes = []*wxx.Shape_t{{
 		Type: "Polygon", MapLayer: "Above Terrain", CreationType: "BASIC",
 		IsWorld: true, HighestViewLevel: "WORLD", CurrentShapeViewLevel: "WORLD",
-		StrokeColor: "1.0,1.0,1.0,1.0", StrokeType: "SIMPLE", Opacity: 1,
+		StrokeColor: "1.0,1.0,1.0,1.0", DsColor: "null", InsColor: "null", StrokeType: "SIMPLE", Opacity: 1,
 		Points: []*wxx.Point_t{{X: 1000, Y: 700}, {X: 1100, Y: 700}, {X: 1050, Y: 800}},
 	}}
 	m.Notes = []*wxx.Note_t{{
