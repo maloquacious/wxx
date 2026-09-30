@@ -158,7 +158,9 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 		return w, err
 	}
 
-	decodeExtraTerrain(m.ExtraTerrain, w)
+	if err := decodeExtraTerrain(m.ExtraTerrain, w); err != nil {
+		return w, err
+	}
 
 	if err := decodeLabels(m.Labels, w); err != nil {
 		return w, err

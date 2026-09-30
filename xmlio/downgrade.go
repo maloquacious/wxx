@@ -3,7 +3,6 @@
 package xmlio
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -87,10 +86,11 @@ func (d DroppedFeature_t) String() string {
 // encode unless the caller passes WithAllowLossy (too blunt: it makes the common,
 // fully-enumerated downgrade as loud as the one we genuinely cannot describe).
 //
-// Consequence, and it is intended: when a feature moves from stub to modeled
-// (#34 would do exactly this for <extraTerrain>), its hard error BECOMES a
-// diagnostic. Modeling it is what earns the encoder the right to be quiet about
-// it, because only then can it say what was lost.
+// Consequence, and it is intended: when a feature moves from stub to modeled,
+// its hard error BECOMES a diagnostic. Modeling it is what earns the encoder the
+// right to be quiet about it, because only then can it say what was lost. #34
+// did exactly this for <extraTerrain>, the last stub, so today nothing produces
+// wxx.ErrUnmodeledStubLoss. The rule stands for the next stub.
 func downgradeLoss(m *wxx.Map_t, targetSchema string) ([]DroppedFeature_t, error) {
 	if targetSchema != "" {
 		// Every non-classic supported schema is W2025 1.06, which expresses
@@ -226,6 +226,18 @@ func classicDowngradeLoss(m *wxx.Map_t) ([]DroppedFeature_t, error) {
 	// conclusion and is why #36 asked for the diff instead of the schema alone.
 	dropped = append(dropped, labelStyleDropShadowLoss(m)...)
 
+	// map/features/feature/label/@dropShadow* and map/labels/label/@dropShadow*
+	// -- the same trio on <label> itself, which classic also lacks (RelaxNG
+	// lines 233-252 define sixteen label attributes, without them).
+	//
+	// Found while #34 made the layers fixture downgradable. Until then the
+	// fixture's <extraTerrain> stub failed the whole encode, so the harness never
+	// ran on it, and it is the only tracked .wxx with labels: its three features'
+	// labels carry the trio. Once the encode succeeded, the diff showed the trio
+	// dropped with nothing reporting it -- silent loss the moment #34 landed,
+	// which is why it lands with #34.
+	dropped = append(dropped, labelDropShadowLoss(m)...)
+
 	// map/blurTerrainBG -- a W2025 top-level element the classic format does not
 	// define at all (absent from the RelaxNG schema; schema/README.md
 	// independently flags it as a verified W2025 delta). Modeled as a pointer, so
@@ -241,62 +253,40 @@ func classicDowngradeLoss(m *wxx.Map_t) ([]DroppedFeature_t, error) {
 		})
 	}
 
-	// map/extraTerrain -- the ADR 0004 terrain-layers loss, and the one entry that
-	// ERRORS instead of reporting.
+	// map/extraTerrain -- the ADR 0004 terrain-layers loss.
 	//
-	// W2025 binds terrain to a named layer per hex
-	// (<extraTerrain><mapLayer name="..."><terrainAndLocation location="x,y"/>);
-	// classic binds mapLayer to features, labels and shapes but never to tiles,
-	// so all classic terrain sits on one hard-coded layer and a per-hex layer
-	// assignment collapses. That much is a genuine downgrade loss.
+	// W2025 places terrain on a named layer per hex
+	// (<extraTerrain><mapLayer name="..."><terrainAndLocation location="x,y"/>),
+	// in addition to each hex's base tile. Classic binds mapLayer to features,
+	// labels and shapes but never to tiles, and defines no <extraTerrain>, so
+	// every such placement is dropped and each hex keeps only its base tile.
 	//
-	// What makes it an error rather than a diagnostic is that Map_t models this
-	// element ONLY as opaque InnerXML (#34 tracks modeling it): the bytes
-	// round-trip 2025 -> 2025 intact, yet nothing in the model understands them.
-	// The encoder therefore cannot enumerate what dropping them costs -- it cannot
-	// say how many hexes, on which layers, with what terrain -- and under the loss
-	// contract it must refuse rather than discard content it cannot describe.
-	// When #34 models terrainAndLocation, this becomes a diagnostic like the rest.
-	if m.ExtraTerrain != nil && !isEmptyInnerXML(m.ExtraTerrain.InnerXML) {
-		inner := strings.TrimSpace(m.ExtraTerrain.InnerXML)
-		return nil, errors.Join(wxx.ErrUnmodeledStubLoss, fmt.Errorf(
-			"map/extraTerrain (Map_t.ExtraTerrain.InnerXML): the classic format defines no <extraTerrain> element, and this map carries %d bytes of it that the model holds only as an opaque stub, so the encoder cannot describe what dropping them would cost: %s",
-			len(m.ExtraTerrain.InnerXML), stubExcerpt(inner)))
+	// Until #34 this entry was a hard error: Map_t held the element as opaque
+	// InnerXML, so the encoder could not say what dropping it would cost. It is
+	// modeled now, so under the loss contract it is reported and the encode
+	// succeeds. The Detail counts placements per layer, which is what the caller
+	// needs to decide whether the loss matters.
+	//
+	// An empty container -- present, no layers -- loses nothing and is not
+	// reported. A layer with no placements is reported, because the harness
+	// would show its <mapLayer> dropped.
+	if m.ExtraTerrain != nil && len(m.ExtraTerrain.MapLayers) != 0 {
+		placements := 0
+		var perLayer []string
+		for _, layer := range m.ExtraTerrain.MapLayers {
+			placements += len(layer.Terrain)
+			perLayer = append(perLayer, fmt.Sprintf("%q: %d", layer.Name, len(layer.Terrain)))
+		}
+		dropped = append(dropped, DroppedFeature_t{
+			Path:  "map/extraTerrain",
+			Field: "Map_t.ExtraTerrain",
+			Detail: fmt.Sprintf("%d terrain placement(s) on %d layer(s) are dropped (%s); each hex keeps only its base tile",
+				placements, len(m.ExtraTerrain.MapLayers), strings.Join(perLayer, ", ")),
+			Reason: "the classic format defines no <extraTerrain> element and cannot place terrain on a map layer",
+		})
 	}
 
 	return dropped, nil
-}
-
-// isEmptyInnerXML reports whether a verbatim InnerXML stub holds nothing.
-//
-// InnerXML is the raw bytes between the element's tags, so an empty container is
-// not "" but whatever the writer's pretty-printer put there: the blank 2.06
-// fixture's <extraTerrain> carries "\n", one newline. A "" test would call that
-// container populated and error on a file that loses nothing.
-//
-// TrimSpace is exactly the right test, and not an approximation. Whitespace
-// BETWEEN elements is insignificant formatting, and no XML content can hide in
-// it: an element needs a '<', an attribute lives inside a tag, and a text node
-// made only of whitespace has no content to lose. So an all-whitespace InnerXML
-// means the container has no children and no text -- dropping it costs nothing.
-// Conversely a single non-whitespace byte means at least one child or text node
-// the model never understood, which is precisely what the encoder must not
-// silently discard.
-func isEmptyInnerXML(inner string) bool {
-	return strings.TrimSpace(inner) == ""
-}
-
-// stubExcerpt renders opaque stub content for an error message, truncated so a
-// large stub cannot turn one error into a wall of XML. The content is echoed
-// because the caller cannot ask the model what was in it -- that is what makes it
-// a stub -- so the bytes are the only description available.
-func stubExcerpt(inner string) string {
-	const max = 160
-	inner = strings.Join(strings.Fields(inner), " ")
-	if len(inner) > max {
-		return strconv.Quote(inner[:max]) + " (truncated)"
-	}
-	return strconv.Quote(inner)
 }
 
 // layersWithOpacity returns "name"=opacity for every map layer carrying a
@@ -389,6 +379,51 @@ func labelStyleDropShadowLoss(m *wxx.Map_t) []DroppedFeature_t {
 		Detail: fmt.Sprintf("the drop-shadow trio is dropped from %d label style(s): %s", len(styles), strings.Join(styles, ", ")),
 		Reason: "the classic <labelstyle> element states none of @dropShadowColor, @dropShadowRadius or @dropShadowSpread (schema/utf-8-xml.rnc lines 181-190 define nine labelstyle attributes, without them)",
 	}}
+}
+
+// labelDropShadowLoss reports the drop-shadow trio on feature labels and on
+// top-level labels, one entry per path. It is gated like
+// labelStyleDropShadowLoss: classic decode leaves DropShadowColor "", so a label
+// that never had the trio reports nothing.
+func labelDropShadowLoss(m *wxx.Map_t) []DroppedFeature_t {
+	const reason = "the classic <label> element states none of @dropShadowColor, @dropShadowRadius or @dropShadowSpread (schema/utf-8-xml.rnc lines 233-252 define sixteen label attributes, without them)"
+	describe := func(l *wxx.Label_t) string {
+		return fmt.Sprintf("(color=%s radius=%s spread=%s)", l.DropShadowColor, floatDetail(l.DropShadowRadius), floatDetail(l.DropShadowSpread))
+	}
+	var dropped []DroppedFeature_t
+
+	var onFeatures []string
+	for i, f := range m.Features {
+		if f == nil || f.Label == nil || f.Label.DropShadowColor == "" {
+			continue
+		}
+		onFeatures = append(onFeatures, fmt.Sprintf("feature %d %q=%s", i, f.Type, describe(f.Label)))
+	}
+	if len(onFeatures) != 0 {
+		dropped = append(dropped, DroppedFeature_t{
+			Path:   "map/features/feature/label/@dropShadow*",
+			Field:  "Map_t.Features[].Label.DropShadow{Color,Radius,Spread}",
+			Detail: fmt.Sprintf("the drop-shadow trio is dropped from %d feature label(s): %s", len(onFeatures), strings.Join(onFeatures, ", ")),
+			Reason: reason,
+		})
+	}
+
+	var onLabels []string
+	for i, l := range m.Labels {
+		if l == nil || l.DropShadowColor == "" {
+			continue
+		}
+		onLabels = append(onLabels, fmt.Sprintf("label %d %q=%s", i, l.InnerText, describe(l)))
+	}
+	if len(onLabels) != 0 {
+		dropped = append(dropped, DroppedFeature_t{
+			Path:   "map/labels/label/@dropShadow*",
+			Field:  "Map_t.Labels[].DropShadow{Color,Radius,Spread}",
+			Detail: fmt.Sprintf("the drop-shadow trio is dropped from %d label(s): %s", len(onLabels), strings.Join(onLabels, ", ")),
+			Reason: reason,
+		})
+	}
+	return dropped
 }
 
 // floatDetail renders a float for a Detail string. It is display only -- no

@@ -354,3 +354,17 @@ leaves the trap and relies on the next caller reading a comment.
 - **No file byte moved.** Every fixture encodes to identical bytes before and
   after (9 fixtures × 4 application versions), which is Decision 1's
   verbatim-output guarantee held across the change rather than assumed.
+
+## Amendment — 2026-09-29 ([#34](https://github.com/maloquacious/wxx/issues/34))
+
+`terrainAndLocation` is no longer a stub. `Map_t.ExtraTerrain` models
+`<mapLayer>` and `<terrainAndLocation>` structurally, so a classic downgrade now
+**reports** the terrain-layers loss (placements counted per layer) and
+succeeds, as the loss contract says a modeled feature should. It was the last
+stub: nothing produces `wxx.ErrUnmodeledStubLoss` today, and the rule that a
+stub hard-errors stands for the next one.
+
+The Decision 6 qualification above still holds as a warning. Letting the
+layers fixture downgrade exposed a loss nobody had seen, the drop-shadow trio
+on feature labels. The stub's error had been hiding it by failing the whole
+encode, and now it is reported too.

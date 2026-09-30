@@ -84,7 +84,7 @@ Tests referenced (in `xmlio/roundtrip_2025_test.go` unless noted, package
 | configuration `<text-config>` / `<labelstyle>` | implemented | implemented | RoundTrip, PublicRoundTrip, CoverageMatrix, **AttrsMatchSource**, **BlackBackgroundIsNotNull**, **IntegerAttributeSpelling** | 7 labelstyles in sample round-trip; `dropShadowColor` (nullable string) / `dropShadowRadius` / `dropShadowSpread` now modeled (#11). **Both nullable colours are exact as of #62**: `backgroundColor="null"` used to come back as `"0.0,0.0,0.0,1.0"` on every label style of every file this codec wrote, because `decodeRgba` folded `"null"` and opaque black into the same nil and `rgbas` rendered nil as black. Decode now uses `decodeZeroableRgba` so nil means `"null"` and nothing else, and encode uses `rgbaOrNull`; `rgbans` was rejected as the fix because it decides on the formatted string and would have laundered a genuine opaque black into `"null"` instead. `TestW2025LabelStyleAttrsMatchSource` compares every attribute against the source document — the audit classic always had and W2025 lacked, which is why the structural round-trip tests could not see this — and `TestW2025LabelStyleBlackBackgroundIsNotNull` synthesizes the black case no fixture carries. `dropShadowRadius` and `dropShadowSpread` are **integers on disk** and are now written as such (issue #64); they were emitted `"0.0"`, which Worldographer refuses to load. The element is byte-identical to the source apart from inter-attribute whitespace. |
 | configuration `<shape-config>` / `<shapestyle>` | implemented | implemented | RoundTrip, PublicRoundTrip, CoverageMatrix | 7 shapestyles in sample round-trip; `lineCap` / `lineJoin` now modeled (#11). |
 | `<blurTerrainBG>` | implemented | implemented | CoverageMatrix | Optional top-level element modeled as `*BlurTerrainBG_t` (nil = absent); 6 attrs round-trip (#11). |
-| `<extraTerrain>` | **stub** | implemented | CoverageMatrix, ClassicDowngradeStubError | Optional top-level element; the container is modeled as `*ExtraTerrain_t` by #11 (nil = absent), but its **content is opaque raw innerxml**, not structured (#34). Both shapes are tracked: `…-blank.wxx` carries an empty container (innerxml `"\n"`), `…-layers.wxx` carries 183 bytes — a `<mapLayer name="Terrain Layer">` holding a `<terrainAndLocation>`. Decode is **stub**, not implemented: nothing in `Map_t` understands those children. |
+| `<extraTerrain>` (+ `<mapLayer>` / `<terrainAndLocation>`) | implemented | implemented | ExtraTerrainMatchesSource, ExtraTerrainRoundTrip, ExtraTerrainDecodeRefusals, ClassicDowngradeExtraTerrain | Modeled structurally by #34 as `ExtraTerrain_t` → `[]ExtraTerrainLayer_t` → `[]TerrainAndLocation_t` (terrain name, integer elevation, icy, GM-only, resources, and `location` kept as the raw x,y point). Encode reproduces the source byte for byte on all three samples. Decode refuses any child element or attribute it does not model instead of dropping it, because the element used to be carried verbatim. `…-blank.wxx` and the populated sample carry an empty container, `…-layers.wxx` one placement; multi-layer shapes are synthesized. |
 
 ## Integer attributes
 
@@ -111,20 +111,13 @@ hard-coded constant carrying the integer spellings verbatim: see issue #67.
 
 ## Known un-modeled fields
 
-**Two, both tracked.** Issue #11 closed the section as it stood -- the six
-W2025-native fields formerly listed here are now modeled additively (below) --
-but two gaps have since been *demonstrated* and neither is covered by #11:
+**None.** The two gaps found after #11 are both closed:
 
-- **`<extraTerrain>` children (`<mapLayer>` / `<terrainAndLocation>`)** -- the
-  container is modeled, its content is an opaque `InnerXML` **stub**. Nothing in
-  `Map_t` understands it, so a downgrade hard-errors rather than reporting a
-  loss. Tracked by **#34**.
-- **`<label>` `@dropShadowColor` / `@dropShadowRadius` / `@dropShadowSpread`** --
-  `Label_t` has no field for them (the trio is modeled on `LabelStyle_t` only), so
-  they are **dropped on a same-release 2025 -> 2025 round trip**. Demonstrated:
-  `…-layers.wxx` carries 3 such labels, re-encode carries 0. Tracked by **#35**.
-
-Do not read the matrix above as "nothing is missing" -- read it with these two.
+- **`<extraTerrain>` children (`<mapLayer>` / `<terrainAndLocation>`)** were an
+  opaque `InnerXML` stub. #34 modeled them, and a downgrade now reports the loss
+  instead of failing.
+- **`<label>` `@dropShadowColor` / `@dropShadowRadius` / `@dropShadowSpread`**
+  were dropped on a 2025 → 2025 round trip. #35 modeled them on `Label_t`.
 
 For the record, the six fields #11 modeled -- and where they now live -- were:
 
@@ -133,7 +126,7 @@ For the record, the six fields #11 modeled -- and where they now live -- were:
 - **`<shapestyle lineCap / lineJoin>`** -- `ShapeStyle_t.LineCap` / `.LineJoin` (strings), mirroring `Shape_t`. CoverageMatrix asserts `SQUARE` / `ROUND`.
 - **`<map hScrollbarPos / vScrollbarPos>`** -- `Map_t.HScrollbarPos` / `.VScrollbarPos` (floats) / schema root attrs. CoverageMatrix asserts they do not drift.
 - **`<blurTerrainBG>`** -- `Map_t.BlurTerrainBG *BlurTerrainBG_t` (nil = absent); 6 attrs modeled. CoverageMatrix asserts non-nil with attrs preserved.
-- **`<extraTerrain>`** -- `Map_t.ExtraTerrain *ExtraTerrain_t` (nil = absent); the container is preserved via **raw innerxml**, so its content remains a **stub**. CoverageMatrix asserts non-nil. The tracked `…-layers.wxx` fixture carries 183 bytes of real children (`<mapLayer name="Terrain Layer">` / `<terrainAndLocation>`), so "present-but-empty" describes only the `…-blank.wxx` fixture (innerxml `"\n"`). Because nothing in `Map_t` understands those children, a downgrade to a target with no `<extraTerrain>` **hard-errors** rather than dropping them silently (#32; `xmlio/downgrade.go`) — this is the ADR 0004 "stub coverage is a precondition for honest loss reporting" case, and it resolves when **#34** models `terrainAndLocation`.
+- **`<extraTerrain>`** -- `Map_t.ExtraTerrain *ExtraTerrain_t` (nil = absent). #11 modeled only the container, carrying its content as raw innerxml, a **stub** that made a downgrade hard-error. #34 replaced the stub with structured types (see the matrix row above).
 
 ## RelaxNG cross-check
 
