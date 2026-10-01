@@ -4,6 +4,8 @@ package xmlio_test
 
 import (
 	"bytes"
+	"errors"
+	"strings"
 	"testing"
 
 	"github.com/maloquacious/wxx"
@@ -23,39 +25,49 @@ func attrValue(attrs [][2]string, name string) (string, bool) {
 	return "", false
 }
 
-// TestW2025FeatureBlackColorMatchesSource decodes the populated 2.08 map,
-// encodes it as "2.06", and requires every <feature>'s @color to come out as
-// the source spells it (issue #99). The map's cathedral on hex (2,1) has
+// populatedFixtures are the populated recipe's maps, one per version saved.
+// The 2.06 map confirms the 2.08 colour spellings, ringColor included (#100).
+var populatedFixtures = []string{
+	"2025-2.06-13x11-941577-populated.wxx",
+	populatedFixture,
+}
+
+// TestW2025FeatureBlackColorMatchesSource decodes each populated map, encodes
+// it as "2.06", and requires every <feature>'s @color to come out as the
+// source spells it (issue #99). Each map's cathedral on hex (2,1) has
 // Override Color set to Black, which the app writes as "0.0,0.0,0.0,1.0"; wxx
 // used to fold that into the same nil as "null" and write it back as "null",
 // so the feature lost its colour.
 //
-// @ringColor is not compared: the codec reads it as "ringcolor" and loses it
-// (issue #100).
+// The ring colour is compared by TestW2025FeatureRingColorMatchesSource.
 func TestW2025FeatureBlackColorMatchesSource(t *testing.T) {
-	src, m := readNotesFixture(t, populatedFixture)
-	out, err := xmlio.MarshalXML(m, "2.06")
-	if err != nil {
-		t.Fatalf("MarshalXML: %v", err)
-	}
-	in := startTagAttrs(src, "feature")
-	got := startTagAttrs(out, "feature")
-	if len(got) != len(in) {
-		t.Fatalf("wrote %d <feature>(s), source has %d", len(got), len(in))
-	}
-	black := false
-	for i := range in {
-		want, ok := attrValue(in[i], "color")
-		if !ok {
-			t.Fatalf("source <feature> %d states no @color", i)
-		}
-		black = black || want == opaqueBlack
-		if have, _ := attrValue(got[i], "color"); have != want {
-			t.Errorf("<feature> %d: @color = %q, want %q", i, have, want)
-		}
-	}
-	if !black {
-		t.Fatalf("%s: no <feature> states color=%q; the fixture no longer exercises #99", populatedFixture, opaqueBlack)
+	for _, fixture := range populatedFixtures {
+		t.Run(fixture, func(t *testing.T) {
+			src, m := readNotesFixture(t, fixture)
+			out, err := xmlio.MarshalXML(m, "2.06")
+			if err != nil {
+				t.Fatalf("MarshalXML: %v", err)
+			}
+			in := startTagAttrs(src, "feature")
+			got := startTagAttrs(out, "feature")
+			if len(got) != len(in) {
+				t.Fatalf("wrote %d <feature>(s), source has %d", len(got), len(in))
+			}
+			black := false
+			for i := range in {
+				want, ok := attrValue(in[i], "color")
+				if !ok {
+					t.Fatalf("source <feature> %d states no @color", i)
+				}
+				black = black || want == opaqueBlack
+				if have, _ := attrValue(got[i], "color"); have != want {
+					t.Errorf("<feature> %d: @color = %q, want %q", i, have, want)
+				}
+			}
+			if !black {
+				t.Fatalf("no <feature> states color=%q; the fixture no longer exercises #99", opaqueBlack)
+			}
+		})
 	}
 }
 
@@ -101,7 +113,7 @@ func TestW2025BlackIsNotNull(t *testing.T) {
 		element string
 		attrs   []string
 	}{
-		{"feature", []string{"color", "ringcolor"}},
+		{"feature", []string{"color", "ringColor"}},
 		{"note", []string{"color"}},
 		{"shapestyle", []string{"fillPaint", "dscolor", "insColor"}},
 	} {
@@ -138,5 +150,100 @@ func TestW2025BlackIsNotNull(t *testing.T) {
 		if got == nil {
 			t.Errorf("re-decode: %s is nil, want an opaque black -- nil means \"null\"", name)
 		}
+	}
+}
+
+// ringAttr returns the index, name and value of a <feature>'s ring colour,
+// whichever way it is spelled.
+func ringAttr(attrs [][2]string) (int, string, string) {
+	for i, a := range attrs {
+		if strings.EqualFold(a[0], "ringcolor") {
+			return i, a[0], a[1]
+		}
+	}
+	return -1, "", ""
+}
+
+// TestW2025FeatureRingColorMatchesSource decodes each W2025 fixture that has
+// features, encodes it as "2.06", and requires every <feature>'s ring colour
+// to come out with the source's name, value and position (issue #100). The
+// app writes ringcolor="null" when no ring colour is set and ringColor when
+// one is; wxx read only the first, so a set ring colour was lost. The
+// populated 2.06 and 2.08 maps each have a white and a black ring; the test
+// fails if no fixture states ringColor.
+func TestW2025FeatureRingColorMatchesSource(t *testing.T) {
+	fixtures := append(append([]string(nil), notesShapesFixtures...), populatedFixtures...)
+	camel := false
+	for _, fixture := range fixtures {
+		t.Run(fixture, func(t *testing.T) {
+			src, m := readNotesFixture(t, fixture)
+			out, err := xmlio.MarshalXML(m, "2.06")
+			if err != nil {
+				t.Fatalf("MarshalXML: %v", err)
+			}
+			in := startTagAttrs(src, "feature")
+			got := startTagAttrs(out, "feature")
+			if len(got) != len(in) {
+				t.Fatalf("wrote %d <feature>(s), source has %d", len(got), len(in))
+			}
+			for i := range in {
+				wi, wn, wv := ringAttr(in[i])
+				if wi < 0 {
+					t.Fatalf("source <feature> %d states no ring colour", i)
+				}
+				camel = camel || wn == "ringColor"
+				gi, gn, gv := ringAttr(got[i])
+				if gn != wn || gv != wv {
+					t.Errorf("<feature> %d: %s=%q, want %s=%q", i, gn, gv, wn, wv)
+				}
+				// Compared as the position after @color, since the encoder
+				// writes attributes the source may lack (e.g. no @uuid).
+				if ci, _ := indexOf(got[i], "color"); gi != ci+1 {
+					t.Errorf("<feature> %d: ring colour is attribute %d, want it straight after @color (%d)", i, gi, ci)
+				}
+				if ci, _ := indexOf(in[i], "color"); wi != ci+1 {
+					t.Errorf("source <feature> %d: ring colour is not straight after @color", i)
+				}
+			}
+		})
+	}
+	if !camel {
+		t.Fatalf("no fixture states ringColor; the test no longer exercises #100")
+	}
+}
+
+// indexOf returns the position of the named attribute in one start tag.
+func indexOf(attrs [][2]string, name string) (int, bool) {
+	for i, a := range attrs {
+		if a[0] == name {
+			return i, true
+		}
+	}
+	return -1, false
+}
+
+// TestW2025FeatureRingColorBothSpellingsRefused requires a <feature> that
+// states both ringcolor and ringColor to be refused rather than resolved
+// (issue #100): the app writes one or the other, never both, so there is no
+// telling which one it meant.
+func TestW2025FeatureRingColorBothSpellingsRefused(t *testing.T) {
+	src, _ := readNotesFixture(t, populatedFixture)
+	src = bytes.TrimLeft(stripXMLDecl(src), "\n")
+	const white = `ringColor="1.0,1.0,1.0,1.0"`
+	if n := bytes.Count(src, []byte(white)); n != 1 {
+		t.Fatalf("fixture states %s %d time(s), want 1", white, n)
+	}
+	doc := bytes.Replace(src, []byte(white), []byte(`ringcolor="null" `+white), 1)
+	_, err := decodeRawXML(t, doc, "1.1")
+	if !errors.Is(err, wxx.ErrAttributeSpelledTwice) {
+		t.Fatalf("decode: err = %v, want errors.Is(err, %v)", err, wxx.ErrAttributeSpelledTwice)
+	}
+	if !strings.Contains(err.Error(), "map/features/feature") {
+		t.Errorf("decode: err = %q, want it to name the feature", err)
+	}
+
+	// The unmodified document decodes, so the refusal above is the edit's.
+	if _, err := decodeRawXML(t, src, "1.1"); err != nil {
+		t.Fatalf("decode unmodified: %v", err)
 	}
 }
