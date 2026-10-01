@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/maloquacious/wxx/xmlio"
@@ -42,6 +43,11 @@ func TestRegisteredFixtureListsAreEveryTrackedFixture(t *testing.T) {
 			for _, p := range set.fixtures {
 				listed = append(listed, filepath.Base(p))
 			}
+			// Worldographer leaves a *-autosave.wxx beside the map it saves,
+			// even after a clean exit; it is git-ignored and never a fixture.
+			onDisk = slices.DeleteFunc(onDisk, func(p string) bool {
+				return strings.HasSuffix(p, "-autosave.wxx")
+			})
 			for i := range onDisk {
 				onDisk[i] = filepath.Base(onDisk[i])
 			}
