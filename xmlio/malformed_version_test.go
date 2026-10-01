@@ -172,7 +172,7 @@ func TestWellFormedOnDiskVersionDecodesParsed(t *testing.T) {
 				t.Errorf("MetaData.Version.App.Compare(\"0.0\"): unexpected error: %v", err)
 			}
 			if v.Schema == nil {
-				return // classic states none; ADR 0003 Decision 2
+				t.Fatalf("MetaData.Version.Schema = nil for %q, want the @schema the file states", v.App.Raw)
 			}
 			if !v.Schema.Parsed() {
 				t.Errorf("MetaData.Version.Schema.Parsed() = false for %q, want true", v.Schema.Raw)

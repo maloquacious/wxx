@@ -23,6 +23,13 @@ import (
 // release="" plus version="1.77" routes to the classic decoder, which tolerates
 // the W2025 elements it does not recognize, so the round trip reports success and
 // wxx cannot tell the file is a chimera.
+//
+// The general property is that a file's declared identity and its content format
+// cannot disagree: whatever identity the SOURCE map states, the bytes state the
+// identity of the application version the caller asked for. These strings are
+// #41's source identity, and the tests below plant them on a W2025 map (see
+// withChimeraIdentity) rather than reading them from a classic file, so the
+// guarantee stays tested on W2025 releases alone.
 const (
 	chimeraRelease = `release=""`
 	chimeraVersion = `version="1.77"`
@@ -32,6 +39,33 @@ const (
 // mapElement matches the <map> start tag, which is where a file's whole identity
 // -- @release, @version, @schema -- lives.
 var mapElement = regexp.MustCompile(`(?s)<map[^>]*>`)
+
+// withChimeraIdentity returns the W2025 2.06 blank fixture with every identity
+// field a Map_t holds overwritten by #41's chimera identity: release="",
+// version="1.77", no schema.
+//
+// Those fields are provenance (issue #45 Decision 9) and no encoder may read
+// them, so a map stating them is a legitimate input; what it must never do is
+// reach the bytes. Planting them on a W2025 map keeps #41's exact strings under
+// test, and every one differs from what a 2.06 target writes, so an encoder that
+// echoed ANY of the three would be caught.
+func withChimeraIdentity(t *testing.T) *wxx.Map_t {
+	t.Helper()
+	m, err := decodeFile(t, sample2025_206)
+	if err != nil {
+		t.Fatalf("public decode %s: %v", sample2025_206, err)
+	}
+	app, err := wxx.ParseDotted("1.77")
+	if err != nil {
+		t.Fatalf("ParseDotted(%q): %v", "1.77", err)
+	}
+	m.MetaData.Version.App = app
+	m.MetaData.Version.Schema = nil
+	m.MetaData.Worldographer.Release = ""
+	m.MetaData.Worldographer.Version = "1.77"
+	m.MetaData.Worldographer.Schema = ""
+	return m
+}
 
 // decodeRawXML runs marshaled XML back through the PUBLIC decoder.
 //
@@ -76,7 +110,10 @@ func decodeRawXML(t *testing.T, xml []byte, xmlVersion string) (*wxx.Map_t, erro
 // given, so there is no longer any path by which source identity reaches output.
 //
 // The chimera is therefore UNCONSTRUCTIBLE rather than merely prevented, and this
-// half asserts exactly that. It still reaches through to xmlio/internal/v1_06 --
+// half asserts exactly that. Its source is a W2025 map carrying #41's identity
+// (withChimeraIdentity), since classic is being removed (issue #103) and the
+// property under test is about the identity a map states, not the content it
+// holds. It still reaches through to xmlio/internal/v1_06 --
 // which it may do, and only a test may: requirement 5's exception for test units,
 // which works because Go's internal rule is directory-based and this external test
 // package sits inside xmlio/. It asks the codec for the one recipe that used to
@@ -88,68 +125,68 @@ func decodeRawXML(t *testing.T, xml []byte, xmlVersion string) (*wxx.Map_t, erro
 // accepts -- the gate checks the ARGUMENT. What stops it is that the argument it
 // checks is now also the argument it WRITES.
 func TestChimeraIsUnreachableThroughThePublicAPI(t *testing.T) {
-	classic, err := decodeFile(t, classicFixture)
-	if err != nil {
-		t.Fatalf("public decode %s: %v", classicFixture, err)
-	}
+	src := withChimeraIdentity(t)
 
-	// Guard against a vacuous pass: the source must really be classic. A W2025
-	// source could not produce a classic-identity chimera, and everything below
-	// would pass while testing nothing.
-	if got := classic.MetaData.Version.App.Raw; got != "1.77" {
-		t.Fatalf("%s states version %q, want %q: the chimera is a classic map through the W2025 codec", classicFixture, got, "1.77")
+	// Guard against a vacuous pass: the source must really state #41's identity.
+	// A source stating 2.06's own identity could not produce a chimera, and
+	// everything below would pass while testing nothing.
+	if got := src.MetaData.Version.App.Raw; got != "1.77" {
+		t.Fatalf("source states version %q, want %q: the chimera is #41's identity through the W2025 codec", got, "1.77")
 	}
-	if classic.MetaData.Version.Schema != nil {
-		t.Fatalf("%s states schema %+v, want nil: a classic source states no @schema", classicFixture, *classic.MetaData.Version.Schema)
+	if src.MetaData.Version.Schema != nil {
+		t.Fatalf("source states schema %+v, want nil: #41's source states no @schema", *src.MetaData.Version.Schema)
+	}
+	if w := src.MetaData.Worldographer; w.Release != "" || w.Version != "1.77" || w.Schema != "" {
+		t.Fatalf("source provenance is release=%q version=%q schema=%q, want #41's release=\"\" version=\"1.77\" schema=\"\"", w.Release, w.Version, w.Schema)
 	}
 
 	// ---- The chimera is unconstructible, even from here ----
 	//
 	// v1_06.Encode with the accepted version "2.06", handed a map still carrying
-	// its classic identity, and WITHOUT identify having run. This is #41's exact
+	// #41's identity, and WITHOUT identify having run. This is #41's exact
 	// recipe, reached the only way it can be reached. Before #45 it returned the
 	// chimera; now it returns a valid 2.06 file, because the codec writes the
 	// identity of the app it was given and cannot read the map's.
-	internal, err := v1_06.Encode(classic, "2.06")
+	internal, err := v1_06.Encode(src, "2.06")
 	if err != nil {
-		t.Fatalf("v1_06.Encode(classic map, %q): %v; #45's acceptance is that this SUCCEEDS and produces a valid 2.06 file", "2.06", err)
+		t.Fatalf("v1_06.Encode(#41-identity map, %q): %v; #45's acceptance is that this SUCCEEDS and produces a valid 2.06 file", "2.06", err)
 	}
 	internalMap := mapElement.Find(internal)
 	if internalMap == nil {
-		t.Fatalf("v1_06.Encode(classic map) emitted no <map> element")
+		t.Fatalf("v1_06.Encode(#41-identity map) emitted no <map> element")
 	}
-	// The recipe that used to yield the classic identity must now yield the W2025
+	// The recipe that used to yield #41's identity must now yield the W2025
 	// one, in full. This is issue #45's acceptance criterion verbatim.
 	for _, want := range []string{`release="2025"`, `version="2.06"`, `schema="1.06"`} {
 		if !bytes.Contains(internalMap, []byte(want)) {
-			t.Errorf("v1_06.Encode(classic map, \"2.06\") wrote a <map> that does not state %s; the codec must derive its identity from the app it was given, not from the map:\n%s", want, internalMap)
+			t.Errorf("v1_06.Encode(#41-identity map, \"2.06\") wrote a <map> that does not state %s; the codec must derive its identity from the app it was given, not from the map:\n%s", want, internalMap)
 		}
 	}
 	// ...and none of the source's identity may survive into it. These three are
 	// what the map still states and what the codec used to echo.
 	for _, forbidden := range []string{chimeraRelease, chimeraVersion, chimeraSchema} {
 		if bytes.Contains(internalMap, []byte(forbidden)) {
-			t.Errorf("v1_06.Encode(classic map, \"2.06\") wrote a <map> stating %s -- the source's identity on W2025 content, which is the chimera:\n%s", forbidden, internalMap)
+			t.Errorf("v1_06.Encode(#41-identity map, \"2.06\") wrote a <map> stating %s -- the source's identity on W2025 content, which is the chimera:\n%s", forbidden, internalMap)
 		}
 	}
 	// The harm the chimera did was to re-decode SILENTLY as classic. What comes
 	// back now must re-decode as what it says it is: W2025 2.06.
 	back, err := decodeRawXML(t, internal, "1.1")
 	if err != nil {
-		t.Fatalf("re-decoding v1_06.Encode(classic map, \"2.06\"): %v; it must be a valid 2.06 file", err)
+		t.Fatalf("re-decoding v1_06.Encode(#41-identity map, \"2.06\"): %v; it must be a valid 2.06 file", err)
 	}
 	if got := back.MetaData.Version.App.Raw; got != "2.06" {
-		t.Errorf("v1_06.Encode(classic map, \"2.06\") re-decodes as App=%q, want %q", got, "2.06")
+		t.Errorf("v1_06.Encode(#41-identity map, \"2.06\") re-decodes as App=%q, want %q", got, "2.06")
 	}
 	if back.MetaData.Version.Schema == nil {
-		t.Errorf("v1_06.Encode(classic map, \"2.06\") re-decodes as Schema=nil, want %q", "1.06")
+		t.Errorf("v1_06.Encode(#41-identity map, \"2.06\") re-decodes as Schema=nil, want %q", "1.06")
 	} else if got := back.MetaData.Version.Schema.Raw; got != "1.06" {
-		t.Errorf("v1_06.Encode(classic map, \"2.06\") re-decodes as Schema=%q, want %q", got, "1.06")
+		t.Errorf("v1_06.Encode(#41-identity map, \"2.06\") re-decodes as Schema=%q, want %q", got, "1.06")
 	}
 
 	// ---- No public path produces it ----
 	//
-	// The public API cannot be asked for "the W2025 codec with a classic
+	// The public API cannot be asked for "the W2025 codec with another
 	// identity", because naming the identity IS naming the codec: an application
 	// version resolves to one release, and that one release supplies both the
 	// identity written into the bytes and the schema that selects the codec
@@ -159,8 +196,8 @@ func TestChimeraIsUnreachableThroughThePublicAPI(t *testing.T) {
 	// Lookup to ask any more (issue #45 collapsed Release_t), and asking the codec
 	// instead would be circular: the codec is what writes these bytes, so a test
 	// that read its declaration and then checked the bytes against it would pass
-	// for any pair of matching wrong values. These are the strings a real 1.73,
-	// 1.77 and 2.06 file states, and they are the point of the ticket.
+	// for any pair of matching wrong values. These are the strings a real 2.06
+	// file states, and they are the point of the ticket.
 	reachedW2025Codec := false
 	for _, tc := range []struct {
 		name           string
@@ -169,18 +206,16 @@ func TestChimeraIsUnreachableThroughThePublicAPI(t *testing.T) {
 		wantSchema     string // map/@schema; "" means the file must state none
 		wantXMLVersion string
 	}{
-		{"classic map as classic 1.77", "1.77", "", "", "1.0"},
-		{"classic map as classic 1.73", "1.73", "", "", "1.0"},
 		// The nearest a caller can get to the chimera: ask for the map to be
-		// written as the application version the W2025 codec accepts. It SUCCEEDS --
-		// a legitimate upgrade, not a chimera -- and the file states the W2025
-		// identity. That is exactly the difference.
-		{"classic map as w2025 2.06", "2.06", "2025", "1.06", "1.1"},
+		// written as the application version the W2025 codec accepts. It SUCCEEDS
+		// and the file states the W2025 identity, not the one the map carries.
+		// That is exactly the difference.
+		{"chimera-identity map as w2025 2.06", "2.06", "2025", "1.06", "1.1"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			data, err := xmlio.MarshalXML(classic, tc.app)
+			data, err := xmlio.MarshalXML(src, tc.app)
 			if err != nil {
-				t.Fatalf("MarshalXML(%s, %q): %v", classicFixture, tc.app, err)
+				t.Fatalf("MarshalXML(%s with #41's identity, %q): %v", sample2025_206, tc.app, err)
 			}
 			if len(data) == 0 {
 				t.Fatalf("MarshalXML(%q) returned no bytes and no error", tc.app)
@@ -213,9 +248,9 @@ func TestChimeraIsUnreachableThroughThePublicAPI(t *testing.T) {
 			// #45 the internal encode of the same map for the same app is the same
 			// correct file, so equality is expected rather than forbidden -- see the
 			// pin below.
-			for _, forbidden := range []string{chimeraRelease, chimeraSchema} {
+			for _, forbidden := range []string{chimeraRelease, chimeraVersion, chimeraSchema} {
 				if bytes.Contains(el, []byte(forbidden)) && tc.wantSchema != "" {
-					t.Errorf("MarshalXML(%q) wrote a <map> stating %s -- the classic identity on W2025 content, which is the chimera:\n%s", tc.app, forbidden, el)
+					t.Errorf("MarshalXML(%q) wrote a <map> stating %s -- the source's identity on W2025 content, which is the chimera:\n%s", tc.app, forbidden, el)
 				}
 			}
 
@@ -240,23 +275,22 @@ func TestChimeraIsUnreachableThroughThePublicAPI(t *testing.T) {
 	}
 
 	// Guard against a vacuous pass: at least one case must reach the W2025 codec.
-	// The classic targets could never produce a classic-identity chimera -- that
-	// IS their identity -- so if no case routed to v1_06, nothing above tested the
-	// pairing the chimera is made of.
+	// If no case routed to v1_06, nothing above tested the pairing the chimera is
+	// made of.
 	if !reachedW2025Codec {
 		t.Errorf("no case targeted a release whose schema selects the W2025 codec, so no case exercises the identity/codec pairing the chimera abuses")
 	}
 
 	// The 2.06 target is the one that reaches the W2025 codec, so pin it hard: the
-	// public encode must not state the classic identity on W2025 content.
-	public, err := xmlio.MarshalXML(classic, "2.06")
+	// public encode must not state the source's identity on W2025 content.
+	public, err := xmlio.MarshalXML(src, "2.06")
 	if err != nil {
-		t.Fatalf(`MarshalXML(classic, "2.06"): %v`, err)
+		t.Fatalf(`MarshalXML(src, "2.06"): %v`, err)
 	}
 	el := mapElement.Find(public)
 	for _, forbidden := range []string{chimeraRelease, chimeraVersion, chimeraSchema} {
 		if bytes.Contains(el, []byte(forbidden)) {
-			t.Errorf("the public W2025 encode states %s -- the classic identity on W2025 content, which is the chimera:\n%s", forbidden, el)
+			t.Errorf("the public W2025 encode states %s -- the source's identity on W2025 content, which is the chimera:\n%s", forbidden, el)
 		}
 	}
 
@@ -277,7 +311,7 @@ func TestChimeraIsUnreachableThroughThePublicAPI(t *testing.T) {
 	// the map it was handed, or a public path has started patching the map before
 	// the codec sees it. Both are the same defect wearing different clothes.
 	if !bytes.Equal(public, internal) {
-		t.Errorf("MarshalXML(classic, \"2.06\") and v1_06.Encode(classic, \"2.06\") disagree; the public path must hand the codec the caller's map and the caller's app unaltered, and the codec must derive every identity byte from the app:\npublic  : %s\ninternal: %s",
+		t.Errorf("MarshalXML(src, \"2.06\") and v1_06.Encode(src, \"2.06\") disagree; the public path must hand the codec the caller's map and the caller's app unaltered, and the codec must derive every identity byte from the app:\npublic  : %s\ninternal: %s",
 			mapElement.Find(public), mapElement.Find(internal))
 	}
 }
@@ -291,18 +325,18 @@ func TestChimeraIsUnreachableThroughThePublicAPI(t *testing.T) {
 // returns none: a caller who is about to os.WriteFile the result must not be
 // handed a file for a release that does not exist.
 func TestEncodeUnregisteredTargetProducesNoBytes(t *testing.T) {
-	m, err := decodeFile(t, classicFixture)
+	m, err := decodeFile(t, sample2025_206)
 	if err != nil {
-		t.Fatalf("public decode %s: %v", classicFixture, err)
+		t.Fatalf("public decode %s: %v", sample2025_206, err)
 	}
 
 	// Control: a registered target really does marshal. Guard against a vacuous
 	// pass -- if this map could not be marshaled at all, the refusals below would
 	// be the map's fault and would say nothing about target resolution.
 	if data, err := xmlio.MarshalXML(m, m.MetaData.Version.App.Raw); err != nil {
-		t.Fatalf("MarshalXML(%s, %q): %v; the refusals below would prove nothing", classicFixture, m.MetaData.Version.App.Raw, err)
+		t.Fatalf("MarshalXML(%s, %q): %v; the refusals below would prove nothing", sample2025_206, m.MetaData.Version.App.Raw, err)
 	} else if len(data) == 0 {
-		t.Fatalf("MarshalXML(%s, its own version) returned no bytes", classicFixture)
+		t.Fatalf("MarshalXML(%s, its own version) returned no bytes", sample2025_206)
 	}
 
 	for _, tc := range []struct {

@@ -174,9 +174,9 @@ func TestRegistryKeysOnRawNotComponents(t *testing.T) {
 			registered, unpadded, a.Major, a.Minor, b.Major, b.Minor)
 	}
 
-	m, err := decodeFile(t, classicFixture)
+	m, err := decodeFile(t, sample2025_206)
 	if err != nil {
-		t.Fatalf("public decode %s: %v", classicFixture, err)
+		t.Fatalf("public decode %s: %v", sample2025_206, err)
 	}
 
 	// The padded string is registered.
@@ -205,9 +205,9 @@ func TestRegistryKeysOnRawNotComponents(t *testing.T) {
 // application version (issue #41 requirement 1), and neither is a CODEC version --
 // "0.77" is on no disk and must resolve to nothing.
 func TestRegistryUnknownApplicationVersion(t *testing.T) {
-	m, err := decodeFile(t, classicFixture)
+	m, err := decodeFile(t, sample2025_206)
 	if err != nil {
-		t.Fatalf("public decode %s: %v", classicFixture, err)
+		t.Fatalf("public decode %s: %v", sample2025_206, err)
 	}
 
 	for _, tc := range []struct {
@@ -302,8 +302,8 @@ func sortedKeys(m map[string]string) []string {
 	return out
 }
 
-// registryFixtureSamples pairs every tracked .wxx fixture with the application
-// version its bytes state and the identity the codec that writes it emits.
+// registryFixtureSamples pairs tracked W2025 .wxx fixtures with the application
+// version their bytes state and the identity the codec that writes it emits.
 var registryFixtureSamples = []struct {
 	name        string
 	path        string
@@ -312,11 +312,6 @@ var registryFixtureSamples = []struct {
 	wantRelease string
 	wantSchema  string // "" means the codec writes no @schema
 }{
-	{"classic 1.73", "../testdata/blank-2017-1.73-1.0.wxx", "1.73", v0_77.Codec_t{}, "", ""},
-	{"classic 1.74", "../testdata/blank-2017-1.74-1.0.wxx", "1.74", v0_77.Codec_t{}, "", ""},
-	{"classic 1.77", "../testdata/blank-2017-1.77-1.0.wxx", "1.77", v0_77.Codec_t{}, "", ""},
-	{"classic 1.77 columns", "../testdata/2017-1.77-1.0-columns-blank.wxx", "1.77", v0_77.Codec_t{}, "", ""},
-	{"classic 1.77 rows", "../testdata/2017-1.77-1.0-rows-blank.wxx", "1.77", v0_77.Codec_t{}, "", ""},
 	{"w2025 2.06 blank", sample2025_206, "2.06", v1_06.Codec_t{}, "2025", "1.06"},
 	{"w2025 2.06 layers beta", sample2025_206LayersBeta, "2.06", v1_06.Codec_t{}, "2025", "1.06"},
 }

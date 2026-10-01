@@ -212,37 +212,3 @@ func TestW2025ExtraTerrainDecodeRefusals(t *testing.T) {
 		})
 	}
 }
-
-// TestClassicDowngradeLabelDropShadowLatent covers the half of the label
-// drop-shadow loss no tracked .wxx can demonstrate: top-level <labels>. Only
-// the layers fixture has labels, and they belong to features. The source is
-// synthesized, as TestClassicDowngradeScrollbarLatent's is.
-func TestClassicDowngradeLabelDropShadowLatent(t *testing.T) {
-	m := decodeW2025(t, sample2025_206)
-	if len(m.Labels) != 0 {
-		t.Fatalf("%s carries %d label(s); this test synthesizes the only one", sample2025_206, len(m.Labels))
-	}
-	m.Labels = []*wxx.Label_t{{
-		MapLayer: "Labels", Style: "Nation", FontFace: "Arial",
-		Color: &wxx.RGBA_t{A: 1}, OutlineColor: &wxx.RGBA_t{A: 1},
-		DropShadowColor: "0.0,0.0,0.0,1.0", DropShadowRadius: 3, DropShadowSpread: 1,
-		Location:  &wxx.LabelLocation_t{ViewLevel: "WORLD", X: 10, Y: 20, Scale: 12.5},
-		InnerText: "Kingdom",
-	}}
-	var d xmlio.EncoderDiagnostics
-	var buf bytes.Buffer
-	if err := xmlio.NewEncoder(classicTarget, xmlio.WithEncoderDiagnostics(&d)).Encode(&buf, m); err != nil {
-		t.Fatalf("encode -> classic: %v", err)
-	}
-	for _, e := range d.Dropped {
-		if e.Path == "map/labels/label/@dropShadow*" {
-			for _, want := range []string{`"Kingdom"`, "color=0.0,0.0,0.0,1.0", "radius=3", "spread=1"} {
-				if !strings.Contains(e.Detail, want) {
-					t.Errorf("Detail = %q, want it to contain %q", e.Detail, want)
-				}
-			}
-			return
-		}
-	}
-	t.Errorf("no map/labels/label/@dropShadow* entry reported; the label's drop shadow is lost silently")
-}

@@ -20,15 +20,13 @@ import (
 // depends on these fields, so the fixture outputs never showed it; cmd/server
 // labels hexes with Coords and did.
 //
-// The fixtures are chosen non-square both ways, so a transposition cannot
-// agree by accident: classic COLUMNS 3 x 5 and 5 x 3, classic ROWS 5 x 3, and
-// W2025 COLUMNS 13 x 11.
+// The fixtures are chosen non-square, so a transposition cannot agree by
+// accident, and cover both orientations: W2025 COLUMNS 13 x 11 and W2025 ROWS
+// 13 x 11.
 func TestDecodedTileCoordinates(t *testing.T) {
 	for _, fixture := range []string{
-		"../testdata/blank-2017-1.77-1.0.wxx",
-		"../testdata/2017-1.77-1.0-columns-blank.wxx",
-		"../testdata/2017-1.77-1.0-rows-blank.wxx",
 		"../testdata/2025-2.06-13x11-941577-blank.wxx",
+		"../testdata/2025-2.06-13x11-941577-rows.wxx",
 	} {
 		t.Run(fixture, func(t *testing.T) {
 			m, err := xmlio.ReadFile(fixture)

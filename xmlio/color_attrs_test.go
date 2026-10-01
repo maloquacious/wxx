@@ -72,24 +72,6 @@ func TestColorAttributesRefused(t *testing.T) {
 	}
 }
 
-// TestClassicGridColorRefused: the classic encoder writes grid colors verbatim
-// too, and refuses the same way (issue #83).
-func TestClassicGridColorRefused(t *testing.T) {
-	m, err := xmlio.ReadFile("../testdata/blank-2017-1.77-1.0.wxx")
-	if err != nil {
-		t.Fatalf("read: %v", err)
-	}
-	m.GridAndNumbering.Color4 = "#00000040"
-	var buf bytes.Buffer
-	err = xmlio.NewEncoder("1.77").Encode(&buf, m)
-	if !errors.Is(err, wxx.ErrInvalidColorAttribute) || !strings.Contains(err.Error(), "map/gridandnumbering/@color4") {
-		t.Fatalf("Encode: err = %v, want an invalid color error naming @color4", err)
-	}
-	if buf.Len() != 0 {
-		t.Errorf("Encode: wrote %d bytes, want 0", buf.Len())
-	}
-}
-
 // TestColorAttributesAccepted: the spellings the samples use still go through
 // unchanged -- "null" where a color is nullable, "r,g,b,a", "0xRRGGBBAA" -- and
 // a label with no drop shadow ("") omits the trio rather than being refused.
