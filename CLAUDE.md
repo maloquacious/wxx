@@ -169,7 +169,7 @@ The **encoder** dispatches the other way round, and the rule is a contract rathe
 - **Go version**: 1.24.4 (specified in `go.mod`)
 - **Copyright header**: Every `.go` file starts with `// Copyright (c) <year> Michael D Henderson. All rights reserved.`
 - **Package comments**: Each package has a doc comment on the `package` line
-- **Minimal dependencies**: Only 2 direct deps (`semver`, `golang.org/x/text`). Keep it lean.
+- **Minimal dependencies**: Add no dependency that can be avoided. `go.mod` is the list; this file does not repeat it.
 - **Line endings**: LF enforced via `.gitattributes` for all source files
 - **Naming**: Types use `_t` suffix for major data types (e.g., `Map_t`). CLI tools are lowercase single-word names.
 - **No external test frameworks**: Uses Go standard `testing` package only
