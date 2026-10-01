@@ -4,11 +4,15 @@ package xmlio_test
 
 import (
 	"bytes"
+	"compress/gzip"
+	"io"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/maloquacious/wxx/xmlio"
+	"golang.org/x/text/encoding/unicode"
+	"golang.org/x/text/transform"
 )
 
 // The decoder splits the converted UTF-8 document into exactly two pieces: the
@@ -121,4 +125,79 @@ func truncate(s string) string {
 		return s
 	}
 	return s[:max] + "..."
+}
+
+// Issue #146: the gzip stage stored its output in Utf16Encoded, overwriting
+// the UTF-16 stage's output, and never set Compressed. The written file was
+// right; the diagnostics were populated-but-wrong, the same failure mode as #51.
+//
+// TestEncoderDiagnostics_StagesChain pins each field to the stage it is named
+// for by chaining them: each stage's field, undone, gives the previous stage's
+// field, and the last stage's field is what was written.
+func TestEncoderDiagnostics_StagesChain(t *testing.T) {
+	m, err := xmlio.ReadFile(sample2025_208Blank)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	var diag xmlio.EncoderDiagnostics
+	var out bytes.Buffer
+	if err := xmlio.NewEncoder("2.08", xmlio.WithEncoderDiagnostics(&diag)).Encode(&out, m); err != nil {
+		t.Fatalf("encode: %v", err)
+	}
+
+	// Non-zero lengths first, so nothing below can pass vacuously on an empty
+	// field. Compressed is the field #146 never set.
+	for _, f := range []struct {
+		name string
+		data []byte
+	}{
+		{"Utf8Encoded", diag.Utf8Encoded},
+		{"WithXmlHeader", diag.WithXmlHeader},
+		{"Utf16Encoded", diag.Utf16Encoded},
+		{"Compressed", diag.Compressed},
+	} {
+		if len(f.data) == 0 {
+			t.Fatalf("%s is empty", f.name)
+		}
+	}
+
+	// WithXmlHeader is Utf8Encoded behind the declaration.
+	if !bytes.HasSuffix(diag.WithXmlHeader, diag.Utf8Encoded) || !bytes.HasPrefix(diag.WithXmlHeader, []byte("<?xml ")) {
+		t.Errorf("WithXmlHeader is not the XML declaration followed by Utf8Encoded: %q", truncate(string(diag.WithXmlHeader)))
+	}
+
+	// Utf16Encoded is UTF-16BE, BOM first, and decodes to WithXmlHeader. The
+	// bug left gzip bytes here, which start 1f 8b.
+	if !bytes.HasPrefix(diag.Utf16Encoded, []byte{0xfe, 0xff}) {
+		t.Errorf("Utf16Encoded starts % x, want the UTF-16BE BOM fe ff", diag.Utf16Encoded[:min(4, len(diag.Utf16Encoded))])
+	}
+	utf8, err := io.ReadAll(transform.NewReader(bytes.NewReader(diag.Utf16Encoded),
+		unicode.UTF16(unicode.BigEndian, unicode.ExpectBOM).NewDecoder()))
+	if err != nil {
+		t.Fatalf("decode Utf16Encoded: %v", err)
+	}
+	if !bytes.Equal(utf8, diag.WithXmlHeader) {
+		t.Error("Utf16Encoded does not decode to WithXmlHeader")
+	}
+
+	// Compressed gunzips to Utf16Encoded.
+	r, err := gzip.NewReader(bytes.NewReader(diag.Compressed))
+	if err != nil {
+		t.Fatalf("Compressed is not gzip: %v", err)
+	}
+	gunzipped, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatalf("gunzip Compressed: %v", err)
+	}
+	if !bytes.Equal(gunzipped, diag.Utf16Encoded) {
+		t.Error("gunzipping Compressed does not give Utf16Encoded")
+	}
+
+	// Compressed is exactly what was written, and a copy rather than an alias.
+	if !bytes.Equal(diag.Compressed, out.Bytes()) {
+		t.Errorf("Compressed (%d bytes) differs from the %d bytes written", len(diag.Compressed), out.Len())
+	}
+	if &diag.Compressed[0] == &out.Bytes()[0] {
+		t.Error("Compressed aliases the written bytes instead of being a copy")
+	}
 }
