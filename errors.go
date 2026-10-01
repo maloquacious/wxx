@@ -33,6 +33,7 @@ const (
 	ErrInvalidTerrainMapFieldCount = Error("invalid terrain map field count")
 	ErrInvalidTerrainMap           = Error("invalid terrain map")
 	ErrInvalidTileGrid             = Error("invalid tile grid")
+	ErrInvalidTileResource         = Error("invalid tile resource")
 	ErrInvalidUTF16                = Error("invalid utf-16")
 	ErrInvalidUTF8                 = Error("invalid utf-8")
 	ErrInvalidVersion              = Error("invalid version")
