@@ -93,8 +93,8 @@ var fixtures207 = []string{
 	sample2025_207Rows,
 }
 
-// fixtures208 is every tracked 2.08 save, held to the testdata directory as
-// fixtures207 is.
+// fixtures208 is every tracked 2.08 save except the performance fixtures,
+// held to the testdata directory as fixtures207 is.
 var fixtures208 = []string{
 	sample2025_208Blank,
 	sample2025_208Layers,
@@ -104,6 +104,17 @@ var fixtures208 = []string{
 	sample2025_208Rows,
 	sample2025_208TileResources,
 	sample2025_208ExtraTerrainBgColor,
+}
+
+// performanceFixtures208 are the 1920 x 1080 saves the benchmarks read (issue
+// #138). They are kept out of fixtures208 on purpose: every loop over that list
+// would decode and encode two million hexes several times on each go test run.
+// The benchmarks and TestNewMapMatchesFullSizeBlankFixture read them instead.
+// TestRegisteredFixtureListsAreEveryTrackedFixture still counts them, so a
+// fixture is in exactly one of the two lists.
+var performanceFixtures208 = []string{
+	"../testdata/2025-2.08-1920x1080-941577-blank.wxx",
+	"../testdata/2025-2.08-1920x1080-941577-random.wxx",
 }
 
 // TestW2025Decode_BothSamples documents that the public decoder accepts both

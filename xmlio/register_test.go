@@ -24,14 +24,18 @@ var registeredFixtureSets = []struct {
 	app      string
 	issue    string
 	fixtures []string
+	// excluded are tracked saves of this version that the loops over fixtures
+	// deliberately skip; see performanceFixtures208.
+	excluded []string
 }{
-	{"2.07", "#92", fixtures207},
-	{"2.08", "#73", fixtures208},
+	{"2.07", "#92", fixtures207, nil},
+	{"2.08", "#73", fixtures208, performanceFixtures208},
 }
 
 // TestRegisteredFixtureListsAreEveryTrackedFixture holds fixtures207 and
-// fixtures208 to the testdata directory, so a save added later is not silently
-// left out of the tests that loop over the lists.
+// fixtures208, with the saves deliberately excluded from them, to the testdata
+// directory, so a save added later is not silently left out of the tests that
+// loop over the lists.
 func TestRegisteredFixtureListsAreEveryTrackedFixture(t *testing.T) {
 	for _, set := range registeredFixtureSets {
 		t.Run(set.app, func(t *testing.T) {
@@ -40,7 +44,7 @@ func TestRegisteredFixtureListsAreEveryTrackedFixture(t *testing.T) {
 				t.Fatalf("glob %s fixtures: %v", set.app, err)
 			}
 			var listed []string
-			for _, p := range set.fixtures {
+			for _, p := range slices.Concat(set.fixtures, set.excluded) {
 				listed = append(listed, filepath.Base(p))
 			}
 			// Worldographer leaves a *-autosave.wxx beside the map it saves,
