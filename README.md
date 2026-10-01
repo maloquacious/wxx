@@ -221,6 +221,54 @@ not been seen in a file. Every fixture states the suggested hex size (46.18 ×
 40 for COLUMNS), so whether the 300-unit hex changes with `hexWidth` and
 `hexHeight` is unknown.
 
+### Drawing lines
+
+`Map_t.NewEdgePath` and `Map_t.NewPath` build a line as a Path shape that
+carries everything Worldographer writes for one
+([#155](https://github.com/maloquacious/wxx/issues/155)). Append the result to
+`m.Shapes`:
+
+```go
+// along hex edges, through hex corners (see Hex geometry)
+s, err := m.NewEdgePath([]wxx.Vertex_t{
+	{Col: 4, Row: 1, Corner: wxx.CornerSE},
+	{Col: 4, Row: 2, Corner: wxx.CornerE},
+	{Col: 4, Row: 2, Corner: wxx.CornerSE},
+}, wxx.WithStrokeWidth(0.1))
+m.Shapes = append(m.Shapes, s)
+
+// through any points, in shape coordinates
+s, err = m.NewPath([]wxx.Position_t{{X: 100, Y: 100}, {X: 812.5, Y: 640}})
+```
+
+`NewEdgePath` is the one to use for a line on the grid, such as a river. Each
+pair of consecutive corners must be the two ends of one hex edge, and anything
+else is a `wxx.ErrInvalidShape` error that names the pair. Mixing up odd and
+even columns is the easy mistake on this grid, and the check catches it.
+Corners of hexes just off the map are allowed, so a line can run along the
+map's edge. The line is written with `isSnapVertices="true"`, as the app
+writes one drawn with Snap Points to Grid. `NewPath` takes any two or more
+finite points and writes `isSnapVertices="false"`.
+
+The options, and their defaults (the values in the river-lines fixture,
+[#154](https://github.com/maloquacious/wxx/issues/154)):
+
+| option | default |
+|---|---|
+| `wxx.WithMapLayer(name)` | `"Above Terrain"`, the layer above the terrain layers; a layer the map lacks is `wxx.ErrUnknownMapLayer` |
+| `wxx.WithStrokeWidth(w)` | `0.05`; must be greater than 0 |
+| `wxx.WithStrokeColor(wxx.RGBA_t{...})` | opaque blue; each component 0..1 |
+| `wxx.WithGMOnly(b)` | `false` |
+
+Everything else (the view levels, `lineCap="SQUARE"`, `lineJoin="ROUND"`,
+`fillRule="NON_ZERO"`, the shadow and blur settings) is what Worldographer
+2.06, 2.07 and 2.08 all write for an unfilled line, so the shape is the same
+whichever version it is written as. The first point is the move-to
+(`type="m"`), and you don't set `Point_t.Type`. Written as 2.08, the two lines
+of `testdata/2025-2.08-13x11-941577-river-lines.wxx` built this way match the
+fixture attribute for attribute. Shape styles such as the built-in River are
+not supported yet.
+
 ### Values wxx changes when it reads a file
 
 There is one place where wxx deliberately changes a value as it reads a file,
