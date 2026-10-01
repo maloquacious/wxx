@@ -62,6 +62,12 @@ func TestW2025InformationAttrsMatchSource(t *testing.T) {
 		"2025-2.07-13x11-941577-notes-shapes.wxx",
 		"2025-2.07-13x11-941577-resources.wxx",
 		"2025-2.07-13x11-941577-rows.wxx",
+		"2025-2.08-13x11-941577-blank.wxx",
+		"2025-2.08-13x11-941577-layers.wxx",
+		"2025-2.08-13x11-941577-notes-shapes.wxx",
+		"2025-2.08-13x11-941577-populated.wxx",
+		"2025-2.08-13x11-941577-resources.wxx",
+		"2025-2.08-13x11-941577-rows.wxx",
 	} {
 		cases[fixture] = func(t *testing.T) pair {
 			path := filepath.Join("..", "testdata", fixture)
@@ -149,7 +155,7 @@ func informationsElement(t *testing.T, label string, doc []byte) []byte {
 }
 
 // encodeFixture decodes a tracked fixture, encodes it as the version it states
-// (2.08 as "2.06"; see sameVersionTarget), and returns
+// (see sameVersionTarget), and returns
 // the source document, the decoded map and the encoded document, all UTF-8.
 func encodeFixture(t *testing.T, fixture string) (in []byte, m *wxx.Map_t, out []byte) {
 	t.Helper()
@@ -172,7 +178,7 @@ func encodeFixture(t *testing.T, fixture string) (in []byte, m *wxx.Map_t, out [
 }
 
 // TestW2025InformationsMatchSource decodes every tracked W2025 fixture,
-// encodes it as the version it states (2.08 as "2.06"), and asserts the encoded <informations> element is
+// encodes it as the version it states, and asserts the encoded <informations> element is
 // byte-identical to the source's (issue #107).
 //
 // The bug this pins: every lore body was written as escaped text

@@ -48,6 +48,12 @@ var xmlHeaderSamples = []struct {
 	{"w2025 2.07 notes-shapes", sample2025_207NotesShapes, "2.07", "1.06", "<?xml version='1.1' encoding='utf-16'?>\n"},
 	{"w2025 2.07 resources", sample2025_207Resources, "2.07", "1.06", "<?xml version='1.1' encoding='utf-16'?>\n"},
 	{"w2025 2.07 rows", sample2025_207Rows, "2.07", "1.06", "<?xml version='1.1' encoding='utf-16'?>\n"},
+	{"w2025 2.08 blank", sample2025_208Blank, "2.08", "1.06", "<?xml version='1.1' encoding='utf-16'?>\n"},
+	{"w2025 2.08 layers", sample2025_208Layers, "2.08", "1.06", "<?xml version='1.1' encoding='utf-16'?>\n"},
+	{"w2025 2.08 notes-shapes", sample2025_208NotesShapes, "2.08", "1.06", "<?xml version='1.1' encoding='utf-16'?>\n"},
+	{"w2025 2.08 populated", sample2025_208Populated, "2.08", "1.06", "<?xml version='1.1' encoding='utf-16'?>\n"},
+	{"w2025 2.08 resources", sample2025_208Resources, "2.08", "1.06", "<?xml version='1.1' encoding='utf-16'?>\n"},
+	{"w2025 2.08 rows", sample2025_208Rows, "2.08", "1.06", "<?xml version='1.1' encoding='utf-16'?>\n"},
 }
 
 // wrongXMLHeaders are declarations a Worldographer file can open with that no
@@ -277,12 +283,12 @@ func TestEncodeIgnoresTheMapsOwnVersion(t *testing.T) {
 	}
 }
 
-// unlicensedTarget is an application version the registry does not state: 2.08,
-// a real build that is not registered until issue #73. ADR 0004 Decision 5's
-// example is the version before it ("a user licensed for 2.06 cannot be handed a
-// 2.07 file"); issue #92 registered 2.07, so the version moved and the assertions
-// did not.
-const unlicensedTarget = "2.08"
+// unlicensedTarget is an application version the registry does not state: 2.09,
+// a build after the newest one registered. ADR 0004 Decision 5's example is an
+// earlier version ("a user licensed for 2.06 cannot be handed a 2.07 file");
+// issue #92 registered 2.07 and issue #73 registered 2.08, so the version moved
+// and the assertions did not.
+const unlicensedTarget = "2.09"
 
 // TestEncodeUnlicensedTargetWritesNothing is the licensing test. Targeting a
 // release the registry does not state must fail, and must fail before anything
@@ -299,7 +305,7 @@ const unlicensedTarget = "2.08"
 // one, so the refusal is about the target and not about the map.
 func TestEncodeUnlicensedTargetWritesNothing(t *testing.T) {
 	// Guard against a vacuous pass: this test says nothing unless the target it
-	// names is genuinely unregistered. When 2.08 is added to the registry, this
+	// names is genuinely unregistered. When 2.09 is added to the registry, this
 	// stops the test rather than letting it "pass" against a licensed target.
 	if _, ok := codecForAppOfTest(t, unlicensedTarget); ok {
 		t.Fatalf("%q is accepted by a codec: this test requires an UNREGISTERED version, so it is not testing the licensing refusal", unlicensedTarget)
@@ -396,8 +402,8 @@ func TestEncodeEmptyTargetVersionIsError(t *testing.T) {
 // registered release resolves, encodes, and writes ITS OWN version string.
 //
 // Target RESOLUTION is what is under test here, not what a target can express.
-// Each case stays within its source's schema: W2025 2.06 and 2.07 share schema
-// 1.06 and therefore one codec, and differ only in the string written to
+// Each case stays within its source's schema: W2025 2.06, 2.07 and 2.08 share
+// schema 1.06 and therefore one codec, and differ only in the string written to
 // map/@version. That is ADR 0004 Decision 4's "the application version is data"
 // claim, stated as bytes.
 var retargetCases = []struct {
@@ -409,6 +415,10 @@ var retargetCases = []struct {
 	{"w2025 2.07 as itself", sample2025_207Blank, "2.07"},
 	{"w2025 2.06 -> 2.07", sample2025_206, "2.07"},
 	{"w2025 2.07 -> 2.06", sample2025_207Blank, "2.06"},
+	{"w2025 2.08 as itself", sample2025_208Blank, "2.08"},
+	{"w2025 2.06 -> 2.08", sample2025_206, "2.08"},
+	{"w2025 2.08 -> 2.06", sample2025_208Blank, "2.06"},
+	{"w2025 2.08 -> 2.07", sample2025_208Blank, "2.07"},
 }
 
 // TestEncodeTargetsEveryRegisteredRelease asserts that each registered release

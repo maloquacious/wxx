@@ -45,8 +45,8 @@ type EncoderDiagnostics struct {
 	// loses nothing, which today is every encode: the one supported schema
 	// expresses everything Map_t models. It stays because the principle does --
 	// always tell the user what they lose -- and W2025-to-W2025 loss, once one is
-	// proven, is what it will report next (issue #92 found none between 2.06 and
-	// 2.07).
+	// proven, is what it will report next (issues #92 and #73 found none between
+	// 2.06, 2.07 and 2.08).
 	//
 	// Only MODELED losses appear here. A downgrade that would drop an unmodeled
 	// stub does not report, it errors: the encoder can only stay quiet about a

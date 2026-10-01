@@ -11,7 +11,7 @@ import (
 	"github.com/maloquacious/wxx/xmlio"
 )
 
-// versionIdentitySamples pairs tracked W2025 2.06 and 2.07 fixtures with the version
+// versionIdentitySamples pairs tracked W2025 2.06, 2.07 and 2.08 fixtures with the version
 // identity their bytes state, observed end-to-end through the public decoder
 // (ADR 0004 Decision 2).
 //
@@ -33,6 +33,12 @@ var versionIdentitySamples = []struct {
 	{"w2025 2.07 notes-shapes", sample2025_207NotesShapes, "2.07", 2, 7, "1.06"},
 	{"w2025 2.07 resources", sample2025_207Resources, "2.07", 2, 7, "1.06"},
 	{"w2025 2.07 rows", sample2025_207Rows, "2.07", 2, 7, "1.06"},
+	{"w2025 2.08 blank", sample2025_208Blank, "2.08", 2, 8, "1.06"},
+	{"w2025 2.08 layers", sample2025_208Layers, "2.08", 2, 8, "1.06"},
+	{"w2025 2.08 notes-shapes", sample2025_208NotesShapes, "2.08", 2, 8, "1.06"},
+	{"w2025 2.08 populated", sample2025_208Populated, "2.08", 2, 8, "1.06"},
+	{"w2025 2.08 resources", sample2025_208Resources, "2.08", 2, 8, "1.06"},
+	{"w2025 2.08 rows", sample2025_208Rows, "2.08", 2, 8, "1.06"},
 }
 
 // TestVersionIdentity asserts that decoding populates MetaData.Version with the
@@ -44,7 +50,8 @@ var versionIdentitySamples = []struct {
 //
 // Each sample is then encoded as the version it states and decoded again, and
 // must come back stating the same identity: a registered version written as
-// itself keeps the identity the file had (issue #92 registered 2.07).
+// itself keeps the identity the file had (issues #92 and #73 registered 2.07
+// and 2.08).
 func TestVersionIdentity(t *testing.T) {
 	for _, tc := range versionIdentitySamples {
 		t.Run(tc.name, func(t *testing.T) {
@@ -105,11 +112,12 @@ func TestVersionIdentityPaddingSurvivesDecode(t *testing.T) {
 	for _, tc := range []struct {
 		name    string
 		path    string
-		wantApp string // rendering the components would give "2.6" or "2.7"
+		wantApp string // rendering the components would give "2.6", "2.7" or "2.8"
 	}{
 		{"2.06/1.06 blank", sample2025_206, "2.06"},
 		{"2.06/1.06 layers", sample2025_206LayersBeta, "2.06"},
 		{"2.07/1.06 blank", sample2025_207Blank, "2.07"},
+		{"2.08/1.06 blank", sample2025_208Blank, "2.08"},
 	} {
 		wantApp := tc.wantApp
 		// Guard against a vacuous pass: this test only proves anything if the

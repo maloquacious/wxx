@@ -30,10 +30,7 @@ var extraTerrainElement = regexp.MustCompile(`(?s)<extraTerrain>.*?</extraTerrai
 // ("225.0,150.0", "Z", "false") and whitespace. Byte equality is affordable here
 // because every sample lays the element out the same way.
 //
-// Every sample is encoded as the version it states, except the 2.08 one, which
-// is encoded as 2.06 until issue #73 registers 2.08 (see sameVersionTarget).
-// All three builds write <extraTerrain> the same way, so that comparison still
-// holds.
+// Every sample is encoded as the version it states (see sameVersionTarget).
 func TestW2025ExtraTerrainMatchesSource(t *testing.T) {
 	type pair struct{ in, out []byte }
 	cases := map[string]func(t *testing.T) pair{}
@@ -46,7 +43,12 @@ func TestW2025ExtraTerrainMatchesSource(t *testing.T) {
 		"2025-2.07-13x11-941577-notes-shapes.wxx",
 		"2025-2.07-13x11-941577-resources.wxx",
 		"2025-2.07-13x11-941577-rows.wxx",
+		"2025-2.08-13x11-941577-blank.wxx",
 		"2025-2.08-13x11-941577-layers.wxx",
+		"2025-2.08-13x11-941577-notes-shapes.wxx",
+		"2025-2.08-13x11-941577-populated.wxx",
+		"2025-2.08-13x11-941577-resources.wxx",
+		"2025-2.08-13x11-941577-rows.wxx",
 	} {
 		cases[fixture] = func(t *testing.T) pair {
 			f, err := os.Open(filepath.Join("..", "testdata", fixture))

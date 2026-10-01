@@ -117,7 +117,7 @@ func readNotesFixture(t *testing.T, fixture string) ([]byte, *wxx.Map_t) {
 }
 
 // TestW2025NotesMatchSource decodes each notes-and-shapes fixture, encodes it
-// as the version it states (2.08 as "2.06"; see sameVersionTarget), and compares every <note> element the encoder wrote with the
+// as the version it states (see sameVersionTarget), and compares every <note> element the encoder wrote with the
 // source's: the start tag's attributes, the <notetext> body and the
 // <location>'s attributes (issue #94). Attribute order and whitespace are not
 // compared; which attributes are present, and their values, are.

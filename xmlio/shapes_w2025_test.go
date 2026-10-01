@@ -80,7 +80,7 @@ func integerSpelledPoint(p map[string]string) bool {
 }
 
 // TestW2025ShapesMatchSource decodes each notes-and-shapes fixture, encodes it
-// as the version it states (2.08 as "2.06"; see sameVersionTarget), and compares every <shape> element the encoder wrote with the
+// as the version it states (see sameVersionTarget), and compares every <shape> element the encoder wrote with the
 // source's: the start tag's attributes and each <p>'s, as the strings the
 // documents spell (issue #94). So @fillRule and p/@type must be present
 // exactly where the source has them, the four @extraLine* must survive, and a

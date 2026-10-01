@@ -40,6 +40,14 @@ const (
 	sample2025_207Layers    = "../testdata/2025-2.07-13x11-941577-layers.wxx"    // release=2025 version=2.07 schema=1.06
 	sample2025_207Resources = "../testdata/2025-2.07-13x11-941577-resources.wxx" // release=2025 version=2.07 schema=1.06
 	sample2025_207Rows      = "../testdata/2025-2.07-13x11-941577-rows.wxx"      // release=2025 version=2.07 schema=1.06
+	// The 2.08 saves (#91, #94), built from the same recipes as the 2.07 ones
+	// plus the populated map.
+	sample2025_208Blank       = "../testdata/2025-2.08-13x11-941577-blank.wxx"        // release=2025 version=2.08 schema=1.06
+	sample2025_208Layers      = "../testdata/2025-2.08-13x11-941577-layers.wxx"       // release=2025 version=2.08 schema=1.06
+	sample2025_208NotesShapes = "../testdata/2025-2.08-13x11-941577-notes-shapes.wxx" // release=2025 version=2.08 schema=1.06
+	sample2025_208Populated   = "../testdata/2025-2.08-13x11-941577-populated.wxx"    // release=2025 version=2.08 schema=1.06
+	sample2025_208Resources   = "../testdata/2025-2.08-13x11-941577-resources.wxx"    // release=2025 version=2.08 schema=1.06
+	sample2025_208Rows        = "../testdata/2025-2.08-13x11-941577-rows.wxx"         // release=2025 version=2.08 schema=1.06
 
 	// w2025Target is the application version the tests encode 2.07 maps as: the
 	// version they state, registered by issue #92.
@@ -47,9 +55,9 @@ const (
 )
 
 // sameVersionTarget returns the application version the *MatchSource tests
-// encode fixture as: the version the fixture's file name states when that
-// version is registered, so a byte comparison with the source is a same-version
-// one, and 2.06 for a 2.08 save until issue #73 registers 2.08.
+// encode fixture as: the version the fixture's file name states, so a byte
+// comparison with the source is a same-version one. Every W2025 version with a
+// tracked fixture is registered: 2.06, 2.07 (issue #92) and 2.08 (issue #73).
 //
 // It is keyed on the file name rather than on the decoded map, and the
 // registered versions are listed rather than looked up, so that a version
@@ -64,14 +72,14 @@ func sameVersionTarget(t *testing.T, fixture string) string {
 	case strings.HasPrefix(base, "2025-2.07-"):
 		return "2.07"
 	case strings.HasPrefix(base, "2025-2.08-"):
-		return "2.06" // 2.08 is not registered until issue #73
+		return "2.08"
 	}
 	t.Fatalf("%s: no target for this fixture's version", fixture)
 	return ""
 }
 
 // fixtures207 is every tracked 2.07 save. Tests that loop over it assert they
-// visited len(fixtures207) files, and TestFixtures207AreEveryTracked207Fixture
+// visited len(fixtures207) files, and TestRegisteredFixtureListsAreEveryTrackedFixture
 // holds it to the testdata directory, so a fixture cannot be skipped unnoticed.
 var fixtures207 = []string{
 	sample2025_207Blank,
@@ -79,6 +87,17 @@ var fixtures207 = []string{
 	sample2025_207NotesShapes,
 	sample2025_207Resources,
 	sample2025_207Rows,
+}
+
+// fixtures208 is every tracked 2.08 save, held to the testdata directory as
+// fixtures207 is.
+var fixtures208 = []string{
+	sample2025_208Blank,
+	sample2025_208Layers,
+	sample2025_208NotesShapes,
+	sample2025_208Populated,
+	sample2025_208Resources,
+	sample2025_208Rows,
 }
 
 // TestW2025Decode_BothSamples documents that the public decoder accepts both

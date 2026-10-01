@@ -119,7 +119,7 @@ func TestInitBuiltTheRegistry(t *testing.T) {
 	if len(byApp) == 0 {
 		t.Fatalf("byApp is empty: init did not build the registry")
 	}
-	for _, app := range []string{"2.06", "2.07"} {
+	for _, app := range []string{"2.06", "2.07", "2.08"} {
 		c, err := codecFor(app)
 		if err != nil {
 			t.Errorf("codecFor(%q): %v", app, err)
