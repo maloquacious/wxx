@@ -75,7 +75,7 @@ func newRowsMap() *wxx.Map_t {
 			t := &wxx.Tile_t{
 				Column:    x,
 				Row:       y,
-				Coords:    hexg.NewOffsetCoord(x, y).ROffsetToCube(true),
+				Coords:    hexg.NewOffsetCoord(x, y).ROffsetToCube(false),
 				Terrain:   x*tilesHigh + y, // distinct, position-sensitive, and listed
 				Elevation: float64(100*x + y),
 				IsIcy:     (x+y)%2 == 0,

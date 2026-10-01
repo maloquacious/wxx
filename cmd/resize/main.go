@@ -352,12 +352,11 @@ func (g geometry_t) placementHex(x, y float64) (col, row int) {
 }
 
 // coords is a hex's cube coordinates in the hexg convention the decoders use
-// for this orientation: odd-q for COLUMNS and, for ROWS, the even-r formula the
-// decoder uses under the OddR label (see v1_06/tiles.go, issue #52). Worldographer
-// staggers odd rows, so the ROWS formula is likely wrong; that is issue #130.
+// for this orientation: odd-q for COLUMNS and odd-r for ROWS (see
+// v1_06/tiles.go; issue #130).
 func (g geometry_t) coords(col, row int) hexg.Hex {
 	if g.staggeredRows {
-		return hexg.NewOffsetCoord(col, row).ROffsetToCube(true)
+		return hexg.NewOffsetCoord(col, row).ROffsetToCube(false)
 	}
 	return hexg.NewOffsetCoord(col, row).QOffsetToCube(false)
 }

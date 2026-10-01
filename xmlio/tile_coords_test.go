@@ -47,7 +47,7 @@ func TestDecodedTileCoordinates(t *testing.T) {
 					}
 					var ok bool
 					if rows {
-						ok = tile.Coords.CubeToROffset(true) == hexg.NewOffsetCoord(c, r)
+						ok = tile.Coords.CubeToROffset(false) == hexg.NewOffsetCoord(c, r)
 					} else {
 						ok = tile.Coords.CubeToQOffset(false) == hexg.NewOffsetCoord(c, r)
 					}

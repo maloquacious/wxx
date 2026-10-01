@@ -16,10 +16,9 @@ import (
 // meaningless; hexg.LayoutOffset has no unset value (its zero is OddR), so a
 // caller must check ok rather than the layout.
 //
-// The OddR label does not yet match the decoder's ROWS cube coordinates:
-// Tile_t.Coords for a ROWS map are computed with the even-r formula
-// (ROffsetToCube(true)), kept from the vendored wxx/hexg, although
-// Worldographer staggers odd rows. That is issue #130.
+// Tile_t.Coords follow the same layout: odd-q for COLUMNS and odd-r for ROWS,
+// because Worldographer staggers odd columns down and odd rows right (#80,
+// #130).
 func (m *Map_t) GridOrientation() (hexg.LayoutOffset, bool) {
 	switch m.HexOrientation {
 	case "COLUMNS":
