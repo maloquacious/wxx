@@ -39,7 +39,7 @@ reasoning about the format; do not infer it from Go structs.
   `github.com/maloquacious/hexg`; `Tile_t.Coords` is a `hexg.Hex`, and
   `Map_t.GridOrientation()` derives the offset layout from `HexOrientation`.
 - `cmd/` — CLI tools used to exercise the package: `bounds`, `copy`,
-  `import`, `info`, `merge`, `resize`, `schema`, `server`, `version`, and
+  `import`, `info`, `merge`, `resize`, `schema`, `version`, and
   the umbrella `wxx` tool (subcommands: `export`).
 - `schema/` — the wxx reference grammars, one per schema version
   (`1.06.rnc`), and a test that checks every 2.08 fixture against the

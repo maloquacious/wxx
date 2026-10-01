@@ -184,7 +184,7 @@ dist/local/info world.wxx
 ```
 
 The full set is `bounds`, `copy`, `import`, `info`, `merge`, `resize`,
-`schema`, `server` and `version`. To crop a map, use `resize` with negative
+`schema` and `version`. To crop a map, use `resize` with negative
 `-top`, `-bottom`, `-left` or `-right`. `import` and `merge` are works in progress.
 
 ### Where this is going *(planned)*

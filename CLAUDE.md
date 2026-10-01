@@ -90,7 +90,6 @@ wxx/
 │   ├── merge/          # Merge multiple maps (WIP)
 │   ├── resize/         # Resize/expand/crop maps
 │   ├── schema/         # Extract XML schema hierarchy
-│   ├── server/         # Web server for hex grid visualization
 │   └── version/        # Display package version
 ├── schema/             # wxx reference grammars, one per schema version
 │   ├── README.md       # how to read them, label vocabulary, format notes

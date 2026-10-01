@@ -17,8 +17,8 @@ import (
 // maintainer's ROWS map adds its blank hexes as whole tilerows. The decoders
 // used to set Row from the tilerow index and Column from the entry, and build
 // Coords from (row, col), transposing every tile in memory. Nothing written
-// depends on these fields, so the fixture outputs never showed it; cmd/server
-// labels hexes with Coords and did.
+// depends on these fields, so the fixture outputs never showed it; cmd/server,
+// since removed, labelled hexes with Coords and showed it.
 //
 // The fixtures are chosen non-square, so a transposition cannot agree by
 // accident, and cover both orientations: W2025 COLUMNS 13 x 11 and W2025 ROWS
