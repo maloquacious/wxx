@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/maloquacious/hexg"
 	"github.com/maloquacious/wxx"
-	"github.com/maloquacious/wxx/hexg"
 	"github.com/maloquacious/wxx/xmlio"
 )
 

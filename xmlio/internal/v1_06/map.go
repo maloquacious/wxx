@@ -9,8 +9,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/maloquacious/hexg"
 	"github.com/maloquacious/wxx"
-	"github.com/maloquacious/wxx/hexg"
 	"github.com/maloquacious/wxx/xmlio/internal/appver"
 )
 

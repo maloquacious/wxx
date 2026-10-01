@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/maloquacious/hexg"
 	"github.com/maloquacious/wxx"
-	"github.com/maloquacious/wxx/hexg"
 	"github.com/maloquacious/wxx/xmlio/internal/v1_06"
 )
 
@@ -76,7 +76,7 @@ func newRowsMap() *wxx.Map_t {
 			t := &wxx.Tile_t{
 				Column:    x,
 				Row:       y,
-				Coords:    hexg.NewOddRCoord(x, y).ToCube(),
+				Coords:    hexg.NewOffsetCoord(x, y).ROffsetToCube(true),
 				Terrain:   x*tilesHigh + y, // distinct, position-sensitive, and listed
 				Elevation: float64(100*x + y),
 				IsIcy:     (x+y)%2 == 0,

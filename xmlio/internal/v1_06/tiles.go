@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/maloquacious/hexg"
 	"github.com/maloquacious/wxx"
-	"github.com/maloquacious/wxx/hexg"
 )
 
 // decodeTiles parses the <tiles>/<tilerow> data into the domain map. It also
@@ -49,9 +49,14 @@ func decodeTiles(src Tiles_t, mapKeySrc MapKey_t, w *wxx.Map_t) error {
 			// offset coordinates take (col, row).
 			t := &wxx.Tile_t{Column: x, Row: y}
 			if w.GridOrientation == hexg.OddQ {
-				t.Coords = hexg.NewOddQCoord(x, y).ToCube()
+				t.Coords = hexg.NewOffsetCoord(x, y).QOffsetToCube(false)
 			} else if w.GridOrientation == hexg.OddR {
-				t.Coords = hexg.NewOddRCoord(x, y).ToCube()
+				// even=true is deliberate (issue #52): the vendored
+				// wxx/hexg's OddRCoord.ToCube used the even-r formula
+				// despite its name, and these are the cube coordinates
+				// every ROWS map has decoded to. Which is right for
+				// Worldographer is not settled here.
+				t.Coords = hexg.NewOffsetCoord(x, y).ROffsetToCube(true)
 			}
 			w.Tiles.Tiles[x][y] = t
 			y++

@@ -12,8 +12,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/maloquacious/hexg"
 	"github.com/maloquacious/wxx"
-	"github.com/maloquacious/wxx/hexg"
 	"github.com/maloquacious/wxx/xmlio"
 )
 
@@ -352,12 +352,13 @@ func (g geometry_t) placementHex(x, y float64) (col, row int) {
 }
 
 // coords is a hex's cube coordinates in the hexg convention the decoders use
-// for this orientation: odd-q for COLUMNS, odd-r for ROWS.
-func (g geometry_t) coords(col, row int) hexg.CubeCoord {
+// for this orientation: odd-q for COLUMNS and, for ROWS, the even-r formula the
+// decoder uses under the OddR label (see v1_06/tiles.go, issue #52).
+func (g geometry_t) coords(col, row int) hexg.Hex {
 	if g.staggeredRows {
-		return hexg.NewOddRCoord(col, row).ToCube()
+		return hexg.NewOffsetCoord(col, row).ROffsetToCube(true)
 	}
-	return hexg.NewOddQCoord(col, row).ToCube()
+	return hexg.NewOffsetCoord(col, row).QOffsetToCube(false)
 }
 
 // shiftMapContent moves every positioned element of m by dCols columns and

@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/maloquacious/hexg"
 	"github.com/maloquacious/wxx"
-	"github.com/maloquacious/wxx/hexg"
 	"github.com/maloquacious/wxx/xmlio"
 )
 
@@ -184,7 +184,7 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		HexWidth:        worldMap.HexWidth,
 		HexHeight:       worldMap.HexHeight,
 		HexOrientation:  worldMap.HexOrientation,
-		GridOrientation: worldMap.GridOrientation.String(),
+		GridOrientation: layoutOffsetName(worldMap.GridOrientation),
 		Rows:            worldMap.RowsHigh,
 		Columns:         worldMap.ColumnsWide,
 	}
@@ -261,7 +261,7 @@ func generateHexGridSVG(m *wxx.Map_t) string {
 				centerX, centerY := calculateHexCenter(row, col, hexWidth, hexHeight, isFlat, padding)
 
 				// Generate labels: row,col on first line, cube coords on second line
-				cubeCoords := tile.Coords.String()
+				cubeCoords := tile.Coords.ConciseString()
 				svg.WriteString(fmt.Sprintf(
 					`<text class="label" x="%.1f" y="%.1f">%d,%d</text>`,
 					centerX, centerY-5, row, col))
@@ -319,4 +319,21 @@ func getHexCorner(centerX, centerY, radiusX, radiusY float64, corner int, isFlat
 	y := centerY + radiusY*math.Sin(angleRad)
 
 	return x, y
+}
+
+// layoutOffsetName names a hexg.LayoutOffset in the spelling the vendored
+// hexg.Orientation_e's String method used; hexg v1.3.0 gives LayoutOffset no
+// String method.
+func layoutOffsetName(o hexg.LayoutOffset) string {
+	switch o {
+	case hexg.EvenQ:
+		return "even-q"
+	case hexg.OddQ:
+		return "odd-q"
+	case hexg.EvenR:
+		return "even-r"
+	case hexg.OddR:
+		return "odd-r"
+	}
+	return fmt.Sprintf("hexg.LayoutOffset(%d)", int(o))
 }

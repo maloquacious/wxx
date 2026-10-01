@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/maloquacious/wxx/hexg"
+	"github.com/maloquacious/hexg"
 )
 
 // validMap builds the smallest Map_t that Validate accepts: the orientation
@@ -91,14 +91,6 @@ func TestValidateRejects(t *testing.T) {
 			break_:  func(m *Map_t) { m.GridOrientation = hexg.OddR },
 			wantErr: ErrMismatchedGridOrientation,
 			wantMsg: "odd-r",
-		},
-		{
-			// The unset zero value is the same desync, reached by omission
-			// rather than by contradiction.
-			name:    "grid orientation unset",
-			break_:  func(m *Map_t) { m.GridOrientation = hexg.UnknownQR },
-			wantErr: ErrMismatchedGridOrientation,
-			wantMsg: "unknown-qr",
 		},
 		{
 			name:    "nil GridAndNumbering",

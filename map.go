@@ -5,8 +5,8 @@ package wxx
 import (
 	"time"
 
+	"github.com/maloquacious/hexg"
 	"github.com/maloquacious/semver"
-	"github.com/maloquacious/wxx/hexg"
 )
 
 // Map_t is the in-memory representation of the map data.
@@ -52,34 +52,34 @@ type Map_t struct {
 	// and is gone. A future reader wanting to know what wrote a file asks
 	// MetaData.Worldographer; a future writer wanting to know what to emit is told,
 	// and asks nothing.
-	Type                      string             `json:"type,omitempty"`
-	LastViewLevel             string             `json:"lastViewLevel,omitempty"`
-	ContinentFactor           int                `json:"continentFactor,omitempty"`
-	KingdomFactor             int                `json:"kingdomFactor,omitempty"`
-	ProvinceFactor            int                `json:"provinceFactor,omitempty"`
-	WorldToContinentHOffset   float64            `json:"worldToContinentHOffset,omitempty"`
-	ContinentToKingdomHOffset float64            `json:"continentToKingdomHOffset,omitempty"`
-	KingdomToProvinceHOffset  float64            `json:"kingdomToProvinceHOffset,omitempty"`
-	WorldToContinentVOffset   float64            `json:"worldToContinentVOffset,omitempty"`
-	ContinentToKingdomVOffset float64            `json:"continentToKingdomVOffset,omitempty"`
-	KingdomToProvinceVOffset  float64            `json:"kingdomToProvinceVOffset,omitempty"`
-	HexWidth                  float64            `json:"hexWidth,omitempty"`
-	HexHeight                 float64            `json:"hexHeight,omitempty"`
-	GridOrientation           hexg.Orientation_e `json:"gridOrientation,omitempty"` // orientation for hexg package
-	HexOrientation            string             `json:"hexOrientation,omitempty"`  // "COLUMNS" or "ROWS"; Validate rejects anything else
-	RowsHigh                  int                `json:"rowsHigh,omitempty"`        // number of rows (derived from TilesHigh based on orientation)
-	ColumnsWide               int                `json:"columnsWide,omitempty"`     // number of columns (derived from TilesWide based on orientation)
-	MapProjection             Projection_e       `json:"mapProjection,omitempty"`
-	ShowNotes                 bool               `json:"showNotes,omitempty"`
-	ShowGMOnly                bool               `json:"showGMOnly,omitempty"`
-	ShowGMOnlyGlow            bool               `json:"showGMOnlyGlow,omitempty"`
-	ShowFeatureLabels         bool               `json:"showFeatureLabels,omitempty"`
-	ShowGrid                  bool               `json:"showGrid,omitempty"`
-	ShowGridNumbers           bool               `json:"showGridNumbers,omitempty"`
-	ShowShadows               bool               `json:"showShadows,omitempty"`
-	TriangleSize              int                `json:"triangleSize,omitempty"`
-	HScrollbarPos             float64            `json:"hScrollbarPos,omitempty"` // W2025 UI scroll position
-	VScrollbarPos             float64            `json:"vScrollbarPos,omitempty"` // W2025 UI scroll position
+	Type                      string            `json:"type,omitempty"`
+	LastViewLevel             string            `json:"lastViewLevel,omitempty"`
+	ContinentFactor           int               `json:"continentFactor,omitempty"`
+	KingdomFactor             int               `json:"kingdomFactor,omitempty"`
+	ProvinceFactor            int               `json:"provinceFactor,omitempty"`
+	WorldToContinentHOffset   float64           `json:"worldToContinentHOffset,omitempty"`
+	ContinentToKingdomHOffset float64           `json:"continentToKingdomHOffset,omitempty"`
+	KingdomToProvinceHOffset  float64           `json:"kingdomToProvinceHOffset,omitempty"`
+	WorldToContinentVOffset   float64           `json:"worldToContinentVOffset,omitempty"`
+	ContinentToKingdomVOffset float64           `json:"continentToKingdomVOffset,omitempty"`
+	KingdomToProvinceVOffset  float64           `json:"kingdomToProvinceVOffset,omitempty"`
+	HexWidth                  float64           `json:"hexWidth,omitempty"`
+	HexHeight                 float64           `json:"hexHeight,omitempty"`
+	GridOrientation           hexg.LayoutOffset `json:"gridOrientation,omitempty"` // orientation for hexg package
+	HexOrientation            string            `json:"hexOrientation,omitempty"`  // "COLUMNS" or "ROWS"; Validate rejects anything else
+	RowsHigh                  int               `json:"rowsHigh,omitempty"`        // number of rows (derived from TilesHigh based on orientation)
+	ColumnsWide               int               `json:"columnsWide,omitempty"`     // number of columns (derived from TilesWide based on orientation)
+	MapProjection             Projection_e      `json:"mapProjection,omitempty"`
+	ShowNotes                 bool              `json:"showNotes,omitempty"`
+	ShowGMOnly                bool              `json:"showGMOnly,omitempty"`
+	ShowGMOnlyGlow            bool              `json:"showGMOnlyGlow,omitempty"`
+	ShowFeatureLabels         bool              `json:"showFeatureLabels,omitempty"`
+	ShowGrid                  bool              `json:"showGrid,omitempty"`
+	ShowGridNumbers           bool              `json:"showGridNumbers,omitempty"`
+	ShowShadows               bool              `json:"showShadows,omitempty"`
+	TriangleSize              int               `json:"triangleSize,omitempty"`
+	HScrollbarPos             float64           `json:"hScrollbarPos,omitempty"` // W2025 UI scroll position
+	VScrollbarPos             float64           `json:"vScrollbarPos,omitempty"` // W2025 UI scroll position
 
 	// elements
 	GridAndNumbering *GridAndNumbering_t `json:"gridAndNumbering,omitempty"`
@@ -625,7 +625,7 @@ type TextureConfig_t struct {
 }
 
 type Tile_t struct {
-	Coords                hexg.CubeCoord
+	Coords                hexg.Hex
 	Row                   int
 	Column                int
 	Terrain               int // lookup into TerrainMap
