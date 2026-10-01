@@ -140,8 +140,8 @@ These delegate all encoding to `github.com/mdhender/ottomap/wog`. Value is in th
 What actually landed when consolidating the reusable knowledge into this package (branch
 `track-b-consolidation`):
 
-- **B1 — `tnwxx` RelaxNG schema imported** to `schema/` (`utf-8-xml.rnc`/`.rng` + README; renamed
-  `schema/v1.73.*` in #72), as reference/validation material only (v1.73/classic scope; not
+- **B1 — `tnwxx` RelaxNG schema imported** to `schema/` (`utf-8-xml.rnc`/`.rng` + README; removed
+  in #72, see git history), as reference/validation material only (v1.73/classic scope; not
   build-time enforced; no new dep).
 - **B2 — per-version coverage matrices**: `xmlio/internal/v0_77/COVERAGE.md` (new) + aligned
   `xmlio/internal/v1_06/COVERAGE.md`, cross-checked against the RelaxNG schema, indexed by
