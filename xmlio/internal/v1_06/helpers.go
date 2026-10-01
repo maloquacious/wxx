@@ -210,9 +210,15 @@ func encodeInnerText(input string) string {
 // normalizes those characters to a space when it reads them raw from an
 // attribute value. Every other control character is also written as a
 // character reference, which XML 1.1 -- the version every W2025 file declares
-// -- permits. Anything else, non-ASCII included, is written as is: the document
-// is UTF-8 until the transport stage converts it to UTF-16, and no W2025 sample
-// shows Worldographer escaping non-ASCII.
+// -- permits.
+//
+// Every non-ASCII character is written as a decimal character reference too
+// (issue #96), because that is how Worldographer writes them: every non-ASCII
+// character in an attribute of every W2025 fixture is spelled that way
+// (title="Fabi&#225;n" in the 2.06 populated map), and none is written raw.
+// The classic encoder has always done the same. A character outside the Basic
+// Multilingual Plane is written as one reference to its code point; no fixture
+// shows how the app spells one.
 func xmlAttr(s string) string {
 	var b strings.Builder
 	b.Grow(len(s) + 2)
@@ -227,7 +233,7 @@ func xmlAttr(s string) string {
 			b.WriteString("&gt;")
 		case r == '"':
 			b.WriteString("&quot;")
-		case r < 0x20 || r == 0x7f:
+		case r < 0x20 || r >= 0x7f:
 			fmt.Fprintf(&b, "&#%d;", r)
 		default:
 			b.WriteRune(r)

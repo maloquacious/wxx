@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/maloquacious/wxx/xmlio"
@@ -44,10 +45,14 @@ func TestW2025InformationAttrsMatchSource(t *testing.T) {
 
 	// Each fixture nests Nation and Culture entries as details of an
 	// "Information" entry, and Religion entries a level deeper. 2.07 is listed
-	// because it is the first stable release of the W2025 schema.
+	// because it is the first stable release of the W2025 schema. The 2.06
+	// populated map's lore has five non-ASCII titles, which the app spells as
+	// decimal character references (title="Fabi&#225;n"); comparing it byte for
+	// byte pins that the encoder spells them the same way (issue #96).
 	for _, fixture := range []string{
 		"2025-2.06-13x11-941577-blank.wxx",
 		"2025-2.06-13x11-941577-layers-beta.wxx",
+		"2025-2.06-13x11-941577-populated.wxx",
 		"2025-2.07-13x11-941577-blank.wxx",
 	} {
 		cases[fixture] = func(t *testing.T) pair {
@@ -71,12 +76,18 @@ func TestW2025InformationAttrsMatchSource(t *testing.T) {
 		}
 	}
 
+	charRef := false // some source attribute spells a character as &#N;
 	for name, load := range cases {
 		t.Run(name, func(t *testing.T) {
 			docs := load(t)
 			in := startTagAttrs(docs.in, "information")
 			out := startTagAttrs(docs.out, "information")
 			compareStartTags(t, name, "information", in, out)
+			for _, attrs := range in {
+				for _, attr := range attrs {
+					charRef = charRef || strings.Contains(attr[1], "&#")
+				}
+			}
 
 			// The regression is pinned only if the fixture states both shapes.
 			sawNone, sawEmpty := false, false
@@ -111,5 +122,8 @@ func TestW2025InformationAttrsMatchSource(t *testing.T) {
 				t.Errorf("%s: Nation entry present = %v, Culture entry present = %v; want both, so their lore attributes are under test", name, sawNation, sawCulture)
 			}
 		})
+	}
+	if !charRef {
+		t.Errorf("no fixture states a character reference in an <information> attribute, so the non-ASCII spelling (issue #96) is untested here")
 	}
 }
