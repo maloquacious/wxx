@@ -2,6 +2,10 @@
 
 - **Status:** **Accepted (2026-09-30)** — maintainer decision on
   [#103](https://github.com/maloquacious/wxx/issues/103).
+- **Amended:** 2026-09-30 — **Decision 4** is reversed by
+  [#72](https://github.com/maloquacious/wxx/issues/72): the classic grammar is
+  removed. Decision 4's original text stands as the record of the decision
+  taken. See *Amendment — 2026-09-30* at the end of this document.
 - **Date:** 2026-09-30
 - **Context tickets:** [#103](https://github.com/maloquacious/wxx/issues/103)
   (this decision), [#98](https://github.com/maloquacious/wxx/issues/98) (the
@@ -127,3 +131,14 @@ decisions mention classic, they now read as follows:
     *Terrain layers* open question and the 2026-09-29 amendment about a classic
     downgrade reporting the terrain-layers loss describe a target that no
     longer exists.
+
+## Amendment — 2026-09-30 ([#72](https://github.com/maloquacious/wxx/issues/72))
+
+**Reverses Decision 4.** Decisions 1, 2, 3, 5 and 6 stand as written.
+
+#72 removes `schema/utf-8-xml.rnc` and `schema/utf-8-xml.rng`. `schema/` now
+holds one reference grammar per **schema version** (`map/@schema`), not per
+application version, starting with `schema/1.06.rnc`. With classic gone, the
+classic grammar describes no schema wxx reads. The coverage work that cited it
+as evidence is a record of the past; the files remain in git history (for
+example `git show 8e0cd55:schema/utf-8-xml.rnc`) and upstream in tnwxx.

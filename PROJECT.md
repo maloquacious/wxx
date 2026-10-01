@@ -2,7 +2,7 @@
 
 ```
 wxx/
-├── schema/                   # RelaxNG schema (reference only: the classic v1.73 format wxx no longer reads)
+├── schema/                   # reference grammars, one per schema version (1.06.rnc); see schema/README.md
 ├── xmlio/                    # packages for decoding and encoding XML data
 │   └── internal/            # codec packages; unimportable outside xmlio/
 │       ├── appver/          # a codec's accepted-application-version declaration

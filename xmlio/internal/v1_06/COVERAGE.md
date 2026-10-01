@@ -132,32 +132,13 @@ For the record, the six fields #11 modeled -- and where they now live -- were:
 
 ## RelaxNG cross-check
 
-The formal RelaxNG schema in `schema/utf-8-xml.rnc` (imported in B1) is **classic
-`version="1.73"` scope only** — it predates the W2025 format, and describes a
-format wxx no longer reads; it is kept as reference (see `schema/README.md`). It is therefore a **partial** checklist for h2025: only the
-elements W2025 *shares* with classic are cross-checkable; the schema says nothing
-about W2025 additions.
+`schema/1.06.rnc` (#72) is the reference grammar for this codec's schema. Its
+path test (`schema/`) fails when a tracked 2.08 fixture contains an element or
+attribute the grammar does not allow, so it is the mechanical checklist of what
+the files contain; this matrix records what the codec does with each of them.
 
-- **Shared elements are all modeled by h2025.** Every element the RelaxNG schema
-  defines — `map`, `gridandnumbering`, `terrainmap`, `maplayer`, `tiles`/`tilerow`,
-  `mapkey`, `features`/`feature`, `location`, `labels`/`label`, `shapes`/`shape`/`p`,
-  `notes`, `informations`/`information`, `configuration` + its five sub-configs,
-  `labelstyle`, `shapestyle` — has a corresponding type in `xmlio/internal/v1_06/schema.go`
-  and appears as **implemented** in the table above. No RelaxNG element is
-  unmodeled by the h2025 decoder.
-- **The six W2025-native fields modeled in #11 lie outside the schema's scope.**
-  Each is a **W2025 addition** the classic RelaxNG schema neither describes nor
-  could have flagged: the schema defines `<maplayer>` with only `isVisible`/`name`
-  (no `opacity`), and defines no `blurTerrainBG`, no `extraTerrain`, no
-  `dropShadow*` on `<labelstyle>`, no `lineCap`/`lineJoin` on `<shapestyle>`, and
-  no `hScrollbarPos`/`vScrollbarPos` on `<map>`. `schema/README.md` independently
-  flags `maplayer/@opacity`, `blurTerrainBG`, and `extraTerrain` as verified
-  W2025 deltas absent from the schema — corroborating that these were real format
-  additions, not modeling oversights the classic schema could have warned about.
-  They are now modeled additively and proven by `TestW2025CoverageMatrix`.
-
-**Conclusion:** the classic-scoped RelaxNG schema confirms h2025 models 100% of
-the *shared* format, and confirms the six #11 fields are genuine W2025 extensions
-the schema does not (and cannot) describe. A W2025-scoped formal schema would be
-needed to mechanically check the additions; until then `TestW2025CoverageMatrix`
-is the executable checklist for them.
+Before #72, this section cross-checked the matrix against the classic grammar
+(`schema/utf-8-xml.rnc`, removed in #72; see `git show 8e0cd55:schema/utf-8-xml.rnc`).
+That check found every element classic shares with W2025 modeled here, and
+confirmed that the six fields #11 modeled are W2025 additions the classic grammar
+does not describe.

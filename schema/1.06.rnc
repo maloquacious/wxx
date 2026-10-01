@@ -1,0 +1,673 @@
+# The wxx reference grammar for Worldographer 2025 schema 1.06.
+#
+# It describes a map whose root states map/@schema="1.06", which Worldographer
+# 2025 2.06, 2.07 and 2.08 all write. Files are named by schema version, not
+# application version.
+#
+# It is checked against 2.08 saves only (the fixtures below). Elements and
+# attributes that only the older 1.06 writers (2.06, 2.07) produce are not
+# covered.
+#
+# This is our best description of the XML inside such a .wxx file, built from
+# a small sample. It is not "the official schema": the format belongs to
+# Worldographer's author. Structure only; meaning stays in short comments, and
+# schema/README.md holds the longer explanations.
+#
+# A .wxx file is gzip-compressed, UTF-16 big-endian XML 1.1. This grammar
+# describes the XML after decompression and decoding; the XML declaration
+# (version='1.1' encoding='utf-16') is outside its scope.
+#
+# ---------------------------------------------------------------------------
+# EVIDENCE
+#
+# The evidence is the six tracked 2.08 fixtures, saved by Worldographer 2.08:
+#
+#   blank         testdata/2025-2.08-13x11-941577-blank.wxx
+#   layers        testdata/2025-2.08-13x11-941577-layers.wxx
+#   notes-shapes  testdata/2025-2.08-13x11-941577-notes-shapes.wxx
+#   populated     testdata/2025-2.08-13x11-941577-populated.wxx
+#   resources     testdata/2025-2.08-13x11-941577-resources.wxx
+#   rows          testdata/2025-2.08-13x11-941577-rows.wxx
+#   all           every one of the six
+#
+# Plus the maintainer's app checks recorded in GitHub issues, cited as
+# "app check, #NN".
+#
+# ---------------------------------------------------------------------------
+# LABELS
+#
+# Every rule is labelled with where it came from:
+#
+#   # observed: <fixtures>   seen in those fixtures (or in an app check)
+#   # inferred: <why>        a guess; treat it as a hypothesis, and when a file
+#                            disagrees, suspect the grammar before the file
+#   TBD                      not known
+#
+# The label above a named pattern covers the element and every line inside it,
+# unless a line carries a label of its own.
+#
+# CARDINALITY. "?", "*" and "+" are claims too, and six fixtures cannot show
+# that something is required. So:
+#
+#   - an attribute or child element that was present on every instance is
+#     still written with "?" (an element that repeats, with "*"). That "?" or
+#     "*" is inferred: the fixtures always contain the item, but cannot show
+#     that a file without it is illegal. A pattern's label says "always" for
+#     these.
+#   - an item marked "sometimes" was absent from at least one instance in the
+#     fixtures; that it is optional is observed.
+#
+# ORDER. Child elements are written with "," in the one order every fixture
+# uses. The order is observed; whether the app requires it is TBD.
+#
+# DATATYPES. Attribute values use xsd datatypes, without facets:
+#
+#   xsd:boolean  spelled true or false in every fixture.
+#   xsd:double   a Java double, as Double.toString spells it: a decimal point,
+#                and exponent form for very small or large values (#111);
+#                observed: rows (map/@vScrollbarPos="4.263256414560601E-14").
+#                Also used for shape/p/@x and @y, which are spelled integrally
+#                on some points and with a decimal point on others (observed:
+#                notes-shapes integral and decimal, populated decimal).
+#   xsd:integer  spelled with no decimal point in every fixture. Each line
+#                says which kind it is: "app check, #64" for the seven
+#                attributes #64 tested in the app (written back integrally by
+#                the app; a decimal point in mapkey/@height stops the file
+#                opening, Java's Integer.parseInt), and "inferred: integral in
+#                every fixture; no app check" for the rest.
+#   xsd:string   everything else: names, uuids, comma-separated lists, colors.
+#
+# An enumeration appears only where the full set of values is known from the
+# app or the code, never from the values seen in the fixtures, and it says
+# where the set came from.
+#
+# COLORS. Two spellings, both xsd:string here:
+#   "r,g,b,a"     four decimals, each 0..1. An out-of-range component stops
+#                 the file opening (observed: app check, #83, dsColor=
+#                 "255,0,0,1"), and so does "" (a shape with dsColor="" and
+#                 insColor=""). Many color attributes also hold the literal
+#                 "null"; that it means "no color" is inferred.
+#   "0xRRGGBBAA"  gridandnumbering/@color0..4 and @numberColor (observed: all).
+#                 color0="" opens and is saved back as "null" (observed: app
+#                 check, #83, on color0 only).
+#
+# ---------------------------------------------------------------------------
+# THE SUBSET (what schema/grammar_test.go can parse)
+#
+# This file must stay valid standard RELAX NG compact syntax, so trang or jing
+# can read it. It also uses only the small subset below, so a plain-Go test can
+# parse it without a dependency. The test fails loudly on anything else.
+#
+#   start = Name                          exactly one start, a reference
+#   Name = pattern                        one named pattern per element context
+#   element name { pattern }
+#   attribute name { value }              value: xsd:type, or "literal" | ...
+#   text   empty   Name (a reference)   ( pattern )
+#   p, q   p | q   p?   p*   p+           "," and "|" never mixed unparenthesised
+#   \name                                 a keyword used as a name (\parent)
+#   # comment                             single "#" only; never "##"
+#
+# Not used, and rejected by the test: "&", mixed, list, interleave, namespaces,
+# wildcards (* or ns:* names), include, datatypes declarations, facets,
+# annotations, "##" documentation comments, "|=" / "&=" combination.
+#
+# The test (schema/grammar_test.go) walks every testdata/2025-2.08-*.wxx and
+# fails if a fixture holds an element or attribute that the grammar does not
+# allow at that position, or non-whitespace text in an element whose pattern
+# has no "text". It checks fixture -> grammar only: names, nesting and where
+# text may appear, not values, order or cardinality, and not rules no fixture
+# exercises.
+# ---------------------------------------------------------------------------
+
+start = Map
+
+# observed: all; attributes always.
+Map = element map {
+  attribute type { xsd:string }?,
+  # observed: all ("2025"); the codec dispatches on this attribute.
+  attribute release { xsd:string }?,
+  # observed: all ("2.08"), the application version. 2.06 and 2.07 also
+  # write schema 1.06 (the v1_06 codec's apps.go), but no fixture of theirs
+  # is checked here.
+  attribute version { xsd:string }?,
+  # observed: all ("1.06"). The literal is the scope of this file: it
+  # describes schema 1.06 and nothing else.
+  attribute schema { "1.06" }?,
+  attribute lastViewLevel { xsd:string }?,
+  # inferred: integral in every fixture; no app check.
+  attribute continentFactor { xsd:integer }?,
+  # inferred: integral in every fixture; no app check.
+  attribute kingdomFactor { xsd:integer }?,
+  # inferred: integral in every fixture; no app check.
+  attribute provinceFactor { xsd:integer }?,
+  attribute worldToContinentHOffset { xsd:double }?,
+  attribute continentToKingdomHOffset { xsd:double }?,
+  attribute kingdomToProvinceHOffset { xsd:double }?,
+  attribute worldToContinentVOffset { xsd:double }?,
+  attribute continentToKingdomVOffset { xsd:double }?,
+  attribute kingdomToProvinceVOffset { xsd:double }?,
+  attribute hScrollbarPos { xsd:double }?,
+  attribute vScrollbarPos { xsd:double }?,
+  attribute hexWidth { xsd:double }?,
+  attribute hexHeight { xsd:double }?,
+  # observed: rows (ROWS), the other five (COLUMNS).
+  # Enumeration from the code: wxx's Map_t.Validate (validate.go) accepts only
+  # these two. Orientation changes how hexes are drawn, not tile storage (#80).
+  attribute hexOrientation { "COLUMNS" | "ROWS" }?,
+  attribute mapProjection { xsd:string }?,
+  attribute showNotes { xsd:boolean }?,
+  attribute showGMOnly { xsd:boolean }?,
+  attribute showGMOnlyGlow { xsd:boolean }?,
+  attribute showFeatureLabels { xsd:boolean }?,
+  attribute showGrid { xsd:boolean }?,
+  attribute showGridNumbers { xsd:boolean }?,
+  attribute showShadows { xsd:boolean }?,
+  # inferred: integral in every fixture; no app check.
+  attribute triangleSize { xsd:integer }?,
+  # inferred: each child is present once in all six (maplayer: eight times);
+  # the "?" and "*" are the looser reading.
+  GridAndNumbering?,
+  BlurTerrainBG?,
+  TerrainMap?,
+  MapLayer*,
+  Tiles?,
+  MapKey?,
+  Features?,
+  ExtraTerrain?,
+  Labels?,
+  Shapes?,
+  Notes?,
+  Informations?,
+  Configuration?
+}
+
+# observed: all; attributes always.
+GridAndNumbering = element gridandnumbering {
+  # 0xRRGGBBAA (observed: all). "" opens and is saved back as "null"
+  # (observed: app check, #83, color0 only; color1..4 inferred the same).
+  attribute color0 { xsd:string }?,
+  attribute color1 { xsd:string }?,
+  attribute color2 { xsd:string }?,
+  attribute color3 { xsd:string }?,
+  attribute color4 { xsd:string }?,
+  attribute width0 { xsd:double }?,
+  attribute width1 { xsd:double }?,
+  attribute width2 { xsd:double }?,
+  attribute width3 { xsd:double }?,
+  attribute width4 { xsd:double }?,
+  attribute gridOffsetContinentKingdomX { xsd:double }?,
+  attribute gridOffsetContinentKingdomY { xsd:double }?,
+  attribute gridOffsetWorldContinentX { xsd:double }?,
+  attribute gridOffsetWorldContinentY { xsd:double }?,
+  attribute gridOffsetWorldKingdomX { xsd:double }?,
+  attribute gridOffsetWorldKingdomY { xsd:double }?,
+  # inferred: integral in every fixture; no app check.
+  attribute gridSquare { xsd:integer }?,
+  attribute gridSquareHeight { xsd:double }?,
+  attribute gridSquareWidth { xsd:double }?,
+  attribute gridOffsetX { xsd:double }?,
+  attribute gridOffsetY { xsd:double }?,
+  attribute numberFont { xsd:string }?,
+  # 0xRRGGBBAA (observed: all).
+  attribute numberColor { xsd:string }?,
+  # inferred: integral in every fixture; no app check.
+  attribute numberSize { xsd:integer }?,
+  attribute numberStyle { xsd:string }?,
+  # inferred: integral in every fixture; no app check.
+  attribute numberFirstCol { xsd:integer }?,
+  # inferred: integral in every fixture; no app check.
+  attribute numberFirstRow { xsd:integer }?,
+  attribute numberOrder { xsd:string }?,
+  attribute numberPosition { xsd:string }?,
+  attribute numberPrePad { xsd:string }?,
+  attribute numberSeparator { xsd:string }?,
+  empty
+}
+
+# observed: all; attributes always.
+BlurTerrainBG = element blurTerrainBG {
+  attribute blur { xsd:boolean }?,
+  attribute topBleed { xsd:double }?,
+  attribute bottomBleed { xsd:double }?,
+  attribute randomness { xsd:double }?,
+  attribute blurStart { xsd:double }?,
+  attribute blurEnd { xsd:double }?,
+  empty
+}
+
+# observed: all.
+# Text: the terrain table, tab-separated pairs "<terrain name> TAB <index>",
+# e.g. "Classic/Water Sea\t1\tClassic/Flat Farmland\t0" (layers).
+TerrainMap = element terrainmap {
+  text
+}
+
+# observed: all; attributes always.
+MapLayer = element maplayer {
+  attribute name { xsd:string }?,
+  attribute isVisible { xsd:boolean }?,
+  attribute opacity { xsd:double }?,
+  empty
+}
+
+# observed: all; attributes always.
+Tiles = element tiles {
+  attribute viewLevel { xsd:string }?,
+  # inferred: integral in every fixture; no app check.
+  attribute tilesWide { xsd:integer }?,
+  # inferred: integral in every fixture; no app check.
+  attribute tilesHigh { xsd:integer }?,
+  # inferred: thirteen tilerows (= tilesWide) in all six; "*" is the looser
+  # reading.
+  TileRow*
+}
+
+# observed: all.
+# One tilerow per column, in COLUMNS and ROWS maps alike: tilesWide tilerows,
+# each holding tilesHigh records, top row first (observed: all, 13 tilerows of
+# 11 records; and the maintainer's 2.08 saves in #85, among them a ROWS map
+# 1 wide by 11 high holding one tilerow of 11 records).
+# Text: one tile record per line, fields tab-separated. Observed: records of
+# 11 fields (layers, notes-shapes, populated, resources) and of 6 fields
+# ending in "Z" (blank, layers, notes-shapes, resources, rows). Field meaning:
+# TBD here; see schema/README.md.
+TileRow = element tilerow {
+  text
+}
+
+# observed: all; attributes always.
+MapKey = element mapkey {
+  attribute positionx { xsd:double }?,
+  attribute positiony { xsd:double }?,
+  # observed: all ("null").
+  attribute viewlevel { xsd:string }?,
+  # integer: the app writes it integrally, and a decimal point stops the
+  # file opening (observed: app check, #64).
+  attribute height { xsd:integer }?,
+  attribute backgroundcolor { xsd:string }?,
+  # integer: the app writes it integrally (observed: app check, #64);
+  # whether a decimal point stops the file opening is untested.
+  attribute backgroundopacity { xsd:integer }?,
+  attribute titleText { xsd:string }?,
+  attribute titleFontFace { xsd:string }?,
+  attribute titleFontColor { xsd:string }?,
+  attribute titleFontBold { xsd:boolean }?,
+  attribute titleFontItalic { xsd:boolean }?,
+  # integer: the app writes it integrally (observed: app check, #64);
+  # whether a decimal point stops the file opening is untested.
+  attribute titleScale { xsd:integer }?,
+  attribute scaleText { xsd:string }?,
+  attribute scaleFontFace { xsd:string }?,
+  attribute scaleFontColor { xsd:string }?,
+  attribute scaleFontBold { xsd:boolean }?,
+  attribute scaleFontItalic { xsd:boolean }?,
+  # integer: the app writes it integrally (observed: app check, #64);
+  # whether a decimal point stops the file opening is untested.
+  attribute scaleScale { xsd:integer }?,
+  attribute entryFontFace { xsd:string }?,
+  attribute entryFontColor { xsd:string }?,
+  attribute entryFontBold { xsd:boolean }?,
+  attribute entryFontItalic { xsd:boolean }?,
+  # integer: the app writes it integrally (observed: app check, #64);
+  # whether a decimal point stops the file opening is untested.
+  attribute entryScale { xsd:integer }?,
+  # inferred: whitespace only in all six; content TBD.
+  text
+}
+
+# observed: all (empty in blank, resources, rows).
+Features = element features {
+  Feature*
+}
+
+# observed: layers, notes-shapes, populated; attributes always unless marked.
+Feature = element feature {
+  attribute type { xsd:string }?,
+  attribute rotate { xsd:double }?,
+  attribute uuid { xsd:string }?,
+  attribute mapLayer { xsd:string }?,
+  attribute isFlipHorizontal { xsd:boolean }?,
+  attribute isFlipVertical { xsd:boolean }?,
+  attribute scale { xsd:double }?,
+  attribute scaleHt { xsd:double }?,
+  attribute tags { xsd:string }?,
+  attribute color { xsd:string }?,
+  # observed: every feature carries exactly one of the two spellings:
+  # ringcolor="null" when no ring color is set (layers, notes-shapes,
+  # populated), ringColor="r,g,b,a" when one is (populated). See #100.
+  (attribute ringcolor { xsd:string } | attribute ringColor { xsd:string })?,
+  attribute isGMOnly { xsd:boolean }?,
+  attribute isPlaceFreely { xsd:boolean }?,
+  attribute labelPosition { xsd:double }?,
+  # inferred: integral in every fixture; no app check.
+  attribute labelDistance { xsd:integer }?,
+  attribute isWorld { xsd:boolean }?,
+  attribute isContinent { xsd:boolean }?,
+  attribute isKingdom { xsd:boolean }?,
+  attribute isProvince { xsd:boolean }?,
+  attribute isFillHexBottom { xsd:boolean }?,
+  attribute isHideTerrainIcon { xsd:boolean }?,
+  # inferred: one location and one label on every feature; "?" is the
+  # looser reading.
+  Location?,
+  Label?
+}
+
+# observed: layers, notes-shapes, populated (under feature);
+# notes-shapes, populated (under note). Attributes always.
+Location = element location {
+  attribute viewLevel { xsd:string }?,
+  attribute x { xsd:double }?,
+  attribute y { xsd:double }?,
+  empty
+}
+
+# observed: all (empty in blank, populated, resources, rows).
+ExtraTerrain = element extraTerrain {
+  ExtraTerrainLayer*
+}
+
+# observed: layers, notes-shapes. Attributes always.
+# Note the spelling: mapLayer here, maplayer under map.
+ExtraTerrainLayer = element mapLayer {
+  attribute name { xsd:string }?,
+  TerrainAndLocation*
+}
+
+# observed: layers, notes-shapes; attributes always.
+TerrainAndLocation = element terrainAndLocation {
+  attribute name { xsd:string }?,
+  # inferred: integral in every fixture; no app check.
+  attribute elevation { xsd:integer }?,
+  attribute icy { xsd:boolean }?,
+  attribute gmOnly { xsd:boolean }?,
+  # comma-separated numbers, or "Z" (observed: layers, notes-shapes).
+  attribute resources { xsd:string }?,
+  # "x,y" (observed: layers, notes-shapes).
+  attribute location { xsd:string }?,
+  empty
+}
+
+# observed: all (empty in all but populated).
+Labels = element labels {
+  Label*
+}
+
+# observed: populated (under labels); layers, notes-shapes, populated (under
+# feature). Attributes always, the same set in both places.
+# Text: the label's text, after the location (observed: populated under
+# labels; notes-shapes under feature, on all three). Empty on every feature
+# label in layers and populated.
+Label = element label {
+  attribute mapLayer { xsd:string }?,
+  attribute style { xsd:string }?,
+  attribute fontFace { xsd:string }?,
+  attribute color { xsd:string }?,
+  attribute outlineColor { xsd:string }?,
+  attribute outlineSize { xsd:double }?,
+  # "null" in every fixture (observed: layers, notes-shapes, populated);
+  # r,g,b,a when set is inferred (#83 presumes it; no app check).
+  attribute dropShadowColor { xsd:string }?,
+  attribute dropShadowRadius { xsd:double }?,
+  attribute dropShadowSpread { xsd:double }?,
+  attribute rotate { xsd:double }?,
+  attribute isBold { xsd:boolean }?,
+  attribute isItalic { xsd:boolean }?,
+  attribute isWorld { xsd:boolean }?,
+  attribute isContinent { xsd:boolean }?,
+  attribute isKingdom { xsd:boolean }?,
+  attribute isProvince { xsd:boolean }?,
+  attribute isGMOnly { xsd:boolean }?,
+  attribute tags { xsd:string }?,
+  # inferred: one location on every label; "?" is the looser reading.
+  LabelLocation?,
+  text
+}
+
+# observed: populated (under labels/label); layers, notes-shapes, populated
+# (under feature/label). Attributes always.
+LabelLocation = element location {
+  attribute viewLevel { xsd:string }?,
+  attribute x { xsd:double }?,
+  attribute y { xsd:double }?,
+  attribute scale { xsd:double }?,
+  empty
+}
+
+# observed: all (empty in all but notes-shapes, populated).
+Shapes = element shapes {
+  Shape*
+}
+
+# observed: notes-shapes, populated; attributes always unless marked.
+Shape = element shape {
+  attribute type { xsd:string }?,
+  attribute isCurve { xsd:boolean }?,
+  attribute isGMOnly { xsd:boolean }?,
+  attribute isSnapVertices { xsd:boolean }?,
+  attribute isMatchTileBorders { xsd:boolean }?,
+  attribute tags { xsd:string }?,
+  attribute creationType { xsd:string }?,
+  attribute isDropShadow { xsd:boolean }?,
+  attribute isInnerShadow { xsd:boolean }?,
+  attribute isBoxBlur { xsd:boolean }?,
+  attribute extraLineDistance { xsd:double }?,
+  attribute extraLineLength { xsd:double }?,
+  attribute extraLineWidth { xsd:double }?,
+  attribute extraLineSeparation { xsd:double }?,
+  attribute isWorld { xsd:boolean }?,
+  attribute isContinent { xsd:boolean }?,
+  attribute isKingdom { xsd:boolean }?,
+  attribute isProvince { xsd:boolean }?,
+  attribute dsSpread { xsd:double }?,
+  attribute dsRadius { xsd:double }?,
+  attribute dsOffsetX { xsd:double }?,
+  attribute dsOffsetY { xsd:double }?,
+  attribute insChoke { xsd:double }?,
+  attribute insRadius { xsd:double }?,
+  attribute insOffsetX { xsd:double }?,
+  attribute insOffsetY { xsd:double }?,
+  attribute bbWidth { xsd:double }?,
+  attribute bbHeight { xsd:double }?,
+  # inferred: integral in every fixture; no app check.
+  attribute bbIterations { xsd:integer }?,
+  attribute mapLayer { xsd:string }?,
+  attribute fillTexture { xsd:string }?,
+  attribute strokeTexture { xsd:string }?,
+  attribute strokeType { xsd:string }?,
+  attribute highestViewLevel { xsd:string }?,
+  attribute currentShapeViewLevel { xsd:string }?,
+  attribute lineCap { xsd:string }?,
+  attribute lineJoin { xsd:string }?,
+  attribute opacity { xsd:double }?,
+  # r,g,b,a or "null"; optional: the app opens "null" and then saves the
+  # shape with no strokeColor at all (observed: app check, #83).
+  attribute strokeColor { xsd:string }?,
+  attribute strokeWidth { xsd:double }?,
+  # dsColor and insColor: r,g,b,a (observed: notes-shapes, populated); a
+  # shape with both "" does not open (observed: app check, #83). "null": TBD,
+  # in no fixture here (PR #84 reports it from other saves).
+  attribute dsColor { xsd:string }?,
+  attribute insColor { xsd:string }?,
+  # sometimes (observed: notes-shapes on 1 of 4 shapes, populated on its 1
+  # shape; both type="Path").
+  attribute fillRule { xsd:string }?,
+  # inferred: two or more points on every shape; "*" is the looser reading.
+  Point*
+}
+
+# observed: notes-shapes, populated; x and y always, the rest sometimes.
+Point = element p {
+  attribute x { xsd:double }?,
+  attribute y { xsd:double }?,
+  # sometimes (observed: "m" on the first point of each Path, notes-shapes
+  # and populated; "c" in populated; absent on notes-shapes' Polygon points
+  # and on the second point of its Path).
+  attribute type { xsd:string }?,
+  # sometimes (observed: populated, on the one type="c" point).
+  attribute cx1 { xsd:double }?,
+  attribute cy1 { xsd:double }?,
+  attribute cx2 { xsd:double }?,
+  attribute cy2 { xsd:double }?,
+  empty
+}
+
+# observed: all (empty in all but notes-shapes, populated).
+Notes = element notes {
+  Note*
+}
+
+# observed: notes-shapes, populated; attributes always.
+Note = element note {
+  attribute key { xsd:string }?,
+  attribute originalViewLevel { xsd:string }?,
+  attribute filename { xsd:string }?,
+  # "parent" is an RNC keyword, hence the backslash.
+  attribute \parent { xsd:string }?,
+  attribute color { xsd:string }?,
+  attribute isWorld { xsd:boolean }?,
+  attribute isContinent { xsd:boolean }?,
+  attribute isKingdom { xsd:boolean }?,
+  attribute isProvince { xsd:boolean }?,
+  attribute title { xsd:string }?,
+  # inferred: one notetext and one location on every note; "?" is the
+  # looser reading.
+  NoteText?,
+  Location?
+}
+
+# observed: notes-shapes, populated.
+# Text: an HTML document in a CDATA section.
+NoteText = element notetext {
+  text
+}
+
+# observed: all.
+Informations = element informations {
+  # inferred: five top-level entries in all six; "*" is the looser reading.
+  Information*
+}
+
+# observed: all, nested three deep in all six: top-level entries
+# (type="Information"), their children (Nation, Culture, Religion), and
+# Religion entries under Religion entries. The recursion is what the files
+# hold (#69).
+# Text: an HTML fragment in a CDATA section (#107), before any nested entry.
+# uuid, type, title always; the rest sometimes, by entry type: Nation carries
+# rulers, government, cultures; Culture carries language; Religion carries
+# religionType, culture, holySymbol, domains (observed: all).
+Information = element information {
+  attribute uuid { xsd:string }?,
+  attribute type { xsd:string }?,
+  attribute title { xsd:string }?,
+  attribute rulers { xsd:string }?,
+  attribute government { xsd:string }?,
+  # a Culture uuid (observed: all).
+  attribute cultures { xsd:string }?,
+  attribute language { xsd:string }?,
+  attribute religionType { xsd:string }?,
+  # a Culture uuid (observed: all).
+  attribute culture { xsd:string }?,
+  attribute holySymbol { xsd:string }?,
+  # comma-separated, or "" (observed: all). A Religion without domains is
+  # accepted on load and saved back as domains="" (observed: app check, #70).
+  attribute domains { xsd:string }?,
+  text,
+  Information*
+}
+
+# observed: all; children always, in this order.
+Configuration = element configuration {
+  # inferred: each child present once in all six; "?" is the looser reading.
+  TerrainConfig?,
+  FeatureConfig?,
+  TextureConfig?,
+  TextConfig?,
+  ShapeConfig?
+}
+
+# observed: all, whitespace only. inferred: content TBD.
+TerrainConfig = element terrain-config {
+  text
+}
+
+# observed: all, whitespace only. inferred: content TBD.
+FeatureConfig = element feature-config {
+  text
+}
+
+# observed: all, whitespace only. inferred: content TBD.
+TextureConfig = element texture-config {
+  text
+}
+
+# observed: all.
+TextConfig = element text-config {
+  # inferred: seven labelstyles in all six; "*" is the looser reading.
+  LabelStyle*
+}
+
+# observed: all; attributes always.
+LabelStyle = element labelstyle {
+  attribute name { xsd:string }?,
+  attribute fontFace { xsd:string }?,
+  attribute scale { xsd:double }?,
+  attribute isBold { xsd:boolean }?,
+  attribute isItalic { xsd:boolean }?,
+  attribute color { xsd:string }?,
+  attribute backgroundColor { xsd:string }?,
+  attribute outlineSize { xsd:double }?,
+  attribute outlineColor { xsd:string }?,
+  # "null" in every fixture (observed: all); r,g,b,a when set is inferred
+  # (#83 presumes it; no app check).
+  attribute dropShadowColor { xsd:string }?,
+  # integer here: the app writes both integrally (observed: app check, #64);
+  # whether a decimal point stops the file opening is untested. Unlike
+  # label/@dropShadowRadius and @dropShadowSpread, spelled "0.0" (observed:
+  # layers, notes-shapes, populated), which #64 did not check.
+  attribute dropShadowRadius { xsd:integer }?,
+  attribute dropShadowSpread { xsd:integer }?,
+  empty
+}
+
+# observed: all.
+ShapeConfig = element shape-config {
+  # inferred: seven shapestyles in all six; "*" is the looser reading.
+  ShapeStyle*
+}
+
+# observed: all; attributes always.
+# Note the spelling: dscolor here, dsColor on shape.
+ShapeStyle = element shapestyle {
+  attribute name { xsd:string }?,
+  attribute strokeType { xsd:string }?,
+  attribute isFractal { xsd:boolean }?,
+  attribute strokeWidth { xsd:double }?,
+  attribute opacity { xsd:double }?,
+  attribute snapVertices { xsd:boolean }?,
+  attribute tags { xsd:string }?,
+  attribute dropShadow { xsd:boolean }?,
+  attribute innerShadow { xsd:boolean }?,
+  attribute boxBlur { xsd:boolean }?,
+  attribute dsSpread { xsd:double }?,
+  attribute dsRadius { xsd:double }?,
+  attribute dsOffsetX { xsd:double }?,
+  attribute dsOffsetY { xsd:double }?,
+  attribute insChoke { xsd:double }?,
+  attribute insRadius { xsd:double }?,
+  attribute insOffsetX { xsd:double }?,
+  attribute insOffsetY { xsd:double }?,
+  attribute bbWidth { xsd:double }?,
+  attribute bbHeight { xsd:double }?,
+  # inferred: integral in every fixture; no app check.
+  attribute bbIterations { xsd:integer }?,
+  attribute fillTexture { xsd:string }?,
+  attribute strokeTexture { xsd:string }?,
+  attribute strokePaint { xsd:string }?,
+  attribute fillPaint { xsd:string }?,
+  attribute dscolor { xsd:string }?,
+  attribute insColor { xsd:string }?,
+  attribute lineCap { xsd:string }?,
+  attribute lineJoin { xsd:string }?,
+  empty
+}

@@ -31,12 +31,10 @@ code; duplicating it here only guarantees a second copy that drifts.
 
 Two things are worth knowing before you open them:
 
-- **The RelaxNG cross-check is partial.** The formal schema in `schema/` is
-  **classic `version="1.73"` scope only** — an upstream copy that predates W2025,
-  kept as reference for a format wxx no longer reads (`schema/README.md`). The
-  W2025 matrix can only cross-check the elements W2025 *shares* with classic; the
-  schema says nothing about W2025 additions such as `<extraTerrain>` or
-  `<blurTerrainBG>`. Documenting the W2025 schema is #2.
+- **The format reference is `schema/1.06.rnc`** (#72), a grammar for schema
+  1.06 checked against the tracked 2.08 fixtures by a path test. The W2025
+  matrix's older RelaxNG cross-check used the classic grammar, which #72
+  removed; see that matrix's *RelaxNG cross-check* section.
 - **A gap's failure mode matters as much as its existence.** The matrices
   distinguish an encoder that drops content silently from one that refuses loudly
   and from one that writes a plausible-looking constant.
