@@ -41,7 +41,6 @@ const (
 	ErrInvalidXML                  = Error("invalid xml")
 	ErrInvalidXMLHeader            = Error("invalid xml header")
 	ErrMapNotClosed                = Error("<map> not closed")
-	ErrMismatchedGridOrientation   = Error("grid orientation disagrees with hex orientation")
 	ErrMissingBOM                  = Error("missing bom")
 	ErrMissingFinalByte            = Error("missing final byte")
 	ErrMissingMapElement           = Error("missing map element")

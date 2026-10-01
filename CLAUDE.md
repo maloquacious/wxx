@@ -11,7 +11,7 @@ One Worldographer format is supported:
 
 The original H2017 ("classic", Worldographer 1.x) format is no longer read or written (issue #103, ADR 0005). The decoder refuses a classic file with `wxx.ErrClassicMap`; Worldographer 2025 converts a classic map itself.
 
-Current version: **0.43.0-alpha** (see `version.go`).
+Current version: **0.44.0-alpha** (see `version.go`).
 
 ## Bugs Before Features
 
@@ -72,7 +72,7 @@ wxx/
 ├── wxx.go              # Core package: Decoder/Encoder interfaces
 ├── map.go              # Map_t struct (in-memory map representation)
 ├── errors.go           # Constant error types (type Error string)
-├── version.go          # Semantic version (0.43.0-alpha)
+├── version.go          # Semantic version (0.44.0-alpha)
 ├── xmlio/              # XML encoding/decoding pipeline
 │   ├── decoder.go      # Generic decoder with functional options
 │   ├── encoder.go      # Generic encoder with functional options
@@ -82,15 +82,6 @@ wxx/
 │       ├── appver/     # a codec's accepted-application-version declaration
 │       ├── codec/      # the Codec interface the dispatcher holds
 │       └── v1_06/      # W2025 schema 1.06: per-element decode/encode files
-├── hexg/               # Hexagonal grid coordinate system library
-│   ├── cube.go         # Cube coordinates (primary system)
-│   ├── offset.go       # Offset coordinates
-│   ├── doubled.go      # Doubled coordinates
-│   ├── adapters.go     # Coordinate conversions
-│   ├── layout.go       # Hex layout management
-│   ├── orientation.go  # Hex orientation types
-│   ├── point.go        # Point structure
-│   └── tribenet.go     # Tribe/settlement network support
 ├── cmd/                # CLI tools (each has its own main.go)
 │   ├── bounds/         # Extract map dimensions
 │   ├── copy/           # Copy WXX files with optional transformations
@@ -185,7 +176,6 @@ Read these files for deeper context:
 - `CODECS.md` - Guiding principles for codec design, API specifications, implementation patterns
 - `PROJECT.md` - Directory structure overview
 - `README.md` - Project overview, version mapping table, pipeline documentation
-- `hexg/HEXES.md` - Hex coordinate system documentation
 - `schema/README.md` - The wxx reference grammars for the file format, their label vocabulary, and format notes
 
 ## Reasoning About the File Format

@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/maloquacious/wxx"
-	"github.com/maloquacious/wxx/hexg"
 	"github.com/maloquacious/wxx/xmlio"
 )
 
@@ -90,7 +89,6 @@ func TestMalformedMapRefusedBeforeAnyBytes(t *testing.T) {
 			{"header wider than the grid", func(m *wxx.Map_t) { m.Tiles.TilesWide++ }, wxx.ErrInvalidTileGrid},
 			{"header higher than the grid", func(m *wxx.Map_t) { m.Tiles.TilesHigh++ }, wxx.ErrInvalidTileGrid},
 			{"nil tile", func(m *wxx.Map_t) { m.Tiles.Tiles[0][0] = nil }, wxx.ErrInvalidTileGrid},
-			{"orientation desync", func(m *wxx.Map_t) { m.GridOrientation = hexg.OddR }, wxx.ErrMismatchedGridOrientation},
 		} {
 			t.Run(target.app+"/"+tc.name, func(t *testing.T) {
 				m := decodeValidFixture(t, target.fixture)

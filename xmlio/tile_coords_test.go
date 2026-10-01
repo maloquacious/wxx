@@ -5,7 +5,7 @@ package xmlio_test
 import (
 	"testing"
 
-	"github.com/maloquacious/wxx/hexg"
+	"github.com/maloquacious/hexg"
 	"github.com/maloquacious/wxx/xmlio"
 )
 
@@ -47,9 +47,9 @@ func TestDecodedTileCoordinates(t *testing.T) {
 					}
 					var ok bool
 					if rows {
-						ok = tile.Coords.ToOddR().Equals(hexg.NewOddRCoord(c, r))
+						ok = tile.Coords.CubeToROffset(true) == hexg.NewOffsetCoord(c, r)
 					} else {
-						ok = tile.Coords.ToOddQ().Equals(hexg.NewOddQCoord(c, r))
+						ok = tile.Coords.CubeToQOffset(false) == hexg.NewOffsetCoord(c, r)
 					}
 					if !ok {
 						t.Fatalf("Tiles[%d][%d].Coords = %v, which is not (col %d, row %d)", c, r, tile.Coords, c, r)

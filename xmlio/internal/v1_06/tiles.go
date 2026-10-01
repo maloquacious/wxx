@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/maloquacious/hexg"
 	"github.com/maloquacious/wxx"
-	"github.com/maloquacious/wxx/hexg"
 )
 
 // decodeTiles parses the <tiles>/<tilerow> data into the domain map. It also
@@ -25,8 +25,11 @@ func decodeTiles(src Tiles_t, mapKeySrc MapKey_t, w *wxx.Map_t) error {
 		TilesHigh: src.TilesHigh,
 	}
 
-	// Set RowsHigh and ColumnsWide based on GridOrientation
-	switch w.GridOrientation {
+	// Set RowsHigh and ColumnsWide based on the orientation. The layout is
+	// derived from HexOrientation (issue #52); decodeMap has already refused a
+	// map stating neither orientation.
+	layout, _ := w.GridOrientation()
+	switch layout {
 	case hexg.OddQ:
 		// Column orientation: TilesWide = columns, TilesHigh = rows
 		w.RowsHigh = w.Tiles.TilesHigh
@@ -48,10 +51,16 @@ func decodeTiles(src Tiles_t, mapKeySrc MapKey_t, w *wxx.Map_t) error {
 			// sample has tilesWide tilerows of tilesHigh entries, and hexg's
 			// offset coordinates take (col, row).
 			t := &wxx.Tile_t{Column: x, Row: y}
-			if w.GridOrientation == hexg.OddQ {
-				t.Coords = hexg.NewOddQCoord(x, y).ToCube()
-			} else if w.GridOrientation == hexg.OddR {
-				t.Coords = hexg.NewOddRCoord(x, y).ToCube()
+			if layout == hexg.OddQ {
+				t.Coords = hexg.NewOffsetCoord(x, y).QOffsetToCube(false)
+			} else if layout == hexg.OddR {
+				// even=true is deliberate (issue #52): the vendored
+				// wxx/hexg's OddRCoord.ToCube used the even-r formula
+				// despite its name, and these are the cube coordinates
+				// every ROWS map has decoded to. Worldographer staggers
+				// odd rows, so this is likely wrong; that is issue #130,
+				// not fixed here.
+				t.Coords = hexg.NewOffsetCoord(x, y).ROffsetToCube(true)
 			}
 			w.Tiles.Tiles[x][y] = t
 			y++

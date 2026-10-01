@@ -30,13 +30,14 @@ reasoning about the format; do not infer it from Go structs.
 
 - `wxx.go`, `map.go`, `errors.go`, `version.go` — top-level package: the
   `Map_t` type, the `Decoder` / `Encoder` interfaces, sentinel
-  errors, and `Version()` (semver, currently `0.43.0-alpha`).
+  errors, and `Version()` (semver, currently `0.44.0-alpha`).
 - `xmlio/` — XML decode/encode entry points and shared transforms
   (`decoder.go`, `encoder.go`, `xml_header.go`).
   - `xmlio/internal/v1_06/` — H2025 (schema 1.06) decoder, encoder, and
     schema types; the only codec.
-- `hexg/` — hex-grid math (cube/offset/doubled coordinates, layouts,
-  orientations, TribeNet adapter). See [hexg/HEXES.md](./hexg/HEXES.md).
+- Hex-grid math (cube/offset coordinates, layouts) is the external module
+  `github.com/maloquacious/hexg`; `Tile_t.Coords` is a `hexg.Hex`, and
+  `Map_t.GridOrientation()` derives the offset layout from `HexOrientation`.
 - `cmd/` — CLI tools used to exercise the package: `bounds`, `copy`,
   `import`, `info`, `merge`, `resize`, `schema`, `server`, `version`, and
   the umbrella `wxx` tool (subcommands: `export`).
@@ -107,5 +108,5 @@ dist/local/wxx export --utf-8 out.xml path/to/file.wxx
 ## Validation
 
 - `go build ./...` — compile everything.
-- `go test ./...` — run unit tests (notably under `hexg/`).
+- `go test ./...` — run unit tests.
 - `go vet ./...` — sanity check before declaring work done.

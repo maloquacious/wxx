@@ -57,26 +57,11 @@ func (m *Map_t) Validate() error {
 
 	var problems []error
 
-	// The orientation, and the second copy of it.
-	//
-	// HexOrientation is the string the file states and the one the encoder
-	// switches on; GridOrientation is the hexg coordinate convention the decoder
-	// sets from it in the same switch. Two fields holding one fact can disagree,
-	// and a map that says COLUMNS in one and odd-r in the other describes no
-	// hex grid that exists. The unset zero value (UnknownQR) is caught by the
-	// same check, which is intended: a caller who set only the string has not
-	// finished building the map.
+	// The orientation. HexOrientation is the only field that holds it; the
+	// hexg layout is derived from it by GridOrientation (issue #52), so there
+	// is no second copy to disagree with it.
 	switch m.HexOrientation {
-	case "COLUMNS":
-		if !m.GridOrientation.IsColumns() {
-			problems = append(problems, errors.Join(ErrMismatchedGridOrientation,
-				fmt.Errorf("hexOrientation %q with gridOrientation %s: want even-q or odd-q", m.HexOrientation, m.GridOrientation)))
-		}
-	case "ROWS":
-		if !m.GridOrientation.IsRows() {
-			problems = append(problems, errors.Join(ErrMismatchedGridOrientation,
-				fmt.Errorf("hexOrientation %q with gridOrientation %s: want even-r or odd-r", m.HexOrientation, m.GridOrientation)))
-		}
+	case "COLUMNS", "ROWS":
 	default:
 		problems = append(problems, errors.Join(ErrInvalidHexOrientation,
 			fmt.Errorf("hexOrientation %q: want \"COLUMNS\" or \"ROWS\"", m.HexOrientation)))

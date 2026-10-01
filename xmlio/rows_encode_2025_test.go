@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/maloquacious/hexg"
 	"github.com/maloquacious/wxx"
-	"github.com/maloquacious/wxx/hexg"
 	"github.com/maloquacious/wxx/xmlio/internal/v1_06"
 )
 
@@ -40,7 +40,6 @@ func newRowsMap() *wxx.Map_t {
 	m.Type = "WORLD"
 	m.MapProjection = wxx.FLAT
 	m.HexOrientation = "ROWS"
-	m.GridOrientation = hexg.OddR
 
 	// Required non-nil substructures so the encoder does not nil-deref.
 	// The grid colors are the samples' value: the encoder refuses a color it
@@ -76,7 +75,7 @@ func newRowsMap() *wxx.Map_t {
 			t := &wxx.Tile_t{
 				Column:    x,
 				Row:       y,
-				Coords:    hexg.NewOddRCoord(x, y).ToCube(),
+				Coords:    hexg.NewOffsetCoord(x, y).ROffsetToCube(true),
 				Terrain:   x*tilesHigh + y, // distinct, position-sensitive, and listed
 				Elevation: float64(100*x + y),
 				IsIcy:     (x+y)%2 == 0,
@@ -116,8 +115,8 @@ func TestW2025RowsRoundTrip(t *testing.T) {
 	if got, want := m2.HexOrientation, "ROWS"; got != want {
 		t.Errorf("HexOrientation = %q, want %q", got, want)
 	}
-	if got, want := m2.GridOrientation, hexg.OddR; got != want {
-		t.Errorf("GridOrientation = %v, want %v", got, want)
+	if got, ok := m2.GridOrientation(); got != hexg.OddR || !ok {
+		t.Errorf("GridOrientation() = (%v, %v), want (%v, true)", got, ok, hexg.OddR)
 	}
 
 	// Grid dimensions must round-trip.

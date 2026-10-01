@@ -8,3 +8,5 @@ require (
 )
 
 require github.com/peterbourgon/ff/v4 v4.0.0-beta.1
+
+require github.com/maloquacious/hexg v1.3.0

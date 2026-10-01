@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/maloquacious/wxx"
-	"github.com/maloquacious/wxx/hexg"
 	"github.com/maloquacious/wxx/xmlio"
 )
 
@@ -280,7 +279,7 @@ func rowsMap(t *testing.T) string {
 	if err != nil {
 		t.Fatalf("read fixture: %v", err)
 	}
-	m.HexOrientation, m.GridOrientation = "ROWS", hexg.OddR
+	m.HexOrientation = "ROWS"
 	m.HexWidth, m.HexHeight = 40, 46.18
 	feature := layers.Features[0]
 	feature.Location.X, feature.Location.Y = 1050, 1050
