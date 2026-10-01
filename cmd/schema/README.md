@@ -34,15 +34,26 @@ inferred schema instead.
 
 ## XML Schema Versions
 
-The tool supports two Worldographer versions:
+The tool supports Worldographer 2025 files (XML 1.1), which state
+`release="2025"`, the application version and the schema version in the `map`
+element, e.g. `release="2025" version="2.06" schema="1.06"`. It reports them
+before the hierarchy:
 
-**Worldographer Classic (XML 1.0)**
-- No schema version attribute
-- Uses release "2017", version "1.74", schema "1.0"
+```
+	W2025: version 2.06: schema 1.06
+```
 
-**Worldographer 2025 (XML 1.1)**  
-- Includes schema version in map element
-- Uses release "2025", version "2.06", schema "1.06"
+A classic (Worldographer 1.x, XML 1.0) file states no release and no schema.
+wxx no longer reads classic files (issue #103), and `schema` refuses one as the
+decoder does, after the transport summary and before inferring anything:
+
+```bash
+go run ./cmd/schema testdata/2017-1.77-1.0-columns-blank.wxx
+```
+```
+	classic (Worldographer 1.x) map: convert it in Worldographer 2025 first
+map: version "1.77": no release
+```
 
 ## Generated Code Conventions
 

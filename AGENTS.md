@@ -13,9 +13,12 @@ compressed and UTF-16 big-endian encoded, with a BOM.
 Two generations of the program produce WXX files; we name them by year:
 
 1. **H2017** — original "Worldographer" / "Worldographer classic". XML 1.0,
-   no schema version attribute on `<map>`.
+   no schema version attribute on `<map>`. **wxx no longer reads or writes
+   it** (issue #103, [ADR 0005](./docs/adr/0005-remove-classic-format.md)):
+   the decoder refuses a classic file with `wxx.ErrClassicMap`, and
+   Worldographer 2025 converts a classic map itself.
 2. **H2025** — "Worldographer 2025". XML 1.1, schema version stored as an
-   attribute of `<map>`.
+   attribute of `<map>`. The only format wxx supports.
 
 Track schema differences in package docs as they are discovered; upstream
 documentation is sparse.
@@ -23,12 +26,12 @@ documentation is sparse.
 ## Repository layout
 
 - `wxx.go`, `map.go`, `errors.go`, `version.go` — top-level package: the
-  `Map_t` superset type, the `Decoder` / `Encoder` interfaces, sentinel
-  errors, and `Version()` (semver, currently `0.41.0-alpha`).
+  `Map_t` type, the `Decoder` / `Encoder` interfaces, sentinel
+  errors, and `Version()` (semver, currently `0.43.0-alpha`).
 - `xmlio/` — XML decode/encode entry points and shared transforms
   (`decoder.go`, `encoder.go`, `xml_header.go`).
-  - `xmlio/internal/v0_77/` — H2017 decoder, encoder, and schema types.
-  - `xmlio/internal/v1_06/` — H2025 decoder (encoder pending).
+  - `xmlio/internal/v1_06/` — H2025 (schema 1.06) decoder, encoder, and
+    schema types; the only codec.
 - `hexg/` — hex-grid math (cube/offset/doubled coordinates, layouts,
   orientations, TribeNet adapter). See [hexg/HEXES.md](./hexg/HEXES.md).
 - `cmd/` — CLI tools used to exercise the package: `bounds`, `copy`,
@@ -49,15 +52,15 @@ documentation is sparse.
 - Follow [CODECS.md](./CODECS.md): `Decode(io.Reader) (*Map_t, error)` and
   `Encode(io.Writer, *Map_t) error`; expose transforms (gunzip, UTF-16↔UTF-8,
   XML header fix) as composable functions; tune behavior via options.
-- `Map_t` is a superset of all known schema versions. Decoders populate it;
-  encoders consume it. Never narrow `Map_t` to a single schema.
+- `Map_t` models the H2025 format, the only one wxx reads. Decoders populate
+  it; encoders consume it. It carries no fields for formats wxx does not read.
 - **An encoder takes an application version, never a schema version, and hands
   out no codec** (issue #41). A caller names a target only by its verbatim
   `map/@version` string — `xmlio.MarshalXML(m, "2.06")` or
-  `xmlio.WithTargetVersion("2.06")` — and the registry resolves it to exactly one
-  release, whose schema then selects the codec. There is no public way to name a
-  schema or hold an encoder: `xmlio.Release_t` is a read-only descriptor, and the
-  schema→codec selector lives in `xmlio/internal/codec`.
+  `xmlio.NewEncoder("2.06")` — and the registry in `xmlio/codecs.go` resolves it
+  to the one codec that accepts it, which writes that version's identity. There
+  is no public way to name a schema or hold an encoder: the codecs and the
+  `codec.Codec` interface live under `xmlio/internal/`.
   - Do not add a public symbol that accepts a schema or returns a codec. Tests
     that legitimately choose an encoder import `xmlio/internal/...` directly —
     `package xmlio_test` lives inside `xmlio/`, and Go's internal rule is

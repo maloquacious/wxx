@@ -6,6 +6,12 @@
 > was already comprehensive and the *encoder* was the incomplete side — the
 > opposite of this plan's premise. Kept for its schema-analysis and
 > definition-of-done notes; do not treat it as the current roadmap.
+>
+> **Classic support has since been removed.** Issue #103 deleted the H2017
+> codec (`xmlio/internal/v0_77/`) this plan copies from and cross-checks
+> against; wxx now reads and writes W2025 only and refuses a classic file (see
+> [ADR 0005](adr/0005-remove-classic-format.md)). References below to `v0_77`,
+> H2017 tests and H2017 round-trips describe the tree as it was in Feb 2026.
 
 This document is the implementation plan for adding full W2025 (Worldographer 2025) decoding support to the wxx package. The W2025 app is out of beta (Inkwell is tagging it as v2) and the prior H2017 format (v1.77) is at end of life.
 

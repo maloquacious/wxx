@@ -13,6 +13,10 @@ Inkwell calls it "Worldographer 2025," so we use "W2025" as the code for the XML
 
 These codes (H2017 and W2025) help us keep the XML schema versions straight.
 
+This package reads and writes W2025 files only.
+Support for H2017 files was removed by issue #103 (see `docs/adr/0005-remove-classic-format.md`);
+the decoder refuses an H2017 file with `wxx.ErrClassicMap` and asks the user to convert it in Worldographer 2025 first.
+
 We generally call either version "Worldographer."
 
 == Data Format Versioning
@@ -28,8 +32,8 @@ W2025 file carries `version="2.06"` alongside `schema="1.06"`.
 1. map.release is only in W2025 files and identifies the Worldographer application major version.
 2. map.version is in both files and identifies the application minor version.
 3. map.schema identifies the XML Schema version. It is present in W2025 files;
-   classic (H2017) files omit it, so their schema version is implicit (inferred
-   from the absence of `release`/`schema` plus a `1.x` `version`).
+   classic (H2017) files omit it. The decoder recognizes a classic file by the
+   absence of `release` plus a `1.x` `version`, and refuses it.
 
 
 The following table maps values from the XML data to the WXX Package Schema Version.
@@ -37,13 +41,13 @@ The following table maps values from the XML data to the WXX Package Schema Vers
 |===
 |Encoding|map.release|map.version|map.schema|WXX Package Schema Version
 
-|UTF-16/BE||1.77||1.0.0
 |UTF-16/BE|2025|2.06|1.06|1.6.0
 |===
 
 [NOTE]
 ====
 Only the combinations of values listed in the table are supported by this package.
+A classic file (no `release`, a `1.x` `version` such as `1.77`, no `schema`) is refused on read.
 ====
 
 == Design Notes

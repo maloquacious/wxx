@@ -7,6 +7,13 @@ carrying into a single consolidated project (`github.com/maloquacious/wxx`).
 Dates are the last git commit (or go.mod mtime where no git history exists).
 "Integration" = whether Worldographer/WXX is the project's core purpose or a side feature.
 
+> **Historical record.** This inventory and its Track B outcomes describe the tree
+> as it was during issue #8. Classic (H2017) support has since been removed by
+> issue #103 ([ADR 0005](adr/0005-remove-classic-format.md)): `xmlio/internal/v0_77/`
+> and its coverage matrix no longer exist, wxx refuses classic files, and `Map_t`
+> models W2025 only. References below to classic dispatch, `v0_77` and `Map_t` as a
+> superset are as of that time.
+
 ---
 
 ## Tier 1 — Dedicated / independent WXX codecs (the format knowledge)
