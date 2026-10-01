@@ -255,7 +255,7 @@ func (e *Encoder) Encode(w io.Writer, m *wxx.Map_t) error {
 		}
 		data = bdup(buf.Bytes())
 		if e.opts.diagnostics != nil {
-			e.opts.diagnostics.Utf16Encoded = bdup(data)
+			e.opts.diagnostics.Compressed = bdup(data)
 		}
 	}
 
