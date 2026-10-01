@@ -26,3 +26,4 @@ forced it, the options weighed, and the consequences.
 | [0003](0003-version-axes.md) | Application version and schema version are independent axes | Accepted (2026-07-15) |
 | [0004](0004-version-struct-and-release-registry.md) | Version identity: `{App, Schema}` plus a supported-release registry | Accepted (2026-07-15), Decision 3 amended by #45, Decision 1 amended by #38 |
 | [0005](0005-remove-classic-format.md) | Remove the classic (H2017 / Worldographer 1.x) format | Accepted (2026-09-30); affects 0001 (classic exemption moot), 0003 (implicit-schema example), 0004 Decisions 2, 3, 4, 6 and 7 (no classic target); Decision 4 reversed by #72 (classic grammar removed) |
+| [0006](0006-gzip-standard-library-default-level.md) | gzip: the standard library, at level 6 by default | Accepted (2026-10-01) |
