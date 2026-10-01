@@ -80,7 +80,7 @@ func integerSpelledPoint(p map[string]string) bool {
 }
 
 // TestW2025ShapesMatchSource decodes each notes-and-shapes fixture, encodes it
-// as "2.06", and compares every <shape> element the encoder wrote with the
+// as the version it states (2.08 as "2.06"; see sameVersionTarget), and compares every <shape> element the encoder wrote with the
 // source's: the start tag's attributes and each <p>'s, as the strings the
 // documents spell (issue #94). So @fillRule and p/@type must be present
 // exactly where the source has them, the four @extraLine* must survive, and a
@@ -99,7 +99,7 @@ func TestW2025ShapesMatchSource(t *testing.T) {
 	for _, fixture := range fixtures {
 		t.Run(fixture, func(t *testing.T) {
 			src, m := readNotesFixture(t, fixture)
-			out, err := xmlio.MarshalXML(m, "2.06")
+			out, err := xmlio.MarshalXML(m, sameVersionTarget(t, fixture))
 			if err != nil {
 				t.Fatalf("MarshalXML: %v", err)
 			}

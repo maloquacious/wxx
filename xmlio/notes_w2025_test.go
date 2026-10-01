@@ -117,7 +117,7 @@ func readNotesFixture(t *testing.T, fixture string) ([]byte, *wxx.Map_t) {
 }
 
 // TestW2025NotesMatchSource decodes each notes-and-shapes fixture, encodes it
-// as "2.06", and compares every <note> element the encoder wrote with the
+// as the version it states (2.08 as "2.06"; see sameVersionTarget), and compares every <note> element the encoder wrote with the
 // source's: the start tag's attributes, the <notetext> body and the
 // <location>'s attributes (issue #94). Attribute order and whitespace are not
 // compared; which attributes are present, and their values, are.
@@ -132,7 +132,7 @@ func TestW2025NotesMatchSource(t *testing.T) {
 	for _, fixture := range notesShapesFixtures {
 		t.Run(fixture, func(t *testing.T) {
 			src, m := readNotesFixture(t, fixture)
-			out, err := xmlio.MarshalXML(m, "2.06")
+			out, err := xmlio.MarshalXML(m, sameVersionTarget(t, fixture))
 			if err != nil {
 				t.Fatalf("MarshalXML: %v", err)
 			}

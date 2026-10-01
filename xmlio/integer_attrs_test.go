@@ -182,7 +182,11 @@ func TestW2025IntegerAttributeSpelling(t *testing.T) {
 	fixtures := []string{
 		"2025-2.06-13x11-941577-blank.wxx",
 		"2025-2.06-13x11-941577-layers-beta.wxx",
+		"2025-2.07-13x11-941577-blank.wxx",
+		"2025-2.07-13x11-941577-layers.wxx",
 		"2025-2.07-13x11-941577-notes-shapes.wxx",
+		"2025-2.07-13x11-941577-resources.wxx",
+		"2025-2.07-13x11-941577-rows.wxx",
 	}
 	for _, fixture := range fixtures {
 		t.Run(fixture, func(t *testing.T) {
@@ -207,7 +211,7 @@ func TestW2025IntegerAttributeSpelling(t *testing.T) {
 			}
 			var ed xmlio.EncoderDiagnostics
 			var buf bytes.Buffer
-			if err := xmlio.NewEncoder("2.06", xmlio.WithEncoderDiagnostics(&ed)).Encode(&buf, m); err != nil {
+			if err := xmlio.NewEncoder(sameVersionTarget(t, fixture), xmlio.WithEncoderDiagnostics(&ed)).Encode(&buf, m); err != nil {
 				t.Fatalf("encode %s: %v", fixture, err)
 			}
 			total += auditIntegerSpelling(t, fixture, dd.Converted, ed.Utf8Encoded)

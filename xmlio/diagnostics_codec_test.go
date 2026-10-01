@@ -33,6 +33,7 @@ func TestDecoderDiagnostics_CodecAndSchema(t *testing.T) {
 		// A W2025 file states a schema, so both fields carry a value.
 		{"w2025 2.06 blank", "../testdata/2025-2.06-13x11-941577-blank.wxx", "v1_06", "1.06"},
 		{"w2025 2.06 layers beta", "../testdata/2025-2.06-13x11-941577-layers-beta.wxx", "v1_06", "1.06"},
+		{"w2025 2.07 notes-shapes", sample2025_207NotesShapes, "v1_06", "1.06"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			f, err := os.Open(tc.path)

@@ -32,6 +32,7 @@ func TestDecoderDiagnostics_HeaderAndDataSplit(t *testing.T) {
 		path string
 	}{
 		{"w2025 2.06 layers beta", "../testdata/2025-2.06-13x11-941577-layers-beta.wxx"},
+		{"w2025 2.07 notes-shapes", sample2025_207NotesShapes},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			f, err := os.Open(tc.path)

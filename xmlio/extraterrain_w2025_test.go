@@ -30,9 +30,10 @@ var extraTerrainElement = regexp.MustCompile(`(?s)<extraTerrain>.*?</extraTerrai
 // ("225.0,150.0", "Z", "false") and whitespace. Byte equality is affordable here
 // because every sample lays the element out the same way.
 //
-// Every sample is encoded as 2.06, including the 2.07 and 2.08 ones: 2.06 is
-// the only W2025 target registered until issue #73 adds theirs. All three write
-// <extraTerrain> the same way, so the comparison still holds.
+// Every sample is encoded as the version it states, except the 2.08 one, which
+// is encoded as 2.06 until issue #73 registers 2.08 (see sameVersionTarget).
+// All three builds write <extraTerrain> the same way, so that comparison still
+// holds.
 func TestW2025ExtraTerrainMatchesSource(t *testing.T) {
 	type pair struct{ in, out []byte }
 	cases := map[string]func(t *testing.T) pair{}
@@ -40,7 +41,11 @@ func TestW2025ExtraTerrainMatchesSource(t *testing.T) {
 		"2025-2.06-13x11-941577-blank.wxx",
 		"2025-2.06-13x11-941577-layers-beta.wxx",
 		"2025-2.06-13x11-941577-layers.wxx",
+		"2025-2.07-13x11-941577-blank.wxx",
 		"2025-2.07-13x11-941577-layers.wxx",
+		"2025-2.07-13x11-941577-notes-shapes.wxx",
+		"2025-2.07-13x11-941577-resources.wxx",
+		"2025-2.07-13x11-941577-rows.wxx",
 		"2025-2.08-13x11-941577-layers.wxx",
 	} {
 		cases[fixture] = func(t *testing.T) pair {
@@ -56,7 +61,7 @@ func TestW2025ExtraTerrainMatchesSource(t *testing.T) {
 			}
 			var ed xmlio.EncoderDiagnostics
 			var buf bytes.Buffer
-			if err := xmlio.NewEncoder("2.06", xmlio.WithEncoderDiagnostics(&ed)).Encode(&buf, m); err != nil {
+			if err := xmlio.NewEncoder(sameVersionTarget(t, fixture), xmlio.WithEncoderDiagnostics(&ed)).Encode(&buf, m); err != nil {
 				t.Fatalf("encode %s: %v", fixture, err)
 			}
 			return pair{dd.Converted, ed.Utf8Encoded}

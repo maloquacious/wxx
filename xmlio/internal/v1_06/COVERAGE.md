@@ -47,7 +47,8 @@ Tests referenced (in `xmlio/roundtrip_2025_test.go` unless noted, package
 - **NotesShapesRoundTrip** = `TestW2025NotesShapesRoundTrip` (in-memory codec
   over `testdata/2025-2.07-13x11-941577-notes-shapes.wxx`, which fills the
   features, inline labels, shapes, notes and `<extraTerrain>` placements the
-  blank sample leaves empty; encoded as 2.06, so `MetaData` is not compared)
+  blank sample leaves empty; encoded as 2.07, the version it states, so
+  `MetaData` is compared with the rest)
 - **NotesShapesPublicRoundTrip** = `TestW2025NotesShapesPublicRoundTrip` (full
   gzip/UTF-16/header pipeline over the same 2.07 map, proving the transport
   layers round-trip shapes/notes/features/labels too)

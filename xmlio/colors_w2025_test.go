@@ -33,7 +33,7 @@ var populatedFixtures = []string{
 }
 
 // TestW2025FeatureBlackColorMatchesSource decodes each populated map, encodes
-// it as "2.06", and requires every <feature>'s @color to come out as the
+// it as the version it states (2.08 as "2.06"; see sameVersionTarget), and requires every <feature>'s @color to come out as the
 // source spells it (issue #99). Each map's cathedral on hex (2,1) has
 // Override Color set to Black, which the app writes as "0.0,0.0,0.0,1.0"; wxx
 // used to fold that into the same nil as "null" and write it back as "null",
@@ -44,7 +44,7 @@ func TestW2025FeatureBlackColorMatchesSource(t *testing.T) {
 	for _, fixture := range populatedFixtures {
 		t.Run(fixture, func(t *testing.T) {
 			src, m := readNotesFixture(t, fixture)
-			out, err := xmlio.MarshalXML(m, "2.06")
+			out, err := xmlio.MarshalXML(m, sameVersionTarget(t, fixture))
 			if err != nil {
 				t.Fatalf("MarshalXML: %v", err)
 			}
@@ -165,7 +165,8 @@ func ringAttr(attrs [][2]string) (int, string, string) {
 }
 
 // TestW2025FeatureRingColorMatchesSource decodes each W2025 fixture that has
-// features, encodes it as "2.06", and requires every <feature>'s ring colour
+// features, encodes it as the version it states (2.08 as "2.06"; see
+// sameVersionTarget), and requires every <feature>'s ring colour
 // to come out with the source's name, value and position (issue #100). The
 // app writes ringcolor="null" when no ring colour is set and ringColor when
 // one is; wxx read only the first, so a set ring colour was lost. The
@@ -177,7 +178,7 @@ func TestW2025FeatureRingColorMatchesSource(t *testing.T) {
 	for _, fixture := range fixtures {
 		t.Run(fixture, func(t *testing.T) {
 			src, m := readNotesFixture(t, fixture)
-			out, err := xmlio.MarshalXML(m, "2.06")
+			out, err := xmlio.MarshalXML(m, sameVersionTarget(t, fixture))
 			if err != nil {
 				t.Fatalf("MarshalXML: %v", err)
 			}
