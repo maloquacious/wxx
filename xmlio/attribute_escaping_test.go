@@ -21,7 +21,9 @@ const hostile = "Salt & \"Pepper\" <Isles> 'n' tab\there\nnew line café"
 
 // TestAttributeEscaping asserts that user text containing XML's markup
 // characters is written as a well-formed attribute and reads back unchanged,
-// through both codecs (issue #71).
+// through both codecs (issue #71). Both write the é as caf&#233;, the decimal
+// character reference Worldographer writes for every non-ASCII attribute
+// character in classic and W2025 files alike (issue #96).
 //
 // The bug this pins: every attribute was written with fmt's %q, a Go string
 // literal. A title of `Salt & "Pepper"` came out as title="Salt & \"Pepper\"",
@@ -38,16 +40,12 @@ func TestAttributeEscaping(t *testing.T) {
 	for _, tc := range []struct {
 		fixture string
 		app     string
-		// nonASCII is how the codec must spell the é: classic Worldographer
-		// writes every non-ASCII attribute character as a decimal character
-		// reference, and no W2025 sample shows it escaping one.
-		nonASCII string
 		// lore reports whether the codec writes <information>. The classic
 		// encoder does not yet (v0_77/COVERAGE.md).
 		lore bool
 	}{
-		{fixture: "2025-2.06-13x11-941577-layers-beta.wxx", app: "2.06", nonASCII: "café", lore: true},
-		{fixture: "2017-1.77-1.0-columns-blank.wxx", app: "1.77", nonASCII: "caf&#233;"},
+		{fixture: "2025-2.06-13x11-941577-layers-beta.wxx", app: "2.06", lore: true},
+		{fixture: "2017-1.77-1.0-columns-blank.wxx", app: "1.77"},
 	} {
 		t.Run(tc.fixture, func(t *testing.T) {
 			m, err := xmlio.ReadFile(filepath.Join("..", "testdata", tc.fixture))
@@ -98,7 +96,7 @@ func TestAttributeEscaping(t *testing.T) {
 				t.Fatalf("encode: %v", err)
 			}
 
-			want := `"Salt &amp; &quot;Pepper&quot; &lt;Isles&gt; 'n' tab&#9;here&#10;new line ` + tc.nonASCII + `"`
+			want := `"Salt &amp; &quot;Pepper&quot; &lt;Isles&gt; 'n' tab&#9;here&#10;new line caf&#233;"`
 			if got := strings.Count(string(ed.Utf8Encoded), want); got != len(targets) {
 				t.Errorf("found the escaped value %d time(s), want %d (one per target): %s", got, len(targets), want)
 			}
