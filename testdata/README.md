@@ -303,3 +303,22 @@ Tests
 Before saving, ensure all layers are visible, GM Only: Show is checked, Grid: Show/Numbers/Shadows are checked.
 
 Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-populated.wxx
+
+## CDATA guard
+
+Tests how Worldographer stores a typed `]]>`, the sequence that ends a CDATA
+section (issue #107). It is typed into every text field that can hold it:
+
+- a feature label (Building Cathedral)
+- a standalone `<labels>` entry
+- a note's title and body (on a Building Waystation)
+- three lore bodies in World Information: Intro, the Nation entry, and Timelines
+
+The app never writes `]]>` inside CDATA. The note and lore editors store it as
+`]]&gt;` inside the CDATA body, and label text, which is not CDATA, is written
+as escaped text: `]]&gt;`. Note titles are attributes and spell it the same
+way.
+
+Saved as testdata/2025-2.06-13x11-941577-cdata-guard.wxx. The lore entries
+were added in a second session, so the file has been saved twice
+(`mapkey/@viewlevel="WORLD"`); nothing it pins depends on that.

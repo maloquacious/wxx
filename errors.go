@@ -13,6 +13,7 @@ func (e Error) Error() string {
 const (
 	ErrAmbiguousAppCodec           = Error("ambiguous application version codec")
 	ErrAttributeSpelledTwice       = Error("attribute stated in two spellings")
+	ErrCDATATerminator             = Error("text contains the CDATA terminator \"]]>\"")
 	ErrClassicMap                  = Error("classic (Worldographer 1.x) map: convert it in Worldographer 2025 first")
 	ErrFSError                     = Error("file-system")
 	ErrGUnZipFailed                = Error("gunzip failed")

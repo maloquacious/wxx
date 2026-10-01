@@ -87,6 +87,12 @@ func encodeNotes(notes []*wxx.Note_t, wb *bytes.Buffer) error {
 			return errors.Join(wxx.ErrNoteWithoutLocation,
 				fmt.Errorf("map/notes/note[%d] (title %q): Location is nil", i+1, note.Title))
 		}
+		// The app's note editor stores a typed "]]>" as "]]&gt;", so it never
+		// writes the terminator inside <notetext> (issue #107).
+		if strings.Contains(note.NoteText, cdataTerminator) {
+			return errors.Join(wxx.ErrCDATATerminator,
+				fmt.Errorf("map/notes/note[%d] (title %q): notetext holds %q", i+1, note.Title, cdataTerminator))
+		}
 	}
 	wb.WriteString("<notes>\n")
 	for _, note := range notes {
@@ -115,9 +121,9 @@ func encodeNote(note *wxx.Note_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(" title=%s", xmlAttr(note.Title)))
 	wb.WriteString(">\n")
 	// notetext is CDATA HTML; emit it verbatim so the round-trip preserves it.
-	wb.WriteString("<notetext><![CDATA[")
-	wb.WriteString(note.NoteText)
-	wb.WriteString("]]></notetext>")
+	wb.WriteString("<notetext>")
+	writeCDATA(wb, note.NoteText)
+	wb.WriteString("</notetext>")
 	wb.WriteString("<location")
 	wb.WriteString(fmt.Sprintf(" viewLevel=%s", xmlAttr(note.Location.ViewLevel)))
 	wb.WriteString(fmt.Sprintf(" x=%s", xmlAttr(floats(note.Location.X))))

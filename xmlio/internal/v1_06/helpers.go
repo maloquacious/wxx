@@ -3,6 +3,7 @@
 package v1_06
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"html"
@@ -192,9 +193,24 @@ func tileTerrain(remap map[int]int, tile *wxx.Tile_t) (int, error) {
 	return index, nil
 }
 
+// encodeInnerText renders s as escaped character data. Worldographer writes
+// label text this way: testdata/2025-2.06-13x11-941577-cdata-guard.wxx has a
+// label reading `]]&gt;`. Lore bodies and note text are CDATA instead, written
+// by writeCDATA.
 func encodeInnerText(input string) string {
 	escaped := html.EscapeString(input) // Escapes < > & "
 	return strings.ReplaceAll(escaped, "\n", "&#10;")
+}
+
+// cdataTerminator ends a CDATA section, so no CDATA body may hold it.
+const cdataTerminator = "]]>"
+
+// writeCDATA writes s verbatim as one CDATA section. The caller has refused
+// any s holding cdataTerminator (issue #107).
+func writeCDATA(wb *bytes.Buffer, s string) {
+	wb.WriteString("<![CDATA[")
+	wb.WriteString(s)
+	wb.WriteString("]]>")
 }
 
 // xmlAttr renders s as a double-quoted XML attribute value (issue #71).
