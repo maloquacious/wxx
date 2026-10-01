@@ -57,6 +57,15 @@ func checkFixtures(t *testing.T, g *grammar, glob string) {
 	if err != nil {
 		t.Fatalf("glob %q: %v", glob, err)
 	}
+	// Worldographer leaves a *-autosave.wxx beside the map it saves, even
+	// after a clean exit; it is git-ignored and never a fixture.
+	fixtures := paths[:0]
+	for _, path := range paths {
+		if !strings.HasSuffix(path, "-autosave.wxx") {
+			fixtures = append(fixtures, path)
+		}
+	}
+	paths = fixtures
 	if len(paths) < minFixtures {
 		t.Fatalf("glob %q matched %d fixtures, want at least %d: the check would pass vacuously", glob, len(paths), minFixtures)
 	}

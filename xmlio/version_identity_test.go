@@ -39,6 +39,7 @@ var versionIdentitySamples = []struct {
 	{"w2025 2.08 populated", sample2025_208Populated, "2.08", 2, 8, "1.06"},
 	{"w2025 2.08 resources", sample2025_208Resources, "2.08", 2, 8, "1.06"},
 	{"w2025 2.08 rows", sample2025_208Rows, "2.08", 2, 8, "1.06"},
+	{"w2025 2.08 tile-resources", sample2025_208TileResources, "2.08", 2, 8, "1.06"},
 }
 
 // TestVersionIdentity asserts that decoding populates MetaData.Version with the

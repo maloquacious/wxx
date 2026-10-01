@@ -99,7 +99,7 @@ A fixture the test reads must live in `testdata/` and be tracked.
   Before you write one in a comment, doc, issue or commit message, check the
   fixture bytes with the `gunzip | iconv` command above.
 - **When a file contradicts an inferred rule, suspect the grammar first.** The
-  grammar is built from six saves; the app wrote the file.
+  grammar is built from seven saves; the app wrote the file.
 - **Do not infer the format from Go structs.** `Map_t` and the codec's schema
   types show what wxx models, not what the file holds.
 
@@ -129,10 +129,8 @@ row first (grammar: `TileRow`, observed: all). The `rows` fixture is a ROWS map
 and still has 13 tilerows of 11 records. A 2.08 ROWS map 1 wide by 11 high
 holds one tilerow of 11 records (#85). Orientation changes only how hexes are
 drawn: COLUMNS staggers odd columns down, ROWS staggers odd rows right (#80,
-recorded in a comment on #72). The meaning of the tab-separated fields in a
-tile record is TBD in the grammar; the codec's
-[`tiles.go`](../xmlio/internal/v1_06/tiles.go) holds wxx's current reading of
-them, which this directory has not verified.
+recorded in a comment on #72). The tab-separated fields of a tile record,
+each with its source, are listed in the grammar (`TileRow`, #117).
 
 **Colors have two spellings** (grammar header, *COLORS*):
 
