@@ -30,8 +30,13 @@ import (
 func (m *Map_t) validateColors() []error {
 	var first error
 	count := 0
+	// outOfRange guards the two loops that run once per tile or placement, so
+	// they format a field name only for a colour that fails. Formatting it
+	// unconditionally cost about 2 million Sprintf calls and 250 MB per
+	// Validate on a 1920 x 1080 map (issue #142).
+	outOfRange := func(c *RGBA_t) bool { return c != nil && !c.inRange() }
 	check := func(path, field string, c *RGBA_t) {
-		if c == nil || c.inRange() {
+		if !outOfRange(c) {
 			return
 		}
 		count++
@@ -43,7 +48,7 @@ func (m *Map_t) validateColors() []error {
 	if m.Tiles != nil {
 		for x, column := range m.Tiles.Tiles {
 			for y, tile := range column {
-				if tile != nil {
+				if tile != nil && outOfRange(tile.CustomBackgroundColor) {
 					check("map/tiles/tilerow", fmt.Sprintf("Tiles_t.Tiles[%d][%d].CustomBackgroundColor", x, y), tile.CustomBackgroundColor)
 				}
 			}
@@ -55,7 +60,7 @@ func (m *Map_t) validateColors() []error {
 				continue
 			}
 			for j, tl := range layer.Terrain {
-				if tl != nil {
+				if tl != nil && outOfRange(tl.CustomBackgroundColor) {
 					check(fmt.Sprintf("map/extraTerrain/mapLayer[@name=%q]/terrainAndLocation[%d]/@bgColor", layer.Name, j),
 						fmt.Sprintf("ExtraTerrain_t.MapLayers[%d].Terrain[%d].CustomBackgroundColor", i, j), tl.CustomBackgroundColor)
 				}

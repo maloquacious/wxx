@@ -201,10 +201,12 @@ func (e *Encoder) Encode(w io.Writer, m *wxx.Map_t) error {
 		e.opts.diagnostics.Dropped = dropped
 	}
 
-	// marshal the Map_t to UTF‑8 XML. The target is named by its verbatim
-	// application version, the only way to name one: MarshalXML resolves it back
-	// to this same codec.
-	data, err := MarshalXML(m, e.app)
+	// marshal the Map_t to UTF‑8 XML. This calls the codec resolved above rather
+	// than MarshalXML, which would resolve the same codec and run Validate and
+	// downgradeLoss a second time: on a 1920 x 1080 map that repeat cost about
+	// 0.2 s and 330 MB per encode (issue #142). Both checks have run above, so
+	// MarshalXML's would add nothing.
+	data, err := c.Encode(m, e.app)
 	if err != nil {
 		return err
 	}

@@ -218,3 +218,44 @@ func TestValidateColorsCountsTheRest(t *testing.T) {
 		t.Errorf("Validate() = %v, want a message containing %q", err, want)
 	}
 }
+
+// TestValidateDoesNotAllocatePerTile pins issue #142: a map whose colours are
+// all in range costs Validate the same allocations at any size. validateColors
+// used to format a field name for every tile and every <extraTerrain>
+// placement before checking the colour, about 2 million Sprintf calls and
+// 250 MB per Validate on a 1920 x 1080 map.
+//
+// Every tile and placement carries an in-range colour, so the check reaches
+// each one rather than skipping a nil.
+func TestValidateDoesNotAllocatePerTile(t *testing.T) {
+	sized := func(tilesWide, tilesHigh, placements int) *Map_t {
+		m := validMap()
+		m.Tiles = &Tiles_t{TilesWide: tilesWide, TilesHigh: tilesHigh}
+		for x := 0; x < tilesWide; x++ {
+			column := make([]*Tile_t, tilesHigh)
+			for y := range column {
+				column[y] = &Tile_t{CustomBackgroundColor: &RGBA_t{R: 0.5, G: 0.5, B: 0.5, A: 1}}
+			}
+			m.Tiles.Tiles = append(m.Tiles.Tiles, column)
+		}
+		layer := &ExtraTerrainLayer_t{Name: "Below All"}
+		for range placements {
+			layer.Terrain = append(layer.Terrain, &TerrainAndLocation_t{CustomBackgroundColor: &RGBA_t{R: 0.5, G: 0.5, B: 0.5, A: 1}})
+		}
+		m.ExtraTerrain = &ExtraTerrain_t{MapLayers: []*ExtraTerrainLayer_t{layer}}
+		return m
+	}
+	allocs := func(m *Map_t) float64 {
+		t.Helper()
+		if err := m.Validate(); err != nil {
+			t.Fatalf("Validate: %v", err)
+		}
+		return testing.AllocsPerRun(10, func() { _ = m.Validate() })
+	}
+
+	small, large := allocs(sized(2, 3, 1)), allocs(sized(200, 100, 1000))
+	if large != small {
+		t.Errorf("Validate allocates %v times on a 200x100 map with 1000 placements and %v on a 2x3 map with 1; want the same: something allocates per tile or per placement",
+			large, small)
+	}
+}
