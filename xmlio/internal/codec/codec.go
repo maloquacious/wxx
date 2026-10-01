@@ -78,4 +78,10 @@ type Codec interface {
 	// accepts, the map/@release each writes, the schema it writes, and the XML
 	// declaration its files open with. The returned set is the caller's own copy.
 	AcceptedApps() appver.Set_t
+
+	// NewMap returns a map of columns x rows Blank hexes in the orientation
+	// hexOrientation, carrying the defaults the application version app writes
+	// for a new map (issue #136). The defaults are what that build writes, so
+	// the codec that accepts it owns them. app is checked as Encode checks it.
+	NewMap(app string, columns, rows int, hexOrientation string) (*wxx.Map_t, error)
 }

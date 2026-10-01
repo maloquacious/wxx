@@ -139,6 +139,40 @@ data without the command-line tool. `Map_t.Validate()` reports a map that
 cannot be written, and every encode runs it first, so a refused map writes
 nothing ([#20](https://github.com/maloquacious/wxx/issues/20)).
 
+### Creating a map
+
+`xmlio.NewMap` returns a new map of the size you ask for, with every hex Blank
+([#136](https://github.com/maloquacious/wxx/issues/136)):
+
+```go
+m, err := xmlio.NewMap(115, 230) // 115 columns x 230 rows, COLUMNS, current version
+m, err := xmlio.NewMap(13, 11,
+	xmlio.WithHexOrientation("ROWS"), // "COLUMNS" (the default) or "ROWS"
+	xmlio.WithApp("2.07"),            // the defaults 2.07 writes
+)
+```
+
+The map carries what Worldographer writes for **File > New World/Kingdom map**
+with the suggested pixel sizes: flat projection, `WORLD` view level, the grid
+and numbering, the map key, the label and shape styles, and the eight map
+layers. `Tiles[col][row]` is filled, each tile's `Coords`, `Column` and `Row` set
+as the decoder sets them, and the terrain table holds Blank alone, at index 0.
+The result passes `Validate()`. Each dimension must be at least 2.
+
+The defaults belong to an application version, so `NewMap` takes one.
+`WithApp` names it verbatim, as `MarshalXML` does, and an unregistered version
+is the same error (`wxx.ErrUnsupportedMapVersion`). Without `WithApp`, `NewMap`
+uses `xmlio.CurrentApp()`: the newest version the registry accepts (`2.08`
+today). Registering a newer version moves it, so a tool can offer
+`-app current` and print `CurrentApp()` to say which version that means.
+
+A 13 x 11 map from `NewMap`, written as a version, is that version's
+`testdata/2025-<version>-13x11-941577-blank.wxx` written the same way, with
+two differences. Worldographer fills `<informations>` with lore generated from
+its random seed, and `NewMap` leaves it empty. The `show*` flags are UI
+settings, saved as they stood at the time (the 2.06 fixture was saved with the
+grid hidden), and `NewMap` always shows the grid and its numbers.
+
 ### Values wxx changes when it reads a file
 
 There is one place where wxx deliberately changes a value as it reads a file,
