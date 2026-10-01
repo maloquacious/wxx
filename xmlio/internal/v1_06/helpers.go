@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -32,53 +33,47 @@ func floatd(f float64) int {
 	return int(f)
 }
 
-// floatf formats a float in the style that Worldographer expects.
-// Zero values are rendered as 0.0.
-// Note: floats is probably the right function to use.
-func floatf(f float64) string {
-	const epsilon = 1e-6
-	if -epsilon < f && f <= epsilon {
-		return "0.0"
-	}
-	return fmt.Sprintf("%g", f)
-}
-
-// floats converts a float64 number to a string representation adhering
-// to certain Worldographer formatting rules.
+// floats spells a float64 the way Worldographer writes one, which is Java's
+// Double.toString:
 //
-// The function tries to represent the float in a manner that avoids scientific notation
-// while preserving the fractional part of the float. It rounds off trailing zeros and
-// ensures that there is always a digit after the decimal point.
+//   - 1e-3 <= |f| < 1e7, and zero: plain decimal with at least one fractional
+//     digit, "1234567.0", "0.1203", "-0.0".
+//   - otherwise: one digit, a point, at least one fractional digit, then "E"
+//     and the exponent with no plus sign or padding, "4.263256414560601E-14",
+//     "1.0E7".
+//   - "NaN", "Infinity" and "-Infinity".
 //
-// Parameters:
-// - f: The float64 number to be converted.
+// The digits are the shortest that read back as f, as Go's strconv and Java's
+// Double.toString (from JDK 19) both choose them, with at least two.
 //
-// Returns:
-//   - The string representation of the input float. If `f` is an integer, ".0" is appended to
-//     signify that it is a float. For non-integer floats, trailing zeros after the decimal point are trimmed.
-//
-// Example:
-//
-//	floats(1234567.00) returns "1234567.0"
-//	floats(0.120300) returns "0.1203"
+// The previous version reformatted any exponent spelling with %f, which keeps
+// six decimals: 4.263256414560601E-14 on the 2.07 and 2.08 rows maps'
+// map/@vScrollbarPos came back as "0.0" (issue #111).
 func floats(f float64) string {
-	s := fmt.Sprintf("%g", f)
-	if strings.IndexByte(s, 'e') != -1 {
-		s = fmt.Sprintf("%f", f)
+	switch {
+	case math.IsNaN(f):
+		return "NaN"
+	case math.IsInf(f, 1):
+		return "Infinity"
+	case math.IsInf(f, -1):
+		return "-Infinity"
 	}
-	if strings.IndexByte(s, '.') == -1 {
-		return s + ".0"
+	if a := math.Abs(f); a == 0 || (1e-3 <= a && a < 1e7) {
+		s := strconv.FormatFloat(f, 'f', -1, 64)
+		if !strings.Contains(s, ".") {
+			s += ".0"
+		}
+		return s
 	}
-	s = strings.TrimRight(s, "0")
-	if s[len(s)-1] == '.' {
-		return s + "0"
+	mantissa, exponent, _ := strings.Cut(strconv.FormatFloat(f, 'e', -1, 64), "e")
+	if !strings.Contains(mantissa, ".") {
+		// One digit is never enough for Java: it takes the closest two-digit
+		// decimal instead, which is "d.0" except among the subnormals
+		// (Double.MIN_VALUE is "4.9E-324", not "5.0E-324").
+		mantissa, exponent, _ = strings.Cut(strconv.FormatFloat(f, 'e', 1, 64), "e")
 	}
-	return s
-}
-
-// floatg formats a float in the style that Worldographer expects.
-func floatg(f float64) string {
-	return fmt.Sprintf("%g", f)
+	e, _ := strconv.Atoi(exponent) // "-14", "+07"
+	return mantissa + "E" + strconv.Itoa(e)
 }
 
 // ints formats an int as a string
