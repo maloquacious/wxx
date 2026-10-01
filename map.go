@@ -66,7 +66,7 @@ type Map_t struct {
 	HexWidth                  float64            `json:"hexWidth,omitempty"`
 	HexHeight                 float64            `json:"hexHeight,omitempty"`
 	GridOrientation           hexg.Orientation_e `json:"gridOrientation,omitempty"` // orientation for hexg package
-	HexOrientation            string             `json:"hexOrientation,omitempty"`  // "COLUMNS" or ??
+	HexOrientation            string             `json:"hexOrientation,omitempty"`  // "COLUMNS" or "ROWS"; Validate rejects anything else
 	RowsHigh                  int                `json:"rowsHigh,omitempty"`        // number of rows (derived from TilesHigh based on orientation)
 	ColumnsWide               int                `json:"columnsWide,omitempty"`     // number of columns (derived from TilesWide based on orientation)
 	MapProjection             Projection_e       `json:"mapProjection,omitempty"`
