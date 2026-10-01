@@ -403,6 +403,10 @@ Label = element label {
   attribute style { xsd:string }?,
   attribute fontFace { xsd:string }?,
   attribute color { xsd:string }?,
+  # observed: app check, #115. In no fixture. An r,g,b,a, opaque black
+  # included, is drawn behind the label under labels and under feature; the
+  # app's save keeps it after @color and writes it on no label that has none.
+  attribute backgroundColor { xsd:string }?,
   attribute outlineColor { xsd:string }?,
   attribute outlineSize { xsd:double }?,
   # "null" in every fixture (observed: layers, notes-shapes, populated);
