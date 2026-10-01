@@ -86,7 +86,9 @@
 # COLORS. Two spellings, both xsd:string here:
 #   "r,g,b,a"     four decimals, each 0..1. An out-of-range component stops
 #                 the file opening (observed: app check, #83, dsColor=
-#                 "255,0,0,1"), and so does "" (a shape with dsColor="" and
+#                 "255,0,0,1"; app check, #128, a tile record's background
+#                 "255.0,0.0,1.0,1.0"; inferred for the other color
+#                 attributes), and so does "" (a shape with dsColor="" and
 #                 insColor=""). Many color attributes also hold the literal
 #                 "null"; that it means "no color" is inferred.
 #   "0xRRGGBBAA"  gridandnumbering/@color0..4 and @numberColor (observed: all).

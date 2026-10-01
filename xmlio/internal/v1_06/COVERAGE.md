@@ -111,6 +111,22 @@ integrally. It reads RAW attribute values — `xmlAggregate`'s `normVal`
 canonicalizes `"0"` and `"0.0"` to the same string, which is right for the loss
 inventory and blind to this.
 
+## Colour range
+
+Every colour `Map_t` holds as an `*RGBA_t` (19 fields: tile and `<extraTerrain>`
+backgrounds, feature, label, label style, shape style, note and map key colours)
+must have each component a finite number from 0 to 1. A component outside that
+stops Worldographer opening the file, because JavaFX's `Color` constructor
+throws (app checks: #83 on `dsColor`, #128 on a tile record's background).
+
+`Map_t.Validate` refuses one before any encode (`ErrInvalidColorAttribute`,
+#128), naming the first by on-disk path and `Map_t` field and counting the rest.
+`TestValidateColorsCoversEveryColorField` walks `Map_t`'s type for every
+`*RGBA_t` field and fails if one is not checked, so a colour field added later
+cannot skip it. Colours the model holds as strings were already checked on
+encode by `rgbaAttr` (#83). Decode stays lenient: `decodeRgba` and
+`decodeZeroableRgba` read any float, and the app does not write one out of range.
+
 ## Values clamped on decode (lossy)
 
 One thing this codec changes on the way in: a `<terrainAndLocation>`

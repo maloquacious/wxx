@@ -125,6 +125,11 @@ func rgbaOrNull(rgba *wxx.RGBA_t) string {
 //
 // Returns:
 // - A XML attribute string representing the rgba. If rgba is nil, returns "0.0,0.0,0.0,1.0"
+//
+// It does not check the range. A component outside 0..1 stops Worldographer
+// opening the file (app checks, #83 and #128), and Map_t.Validate refuses one
+// before any encode reaches this (issue #128), so every colour arriving here is
+// already in range.
 func rgbas(rgba *wxx.RGBA_t) string {
 	if rgba == nil {
 		return "0.0,0.0,0.0,1.0"
