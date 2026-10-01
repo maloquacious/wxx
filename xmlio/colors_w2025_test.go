@@ -25,38 +25,49 @@ func attrValue(attrs [][2]string, name string) (string, bool) {
 	return "", false
 }
 
-// TestW2025FeatureBlackColorMatchesSource decodes the populated 2.08 map,
-// encodes it as "2.06", and requires every <feature>'s @color to come out as
-// the source spells it (issue #99). The map's cathedral on hex (2,1) has
+// populatedFixtures are the populated recipe's maps, one per version saved.
+// The 2.06 map confirms the 2.08 colour spellings, ringColor included (#100).
+var populatedFixtures = []string{
+	"2025-2.06-13x11-941577-populated.wxx",
+	populatedFixture,
+}
+
+// TestW2025FeatureBlackColorMatchesSource decodes each populated map, encodes
+// it as "2.06", and requires every <feature>'s @color to come out as the
+// source spells it (issue #99). Each map's cathedral on hex (2,1) has
 // Override Color set to Black, which the app writes as "0.0,0.0,0.0,1.0"; wxx
 // used to fold that into the same nil as "null" and write it back as "null",
 // so the feature lost its colour.
 //
 // The ring colour is compared by TestW2025FeatureRingColorMatchesSource.
 func TestW2025FeatureBlackColorMatchesSource(t *testing.T) {
-	src, m := readNotesFixture(t, populatedFixture)
-	out, err := xmlio.MarshalXML(m, "2.06")
-	if err != nil {
-		t.Fatalf("MarshalXML: %v", err)
-	}
-	in := startTagAttrs(src, "feature")
-	got := startTagAttrs(out, "feature")
-	if len(got) != len(in) {
-		t.Fatalf("wrote %d <feature>(s), source has %d", len(got), len(in))
-	}
-	black := false
-	for i := range in {
-		want, ok := attrValue(in[i], "color")
-		if !ok {
-			t.Fatalf("source <feature> %d states no @color", i)
-		}
-		black = black || want == opaqueBlack
-		if have, _ := attrValue(got[i], "color"); have != want {
-			t.Errorf("<feature> %d: @color = %q, want %q", i, have, want)
-		}
-	}
-	if !black {
-		t.Fatalf("%s: no <feature> states color=%q; the fixture no longer exercises #99", populatedFixture, opaqueBlack)
+	for _, fixture := range populatedFixtures {
+		t.Run(fixture, func(t *testing.T) {
+			src, m := readNotesFixture(t, fixture)
+			out, err := xmlio.MarshalXML(m, "2.06")
+			if err != nil {
+				t.Fatalf("MarshalXML: %v", err)
+			}
+			in := startTagAttrs(src, "feature")
+			got := startTagAttrs(out, "feature")
+			if len(got) != len(in) {
+				t.Fatalf("wrote %d <feature>(s), source has %d", len(got), len(in))
+			}
+			black := false
+			for i := range in {
+				want, ok := attrValue(in[i], "color")
+				if !ok {
+					t.Fatalf("source <feature> %d states no @color", i)
+				}
+				black = black || want == opaqueBlack
+				if have, _ := attrValue(got[i], "color"); have != want {
+					t.Errorf("<feature> %d: @color = %q, want %q", i, have, want)
+				}
+			}
+			if !black {
+				t.Fatalf("no <feature> states color=%q; the fixture no longer exercises #99", opaqueBlack)
+			}
+		})
 	}
 }
 
@@ -158,10 +169,10 @@ func ringAttr(attrs [][2]string) (int, string, string) {
 // to come out with the source's name, value and position (issue #100). The
 // app writes ringcolor="null" when no ring colour is set and ringColor when
 // one is; wxx read only the first, so a set ring colour was lost. The
-// populated 2.08 map has both a white and a black ring; the test fails if no
-// fixture states ringColor.
+// populated 2.06 and 2.08 maps each have a white and a black ring; the test
+// fails if no fixture states ringColor.
 func TestW2025FeatureRingColorMatchesSource(t *testing.T) {
-	fixtures := append(append([]string(nil), notesShapesFixtures...), populatedFixture)
+	fixtures := append(append([]string(nil), notesShapesFixtures...), populatedFixtures...)
 	camel := false
 	for _, fixture := range fixtures {
 		t.Run(fixture, func(t *testing.T) {
