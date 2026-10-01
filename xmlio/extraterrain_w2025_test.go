@@ -209,7 +209,7 @@ func TestW2025ExtraTerrainDecodeRefusals(t *testing.T) {
 				t.Fatalf("fixture does not contain %q; this case is doctoring the wrong text", tc.from)
 			}
 			doctored := bytes.Replace(source, []byte(tc.from), []byte(tc.to), 1)
-			_, err := v1_06.Decode(doctored)
+			_, _, err := v1_06.Decode(doctored)
 			if err == nil {
 				t.Fatalf("decode: want an error, got nil")
 			}

@@ -33,6 +33,10 @@ func main() {
 			continue
 		}
 		fmt.Printf("\t%8s codec: %s\n", decoderDiagnostics.Codec, w.MetaData.Version)
+		// A decode can clamp an out-of-range value (issue #124).
+		for _, c := range decoderDiagnostics.Clamped {
+			fmt.Fprintf(os.Stderr, "warning: %s: changed on read: %s\n", arg, c)
+		}
 		fmt.Printf("\t%8d tiles high\n", w.Tiles.TilesHigh)
 		fmt.Printf("\t%8d tiles wide\n", w.Tiles.TilesWide)
 		fmt.Printf("\t%8d terrain tiles defined\n", len(w.TerrainMap.List))

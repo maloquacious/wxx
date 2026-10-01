@@ -146,7 +146,7 @@ func TestW2025RoundTrip(t *testing.T) {
 		t.Fatalf("v1_06.Encode: %v", err)
 	}
 
-	m2, err := v1_06.Decode(xmlBytes)
+	m2, _, err := v1_06.Decode(xmlBytes)
 	if err != nil {
 		t.Fatalf("v1_06.Decode(re-encoded): %v\n---encoded xml (first 800 bytes)---\n%s", err, head(xmlBytes, 800))
 	}
@@ -210,7 +210,7 @@ func TestW2025NotesShapesRoundTrip(t *testing.T) {
 		t.Fatalf("v1_06.Encode: %v", err)
 	}
 
-	m2, err := v1_06.Decode(xmlBytes)
+	m2, _, err := v1_06.Decode(xmlBytes)
 	if err != nil {
 		t.Fatalf("v1_06.Decode(re-encoded): %v\n---encoded xml (first 800 bytes)---\n%s", err, head(xmlBytes, 800))
 	}

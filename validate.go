@@ -123,6 +123,7 @@ func (m *Map_t) Validate() error {
 	}
 
 	problems = append(problems, m.Tiles.validate()...)
+	problems = append(problems, m.ExtraTerrain.validateResources()...)
 
 	// Join drops nils and returns nil for an empty slice, so a valid map returns
 	// nil without a length check here.
@@ -198,17 +199,7 @@ func (t *Tiles_t) validateResources() []error {
 	count := 0
 	for x, column := range t.Tiles {
 		for y, tile := range column {
-			r := tile.Resources
-			for _, f := range []struct {
-				name  string
-				value int
-			}{
-				{"Animal", r.Animal}, {"Brick", r.Brick}, {"Crops", r.Crops}, {"Gems", r.Gems},
-				{"Lumber", r.Lumber}, {"Metals", r.Metals}, {"Rock", r.Rock},
-			} {
-				if 0 <= f.value && f.value <= 100 {
-					continue
-				}
+			for _, f := range tile.Resources.outOfRange() {
 				count++
 				if first == nil {
 					first = fmt.Errorf("map/tiles (Tiles_t.Tiles[%d][%d].Resources.%s): %d: want 0..100", x, y, f.name, f.value)
@@ -216,11 +207,75 @@ func (t *Tiles_t) validateResources() []error {
 			}
 		}
 	}
+	return resourceProblem(ErrInvalidTileResource, first, count)
+}
+
+// validateResources reports an <extraTerrain> resource outside 0..100 (issue
+// #124).
+//
+// The seven resources on a <terrainAndLocation> are the ones a tile record
+// carries, for a terrain on another layer. Worldographer 2.08 reads them with
+// Byte.parseByte too: a value of 150 stops the file opening (app check, #124).
+// Whether it clamps 101..127 here, as it does in a tile record, is untested;
+// the check refuses them anyway, so a map wxx writes never depends on that.
+//
+// The decoder clamps an out-of-range value on the way in and reports it (see
+// xmlio.DecoderDiagnostics.Clamped), so a decoded map always passes this. Only a
+// caller's own assignment can trip it.
+func (e *ExtraTerrain_t) validateResources() []error {
+	if e == nil {
+		return nil
+	}
+	var first error
+	count := 0
+	for i, layer := range e.MapLayers {
+		if layer == nil {
+			continue
+		}
+		for j, tl := range layer.Terrain {
+			if tl == nil {
+				continue
+			}
+			for _, f := range tl.Resources.outOfRange() {
+				count++
+				if first == nil {
+					first = fmt.Errorf("map/extraTerrain/mapLayer[@name=%q]/terrainAndLocation[%d]/@resources (ExtraTerrain_t.MapLayers[%d].Terrain[%d].Resources.%s): %d: want 0..100",
+						layer.Name, j, i, j, f.name, f.value)
+				}
+			}
+		}
+	}
+	return resourceProblem(ErrInvalidExtraTerrainResource, first, count)
+}
+
+// resourceField is one named resource value.
+type resourceField struct {
+	name  string
+	value int
+}
+
+// outOfRange returns the resources outside 0..100, in field order.
+func (r Resources_t) outOfRange() []resourceField {
+	var bad []resourceField
+	for _, f := range []resourceField{
+		{"Animal", r.Animal}, {"Brick", r.Brick}, {"Crops", r.Crops}, {"Gems", r.Gems},
+		{"Lumber", r.Lumber}, {"Metals", r.Metals}, {"Rock", r.Rock},
+	} {
+		if f.value < 0 || f.value > 100 {
+			bad = append(bad, f)
+		}
+	}
+	return bad
+}
+
+// resourceProblem wraps the first out-of-range resource in kind and counts the
+// rest, or returns nil when there were none.
+func resourceProblem(kind Error, first error, count int) []error {
 	if first == nil {
 		return nil
 	}
 	if count > 1 {
 		first = fmt.Errorf("%w (and %d more out-of-range resources)", first, count-1)
 	}
-	return []error{errors.Join(ErrInvalidTileResource, first)}
+	return []error{errors.Join(kind, first)}
 }

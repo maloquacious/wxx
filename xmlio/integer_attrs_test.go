@@ -321,7 +321,7 @@ func TestW2025DecodeRejectsDecimalInIntegerAttribute(t *testing.T) {
 	}
 	doctored := bytes.Replace(source, []byte(good), []byte(bad), 1)
 
-	_, err = v1_06.Decode(doctored)
+	_, _, err = v1_06.Decode(doctored)
 	if err == nil {
 		t.Fatalf("v1_06.Decode: want an error for %s, got nil", bad)
 	}

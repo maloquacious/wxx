@@ -107,7 +107,7 @@ func TestW2025RowsRoundTrip(t *testing.T) {
 		t.Fatalf("v1_06.Encode(ROWS): %v", err)
 	}
 
-	m2, err := v1_06.Decode(xmlBytes)
+	m2, _, err := v1_06.Decode(xmlBytes)
 	if err != nil {
 		t.Fatalf("v1_06.Decode(re-encoded ROWS): %v\n---encoded xml---\n%s", err, head(xmlBytes, 1200))
 	}

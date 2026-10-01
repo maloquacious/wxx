@@ -25,6 +25,7 @@ const (
 	ErrInvalidDottedComponentCount = Error("invalid dotted version component count")
 	ErrInvalidDottedVersion        = Error("invalid dotted version")
 	ErrInvalidEncodingHeader       = Error("invalid encoding header")
+	ErrInvalidExtraTerrainResource = Error("invalid extra terrain resource")
 	ErrInvalidGZip                 = Error("invalid gzip")
 	ErrInvalidHexOrientation       = Error("invalid hex orientation")
 	ErrInvalidColorAttribute       = Error("invalid color attribute")

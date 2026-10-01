@@ -75,6 +75,11 @@ func main() {
 	if !quiet {
 		fmt.Printf("input: %s (%s)\n", inputFile, inputMap.MetaData.Version)
 	}
+	// A decode can clamp an out-of-range value (issue #124); the copy will hold
+	// the clamped value, so say so, even when quiet.
+	for _, c := range decoderDiagnostics.Clamped {
+		_, _ = fmt.Fprintf(os.Stderr, "warning: %s: changed on read: %s\n", inputFile, c)
+	}
 
 	// Write to the output file, as the application version the INPUT states.
 	//

@@ -55,6 +55,19 @@ type DecoderDiagnostics struct {
 	// parsed metadata before dispatch, so it is populated even when Decode
 	// goes on to reject the file as unsupported.
 	Schema string
+
+	// Clamped lists every value the decoder changed to bring it into range
+	// (issue #124). Each is a LOSS: the returned Map_t does not hold what the
+	// file said, and encoding it writes the clamped value. It is empty when the
+	// decode changed nothing, which is every file the app itself saved, since
+	// the app does not write an out-of-range value.
+	//
+	// Like everything here it is opt-in, via WithDecoderDiagnostics, and that is
+	// a real limit: a caller who never asks is not told. A caller that writes a
+	// decoded map back out should ask, and tell its user; cmd/copy, cmd/resize,
+	// cmd/merge, cmd/import and cmd/info print each one to stderr. See
+	// ClampedValue_t for what is clamped and why.
+	Clamped []ClampedValue_t
 }
 
 // NewDecoder returns a Decoder that implements the wxx.Decoder interface.
@@ -259,7 +272,11 @@ func (d *Decoder) Decode(r io.Reader) (*wxx.Map_t, error) {
 		if d.opts.diagnostics != nil {
 			d.opts.diagnostics.Codec = "v1_06"
 		}
-		return v1_06.Decode(data)
+		m, clamps, err := v1_06.Decode(data)
+		if d.opts.diagnostics != nil {
+			d.opts.diagnostics.Clamped = clampedValues(clamps)
+		}
+		return m, err
 	case "":
 		// H2017 ("classic") files carry no release or schema attribute; they
 		// are identified solely by a "1.x" version (e.g. 1.73/1.74/1.77).
