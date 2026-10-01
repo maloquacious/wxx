@@ -428,13 +428,22 @@ It is 1920 x 1080 hexes, 9.5 MB gzipped.
 File > New World/Kingdom map
 
 Hex Orientation: Columns Line Up
+Map Projection: Flat
   Hexes Wide: 1920
   Hexes High: 1080
+
+Initial View Level: WORLD
+
+[x] Use suggested pixel sizes
 
 Random Seed: 941577
 
 Generate terrain: full world, default options
 
 Generate Map
+
+### Save
+
+Before saving, ensure all layers are visible, GM Only: Show is checked, Grid: Show/Numbers/Shadows are checked.
 
 Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-random.wxx
