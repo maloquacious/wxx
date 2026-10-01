@@ -129,5 +129,8 @@ is needed for the maps in hand.
 The profile findings are filed separately rather than fixed in #138:
 
 - gzip level: #141 (`WithGzipLevel`, above)
-- `Validate` allocates per tile and runs twice per encode: #142
+- `Validate` allocates per tile and runs twice per encode: #142. Fixed: on the
+  baseline machine, Encode blank 1920×1080 went from 0.85 s, 483 MB and 21.3 M
+  allocs to 0.53 s, 230 MB and 10.4 M; Encode random 1920×1080 from 3.16 s,
+  717 MB and 26.9 M allocs to 3.0 s, 464 MB and 16.0 M (median of 3).
 - the encode pipeline's per-tile formatting and whole-document copies: #143
