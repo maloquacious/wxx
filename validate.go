@@ -178,5 +178,49 @@ func (t *Tiles_t) validate() []error {
 			}
 		}
 	}
-	return problems
+	return append(problems, t.validateResources()...)
+}
+
+// validateResources reports a tile resource outside 0..100 (issue #122).
+//
+// The encoder writes a resource as the integer it is given, and Worldographer
+// 2.08 does not keep a value above 100: it reads the field with
+// Byte.parseByte, so 128 and above stop the file opening, and 101..127 open
+// and are saved back as 100 (app checks on Brick, #122). The v1_06 decoder
+// refuses anything outside 0..100, so before this check wxx wrote a file it
+// could not read back. Negative values are refused for the same reason; the
+// app was not tried with one.
+//
+// Like the nil-tile check, it names the FIRST offending tile and field, and
+// counts the rest, rather than listing one problem per tile.
+func (t *Tiles_t) validateResources() []error {
+	var first error
+	count := 0
+	for x, column := range t.Tiles {
+		for y, tile := range column {
+			r := tile.Resources
+			for _, f := range []struct {
+				name  string
+				value int
+			}{
+				{"Animal", r.Animal}, {"Brick", r.Brick}, {"Crops", r.Crops}, {"Gems", r.Gems},
+				{"Lumber", r.Lumber}, {"Metals", r.Metals}, {"Rock", r.Rock},
+			} {
+				if 0 <= f.value && f.value <= 100 {
+					continue
+				}
+				count++
+				if first == nil {
+					first = fmt.Errorf("map/tiles (Tiles_t.Tiles[%d][%d].Resources.%s): %d: want 0..100", x, y, f.name, f.value)
+				}
+			}
+		}
+	}
+	if first == nil {
+		return nil
+	}
+	if count > 1 {
+		first = fmt.Errorf("%w (and %d more out-of-range resources)", first, count-1)
+	}
+	return []error{errors.Join(ErrInvalidTileResource, first)}
 }

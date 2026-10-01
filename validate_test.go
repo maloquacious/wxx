@@ -180,6 +180,39 @@ func TestValidateRejects(t *testing.T) {
 			wantErr: ErrInvalidTileGrid,
 			wantMsg: "Tiles_t.Tiles[1][2]",
 		},
+		{
+			// 128 and above stop Worldographer opening the file (app check
+			// at 150, issue #122).
+			name:    "resource the app cannot read",
+			break_:  func(m *Map_t) { m.Tiles.Tiles[0][0].Resources.Brick = 150 },
+			wantErr: ErrInvalidTileResource,
+			wantMsg: "Tiles_t.Tiles[0][0].Resources.Brick): 150: want 0..100",
+		},
+		{
+			// 101..127 open, and the app saves them back as 100 (app check at
+			// 127, issue #122).
+			name:    "resource the app clamps",
+			break_:  func(m *Map_t) { m.Tiles.Tiles[1][2].Resources.Rock = 101 },
+			wantErr: ErrInvalidTileResource,
+			wantMsg: "Tiles_t.Tiles[1][2].Resources.Rock): 101: want 0..100",
+		},
+		{
+			name:    "negative resource",
+			break_:  func(m *Map_t) { m.Tiles.Tiles[0][1].Resources.Animal = -1 },
+			wantErr: ErrInvalidTileResource,
+			wantMsg: "Tiles_t.Tiles[0][1].Resources.Animal): -1: want 0..100",
+		},
+		{
+			// The first is named and the rest counted, not listed per tile.
+			name: "several resources out of range",
+			break_: func(m *Map_t) {
+				m.Tiles.Tiles[0][0].Resources.Gems = 200
+				m.Tiles.Tiles[1][0].Resources.Lumber = 200
+				m.Tiles.Tiles[1][1].Resources.Metals = 200
+			},
+			wantErr: ErrInvalidTileResource,
+			wantMsg: "Resources.Gems): 200: want 0..100 (and 2 more out-of-range resources)",
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			m := validMap()
@@ -196,6 +229,19 @@ func TestValidateRejects(t *testing.T) {
 				t.Errorf("Validate() = %q, want a message containing %q", err.Error(), tc.wantMsg)
 			}
 		})
+	}
+}
+
+// TestValidateAcceptsResourceBounds asserts both ends of 0..100 pass on every
+// resource field (issue #122). An off-by-one in the range check would refuse a
+// value the app reads as written.
+func TestValidateAcceptsResourceBounds(t *testing.T) {
+	for _, v := range []int{0, 100} {
+		m := validMap()
+		m.Tiles.Tiles[1][2].Resources = Resources_t{Animal: v, Brick: v, Crops: v, Gems: v, Lumber: v, Metals: v, Rock: v}
+		if err := m.Validate(); err != nil {
+			t.Errorf("every resource %d: Validate() = %v, want nil", v, err)
+		}
 	}
 }
 

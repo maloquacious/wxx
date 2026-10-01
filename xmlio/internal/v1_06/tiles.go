@@ -220,7 +220,8 @@ func encodeTile(tile *wxx.Tile_t, terrainRemap map[int]int, wb *bytes.Buffer) er
 	return nil
 }
 
-// all resources are supposed to be in the range of 0...100, but we don't enforce
+// Every resource is in 0..100: Map_t.Validate refuses anything else before the
+// encoder runs (issue #122), because the app does not keep a value above 100.
 func encodeTileResources(resources wxx.Resources_t, wb *bytes.Buffer) error {
 	// compress if there are no resources other than Animal
 	if resources.Brick == 0 && resources.Crops == 0 && resources.Gems == 0 && resources.Lumber == 0 && resources.Metals == 0 && resources.Rock == 0 {

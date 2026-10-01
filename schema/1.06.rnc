@@ -294,10 +294,12 @@ Tiles = element tiles {
 #   6..11  brick, crops, gems, lumber, metals, rock: integers. observed:
 #          tile-resources. When all six are 0 the app writes the single field
 #          "Z" in their place (observed: tile-resources, hex (1,0)); no
-#          fixture writes six zeros. Range 0 to 100: inferred: Discord (a
-#          post by Worldographer's author, 2023-12-22, summarized in
-#          xmlio/internal/v1_06/tiles.go; it predates Worldographer 2025:
+#          fixture writes six zeros. Range 0 to 100 (Discord, 2023-12-22,
+#          summarized in xmlio/internal/v1_06/tiles.go:
 #          https://discord.com/channels/535205750532997160/877285895991095369/1187771984768151653).
+#          observed: app check, #122, on brick: 127 opens and is saved
+#          back as 100; 150 stops the file opening (Byte.parseByte). The
+#          other fields and negative values are untested.
 #   last   custom background color ("Override BG" in the app), "r,g,b,a"
 #          (grammar header, COLORS), after the resources or after "Z", so a
 #          record with one has 12 or 7 fields. observed: tile-resources.
