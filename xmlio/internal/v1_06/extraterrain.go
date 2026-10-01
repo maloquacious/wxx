@@ -53,6 +53,10 @@ func decodeExtraTerrain(src *ExtraTerrain_t, w *wxx.Map_t, clamps *[]Clamp_t) er
 				c.Field = fmt.Sprintf("Map_t.ExtraTerrain.MapLayers[%d].Terrain[%d].Resources.%s", i, j, c.Field)
 				*clamps = append(*clamps, c)
 			}
+			bgColor, err := decodeBgColor(tl.BgColor)
+			if err != nil {
+				return errors.Join(wxx.ErrInvalidColorAttribute, fmt.Errorf("%s/@bgColor: %w", tlPath, err))
+			}
 			x, y, err := decodeLocation(tl.Location)
 			if err != nil {
 				return fmt.Errorf("%s/@location: %w", tlPath, err)
@@ -65,6 +69,8 @@ func decodeExtraTerrain(src *ExtraTerrain_t, w *wxx.Map_t, clamps *[]Clamp_t) er
 				Resources: resources,
 				X:         x,
 				Y:         y,
+
+				CustomBackgroundColor: bgColor,
 			})
 		}
 		w.ExtraTerrain.MapLayers = append(w.ExtraTerrain.MapLayers, wLayer)
@@ -159,6 +165,20 @@ func decodeExtraTerrainResources(s string) (wxx.Resources_t, []Clamp_t, error) {
 	return wxx.Resources_t{Animal: v[0], Brick: v[1], Crops: v[2], Gems: v[3], Lumber: v[4], Metals: v[5], Rock: v[6]}, clamped, nil
 }
 
+// decodeBgColor parses a <terrainAndLocation> @bgColor value (issue #126):
+// "r,g,b,a", or "" when the attribute is absent, which decodes to nil. Opaque
+// black is kept as a colour (#99).
+//
+// "null" is refused. decodeZeroableRgba would read it as nil, and the encoder
+// omits a nil colour, so a "null" would vanish on the next write. No fixture
+// has one; the app writes the attribute only with a colour in it.
+func decodeBgColor(s string) (*wxx.RGBA_t, error) {
+	if s == "null" {
+		return nil, fmt.Errorf("%q: want r,g,b,a or no attribute; wxx would drop \"null\" on encode", s)
+	}
+	return decodeZeroableRgba(s)
+}
+
 // decodeLocation parses a <terrainAndLocation> @location value, "x,y".
 func decodeLocation(s string) (x, y float64, err error) {
 	xs, ys, ok := strings.Cut(s, ",")
@@ -194,12 +214,19 @@ func encodeExtraTerrain(extraTerrain *wxx.ExtraTerrain_t, wb *bytes.Buffer) erro
 			if err != nil {
 				return err
 			}
-			wb.WriteString(fmt.Sprintf("\t\t<terrainAndLocation name=%s elevation=%s icy=%s gmOnly=%s resources=%s location=%s />\n",
+			// @bgColor sits between @resources and @location, and only when
+			// the placement has Override BG set (issue #126).
+			bgColor := ""
+			if tl.CustomBackgroundColor != nil {
+				bgColor = " bgColor=" + xmlAttr(rgbas(tl.CustomBackgroundColor))
+			}
+			wb.WriteString(fmt.Sprintf("\t\t<terrainAndLocation name=%s elevation=%s icy=%s gmOnly=%s resources=%s%s location=%s />\n",
 				xmlAttr(tl.Terrain),
 				xmlAttr(elevation.String()),
 				xmlAttr(bools(tl.IsIcy)),
 				xmlAttr(bools(tl.IsGMOnly)),
 				xmlAttr(encodeExtraTerrainResources(tl.Resources)),
+				bgColor,
 				xmlAttr(floats(tl.X)+","+floats(tl.Y))))
 		}
 		wb.WriteString("\t</mapLayer>\n")

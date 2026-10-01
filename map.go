@@ -204,14 +204,19 @@ type ExtraTerrainLayer_t struct {
 // not a hex. They are kept as written, because the mapping to a hex is inferred
 // (on the COLUMNS samples, x = 225*col and y = 300*row + 150 for odd columns)
 // and unconfirmed for ROWS maps or other hex sizes; see #34.
+//
+// CustomBackgroundColor is the on-disk @bgColor, written by the app when the
+// placement has Override BG set and omitted otherwise (issue #126). nil means
+// the attribute is absent; opaque black is a colour, not nil (#99).
 type TerrainAndLocation_t struct {
-	Terrain   string      `json:"terrain"`
-	Elevation float64     `json:"elevation"`
-	IsIcy     bool        `json:"isIcy,omitempty"`
-	IsGMOnly  bool        `json:"isGMOnly,omitempty"`
-	Resources Resources_t `json:"resources"`
-	X         float64     `json:"x"`
-	Y         float64     `json:"y"`
+	Terrain               string      `json:"terrain"`
+	Elevation             float64     `json:"elevation"`
+	IsIcy                 bool        `json:"isIcy,omitempty"`
+	IsGMOnly              bool        `json:"isGMOnly,omitempty"`
+	Resources             Resources_t `json:"resources"`
+	CustomBackgroundColor *RGBA_t     `json:"customBackgroundColor,omitempty"`
+	X                     float64     `json:"x"`
+	Y                     float64     `json:"y"`
 }
 
 type GridAndNumbering_t struct {
