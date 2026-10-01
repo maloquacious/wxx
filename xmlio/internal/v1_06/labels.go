@@ -38,9 +38,7 @@ func decodeLabels(src Labels_t, w *wxx.Map_t) error {
 		if wLabel.OutlineColor, err = decodeRgba(mLabel.OutlineColor); err != nil {
 			return fmt.Errorf("label.outlineColor: %w", err)
 		}
-		if mLabel.BackgroundColor == "" {
-			wLabel.BackgroundColor = nil
-		} else if wLabel.BackgroundColor, err = decodeZeroableRgba(mLabel.BackgroundColor); err != nil {
+		if wLabel.BackgroundColor, err = decodeLabelBackgroundColor(mLabel.BackgroundColor); err != nil {
 			return fmt.Errorf("label.backgroundColor: %w", err)
 		}
 		wLabel.Location = &wxx.LabelLocation_t{
@@ -53,6 +51,17 @@ func decodeLabels(src Labels_t, w *wxx.Map_t) error {
 		w.Labels = append(w.Labels, wLabel)
 	}
 	return nil
+}
+
+// decodeLabelBackgroundColor decodes label/@backgroundColor for both label
+// contexts (labels/label and feature/label). No saved fixture carries it; an
+// app check (#115) showed Worldographer 2025 draws it in both contexts when the
+// label has no preset style, ignores it under a preset style, and that the app's
+// save keeps it either way and writes it only when set. wxx keeps what the app
+// keeps, drawn or not. An
+// absent attribute is nil; opaque black is a colour, not nil.
+func decodeLabelBackgroundColor(s string) (*wxx.RGBA_t, error) {
+	return decodeZeroableRgba(s)
 }
 
 func encodeLabels(labels []*wxx.Label_t, wb *bytes.Buffer) error {
@@ -72,11 +81,11 @@ func encodeLabel(label *wxx.Label_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(" style=%s", xmlAttr(label.Style)))       // can be null!
 	wb.WriteString(fmt.Sprintf(" fontFace=%s", xmlAttr(label.FontFace))) // can be null!
 	wb.WriteString(fmt.Sprintf(" color=%s", xmlAttr(rgbas(label.Color))))
-	// todo: backgroundColor is sometimes not displayed when its value is "0.0,0.0,0.0,1.0".
-	// I may need to ask on the Inkwell Discord about this; I can't figure out the pattern.
-	// Until then, seems to be no harm in excluding it (other than noise in the diff).
-	if attr := rgbas(label.BackgroundColor); attr != "0.0,0.0,0.0,1.0" { // do not include if null
-		wb.WriteString(fmt.Sprintf(" backgroundColor=%s", xmlAttr(attr)))
+	// The app writes backgroundColor after color when the label has one and omits
+	// it when it does not (#115), so nil is the absent attribute. Opaque black is a
+	// real background and is written like any other colour.
+	if label.BackgroundColor != nil {
+		wb.WriteString(fmt.Sprintf(" backgroundColor=%s", xmlAttr(rgbas(label.BackgroundColor))))
 	}
 	wb.WriteString(fmt.Sprintf(" outlineColor=%s", xmlAttr(rgbas(label.OutlineColor))))
 	wb.WriteString(fmt.Sprintf(" outlineSize=%s", xmlAttr(floats(label.OutlineSize))))

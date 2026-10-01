@@ -91,7 +91,7 @@ func decodeFeatures(src Features, w *wxx.Map_t) error {
 			if f.Label.OutlineColor, err = decodeRgba(mFeature.Label.OutlineColor); err != nil {
 				return fmt.Errorf("feature.label.outlineColor: %w", err)
 			}
-			if f.Label.BackgroundColor, err = decodeRgba(mFeature.Label.BackgroundColor); err != nil {
+			if f.Label.BackgroundColor, err = decodeLabelBackgroundColor(mFeature.Label.BackgroundColor); err != nil {
 				return fmt.Errorf("feature.label.backgroundColor: %w", err)
 			}
 			f.Label.Location = &wxx.LabelLocation_t{
