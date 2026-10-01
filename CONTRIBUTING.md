@@ -104,6 +104,22 @@ Squash is the rule. `main` stays linear, each commit subject gaining the
 `--delete-branch` is what keeps the branch list clean; afterwards
 `git fetch --prune` clears the stale local ref.
 
+### 7. Tag every version change
+
+When a merge changes the version in `version.go`, tag the squash commit on
+`main` with that version and push the tag:
+
+```sh
+git checkout main && git pull --ff-only
+git tag v0.50.0-beta        # "v" + the version.go string, lightweight like the earlier tags
+git push origin v0.50.0-beta
+```
+
+Every version `version.go` states on `main` gets a tag, so tags and the code
+cannot drift apart. If two version bumps merge back to back, tag each merge
+commit. Tagging started with `v0.50.0-beta`; 0.49.0-beta and the earlier
+untagged versions were never tagged.
+
 ## Reading the older history
 
 The merge style changed. Pull requests through #27 landed as merge commits

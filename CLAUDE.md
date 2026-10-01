@@ -13,6 +13,9 @@ The original H2017 ("classic", Worldographer 1.x) format is no longer read or wr
 
 Current version: **0.50.0-beta** (see `version.go`).
 
+**Tag every version change.** When a merge to `main` changes `version.go`, tag that commit
+`v<version>` (lightweight) and push the tag. See CONTRIBUTING.md step 7.
+
 ## Bugs Before Features
 
 **Open bugs outrank feature work.** When choosing what to do next, or when asked to start a
