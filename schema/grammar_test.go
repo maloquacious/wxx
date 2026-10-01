@@ -3,8 +3,9 @@
 // Package schema holds the wxx reference grammars for Worldographer files. It
 // has no Go API: this test keeps 1.06.rnc honest by checking every tracked 2.08
 // fixture against it, fixture -> grammar. A fixture element or attribute that
-// the grammar does not allow at that position fails the test. Grammar rules no
-// fixture exercises do not.
+// the grammar does not allow at that position fails the test, and so does
+// non-whitespace text inside an element whose pattern has no `text`. Grammar
+// rules no fixture exercises do not.
 //
 // The test parses a small subset of RELAX NG compact syntax, documented in the
 // header of 1.06.rnc, and fails loudly on anything outside it rather than
@@ -115,13 +116,15 @@ func readWXX(path string) ([]byte, error) {
 // ---------------------------------------------------------------------------
 // The grammar graph.
 
-// elemNode is one `element` in the grammar: the attributes it allows and the
-// child elements its content allows, by name.
+// elemNode is one `element` in the grammar: the attributes it allows, the
+// child elements its content allows, by name, and whether its content allows
+// text.
 type elemNode struct {
 	name     string
 	label    string // the named pattern it is the body of, for messages
 	attrs    map[string]bool
 	children map[string]*elemNode
+	text     bool // the content holds a `text` pattern
 	content  *pnode
 }
 
@@ -150,6 +153,7 @@ func (g *grammar) check(data []byte) (*result, error) {
 		patternPath string
 		xmlPath     string
 		seen        map[string]int
+		textSeen    bool // non-whitespace text already reported or allowed
 	}
 	res := &result{}
 	byKey := map[string]*violation{}
@@ -215,14 +219,32 @@ func (g *grammar) check(data []byte) (*result, error) {
 			stack = append(stack, &frame{node: node, patternPath: patternPath, xmlPath: xmlPath, seen: map[string]int{}})
 		case xml.EndElement:
 			stack = stack[:len(stack)-1]
+		case xml.CharData:
+			// Text, CDATA sections included. Whitespace-only text is
+			// allowed anywhere, as in RELAX NG; anything else needs a
+			// `text` in the element's pattern. Reported once per element.
+			if len(stack) == 0 || isXMLSpace(tok) {
+				break
+			}
+			top := stack[len(stack)-1]
+			if top.node != nil && !top.textSeen && !top.node.text {
+				report(top.patternPath, "text", top.xmlPath)
+			}
+			top.textSeen = true
 		}
-		// CharData, Comment, ProcInst and Directive carry no element or
-		// attribute, so they are not checked.
+		// Comment, ProcInst and Directive carry no element, attribute or
+		// text, so they are not checked.
 	}
 	if !sawRoot {
 		return nil, fmt.Errorf("no root element")
 	}
 	return res, nil
+}
+
+// isXMLSpace reports whether b is empty or holds only XML whitespace (space,
+// tab, CR, LF).
+func isXMLSpace(b []byte) bool {
+	return len(bytes.Trim(b, " \t\r\n")) == 0
 }
 
 // qname spells a name with its namespace, so a namespaced element or
@@ -431,7 +453,9 @@ func (g *grammar) content(e *elemNode, n *pnode, refs map[string]bool) error {
 			return fmt.Errorf("two different patterns (%s, %s) for child element %s: the check cannot tell them apart", prev.label, n.elem.label, n.name)
 		}
 		e.children[n.name] = n.elem
-	case pText, pEmpty:
+	case pText:
+		e.text = true
+	case pEmpty:
 	case pRef:
 		if refs[n.name] {
 			return fmt.Errorf("pattern %s refers to itself without an element in between", n.name)
@@ -807,12 +831,16 @@ func TestParserRejectsUnsupported(t *testing.T) {
 
 func TestCheckReportsMissing(t *testing.T) {
 	g, err := parseGrammar(`start = A
-A = element a { attribute x { xsd:string }?, B* }
-B = element b { (attribute y { xsd:string } | attribute z { xsd:string }), B* }`)
+A = element a { attribute x { xsd:string }?, B*, E? }
+B = element b { (attribute y { xsd:string } | attribute z { xsd:string }), B* }
+E = element e { text }`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	res, err := g.check([]byte(`<a x="1" w="2"><b y="1"><b z="2"><c/></b></b><d/></a>`))
+	// Whitespace between elements is allowed everywhere; the text in the
+	// outer b (plain) and the inner b (CDATA) is not, and is reported once
+	// per element; e's text is allowed.
+	res, err := g.check([]byte("<a x=\"1\" w=\"2\">\n <b y=\"1\">t<b z=\"2\"><c/><![CDATA[u]]></b>v</b><d/><e>ok</e>\n</a>"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -824,12 +852,14 @@ B = element b { (attribute y { xsd:string } | attribute z { xsd:string }), B* }`
 	want := []string{
 		"A attribute w /a",
 		"A element d /a/d[1]",
+		"A/B text /a/b[1]",
 		"A/B/B element c /a/b[1]/b[1]/c[1]",
+		"A/B/B text /a/b[1]/b[1]",
 	}
 	if strings.Join(got, "\n") != strings.Join(want, "\n") {
 		t.Errorf("violations:\n%s\nwant:\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
 	}
-	if res.elements != 5 || res.attributes != 4 {
-		t.Errorf("visited %d elements, %d attributes; want 5, 4", res.elements, res.attributes)
+	if res.elements != 6 || res.attributes != 4 {
+		t.Errorf("visited %d elements, %d attributes; want 6, 4", res.elements, res.attributes)
 	}
 }
