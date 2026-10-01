@@ -419,3 +419,22 @@ way.
 Saved as testdata/2025-2.06-13x11-941577-cdata-guard.wxx. The lore entries
 were added in a second session, so the file has been saved twice
 (`mapkey/@viewlevel="WORLD"`); nothing it pins depends on that.
+
+## Random
+
+A large generated map, for the performance and memory tests (issue #138).
+It is 1920 x 1080 hexes, 9.5 MB gzipped.
+
+File > New World/Kingdom map
+
+Hex Orientation: Columns Line Up
+  Hexes Wide: 1920
+  Hexes High: 1080
+
+Random Seed: 941577
+
+Generate terrain: full world, default options
+
+Generate Map
+
+Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-random.wxx
