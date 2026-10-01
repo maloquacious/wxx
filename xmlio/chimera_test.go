@@ -19,10 +19,11 @@ import (
 //
 //	<map type="WORLD" release="" version="1.77" schema="" ...>
 //
-// The harm is not that the file is wrong. It is that NOTHING DETECTS IT.
-// release="" plus version="1.77" routes to the classic decoder, which tolerates
-// the W2025 elements it does not recognize, so the round trip reports success and
-// wxx cannot tell the file is a chimera.
+// The harm was not that the file was wrong. It was that NOTHING DETECTED IT.
+// release="" plus version="1.77" routed to the classic decoder, which tolerated
+// the W2025 elements it did not recognize, so the round trip reported success and
+// wxx could not tell the file was a chimera. (Since issue #103 the decoder
+// refuses that identity outright.)
 //
 // The general property is that a file's declared identity and its content format
 // cannot disagree: whatever identity the SOURCE map states, the bytes state the

@@ -374,9 +374,9 @@ func TestRegistryMatchesFixtures(t *testing.T) {
 				t.Errorf("%s: its codec declares schema %q, want %q", tc.path, got, tc.wantSchema)
 			}
 
-			// The schema axis, cross-checked against the parsed identity: "" is the
-			// implicit legacy schema and is an identity, not an unknown (ADR 0004
-			// Decision 2).
+			// The schema axis, cross-checked against the parsed identity: "" was
+			// classic's implicit legacy schema (removed in issue #103) and is an
+			// identity, not an unknown (ADR 0004 Decision 2).
 			if tc.wantSchema == "" {
 				if v.Schema != nil {
 					t.Errorf("%s: MetaData.Version.Schema = %+v, want nil", tc.path, *v.Schema)

@@ -45,9 +45,9 @@ type App_t struct {
 
 	// Release is the map/@release this application version writes, verbatim
 	// ("2025"). "" means the file states no map/@release attribute AT ALL, which
-	// is classic's identity (ADR 0004 Decision 2) and not "unknown" -- the two
-	// must not be conflated, because an unknown release is a bug and an absent one
-	// is a correct classic file.
+	// was classic's identity (ADR 0004 Decision 2; no codec has written it since
+	// issue #103) and is not "unknown" -- the two must not be conflated, because
+	// an unknown release is a bug and an absent one is a stated identity.
 	//
 	// This is an output value. It is never read from the map being encoded.
 	Release string
@@ -62,16 +62,17 @@ type App_t struct {
 // 5).
 type Set_t struct {
 	// Codec identifies the declaring codec by its package path element, e.g.
-	// "v0_77". It is our identifier, not a file value, and it exists here only to
+	// "v1_06". It is our identifier, not a file value, and it exists here only to
 	// name the codec in an error message.
 	//
-	// A codec version is not a schema version: "0.77" appears on no disk and must
+	// A codec version is not a schema version: it appears on no disk and must
 	// never reach Schema or a file.
 	Codec string
 
 	// Schema is the single schema version this codec writes, verbatim as a file
 	// states it ("1.06"); "" when the codec writes no map/@schema attribute at
-	// all, which is classic's implicit legacy schema (ADR 0004 Decision 2).
+	// all, as classic's implicit legacy schema did (ADR 0004 Decision 2) before
+	// issue #103 removed it.
 	//
 	// Every schema string that reaches a file is copied from here verbatim and is
 	// never re-rendered from a parsed version's components, because verbatim
@@ -79,7 +80,7 @@ type Set_t struct {
 	Schema string
 
 	// XMLVersion is the version in the XML declaration this codec's files open
-	// with: "1.0" for classic, "1.1" for W2025.
+	// with: "1.1" for W2025 (classic's was "1.0").
 	//
 	// It is a per-CODEC constant TODAY, and only because that is what Inkwell
 	// currently produces: every build that writes a given schema happens to open
@@ -115,8 +116,8 @@ func (s Set_t) Clone() Set_t {
 //
 // The comparison is verbatim, for the reason given on App_t.Version. The App_t
 // returned when ok is false is the zero value and must not be read: its empty
-// Release would be indistinguishable from classic's meaningful "write no
-// map/@release attribute".
+// Release would be indistinguishable from the meaningful "write no map/@release
+// attribute".
 func (s Set_t) App(app string) (App_t, bool) {
 	for _, a := range s.Apps {
 		if a.Version == app {
@@ -150,11 +151,12 @@ func (s Set_t) VerifyApp(app string) error {
 // independent of any other codec's.
 //
 // A codec states a schema IF AND ONLY IF its application versions state a
-// release: classic files carry neither map/@schema nor map/@release, W2025 files
-// carry both (ADR 0003 Decision 2). This is the guard NewRegistry used to enforce
-// over registry entries, which issue #41 called load-bearing and which has
-// nowhere else to live once the registry stops carrying schema and release
-// (issue #45 Decision 8). It moves here rather than lapsing.
+// release: W2025 files carry both map/@schema and map/@release, and classic
+// files, which wxx no longer reads (issue #103), carried neither (ADR 0003
+// Decision 2). This is the guard NewRegistry used to enforce over registry
+// entries, which issue #41 called load-bearing and which has nowhere else to
+// live once the registry stops carrying schema and release (issue #45 Decision
+// 8). It moves here rather than lapsing.
 //
 // It belongs on the declaration because the declaration is what it is about. A
 // codec pairing Schema "" with an app carrying Release "2025" is not describing a
@@ -185,7 +187,7 @@ func (s Set_t) Verify() error {
 // SchemaLabel renders the declared schema for an error message.
 func (s Set_t) SchemaLabel() string {
 	if s.Schema == "" {
-		return "implicit (classic)"
+		return "none"
 	}
 	return fmt.Sprintf("%q", s.Schema)
 }
@@ -194,7 +196,7 @@ func (s Set_t) SchemaLabel() string {
 // meaningful absence from a quoted value.
 func releaseLabel(release string) string {
 	if release == "" {
-		return "absent (classic)"
+		return "absent"
 	}
 	return fmt.Sprintf("%q", release)
 }

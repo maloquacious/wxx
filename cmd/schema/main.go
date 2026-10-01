@@ -113,9 +113,10 @@ func main() {
 			fmt.Printf("\t%v\n", err)
 			continue
 		}
-		if xmlMetaData.Release == "" && xmlMetaData.Version != "" && xmlMetaData.Schema == "" {
-			// H2017 file
-			fmt.Printf("\tH2017: version %s\n", xmlMetaData.Version)
+		if xmlMetaData.Release == "" && strings.HasPrefix(xmlMetaData.Version, "1.") {
+			// a classic (Worldographer 1.x) file, refused as the decoder refuses it (issue #103)
+			fmt.Printf("\t%v\n", errors.Join(wxx.ErrClassicMap, fmt.Errorf("map: version %q: no release", xmlMetaData.Version)))
+			continue
 		} else if xmlMetaData.Release == "2025" && xmlMetaData.Version != "" && xmlMetaData.Schema != "" {
 			// W2025 file
 			fmt.Printf("\tW2025: version %s: schema %s\n", xmlMetaData.Version, xmlMetaData.Schema)
@@ -141,8 +142,8 @@ func main() {
 
 type mapMetaData struct {
 	Version string `xml:"version,attr"` // required
-	Release string `xml:"release,attr"` // H2017 optional, W2025 required
-	Schema  string `xml:"schema,attr"`  // H2017 optional, W2025 required
+	Release string `xml:"release,attr"` // W2025 required; absent from a classic file
+	Schema  string `xml:"schema,attr"`  // W2025 required; absent from a classic file
 }
 
 // readMapMetadata

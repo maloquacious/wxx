@@ -251,10 +251,10 @@ func TestParsedReportsWhetherComponentsExist(t *testing.T) {
 		t.Errorf("the Dotted returned with an error reports Parsed() = true, want false")
 	}
 
-	// The decoder fallback's shape. This literal is what
-	// v1_06.dottedOrRaw and v0_77.classicVersionIdentity build; written here
-	// inside package wxx it could name the flag, and the point is that outside
-	// the package it cannot.
+	// The decoder fallback's shape. This literal is what v1_06.dottedOrRaw
+	// builds (and v0_77.classicVersionIdentity did, before issue #103); written
+	// here inside package wxx it could name the flag, and the point is that
+	// outside the package it cannot.
 	fallback := Dotted{Raw: "garbage"}
 	if fallback.Parsed() {
 		t.Errorf("Dotted{Raw: %q}.Parsed() = true, want false: the decoder fallback never parsed anything", fallback.Raw)

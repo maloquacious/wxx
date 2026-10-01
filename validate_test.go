@@ -150,7 +150,7 @@ func TestValidateRejects(t *testing.T) {
 		},
 		{
 			// The grid the encoders panicked on: the header promises a column
-			// the grid does not hold, and both codecs loop to the header.
+			// the grid does not hold, and the encoder loops to the header.
 			name:    "header claims more columns than the grid holds",
 			break_:  func(m *Map_t) { m.Tiles.TilesWide++ },
 			wantErr: ErrInvalidTileGrid,

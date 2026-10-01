@@ -162,10 +162,10 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 
 	// Create a simplified map structure for the template
 	// The two version axes are reported separately: map/@version is the build
-	// that wrote the file and map/@schema is the format it conforms to. A classic
-	// file states no schema at all, and the absence is what identifies the
-	// implicit legacy one, so say that rather than showing an empty cell.
-	fileSchema := "implicit (classic)"
+	// that wrote the file and map/@schema is the format it conforms to. A
+	// decoded map always states a schema; "none" guards the nil anyway rather
+	// than showing an empty cell.
+	fileSchema := "none"
 	if s := worldMap.MetaData.Version.Schema; s != nil {
 		fileSchema = s.Raw
 	}

@@ -17,29 +17,29 @@ package wxx
 // Both members are Dotted, never semver: the components exist to compare and Raw
 // is what goes back to disk.
 type Version_t struct {
-	// App is map/@version, the application build that wrote the file: "1.73",
-	// "1.74" or "1.77" for classic, "2.06" for the W2025 baseline. Every
-	// supported file states it, so it is a value rather than a pointer.
+	// App is map/@version, the application build that wrote the file: "2.06"
+	// for the W2025 baseline. Every supported file states it, so it is a value
+	// rather than a pointer.
 	App Dotted
 
 	// Schema is map/@schema, the on-disk data format the file conforms to
 	// ("1.06" for the W2025 baseline).
 	//
-	// nil is meaningful, and it does not mean "unknown": it identifies the one
-	// implicit legacy (classic) schema, which states no @schema attribute at
-	// all. Classic 1.73, 1.74 and 1.77 share an identical element vocabulary,
-	// so the absence names a single schema rather than leaving a question open.
+	// nil means the map states no schema. Every supported file states one, so
+	// a decoded map never holds nil; only a map a caller built can. It was the
+	// classic (Worldographer 1.x) format's identity, which states no @schema
+	// attribute at all, until issue #103 removed classic support.
 	Schema *Dotted
 }
 
 // String renders both axes for display: `app 2.06, schema 1.06` for a W2025
-// file, `app 1.77, schema implicit (classic)` for a classic one.
+// file, and `schema none` when Schema is nil.
 //
 // This is for humans -- a report line, an error message, a template. Nothing
 // written to a file ever comes from here: an encoder emits App.Raw and
 // Schema.Raw individually, into the attributes they came from.
 func (v Version_t) String() string {
-	schema := "implicit (classic)"
+	schema := "none"
 	if v.Schema != nil {
 		schema = v.Schema.Raw
 	}

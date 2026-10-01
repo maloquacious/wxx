@@ -216,9 +216,9 @@ func encodeInnerText(input string) string {
 // (issue #96), because that is how Worldographer writes them: every non-ASCII
 // character in an attribute of every W2025 fixture is spelled that way
 // (title="Fabi&#225;n" in the 2.06 populated map), and none is written raw.
-// The classic encoder has always done the same. A character outside the Basic
-// Multilingual Plane is written as one reference to its code point; no fixture
-// shows how the app spells one.
+// The classic encoder, removed in issue #103, did the same. A character
+// outside the Basic Multilingual Plane is written as one reference to its code
+// point; no fixture shows how the app spells one.
 func xmlAttr(s string) string {
 	var b strings.Builder
 	b.Grow(len(s) + 2)

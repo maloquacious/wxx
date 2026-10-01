@@ -214,8 +214,8 @@ func (d *Decoder) Decode(r io.Reader) (*wxx.Map_t, error) {
 	// Read the map metadata so we know how to dispatch for parsing.
 	var xmlMetaData struct {
 		Version string `xml:"version,attr"` // required
-		Release string `xml:"release,attr"` // H2017 optional, W2025 required
-		Schema  string `xml:"schema,attr"`  // H2017 optional, W2025 required
+		Release string `xml:"release,attr"` // W2025 required; absent from a classic file
+		Schema  string `xml:"schema,attr"`  // W2025 required; absent from a classic file
 		buffer  []byte
 	}
 
