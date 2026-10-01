@@ -135,7 +135,11 @@ above (issue #124, the maintainer's ruling). It is the only clamp, and it is a
 - **The resource name in a report is only as right as the field order.** The
   decoder reads the seven values in the tile record's order (animal, brick,
   crops, gems, lumber, metals, rock). For this attribute that order is
-  **unverified** (#124), so a report saying `Brick` means "the second value".
+  **unverified, and the app gives no way to verify it** (#124): the Options
+  panel does not set a non-base placement's resources and the hover tooltip
+  shows them as 0. So a report saying `Brick` means "the second value". The
+  order costs nothing on disk: decode and encode use the same order, so all
+  seven positions round-trip unchanged.
 - **No app-saved fixture is clamped**, and `TestW2025FixturesReportNoClamps`
   holds every 2.07 and 2.08 fixture to that.
 
