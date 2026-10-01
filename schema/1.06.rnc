@@ -20,16 +20,17 @@
 # ---------------------------------------------------------------------------
 # EVIDENCE
 #
-# The evidence is the seven tracked 2.08 fixtures, saved by Worldographer 2.08:
+# The evidence is the eight tracked 2.08 fixtures, saved by Worldographer 2.08:
 #
-#   blank           testdata/2025-2.08-13x11-941577-blank.wxx
-#   layers          testdata/2025-2.08-13x11-941577-layers.wxx
-#   notes-shapes    testdata/2025-2.08-13x11-941577-notes-shapes.wxx
-#   populated       testdata/2025-2.08-13x11-941577-populated.wxx
-#   resources       testdata/2025-2.08-13x11-941577-resources.wxx
-#   rows            testdata/2025-2.08-13x11-941577-rows.wxx
-#   tile-resources  testdata/2025-2.08-13x11-941577-tile-resources.wxx
-#   all             every one of the seven
+#   blank                  testdata/2025-2.08-13x11-941577-blank.wxx
+#   extraterrain-bgcolor   testdata/2025-2.08-13x11-941577-extraterrain-bgcolor.wxx
+#   layers                 testdata/2025-2.08-13x11-941577-layers.wxx
+#   notes-shapes           testdata/2025-2.08-13x11-941577-notes-shapes.wxx
+#   populated              testdata/2025-2.08-13x11-941577-populated.wxx
+#   resources              testdata/2025-2.08-13x11-941577-resources.wxx
+#   rows                   testdata/2025-2.08-13x11-941577-rows.wxx
+#   tile-resources         testdata/2025-2.08-13x11-941577-tile-resources.wxx
+#   all                    every one of the eight
 #
 # Plus the maintainer's app checks recorded in GitHub issues, cited as
 # "app check, #NN".
@@ -47,7 +48,7 @@
 # The label above a named pattern covers the element and every line inside it,
 # unless a line carries a label of its own.
 #
-# CARDINALITY. "?", "*" and "+" are claims too, and seven fixtures cannot show
+# CARDINALITY. "?", "*" and "+" are claims too, and eight fixtures cannot show
 # that something is required. So:
 #
 #   - an attribute or child element that was present on every instance is
@@ -165,7 +166,7 @@ Map = element map {
   attribute showShadows { xsd:boolean }?,
   # inferred: integral in every fixture; no app check.
   attribute triangleSize { xsd:integer }?,
-  # inferred: each child is present once in all seven (maplayer: eight times);
+  # inferred: each child is present once in all eight (maplayer: eight times);
   # the "?" and "*" are the looser reading.
   GridAndNumbering?,
   BlurTerrainBG?,
@@ -258,7 +259,7 @@ Tiles = element tiles {
   attribute tilesWide { xsd:integer }?,
   # inferred: integral in every fixture; no app check.
   attribute tilesHigh { xsd:integer }?,
-  # inferred: thirteen tilerows (= tilesWide) in all seven; "*" is the looser
+  # inferred: thirteen tilerows (= tilesWide) in all eight; "*" is the looser
   # reading.
   TileRow*
 }
@@ -344,7 +345,7 @@ MapKey = element mapkey {
   # integer: the app writes it integrally (observed: app check, #64);
   # whether a decimal point stops the file opening is untested.
   attribute entryScale { xsd:integer }?,
-  # inferred: whitespace only in all seven; content TBD.
+  # inferred: whitespace only in all eight; content TBD.
   text
 }
 
@@ -407,7 +408,8 @@ ExtraTerrainLayer = element mapLayer {
   TerrainAndLocation*
 }
 
-# observed: layers, notes-shapes; attributes always.
+# observed: extraterrain-bgcolor, layers, notes-shapes; attributes always,
+# except bgColor.
 TerrainAndLocation = element terrainAndLocation {
   attribute name { xsd:string }?,
   # inferred: integral in every fixture; no app check.
@@ -424,6 +426,10 @@ TerrainAndLocation = element terrainAndLocation {
   # check, #124). A value of 150 stops the file opening; the app reads it
   # with Byte.parseByte (observed: app check, #124). 101..127: TBD.
   attribute resources { xsd:string }?,
+  # Override BG: "r,g,b,a" (header, COLORS), present only when it is set
+  # (observed: extraterrain-bgcolor, sometimes; magenta "1.0,0.0,1.0,1.0" and
+  # opaque black "0.0,0.0,0.0,1.0", absent on the placement without it; #126).
+  attribute bgColor { xsd:string }?,
   # "x,y" (observed: layers, notes-shapes).
   attribute location { xsd:string }?,
   empty
@@ -593,11 +599,11 @@ NoteText = element notetext {
 
 # observed: all.
 Informations = element informations {
-  # inferred: five top-level entries in all seven; "*" is the looser reading.
+  # inferred: five top-level entries in all eight; "*" is the looser reading.
   Information*
 }
 
-# observed: all, nested three deep in all seven: top-level entries
+# observed: all, nested three deep in all eight: top-level entries
 # (type="Information"), their children (Nation, Culture, Religion), and
 # Religion entries under Religion entries. The recursion is what the files
 # hold (#69).
@@ -627,7 +633,7 @@ Information = element information {
 
 # observed: all; children always, in this order.
 Configuration = element configuration {
-  # inferred: each child present once in all seven; "?" is the looser reading.
+  # inferred: each child present once in all eight; "?" is the looser reading.
   TerrainConfig?,
   FeatureConfig?,
   TextureConfig?,
@@ -652,7 +658,7 @@ TextureConfig = element texture-config {
 
 # observed: all.
 TextConfig = element text-config {
-  # inferred: seven labelstyles in all seven; "*" is the looser reading.
+  # inferred: seven labelstyles in all eight; "*" is the looser reading.
   LabelStyle*
 }
 
@@ -681,7 +687,7 @@ LabelStyle = element labelstyle {
 
 # observed: all.
 ShapeConfig = element shape-config {
-  # inferred: seven shapestyles in all seven; "*" is the looser reading.
+  # inferred: seven shapestyles in all eight; "*" is the looser reading.
   ShapeStyle*
 }
 

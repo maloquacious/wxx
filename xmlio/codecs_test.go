@@ -329,6 +329,7 @@ var registryFixtureSamples = []struct {
 	{"w2025 2.08 resources", sample2025_208Resources, "2.08", v1_06.Codec_t{}, "2025", "1.06"},
 	{"w2025 2.08 rows", sample2025_208Rows, "2.08", v1_06.Codec_t{}, "2025", "1.06"},
 	{"w2025 2.08 tile-resources", sample2025_208TileResources, "2.08", v1_06.Codec_t{}, "2025", "1.06"},
+	{"w2025 2.08 extraterrain-bgcolor", sample2025_208ExtraTerrainBgColor, "2.08", v1_06.Codec_t{}, "2025", "1.06"},
 }
 
 // TestRegistryMatchesFixtures grounds the registry in the files on disk rather

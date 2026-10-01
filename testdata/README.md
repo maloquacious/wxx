@@ -357,6 +357,50 @@ Before saving, ensure all layers are visible, GM Only: Show is checked, Grid: Sh
 
 Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-tile-resources.wxx
 
+## ExtraTerrain bgColor
+
+Sets Override BG on terrain placed on a layer other than Terrain Land/Water,
+which the app writes as `<terrainAndLocation bgColor="r,g,b,a">` (issue #126):
+one placement with a color, one without, and one with opaque black.
+
+File > New World/Kingdom map
+
+Hex Orientation: Columns Line Up
+Map Projection: Flat
+  Hexes Wide: 13
+  Hexes High: 11
+
+Initial View Level: WORLD
+
+[x] Use suggested pixel sizes
+
+Random Seed: 941577
+
+All one terrain: Blank
+
+Generate Map
+
+### Add Terrain
+Open the Terrain tab, select Below All from the dropdown, disable terrain fill,
+and select Flat Desert Cold. On the Options sub-tab leave Icy and GM Only
+unchecked. Then:
+
+1. Hex (1,0): Override BG unchecked. Click on (1,0).
+2. Hex (0,0): Override BG checked, the magenta swatch. Click on (0,0).
+3. Hex (2,0): Override BG checked, the black swatch. Click on (2,0).
+
+Pick colors by the swatch: the picker named the black swatch "White". The
+app lists the placements by position, not in the order they were added.
+
+On this layer the Options panel's elevation, GM Only and resources are not
+applied (#124), so only the background color is under the recipe's control.
+
+### Save
+
+Before saving, ensure all layers are visible, GM Only: Show is checked, Grid: Show/Numbers/Shadows are checked.
+
+Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-extraterrain-bgcolor.wxx
+
 ## CDATA guard
 
 Tests how Worldographer stores a typed `]]>`, the sequence that ends a CDATA

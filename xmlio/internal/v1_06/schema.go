@@ -102,6 +102,7 @@ type TerrainAndLocation_t struct {
 	Icy        bool                 `xml:"icy,attr"`
 	GmOnly     bool                 `xml:"gmOnly,attr"`
 	Resources  string               `xml:"resources,attr"`
+	BgColor    string               `xml:"bgColor,attr"` // absent reads as ""; issue #126
 	Location   string               `xml:"location,attr"`
 	OtherAttrs []xml.Attr           `xml:",any,attr"`
 	Other      []unmodeledElement_t `xml:",any"`

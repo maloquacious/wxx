@@ -42,14 +42,16 @@ const (
 	sample2025_207Rows      = "../testdata/2025-2.07-13x11-941577-rows.wxx"      // release=2025 version=2.07 schema=1.06
 	// The 2.08 saves (#91, #94), built from the same recipes as the 2.07 ones
 	// plus the populated map, and tile-resources, which sets every field of one
-	// tile record (#117).
-	sample2025_208Blank         = "../testdata/2025-2.08-13x11-941577-blank.wxx"          // release=2025 version=2.08 schema=1.06
-	sample2025_208Layers        = "../testdata/2025-2.08-13x11-941577-layers.wxx"         // release=2025 version=2.08 schema=1.06
-	sample2025_208NotesShapes   = "../testdata/2025-2.08-13x11-941577-notes-shapes.wxx"   // release=2025 version=2.08 schema=1.06
-	sample2025_208Populated     = "../testdata/2025-2.08-13x11-941577-populated.wxx"      // release=2025 version=2.08 schema=1.06
-	sample2025_208Resources     = "../testdata/2025-2.08-13x11-941577-resources.wxx"      // release=2025 version=2.08 schema=1.06
-	sample2025_208Rows          = "../testdata/2025-2.08-13x11-941577-rows.wxx"           // release=2025 version=2.08 schema=1.06
-	sample2025_208TileResources = "../testdata/2025-2.08-13x11-941577-tile-resources.wxx" // release=2025 version=2.08 schema=1.06
+	// tile record (#117), and extraterrain-bgcolor, which sets Override BG on
+	// Below All placements (#126).
+	sample2025_208Blank               = "../testdata/2025-2.08-13x11-941577-blank.wxx"                // release=2025 version=2.08 schema=1.06
+	sample2025_208Layers              = "../testdata/2025-2.08-13x11-941577-layers.wxx"               // release=2025 version=2.08 schema=1.06
+	sample2025_208NotesShapes         = "../testdata/2025-2.08-13x11-941577-notes-shapes.wxx"         // release=2025 version=2.08 schema=1.06
+	sample2025_208Populated           = "../testdata/2025-2.08-13x11-941577-populated.wxx"            // release=2025 version=2.08 schema=1.06
+	sample2025_208Resources           = "../testdata/2025-2.08-13x11-941577-resources.wxx"            // release=2025 version=2.08 schema=1.06
+	sample2025_208Rows                = "../testdata/2025-2.08-13x11-941577-rows.wxx"                 // release=2025 version=2.08 schema=1.06
+	sample2025_208TileResources       = "../testdata/2025-2.08-13x11-941577-tile-resources.wxx"       // release=2025 version=2.08 schema=1.06
+	sample2025_208ExtraTerrainBgColor = "../testdata/2025-2.08-13x11-941577-extraterrain-bgcolor.wxx" // release=2025 version=2.08 schema=1.06
 
 	// w2025Target is the application version the tests encode 2.07 maps as: the
 	// version they state, registered by issue #92.
@@ -101,6 +103,7 @@ var fixtures208 = []string{
 	sample2025_208Resources,
 	sample2025_208Rows,
 	sample2025_208TileResources,
+	sample2025_208ExtraTerrainBgColor,
 }
 
 // TestW2025Decode_BothSamples documents that the public decoder accepts both

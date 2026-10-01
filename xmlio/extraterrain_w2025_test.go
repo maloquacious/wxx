@@ -44,11 +44,13 @@ func TestW2025ExtraTerrainMatchesSource(t *testing.T) {
 		"2025-2.07-13x11-941577-resources.wxx",
 		"2025-2.07-13x11-941577-rows.wxx",
 		"2025-2.08-13x11-941577-blank.wxx",
+		"2025-2.08-13x11-941577-extraterrain-bgcolor.wxx",
 		"2025-2.08-13x11-941577-layers.wxx",
 		"2025-2.08-13x11-941577-notes-shapes.wxx",
 		"2025-2.08-13x11-941577-populated.wxx",
 		"2025-2.08-13x11-941577-resources.wxx",
 		"2025-2.08-13x11-941577-rows.wxx",
+		"2025-2.08-13x11-941577-tile-resources.wxx",
 	} {
 		cases[fixture] = func(t *testing.T) pair {
 			f, err := os.Open(filepath.Join("..", "testdata", fixture))
@@ -203,6 +205,9 @@ func TestW2025ExtraTerrainDecodeRefusals(t *testing.T) {
 		{"resources neither Z nor seven values", placement, `resources="1,2,3" location="225.0,150.0" />`, "@resources"},
 		{"location without a comma", placement, `resources="Z" location="225.0" />`, "@location"},
 		{"fractional elevation", `elevation="1000"`, `elevation="1000.0"`, "elevation"},
+		// "null" would decode to no colour and be omitted on encode (#126).
+		{"bgColor null", placement, `resources="Z" bgColor="null" location="225.0,150.0" />`, "@bgColor"},
+		{"bgColor not a colour", placement, `resources="Z" bgColor="magenta" location="225.0,150.0" />`, "@bgColor"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if !bytes.Contains(source, []byte(tc.from)) {
@@ -217,5 +222,36 @@ func TestW2025ExtraTerrainDecodeRefusals(t *testing.T) {
 				t.Errorf("decode: err = %q, want it to name %q", err, tc.wantMsg)
 			}
 		})
+	}
+}
+
+// TestW2025ExtraTerrainBgColor pins the three cases of <terrainAndLocation>
+// @bgColor (issue #126) in the fixture built for it: Override BG set to
+// magenta at hex (0,0), not set at (1,0), and set to opaque black at (2,0).
+// Black is the case #99 lost elsewhere, by reading it as no colour; here nil
+// means the attribute is absent and nothing else.
+func TestW2025ExtraTerrainBgColor(t *testing.T) {
+	m, err := xmlio.ReadFile(sample2025_208ExtraTerrainBgColor)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	placements := m.ExtraTerrain.MapLayers[0].Terrain
+	if len(placements) != 3 {
+		t.Fatalf("Below All holds %d placements, want 3", len(placements))
+	}
+	for i, want := range []*wxx.RGBA_t{
+		{R: 1, G: 0, B: 1, A: 1}, // (0,0): magenta
+		nil,                      // (1,0): no Override BG
+		{R: 0, G: 0, B: 0, A: 1}, // (2,0): opaque black
+	} {
+		got := placements[i].CustomBackgroundColor
+		switch {
+		case want == nil && got != nil:
+			t.Errorf("placement %d: CustomBackgroundColor = %+v, want nil", i, *got)
+		case want != nil && got == nil:
+			t.Errorf("placement %d: CustomBackgroundColor = nil, want %+v", i, *want)
+		case want != nil && *got != *want:
+			t.Errorf("placement %d: CustomBackgroundColor = %+v, want %+v", i, *got, *want)
+		}
 	}
 }
