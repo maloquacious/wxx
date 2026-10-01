@@ -14,9 +14,10 @@ import (
 // label contexts, labels/label and feature/label.
 //
 // No saved fixture carries the attribute. An app check settled it: Worldographer
-// 2025 2.08 draws backgroundColor, opaque black included, behind both a free
-// label and a feature label, and its save keeps the attribute, written straight
-// after @color, and writes it on no label that had none. So:
+// 2025 2.08 draws backgroundColor, opaque black included, behind a free label,
+// and does not draw it on a feature label. Its save keeps the attribute in both
+// contexts, written straight after @color, and writes it on no label that had
+// none. wxx keeps what the app keeps. So:
 //
 //   - a nil background writes no attribute;
 //   - any set background is written after @color, opaque black included -- the

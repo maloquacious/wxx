@@ -55,8 +55,9 @@ func decodeLabels(src Labels_t, w *wxx.Map_t) error {
 
 // decodeLabelBackgroundColor decodes label/@backgroundColor for both label
 // contexts (labels/label and feature/label). No saved fixture carries it; an
-// app check (#115) showed Worldographer 2025 draws it in both contexts, and that
-// the app's save keeps it and writes it only when set. An
+// app check (#115) showed Worldographer 2025 draws it on a labels/label but not
+// on a feature/label, and that the app's save keeps it in both contexts and
+// writes it only when set. wxx keeps what the app keeps, drawn or not. An
 // absent attribute is nil; opaque black is a colour, not nil.
 func decodeLabelBackgroundColor(s string) (*wxx.RGBA_t, error) {
 	return decodeZeroableRgba(s)
