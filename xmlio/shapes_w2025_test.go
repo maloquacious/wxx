@@ -92,9 +92,10 @@ func integerSpelledPoint(p map[string]string) bool {
 // The populated 2.08 map (issue #94) adds a curved path, whose type="c" points
 // state control points in @cx1 @cy1 @cx2 @cy2, and the first coordinates with
 // long fractional parts (x="1715.028150714595"); both are compared as exact
-// strings like every other attribute.
+// strings like every other attribute. The river-lines 2.08 map (issue #154)
+// adds two lines drawn with Snap Points to Grid.
 func TestW2025ShapesMatchSource(t *testing.T) {
-	fixtures := append(append([]string(nil), notesShapesFixtures...), populatedFixture)
+	fixtures := append(append([]string(nil), notesShapesFixtures...), populatedFixture, riverLinesFixture)
 	curve := false // a <p> with @cx1 in some fixture's source
 	for _, fixture := range fixtures {
 		t.Run(fixture, func(t *testing.T) {
@@ -126,7 +127,7 @@ func TestW2025ShapesMatchSource(t *testing.T) {
 					compareAttrSets(t, fixture, fmt.Sprintf("shape %d/p", i), j, in[i].points[j], got[i].points[j])
 				}
 			}
-			if fixture == populatedFixture {
+			if fixture == populatedFixture || fixture == riverLinesFixture {
 				return
 			}
 

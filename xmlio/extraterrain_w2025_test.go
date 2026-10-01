@@ -49,6 +49,7 @@ func TestW2025ExtraTerrainMatchesSource(t *testing.T) {
 		"2025-2.08-13x11-941577-notes-shapes.wxx",
 		"2025-2.08-13x11-941577-populated.wxx",
 		"2025-2.08-13x11-941577-resources.wxx",
+		"2025-2.08-13x11-941577-river-lines.wxx",
 		"2025-2.08-13x11-941577-rows.wxx",
 		"2025-2.08-13x11-941577-tile-resources.wxx",
 	} {

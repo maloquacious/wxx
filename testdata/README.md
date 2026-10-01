@@ -476,3 +476,58 @@ Generate Map
 Before saving, ensure all layers are visible, GM Only: Show is checked, Grid: Show/Numbers/Shadows are checked.
 
 Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-random.wxx
+
+## River lines
+
+Two plain lines drawn along hex edges, the way a river runs (issue #154). It
+shows what the app writes for a line drawn on the grid: a `Path` shape, with
+every point on a hex corner.
+
+File > New World/Kingdom map
+
+Hex Orientation: Columns Line Up
+Map Projection: Flat
+  Hexes Wide: 13
+  Hexes High: 11
+
+Initial View Level: WORLD
+
+[x] Use suggested pixel sizes
+
+Random Seed: 941577
+
+All one terrain: Blank
+
+Generate Map
+
+### Add Terrain and Lines
+
+1. Open the Terrain tab, select Terrain Land from the dropdown, enable terrain
+   fill, and fill the layer with Flat Farmland.
+2. Open the Shapes tab and choose Line, color Blue, the Above Terrain layer.
+   Check Snap Points to Grid, and leave the fill option and Add Tile Border
+   unchecked.
+3. Draw line 1 by clicking each of these hex corners once, then click
+   De-select:
+
+   (4,1) se, (4,2) e, (4,2) se, (4,3) e, (5,2) se, (5,3) e, (5,3) se, (4,4) e,
+   (4,3) se, (3,3) e, (3,3) se, (2,4) e
+
+4. Draw line 2, which ends on a corner of line 1, then click De-select:
+
+   (6,2) e, (6,2) se, (5,2) e, (5,2) se
+
+Corners are named clockwise from east: `e, se, sw, w, nw, ne`. Click close to
+the corner: a point can also snap to a hex center. The notes-shapes line, drawn
+with Snap Points to Grid checked, has both its points on centers.
+
+The 2.08 fixture was built from this recipe. Apart from the Farmland fill and
+the two lines, it matches the 2.08 blank fixture except for the lore in
+`<informations>`, which Worldographer generated differently this time from the
+same seed.
+
+### Save
+
+Before saving, ensure all layers are visible, GM Only: Show is checked, Grid: Show/Numbers/Shadows are checked.
+
+Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-river-lines.wxx

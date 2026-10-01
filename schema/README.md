@@ -99,7 +99,7 @@ A fixture the test reads must live in `testdata/` and be tracked.
   Before you write one in a comment, doc, issue or commit message, check the
   fixture bytes with the `gunzip | iconv` command above.
 - **When a file contradicts an inferred rule, suspect the grammar first.** The
-  grammar is built from eight saves; the app wrote the file.
+  grammar is built from nine saves; the app wrote the file.
 - **Do not infer the format from Go structs.** `Map_t` and the codec's schema
   types show what wxx models, not what the file holds.
 
