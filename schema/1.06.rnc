@@ -269,8 +269,36 @@ Tiles = element tiles {
 # 1 wide by 11 high holding one tilerow of 11 records).
 # Text: one tile record per line, fields tab-separated. Observed: records of
 # 11 fields (layers, notes-shapes, populated, resources) and of 6 fields
-# ending in "Z" (blank, layers, notes-shapes, resources, rows). Field meaning:
-# TBD here; see schema/README.md.
+# ending in "Z" (blank, layers, notes-shapes, resources, rows).
+#
+# The fields, in order. Spellings are observed: all. Meanings marked
+# "Discord" come from a post by Worldographer's author on Discord,
+# 2023-12-22, as summarized in xmlio/internal/v1_06/tiles.go (the post itself
+# is not checked here, and it predates Worldographer 2025):
+# https://discord.com/channels/535205750532997160/877285895991095369/1187771984768151653
+#
+#   1      terrain slot: an integer, the index of an entry in TerrainMap.
+#          observed: every slot resolves in its file's terrainmap.
+#   2      elevation: integral in every fixture (Blank 1, Water Sea -1, Flat
+#          Farmland 1000). Whether a decimal point is allowed is TBD.
+#   3      isIcy: 0 or 1. observed: notes-shapes, which sets it in the app
+#          (testdata/README.md). The Discord summary says float; no fixture
+#          spells it so.
+#   4      isGMOnly: 0 or 1. observed: notes-shapes, as 3. Set on a hex of
+#          another layer (Below All, Above Water, Above Terrain), 3 and 4
+#          stay 0 here and that layer's terrainAndLocation carries them
+#          (observed: notes-shapes).
+#   5      animals: an integer, 0 to 59 in the fixtures. Meaning and a range
+#          of 0 to 100: inferred: Discord.
+#   6      "Z", ending a 6-field record; or brick, in an 11-field record.
+#   7..11  crops, gems, lumber, metals, rock. Integers in every fixture; gems
+#          is 0 in every record.
+#          Names of 6..11: inferred: Discord. That "Z" stands for all six
+#          being 0: inferred: Discord; no fixture has an 11-field record with
+#          all six at 0.
+#   last   an optional custom background color, making 7 or 12 fields:
+#          inferred: Discord and the codec. No fixture has one; its spelling
+#          is TBD.
 TileRow = element tilerow {
   text
 }
