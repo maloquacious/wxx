@@ -124,6 +124,7 @@ func (m *Map_t) Validate() error {
 
 	problems = append(problems, m.Tiles.validate()...)
 	problems = append(problems, m.ExtraTerrain.validateResources()...)
+	problems = append(problems, m.validateColors()...)
 
 	// Join drops nils and returns nil for an empty slice, so a valid map returns
 	// nil without a length check here.

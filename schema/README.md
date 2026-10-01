@@ -135,7 +135,10 @@ each with its source, are listed in the grammar (`TileRow`, #117).
 **Colors have two spellings** (grammar header, *COLORS*):
 
 - `r,g,b,a`: four decimals, each 0 to 1. An out-of-range component stops the
-  file opening (app check, #83: `dsColor="255,0,0,1"`), and so does a shape
+  file opening, with JavaFX's "Color's red value (255.0) must be in the range
+  0.0-1.0" (app checks: #83 on `dsColor="255,0,0,1"`, #128 on a tile record's
+  background `255.0,0.0,1.0,1.0`). The other color attributes are inferred to
+  fail the same way, since two read by different code did. So does a shape
   with `dsColor=""` and `insColor=""`. Many color attributes also hold the
   literal `null`; that it means "no color" is inferred.
 - `0xRRGGBBAA`: `gridandnumbering/@color0..4` and `@numberColor` (observed:

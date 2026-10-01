@@ -41,3 +41,30 @@ func TestW2025TileResourceOutOfRangeRefused(t *testing.T) {
 		t.Errorf("Encode: wrote %d bytes to w, want 0", buf.Len())
 	}
 }
+
+// TestW2025ColorOutOfRangeRefused is issue #128's reproduction. The encoder
+// wrote an *RGBA_t colour unchecked, and Worldographer 2.08 will not open a
+// tile record whose background is 255.0,0.0,1.0,1.0 (JavaFX's Color
+// constructor, app check, #128). It is now refused before writing a byte.
+func TestW2025ColorOutOfRangeRefused(t *testing.T) {
+	m, err := xmlio.ReadFile(sample2025_208TileResources)
+	if err != nil {
+		t.Fatalf("read %s: %v", sample2025_208TileResources, err)
+	}
+	m.Tiles.Tiles[0][0].CustomBackgroundColor = &wxx.RGBA_t{R: 255, G: 0, B: 1, A: 1}
+
+	var buf bytes.Buffer
+	err = xmlio.NewEncoder("2.08").Encode(&buf, m)
+	if err == nil {
+		t.Fatalf("Encode: want an error, got nil")
+	}
+	if !errors.Is(err, wxx.ErrInvalidColorAttribute) {
+		t.Errorf("Encode: err = %v, want errors.Is(err, %v)", err, wxx.ErrInvalidColorAttribute)
+	}
+	if want := "Tiles_t.Tiles[0][0].CustomBackgroundColor): 255,0,1,1"; !strings.Contains(err.Error(), want) {
+		t.Errorf("Encode: err = %q, want it to name %q", err.Error(), want)
+	}
+	if buf.Len() != 0 {
+		t.Errorf("Encode: wrote %d bytes to w, want 0", buf.Len())
+	}
+}
