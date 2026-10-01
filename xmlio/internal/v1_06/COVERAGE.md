@@ -88,7 +88,7 @@ Tests referenced (in `xmlio/roundtrip_2025_test.go` unless noted, package
 | configuration `<text-config>` / `<labelstyle>` | implemented | implemented | RoundTrip, PublicRoundTrip, CoverageMatrix, **AttrsMatchSource**, **BlackBackgroundIsNotNull**, **IntegerAttributeSpelling** | 7 labelstyles in sample round-trip; `dropShadowColor` (nullable string) / `dropShadowRadius` / `dropShadowSpread` now modeled (#11). **Both nullable colours are exact as of #62**: `backgroundColor="null"` used to come back as `"0.0,0.0,0.0,1.0"` on every label style of every file this codec wrote, because `decodeRgba` folded `"null"` and opaque black into the same nil and `rgbas` rendered nil as black. Decode now uses `decodeZeroableRgba` so nil means `"null"` and nothing else, and encode uses `rgbaOrNull`; `rgbans` was rejected as the fix because it decides on the formatted string and would have laundered a genuine opaque black into `"null"` instead. `TestW2025LabelStyleAttrsMatchSource` compares every attribute against the source document — the audit the classic codec had and W2025 lacked, which is why the structural round-trip tests could not see this — and `TestW2025LabelStyleBlackBackgroundIsNotNull` synthesizes the black case no fixture carries. `dropShadowRadius` and `dropShadowSpread` are **integers on disk** and are now written as such (issue #64); they were emitted `"0.0"`, which Worldographer refuses to load. The element is byte-identical to the source apart from inter-attribute whitespace. |
 | configuration `<shape-config>` / `<shapestyle>` | implemented | implemented | RoundTrip, PublicRoundTrip, CoverageMatrix, **BlackIsNotNull** | 7 shapestyles in sample round-trip; `lineCap` / `lineJoin` now modeled (#11). The nullable `@fillPaint`, `@dscolor` and `@insColor` decode with `decodeZeroableRgba` and encode with `rgbaOrNull` (#99), so an opaque black is no longer written as `"null"`. `@strokePaint` is never `"null"` and keeps `decodeRgba`/`rgbas`, which is lossless for it. |
 | `<blurTerrainBG>` | implemented | implemented | CoverageMatrix | Optional top-level element modeled as `*BlurTerrainBG_t` (nil = absent); 6 attrs round-trip (#11). |
-| `<extraTerrain>` (+ `<mapLayer>` / `<terrainAndLocation>`) | implemented | implemented | ExtraTerrainMatchesSource, ExtraTerrainRoundTrip, ExtraTerrainDecodeRefusals | Modeled structurally by #34 as `ExtraTerrain_t` → `[]ExtraTerrainLayer_t` → `[]TerrainAndLocation_t` (terrain name, integer elevation, icy, GM-only, resources, and `location` kept as the raw x,y point). Encode reproduces the source byte for byte on all three samples. Decode refuses any child element or attribute it does not model instead of dropping it, because the element used to be carried verbatim. `…-blank.wxx` carries an empty container, `…-layers.wxx` one placement; multi-layer shapes are synthesized. |
+| `<extraTerrain>` (+ `<mapLayer>` / `<terrainAndLocation>`) | implemented; **lossy** for a resource outside 0..100 | implemented | ExtraTerrainMatchesSource, ExtraTerrainRoundTrip, ExtraTerrainDecodeRefusals, **ExtraTerrainResourceClampedOnDecode**, **ExtraTerrainClampIsWrittenBack**, **FixturesReportNoClamps**, **ExtraTerrainResourceOutOfRangeRefused** (in `xmlio/extraterrain_clamp_test.go`) | Decode **clamps** a `@resources` value outside 0..100 and reports it; encode refuses one. See *Values clamped on decode* below (#124). Modeled structurally by #34 as `ExtraTerrain_t` → `[]ExtraTerrainLayer_t` → `[]TerrainAndLocation_t` (terrain name, integer elevation, icy, GM-only, resources, and `location` kept as the raw x,y point). Encode reproduces the source byte for byte on all three samples. Decode refuses any child element or attribute it does not model instead of dropping it, because the element used to be carried verbatim. `…-blank.wxx` carries an empty container, `…-layers.wxx` one placement; multi-layer shapes are synthesized. |
 
 ## Integer attributes
 
@@ -110,6 +110,47 @@ every attribute a tracked document always spells integrally must be emitted
 integrally. It reads RAW attribute values — `xmlAggregate`'s `normVal`
 canonicalizes `"0"` and `"0.0"` to the same string, which is right for the loss
 inventory and blind to this.
+
+## Values clamped on decode (lossy)
+
+One thing this codec changes on the way in: a `<terrainAndLocation>`
+`@resources` value outside **0..100** is clamped into it, 0 below and 100
+above (issue #124, the maintainer's ruling). It is the only clamp, and it is a
+**loss**: the decoded `Map_t` holds the clamped value, and an encode writes it.
+
+- **Why clamp, not keep.** Worldographer 2.08 reads these fields with
+  `Byte.parseByte`: a value of 150 stops the file opening (app check, #124, in
+  `LoadMapTask.readExtraTerrain`). Keeping it would carry a value the app cannot
+  read into whatever wxx writes next.
+- **Why clamp, not refuse.** In a tile record the app opens 101..127 and saves
+  them as 100 (app check, #122). Clamping here **assumes** it does the same for
+  `<extraTerrain>`; that is untested. Refusing would make wxx unable to read a
+  map the app may open. Negative values are clamped to 0; the app was not tried
+  with one.
+- **How it is reported.** `decodeExtraTerrainResources` returns a `Clamp_t` per
+  changed value, `Decode` returns them with the map, and `xmlio` publishes them
+  as `DecoderDiagnostics.Clamped` (`xmlio.ClampedValue_t`: path, `Map_t` field,
+  old value, new value, reason). It is opt-in like all diagnostics. The command
+  line tools that read a map print each one to stderr.
+- **The resource name in a report is only as right as the field order.** The
+  decoder reads the seven values in the tile record's order (animal, brick,
+  crops, gems, lumber, metals, rock). For this attribute that order is
+  **unverified, and the app gives no way to verify it** (#124): the Options
+  panel does not set a non-base placement's resources and the hover tooltip
+  shows them as 0. So a report saying `Brick` means "the second value". The
+  order costs nothing on disk: decode and encode use the same order, so all
+  seven positions round-trip unchanged.
+- **No app-saved fixture is clamped**, and `TestW2025FixturesReportNoClamps`
+  holds every 2.07 and 2.08 fixture to that.
+
+Two neighbours behave differently, on purpose:
+
+- **A tile record resource outside 0..100 is refused on decode**, not clamped
+  (`tiles.go`, since before #122). Only `<extraTerrain>` was ruled on in #124.
+- **Encode clamps nothing.** `Map_t.Validate` refuses an out-of-range resource
+  in either place (`ErrInvalidTileResource`, #122;
+  `ErrInvalidExtraTerrainResource`, #124) before a byte is written. A clamped
+  map passes, because its values are back in range.
 
 ## Known un-modeled fields
 

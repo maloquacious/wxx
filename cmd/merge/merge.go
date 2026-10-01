@@ -94,9 +94,15 @@ func main() {
 		if err != nil {
 			log.Fatalf("error: opening file: %v\n", err)
 		}
-		inputMap, err := xmlio.NewDecoder().Decode(fp)
+		var decoderDiagnostics xmlio.DecoderDiagnostics
+		inputMap, err := xmlio.NewDecoder(xmlio.WithDecoderDiagnostics(&decoderDiagnostics)).Decode(fp)
 		if err != nil {
 			log.Fatalf("error: loading Worldographer file: %v\n", err)
+		}
+		// A decode can clamp an out-of-range value (issue #124); the output will
+		// hold the clamped value, so say so.
+		for _, c := range decoderDiagnostics.Clamped {
+			log.Printf("warning: %s: changed on read: %s\n", inputFile, c)
 		}
 		inputMaps = append(inputMaps, inputMap)
 		_ = fp.Close()

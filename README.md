@@ -135,8 +135,35 @@ func main() {
 ```
 
 The public API supports parsing, inspecting, modifying and writing Worldographer
-data without the command-line tool. Validation is *(planned)*: `Map_t` has no
-`Validate()` today — see [#20](https://github.com/maloquacious/wxx/issues/20).
+data without the command-line tool. `Map_t.Validate()` reports a map that
+cannot be written, and every encode runs it first, so a refused map writes
+nothing ([#20](https://github.com/maloquacious/wxx/issues/20)).
+
+### Values wxx changes when it reads a file
+
+There is one place where wxx deliberately changes a value as it reads a file,
+and **the change is lossy**:
+
+- **A resource on an `<extraTerrain>` layer outside 0..100 is clamped**: 0
+  below, 100 above
+  ([#124](https://github.com/maloquacious/wxx/issues/124)). Worldographer will
+  not open a file holding 128 or more there, and it saves a tile's 101..127 as
+  100, so wxx reads the value the way the app is assumed to rather than
+  refusing the map. The map then holds the clamped value, and writing it back
+  writes the clamped value: **the original is lost.**
+
+Every clamp is reported. Pass `xmlio.WithDecoderDiagnostics` and read
+`DecoderDiagnostics.Clamped`; each entry names the place in the file, the
+`Map_t` field, the old and new values, and why. A caller that never asks for
+diagnostics is not told, so **a program that writes a decoded map back out
+should ask, and tell its user.** The command-line tools that read a map
+(`copy`, `info`, `import`, `merge`, `resize`) print each one to stderr as a
+`warning: ... changed on read: ...` line.
+
+wxx never **writes** an out-of-range resource. `Validate()` refuses any tile
+or `<extraTerrain>` resource outside 0..100
+([#122](https://github.com/maloquacious/wxx/issues/122), #124), and a tile
+resource outside 0..100 is refused on read rather than clamped.
 
 The exact package path and API are still evolving, and the API has already made
 breaking changes at `0.x`.

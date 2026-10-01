@@ -45,7 +45,7 @@ func w2025Recode(t *testing.T, m1 *wxx.Map_t, app string) *wxx.Map_t {
 	if err != nil {
 		t.Fatalf("v1_06.Encode: %v", err)
 	}
-	m2, err := v1_06.Decode(xmlBytes)
+	m2, _, err := v1_06.Decode(xmlBytes)
 	if err != nil {
 		t.Fatalf("v1_06.Decode(re-encoded): %v", err)
 	}
@@ -512,7 +512,7 @@ func TestW2025LabelDropShadowRoundTrip(t *testing.T) {
 
 	// And the trio must survive a decode of the re-encoded bytes, so the loss is
 	// pinned at the model level too, not just in the byte stream.
-	m2, err := v1_06.Decode(out)
+	m2, _, err := v1_06.Decode(out)
 	if err != nil {
 		t.Fatalf("v1_06.Decode(re-encoded): %v", err)
 	}

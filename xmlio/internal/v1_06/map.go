@@ -38,8 +38,9 @@ func dottedOrRaw(s string) wxx.Dotted {
 	return d
 }
 
-// Decode the XML data using the H2025.V1 schema and return a Map_t or an error.
-// It is a work in progress; see COVERAGE.md.
+// Decode the XML data using the H2025.V1 schema and return a Map_t or an error,
+// with every value it clamped into range on the way (see Clamp_t). It is a work
+// in progress; see COVERAGE.md.
 //
 // Decode does a single xml.Unmarshal into the version-specific XMLSchema structs
 // (schema.go) then copies the <map> root attributes here and dispatches each
@@ -48,24 +49,27 @@ func dottedOrRaw(s string) wxx.Dotted {
 // This is the whole of decode dispatch: xmlio's decoder.go calls it directly,
 // having read the map/@release that identifies the file. There is no Decode on
 // codec.Codec to route through -- see that interface for why.
-func Decode(input []byte) (*wxx.Map_t, error) {
+func Decode(input []byte) (*wxx.Map_t, []Clamp_t, error) {
+	// clamps collects every value decode changed to bring it into range; see
+	// Clamp_t. It is returned with the map, and with a partial map on error.
+	var clamps []Clamp_t
 	m := &XMLSchema{}
 
 	// unmarshal into a structure that's built just for the conversion
 	err := xml.Unmarshal(input, &m)
 	if err != nil {
 		log.Printf("v1_06: %v\n", err)
-		return nil, err
+		return nil, nil, err
 	}
 	if m.Release == "" {
-		return nil, fmt.Errorf("missing map.Release")
+		return nil, nil, fmt.Errorf("missing map.Release")
 	} else if m.Version == "" {
-		return nil, fmt.Errorf("missing map.Version")
+		return nil, nil, fmt.Errorf("missing map.Version")
 	} else if m.Schema == "" {
-		return nil, fmt.Errorf("missing map.Schema")
+		return nil, nil, fmt.Errorf("missing map.Schema")
 	}
 	if m.Release != "2025" {
-		return nil, fmt.Errorf("%s/%s/%s: unsupported release", m.Release, m.Version, m.Schema)
+		return nil, nil, fmt.Errorf("%s/%s/%s: unsupported release", m.Release, m.Version, m.Schema)
 	}
 	// The schema must parse: it is what selects the codec on the way back out
 	// (ADR 0004 Decision 4), so a file whose @schema is not a dotted version is
@@ -73,7 +77,7 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	// is the same input the removed schema-to-semver conversion rejected.
 	schema, err := wxx.ParseDotted(m.Schema)
 	if err != nil {
-		return nil, fmt.Errorf("%s/%s/%s: malformed schema: %w", m.Release, m.Version, m.Schema, err)
+		return nil, nil, fmt.Errorf("%s/%s/%s: malformed schema: %w", m.Release, m.Version, m.Schema, err)
 	}
 
 	// process source into a WXX structure and return it or any errors
@@ -110,7 +114,7 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	case "ROWS":
 		w.GridOrientation = hexg.OddR
 	default:
-		return nil, fmt.Errorf("%q: unknown orientation", m.HexOrientation)
+		return nil, nil, fmt.Errorf("%q: unknown orientation", m.HexOrientation)
 	}
 	w.HexWidth = m.HexWidth
 	w.KingdomFactor = m.KingdomFactor
@@ -123,7 +127,7 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	case "ICOSAHEDRAL":
 		w.MapProjection = wxx.ICOSAHEDRAL
 	default:
-		return nil, fmt.Errorf("%q: unknown projection", m.MapProjection)
+		return nil, nil, fmt.Errorf("%q: unknown projection", m.MapProjection)
 	}
 	w.ProvinceFactor = m.ProvinceFactor
 	w.ShowFeatureLabels = m.ShowFeatureLabels
@@ -145,42 +149,42 @@ func Decode(input []byte) (*wxx.Map_t, error) {
 	decodeBlurTerrainBG(m.BlurTerrainBG, w)
 
 	if err := decodeTerrainMap(m.TerrainMap, w); err != nil {
-		return w, err
+		return w, clamps, err
 	}
 
 	decodeMapLayers(m.MapLayers, w)
 
 	if err := decodeTiles(m.Tiles, m.MapKey, w); err != nil {
-		return w, err
+		return w, clamps, err
 	}
 
 	if err := decodeFeatures(m.Features, w); err != nil {
-		return w, err
+		return w, clamps, err
 	}
 
-	if err := decodeExtraTerrain(m.ExtraTerrain, w); err != nil {
-		return w, err
+	if err := decodeExtraTerrain(m.ExtraTerrain, w, &clamps); err != nil {
+		return w, clamps, err
 	}
 
 	if err := decodeLabels(m.Labels, w); err != nil {
-		return w, err
+		return w, clamps, err
 	}
 
 	if err := decodeShapes(m.Shapes, w); err != nil {
-		return w, err
+		return w, clamps, err
 	}
 
 	if err := decodeNotes(m.Notes, w); err != nil {
-		return w, err
+		return w, clamps, err
 	}
 
 	decodeInformations(m.Informations, w)
 
 	if err := decodeConfiguration(m.Configuration, w); err != nil {
-		return w, err
+		return w, clamps, err
 	}
 
-	return w, nil
+	return w, clamps, nil
 }
 
 // Encode the Map_t into a slice of UTF-8 bytes that matches this version's XML schema.

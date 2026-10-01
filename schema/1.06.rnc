@@ -415,6 +415,14 @@ TerrainAndLocation = element terrainAndLocation {
   attribute icy { xsd:boolean }?,
   attribute gmOnly { xsd:boolean }?,
   # comma-separated numbers, or "Z" (observed: layers, notes-shapes).
+  # Seven values when not "Z" (observed: layers, notes-shapes). Which resource
+  # each one is: TBD; wxx assumes the tile record's order (TileRow 5..11),
+  # unverified. The app offers no way to settle it: the Options panel's
+  # resources, elevation and GM Only are not applied to a placement on a
+  # layer other than Terrain Land/Water, there is no edit, and the hover
+  # tooltip shows 0 for every resource of such a placement (observed: app
+  # check, #124). A value of 150 stops the file opening; the app reads it
+  # with Byte.parseByte (observed: app check, #124). 101..127: TBD.
   attribute resources { xsd:string }?,
   # "x,y" (observed: layers, notes-shapes).
   attribute location { xsd:string }?,

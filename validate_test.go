@@ -213,6 +213,28 @@ func TestValidateRejects(t *testing.T) {
 			wantErr: ErrInvalidTileResource,
 			wantMsg: "Resources.Gems): 200: want 0..100 (and 2 more out-of-range resources)",
 		},
+		{
+			// The app will not open a file with 150 in an <extraTerrain>
+			// resource either (app check, issue #124).
+			name: "extraTerrain resource the app cannot read",
+			break_: func(m *Map_t) {
+				m.ExtraTerrain = &ExtraTerrain_t{MapLayers: []*ExtraTerrainLayer_t{
+					{Name: "Below All", Terrain: []*TerrainAndLocation_t{{Resources: Resources_t{Brick: 150}}}},
+				}}
+			},
+			wantErr: ErrInvalidExtraTerrainResource,
+			wantMsg: `mapLayer[@name="Below All"]/terrainAndLocation[0]/@resources (ExtraTerrain_t.MapLayers[0].Terrain[0].Resources.Brick): 150: want 0..100`,
+		},
+		{
+			name: "negative extraTerrain resource",
+			break_: func(m *Map_t) {
+				m.ExtraTerrain = &ExtraTerrain_t{MapLayers: []*ExtraTerrainLayer_t{
+					{Name: "Below All", Terrain: []*TerrainAndLocation_t{{Resources: Resources_t{Rock: -1}}}},
+				}}
+			},
+			wantErr: ErrInvalidExtraTerrainResource,
+			wantMsg: "Resources.Rock): -1: want 0..100",
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			m := validMap()
