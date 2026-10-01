@@ -60,10 +60,14 @@ Tests referenced (in `xmlio/roundtrip_2025_test.go` unless noted, package
   decode->encode->decode over both the 2.07 notes-shapes map and the real sample,
   asserting per-element counts and key field values -- including the six
   W2025-native fields modeled in #11)
+- **MapAttrsMatchSource** = `TestW2025MapAttrsMatchSource` (in
+  `xmlio/map_attrs_w2025_test.go`; every W2025 fixture's `<map>` start tag
+  written back with the source's attribute names, order and values, including
+  a float in exponent spelling, #111)
 
 | `<map>` child element | Decode | Encode | Test(s) | Notes |
 |---|---|---|---|---|
-| `<map>` root + scalar attributes | implemented | implemented | RoundTrip, PublicRoundTrip, DecodeBoth, CoverageMatrix | `hScrollbarPos` / `vScrollbarPos` now modeled (#11). |
+| `<map>` root + scalar attributes | implemented | implemented | RoundTrip, PublicRoundTrip, DecodeBoth, CoverageMatrix, MapAttrsMatchSource | `hScrollbarPos` / `vScrollbarPos` now modeled (#11). Floats are spelled as Java's `Double.toString` writes them, exponent form included (#111). |
 | `<gridandnumbering>` (30 attrs) | implemented | implemented | RoundTrip, PublicRoundTrip | All 30 attributes modeled and re-emitted. |
 | `<terrainmap>` | implemented | implemented | RoundTrip, DecodeBoth | Tab-delimited name/slot table parsed into `TerrainMap_t`. The encoder writes the table in index order (#87). Worldographer does not always: 2.07 saved the notes-shapes map as `Blank 0`, `Classic/Water Sea 2`, `Classic/Flat Farmland 1`, so re-encoding it reorders the entries while each name keeps its index. Whether the order matters to Worldographer is untested in the app; NotesShapesRoundTrip compares the table in index order. |
 | `<maplayer>` | implemented | implemented | RoundTrip, PublicRoundTrip, CoverageMatrix | `opacity` now modeled (#11); `name` + `isVisible` + `opacity` round-trip. |
