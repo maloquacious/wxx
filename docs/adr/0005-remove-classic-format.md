@@ -2,6 +2,11 @@
 
 - **Status:** **Accepted (2026-09-30)** — maintainer decision on
   [#103](https://github.com/maloquacious/wxx/issues/103).
+- **Amended:** 2026-09-30 — **Decision 4** is amended by
+  [#72](https://github.com/maloquacious/wxx/issues/72): the grammar files are
+  renamed `schema/v1.73.rnc` and `schema/v1.73.rng`. Decision 4's original text
+  stands as the record of the decision taken. See *Amendment — 2026-09-30* at
+  the end of this document.
 - **Date:** 2026-09-30
 - **Context tickets:** [#103](https://github.com/maloquacious/wxx/issues/103)
   (this decision), [#98](https://github.com/maloquacious/wxx/issues/98) (the
@@ -127,3 +132,14 @@ decisions mention classic, they now read as follows:
     *Terrain layers* open question and the 2026-09-29 amendment about a classic
     downgrade reporting the terrain-layers loss describe a target that no
     longer exists.
+
+## Amendment — 2026-09-30 ([#72](https://github.com/maloquacious/wxx/issues/72))
+
+**Amends Decision 4** in name only. Decisions 1, 2, 3, 5 and 6 stand as written.
+
+#72 renamed `schema/utf-8-xml.rnc` and `schema/utf-8-xml.rng` to
+`schema/v1.73.rnc` and `schema/v1.73.rng`, naming each grammar by the
+application version it describes. The content is byte-for-byte unchanged; it is
+still the upstream tnwxx copy. The decision itself is unchanged: the classic
+grammar is kept as reference only, and wxx does not read or write the format it
+describes.

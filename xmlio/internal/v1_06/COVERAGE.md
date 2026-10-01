@@ -132,7 +132,7 @@ For the record, the six fields #11 modeled -- and where they now live -- were:
 
 ## RelaxNG cross-check
 
-The formal RelaxNG schema in `schema/utf-8-xml.rnc` (imported in B1) is **classic
+The formal RelaxNG schema in `schema/v1.73.rnc` (imported in B1) is **classic
 `version="1.73"` scope only** — it predates the W2025 format, and describes a
 format wxx no longer reads; it is kept as reference (see `schema/README.md`). It is therefore a **partial** checklist for h2025: only the
 elements W2025 *shares* with classic are cross-checkable; the schema says nothing

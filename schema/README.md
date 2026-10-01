@@ -11,8 +11,8 @@ classic file with `wxx.ErrClassicMap`. The schema is kept as reference material,
 for the elements W2025 shares with classic and because earlier coverage work cites
 it as evidence.
 
-- `utf-8-xml.rnc` — RelaxNG in the compact (`.rnc`) syntax. This is the readable one.
-- `utf-8-xml.rng` — the same schema in the XML (`.rng`) syntax, consumable by
+- `v1.73.rnc` — RelaxNG in the compact (`.rnc`) syntax. This is the readable one.
+- `v1.73.rng` — the same schema in the XML (`.rng`) syntax, consumable by
   RelaxNG validators such as [Jing](https://relaxng.org/jclark/jing.html) or
   `xmllint --relaxng`.
 
@@ -38,6 +38,8 @@ WXX mapping tool. The files were copied byte-for-byte (unmodified) from that rep
 - Source: `~/Jetbrains/worldographer/tnwxx/testdata/utf-8-xml.rnc` (dated 2023-12-15)
 - Source: `~/Jetbrains/worldographer/tnwxx/testdata/utf-8-xml.rng` (dated 2024-01-02)
 - Copied: 2026-07-13
+
+This repo renamed them `v1.73.rnc` and `v1.73.rng` in #72; the content is unchanged.
 
 The schema was derived from a real Worldographer export in that repo
 (`testdata/utf-8-xml.xml`), whose root element is:
@@ -106,5 +108,5 @@ sample by hand, decode the WXX container to UTF-8 XML and run an external valida
 e.g.:
 
 ```sh
-xmllint --relaxng schema/utf-8-xml.rng path/to/decoded.xml --noout
+xmllint --relaxng schema/v1.73.rng path/to/decoded.xml --noout
 ```
