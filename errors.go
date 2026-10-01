@@ -29,6 +29,7 @@ const (
 	ErrInvalidGZip                 = Error("invalid gzip")
 	ErrInvalidHexOrientation       = Error("invalid hex orientation")
 	ErrInvalidColorAttribute       = Error("invalid color attribute")
+	ErrInvalidCorner               = Error("invalid hex corner")
 	ErrInvalidIntegerAttribute     = Error("invalid integer attribute")
 	ErrInvalidMapMetadata          = Error("invalid <map> metadata")
 	ErrInvalidTerrainMapFieldCount = Error("invalid terrain map field count")
