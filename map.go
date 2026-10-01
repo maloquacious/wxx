@@ -219,10 +219,11 @@ type ExtraTerrainLayer_t struct {
 // Terrain is the terrain's NAME (on disk, @name), e.g. "Classic/Flat Beach" --
 // not the Tiles_t index into TerrainMap that a base tile uses.
 //
-// X and Y are the on-disk @location: a point in the map's drawing coordinates,
-// not a hex. They are kept as written, because the mapping to a hex is inferred
-// (on the COLUMNS samples, x = 225*col and y = 300*row + 150 for odd columns)
-// and unconfirmed for ROWS maps or other hex sizes; see #34.
+// X and Y are the on-disk @location: a point in the map's shape coordinates
+// (see geometry.go), not a hex. They are kept as written, because the mapping
+// to a hex is inferred: on the COLUMNS samples the location is the top left of
+// the hex's bounding box, its TileCenter less (150, 150), and that is
+// unconfirmed for ROWS maps or other hex sizes; see #34.
 //
 // CustomBackgroundColor is the on-disk @bgColor, written by the app when the
 // placement has Override BG set and omitted otherwise (issue #126). nil means

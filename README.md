@@ -173,6 +173,54 @@ its random seed, and `NewMap` leaves it empty. The `show*` flags are UI
 settings, saved as they stood at the time (the 2.06 fixture was saved with the
 grid hidden), and `NewMap` always shows the grid and its numbers.
 
+### Hex geometry
+
+Shapes, labels, features, notes and `<extraTerrain>` placements are positioned
+in the map's own coordinate space, not by tile. `Map_t` says where a hex's
+center and corners are in that space
+([#153](https://github.com/maloquacious/wxx/issues/153)), for the map's own
+`HexOrientation`:
+
+```go
+p, err := m.TileCenter(4, 2)                // wxx.Position_t{X: 1050, Y: 750} on a COLUMNS map
+p, err := m.TileCorner(4, 1, wxx.CornerSE)  // {1125, 600}
+corners, err := m.Corners()                 // the six corners, clockwise
+```
+
+The space has x to the right and y down, from the map's top left. A hex is 300
+units wide and 300 high:
+
+- **COLUMNS** (flat-top): hex (col, row) has its center at
+  (150 + 225·col, 150 + 300·row + 150·odd(col)), and its corners, clockwise
+  from east, are `e, se, sw, w, nw, ne`, at (±150, 0) and (±75, ±150) from the
+  center.
+- **ROWS** (pointy-top): the same hex turned a quarter. The center is at
+  (150 + 300·col + 150·odd(row), 150 + 225·row), and the corners, clockwise
+  from north, are `n, ne, se, s, sw, nw`, at (0, ±150) and (±150, ±75).
+
+Every value is a whole multiple of 75, so positions compare exactly. A corner
+of the other orientation (`e` on a ROWS map) is `wxx.ErrInvalidCorner`, and a
+map whose orientation is neither is `wxx.ErrInvalidHexOrientation`. A hex off
+the map still has a center and corners, so a path can run along the map's
+edge. `wxx.ParseCorner("se")` turns a name into a corner.
+
+Most corners belong to three hexes, and each hex names the corner
+differently: on a COLUMNS map, hex (4, 2)'s `se` is (5, 2)'s `w` and (4, 3)'s
+`ne`. A `wxx.Vertex_t{Col, Row, Corner}` names a corner by one of its hexes.
+`m.SameCorner(a, b)` reports whether two vertices are the same corner,
+`m.CanonicalVertex(v)` gives every corner one name (a hex's `e` or `se` on a
+COLUMNS map, `s` or `se` on a ROWS map), and `m.SharesEdge(a, b)` reports
+whether two vertices are the two ends of one hex edge.
+
+The COLUMNS geometry fits every COLUMNS fixture's shapes: the tile-border
+polygons in the notes-shapes fixtures and both lines in the river-lines
+fixture. The ROWS center was confirmed in Worldographer
+([#80](https://github.com/maloquacious/wxx/issues/80)). No ROWS fixture has a
+shape, though, so the ROWS corners are the COLUMNS corners transposed and have
+not been seen in a file. Every fixture states the suggested hex size (46.18 ×
+40 for COLUMNS), so whether the 300-unit hex changes with `hexWidth` and
+`hexHeight` is unknown.
+
 ### Values wxx changes when it reads a file
 
 There is one place where wxx deliberately changes a value as it reads a file,
