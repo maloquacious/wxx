@@ -119,9 +119,7 @@ convention; do not take the older shape as a model.
 These live in `CLAUDE.md` and are summarized here only as a pointer: copyright
 header on every `.go` file, package doc comments, `_t` suffix on major types,
 the standard `testing` package and no external test frameworks, and a hard
-preference for adding no dependency that can be avoided. The list is currently
-three — `semver`, `golang.org/x/text`, and `ff/v4`, the last of which goes when
-the commands collapse into the Lua script host.
+preference for adding no dependency that can be avoided. `go.mod` is the list.
 
 Fixtures a test reads belong in `testdata/`, flat and tracked, so the suite runs
 from a clean clone. `scratch/` and `dist/` are git-ignored local output and must
