@@ -405,11 +405,11 @@ Label = element label {
   attribute color { xsd:string }?,
   # observed: app check, #115. In no fixture. An r,g,b,a, opaque black
   # included, under labels or under feature. It is drawn behind the label only
-  # when the label has no preset style; with a preset (@style="City") the
-  # preset wins and it is not drawn, but the app's save keeps it. The app's
-  # "Background" checkbox sets it; the save writes it after @color, and on no
-  # label that has none. The drawn labels in the check had @style="Use Custom
-  # Style"; that this is how the app spells "No Preset Style" is inferred.
+  # when the label has no preset style: @style="Use Custom Style" under labels,
+  # @style="No Preset Style" under feature (the app's save spelled each). With
+  # a preset (@style="City") the preset wins and it is not drawn, but the app's
+  # save keeps it. The app's "Background" checkbox sets it; the save writes it
+  # after @color, and on no label that has none.
   attribute backgroundColor { xsd:string }?,
   attribute outlineColor { xsd:string }?,
   attribute outlineSize { xsd:double }?,
