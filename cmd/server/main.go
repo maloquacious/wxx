@@ -184,7 +184,7 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		HexWidth:        worldMap.HexWidth,
 		HexHeight:       worldMap.HexHeight,
 		HexOrientation:  worldMap.HexOrientation,
-		GridOrientation: layoutOffsetName(worldMap.GridOrientation),
+		GridOrientation: gridOrientationName(worldMap),
 		Rows:            worldMap.RowsHigh,
 		Columns:         worldMap.ColumnsWide,
 	}
@@ -247,7 +247,8 @@ func generateHexGridSVG(m *wxx.Map_t) string {
 	</style>`)
 
 	// Determine if we have flat-top or pointy-top hexes
-	isFlat := m.GridOrientation == hexg.EvenQ || m.GridOrientation == hexg.OddQ
+	layout, _ := m.GridOrientation()
+	isFlat := layout == hexg.EvenQ || layout == hexg.OddQ
 
 	// Draw hexes
 	for row := 0; row < maxRows && row < len(m.Tiles.Tiles); row++ {
@@ -321,10 +322,14 @@ func getHexCorner(centerX, centerY, radiusX, radiusY float64, corner int, isFlat
 	return x, y
 }
 
-// layoutOffsetName names a hexg.LayoutOffset in the spelling the vendored
-// hexg.Orientation_e's String method used; hexg v1.3.0 gives LayoutOffset no
-// String method.
-func layoutOffsetName(o hexg.LayoutOffset) string {
+// gridOrientationName names m's hexg layout, derived from HexOrientation by
+// Map_t.GridOrientation, in the spelling the vendored hexg.Orientation_e's
+// String method used; hexg v1.3.0 gives LayoutOffset no String method.
+func gridOrientationName(m *wxx.Map_t) string {
+	o, ok := m.GridOrientation()
+	if !ok {
+		return "unset"
+	}
 	switch o {
 	case hexg.EvenQ:
 		return "even-q"

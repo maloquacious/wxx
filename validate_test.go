@@ -6,8 +6,6 @@ import (
 	"errors"
 	"strings"
 	"testing"
-
-	"github.com/maloquacious/hexg"
 )
 
 // validMap builds the smallest Map_t that Validate accepts: the orientation
@@ -23,7 +21,6 @@ func validMap() *Map_t {
 
 	m := &Map_t{}
 	m.HexOrientation = "COLUMNS"
-	m.GridOrientation = hexg.OddQ
 	m.GridAndNumbering = &GridAndNumbering_t{}
 	m.TerrainMap = &TerrainMap_t{}
 	m.MapKey = &MapKey_t{}
@@ -53,7 +50,7 @@ func TestValidateAcceptsAWellFormedMap(t *testing.T) {
 	}
 
 	rows := validMap()
-	rows.HexOrientation, rows.GridOrientation = "ROWS", hexg.OddR
+	rows.HexOrientation = "ROWS"
 	if err := rows.Validate(); err != nil {
 		t.Errorf("ROWS: Validate() = %v, want nil", err)
 	}
@@ -82,15 +79,6 @@ func TestValidateRejects(t *testing.T) {
 			break_:  func(m *Map_t) { m.HexOrientation = "HEXES" },
 			wantErr: ErrInvalidHexOrientation,
 			wantMsg: `hexOrientation "HEXES"`,
-		},
-		{
-			// The desync issue #20 is named for: two fields holding one fact,
-			// disagreeing. COLUMNS with a rows coordinate convention is not a
-			// grid that can be drawn.
-			name:    "grid orientation contradicts hex orientation",
-			break_:  func(m *Map_t) { m.GridOrientation = hexg.OddR },
-			wantErr: ErrMismatchedGridOrientation,
-			wantMsg: "odd-r",
 		},
 		{
 			name:    "nil GridAndNumbering",

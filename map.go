@@ -9,6 +9,27 @@ import (
 	"github.com/maloquacious/semver"
 )
 
+// GridOrientation returns the hexg offset layout of m's grid. It is derived
+// from HexOrientation, the only field that holds the orientation, and is never
+// stored: "COLUMNS" is hexg.OddQ and "ROWS" is hexg.OddR. For any other
+// HexOrientation, including the unset "", ok is false and the layout is
+// meaningless; hexg.LayoutOffset has no unset value (its zero is OddR), so a
+// caller must check ok rather than the layout.
+//
+// The OddR label does not yet match the decoder's ROWS cube coordinates:
+// Tile_t.Coords for a ROWS map are computed with the even-r formula
+// (ROffsetToCube(true)), kept from the vendored wxx/hexg, although
+// Worldographer staggers odd rows. That is issue #130.
+func (m *Map_t) GridOrientation() (hexg.LayoutOffset, bool) {
+	switch m.HexOrientation {
+	case "COLUMNS":
+		return hexg.OddQ, true
+	case "ROWS":
+		return hexg.OddR, true
+	}
+	return 0, false
+}
+
 // Map_t is the in-memory representation of the map data.
 // We have created this to work with the known versions of Worldographer XML data.
 // We are assuming that this will continue to work with future versions of the application.
@@ -52,34 +73,33 @@ type Map_t struct {
 	// and is gone. A future reader wanting to know what wrote a file asks
 	// MetaData.Worldographer; a future writer wanting to know what to emit is told,
 	// and asks nothing.
-	Type                      string            `json:"type,omitempty"`
-	LastViewLevel             string            `json:"lastViewLevel,omitempty"`
-	ContinentFactor           int               `json:"continentFactor,omitempty"`
-	KingdomFactor             int               `json:"kingdomFactor,omitempty"`
-	ProvinceFactor            int               `json:"provinceFactor,omitempty"`
-	WorldToContinentHOffset   float64           `json:"worldToContinentHOffset,omitempty"`
-	ContinentToKingdomHOffset float64           `json:"continentToKingdomHOffset,omitempty"`
-	KingdomToProvinceHOffset  float64           `json:"kingdomToProvinceHOffset,omitempty"`
-	WorldToContinentVOffset   float64           `json:"worldToContinentVOffset,omitempty"`
-	ContinentToKingdomVOffset float64           `json:"continentToKingdomVOffset,omitempty"`
-	KingdomToProvinceVOffset  float64           `json:"kingdomToProvinceVOffset,omitempty"`
-	HexWidth                  float64           `json:"hexWidth,omitempty"`
-	HexHeight                 float64           `json:"hexHeight,omitempty"`
-	GridOrientation           hexg.LayoutOffset `json:"gridOrientation,omitempty"` // orientation for hexg package
-	HexOrientation            string            `json:"hexOrientation,omitempty"`  // "COLUMNS" or "ROWS"; Validate rejects anything else
-	RowsHigh                  int               `json:"rowsHigh,omitempty"`        // number of rows (derived from TilesHigh based on orientation)
-	ColumnsWide               int               `json:"columnsWide,omitempty"`     // number of columns (derived from TilesWide based on orientation)
-	MapProjection             Projection_e      `json:"mapProjection,omitempty"`
-	ShowNotes                 bool              `json:"showNotes,omitempty"`
-	ShowGMOnly                bool              `json:"showGMOnly,omitempty"`
-	ShowGMOnlyGlow            bool              `json:"showGMOnlyGlow,omitempty"`
-	ShowFeatureLabels         bool              `json:"showFeatureLabels,omitempty"`
-	ShowGrid                  bool              `json:"showGrid,omitempty"`
-	ShowGridNumbers           bool              `json:"showGridNumbers,omitempty"`
-	ShowShadows               bool              `json:"showShadows,omitempty"`
-	TriangleSize              int               `json:"triangleSize,omitempty"`
-	HScrollbarPos             float64           `json:"hScrollbarPos,omitempty"` // W2025 UI scroll position
-	VScrollbarPos             float64           `json:"vScrollbarPos,omitempty"` // W2025 UI scroll position
+	Type                      string       `json:"type,omitempty"`
+	LastViewLevel             string       `json:"lastViewLevel,omitempty"`
+	ContinentFactor           int          `json:"continentFactor,omitempty"`
+	KingdomFactor             int          `json:"kingdomFactor,omitempty"`
+	ProvinceFactor            int          `json:"provinceFactor,omitempty"`
+	WorldToContinentHOffset   float64      `json:"worldToContinentHOffset,omitempty"`
+	ContinentToKingdomHOffset float64      `json:"continentToKingdomHOffset,omitempty"`
+	KingdomToProvinceHOffset  float64      `json:"kingdomToProvinceHOffset,omitempty"`
+	WorldToContinentVOffset   float64      `json:"worldToContinentVOffset,omitempty"`
+	ContinentToKingdomVOffset float64      `json:"continentToKingdomVOffset,omitempty"`
+	KingdomToProvinceVOffset  float64      `json:"kingdomToProvinceVOffset,omitempty"`
+	HexWidth                  float64      `json:"hexWidth,omitempty"`
+	HexHeight                 float64      `json:"hexHeight,omitempty"`
+	HexOrientation            string       `json:"hexOrientation,omitempty"` // "COLUMNS" or "ROWS"; Validate rejects anything else; GridOrientation derives the hexg layout from it
+	RowsHigh                  int          `json:"rowsHigh,omitempty"`       // number of rows (derived from TilesHigh based on orientation)
+	ColumnsWide               int          `json:"columnsWide,omitempty"`    // number of columns (derived from TilesWide based on orientation)
+	MapProjection             Projection_e `json:"mapProjection,omitempty"`
+	ShowNotes                 bool         `json:"showNotes,omitempty"`
+	ShowGMOnly                bool         `json:"showGMOnly,omitempty"`
+	ShowGMOnlyGlow            bool         `json:"showGMOnlyGlow,omitempty"`
+	ShowFeatureLabels         bool         `json:"showFeatureLabels,omitempty"`
+	ShowGrid                  bool         `json:"showGrid,omitempty"`
+	ShowGridNumbers           bool         `json:"showGridNumbers,omitempty"`
+	ShowShadows               bool         `json:"showShadows,omitempty"`
+	TriangleSize              int          `json:"triangleSize,omitempty"`
+	HScrollbarPos             float64      `json:"hScrollbarPos,omitempty"` // W2025 UI scroll position
+	VScrollbarPos             float64      `json:"vScrollbarPos,omitempty"` // W2025 UI scroll position
 
 	// elements
 	GridAndNumbering *GridAndNumbering_t `json:"gridAndNumbering,omitempty"`

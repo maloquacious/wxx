@@ -9,7 +9,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/maloquacious/hexg"
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/xmlio/internal/appver"
 )
@@ -108,12 +107,9 @@ func Decode(input []byte) (*wxx.Map_t, []Clamp_t, error) {
 	w.ContinentToKingdomVOffset = m.ContinentToKingdomVOffset
 	w.HexHeight = m.HexHeight
 	w.HexOrientation = m.HexOrientation
-	switch m.HexOrientation {
-	case "COLUMNS":
-		w.GridOrientation = hexg.OddQ
-	case "ROWS":
-		w.GridOrientation = hexg.OddR
-	default:
+	// The hexg layout is not stored; Map_t.GridOrientation derives it from
+	// HexOrientation (issue #52). A file stating neither orientation is refused.
+	if _, ok := w.GridOrientation(); !ok {
 		return nil, nil, fmt.Errorf("%q: unknown orientation", m.HexOrientation)
 	}
 	w.HexWidth = m.HexWidth

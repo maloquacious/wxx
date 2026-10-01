@@ -40,7 +40,6 @@ func newRowsMap() *wxx.Map_t {
 	m.Type = "WORLD"
 	m.MapProjection = wxx.FLAT
 	m.HexOrientation = "ROWS"
-	m.GridOrientation = hexg.OddR
 
 	// Required non-nil substructures so the encoder does not nil-deref.
 	// The grid colors are the samples' value: the encoder refuses a color it
@@ -116,8 +115,8 @@ func TestW2025RowsRoundTrip(t *testing.T) {
 	if got, want := m2.HexOrientation, "ROWS"; got != want {
 		t.Errorf("HexOrientation = %q, want %q", got, want)
 	}
-	if got, want := m2.GridOrientation, hexg.OddR; got != want {
-		t.Errorf("GridOrientation = %v, want %v", got, want)
+	if got, ok := m2.GridOrientation(); got != hexg.OddR || !ok {
+		t.Errorf("GridOrientation() = (%v, %v), want (%v, true)", got, ok, hexg.OddR)
 	}
 
 	// Grid dimensions must round-trip.

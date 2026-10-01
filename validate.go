@@ -5,8 +5,6 @@ package wxx
 import (
 	"errors"
 	"fmt"
-
-	"github.com/maloquacious/hexg"
 )
 
 // Validate reports every way m is internally inconsistent (issue #20).
@@ -59,26 +57,11 @@ func (m *Map_t) Validate() error {
 
 	var problems []error
 
-	// The orientation, and the second copy of it.
-	//
-	// HexOrientation is the string the file states and the one the encoder
-	// switches on; GridOrientation is the hexg coordinate convention the decoder
-	// sets from it in the same switch. Two fields holding one fact can disagree,
-	// and a map that says COLUMNS in one and odd-r in the other describes no
-	// hex grid that exists. hexg.LayoutOffset has no "unset" value -- its zero
-	// is OddR -- so a caller who set only the string gets OddR, which this
-	// check catches for COLUMNS but cannot catch for ROWS.
+	// The orientation. HexOrientation is the only field that holds it; the
+	// hexg layout is derived from it by GridOrientation (issue #52), so there
+	// is no second copy to disagree with it.
 	switch m.HexOrientation {
-	case "COLUMNS":
-		if m.GridOrientation != hexg.EvenQ && m.GridOrientation != hexg.OddQ {
-			problems = append(problems, errors.Join(ErrMismatchedGridOrientation,
-				fmt.Errorf("hexOrientation %q with gridOrientation %s: want even-q or odd-q", m.HexOrientation, layoutOffsetName(m.GridOrientation))))
-		}
-	case "ROWS":
-		if m.GridOrientation != hexg.EvenR && m.GridOrientation != hexg.OddR {
-			problems = append(problems, errors.Join(ErrMismatchedGridOrientation,
-				fmt.Errorf("hexOrientation %q with gridOrientation %s: want even-r or odd-r", m.HexOrientation, layoutOffsetName(m.GridOrientation))))
-		}
+	case "COLUMNS", "ROWS":
 	default:
 		problems = append(problems, errors.Join(ErrInvalidHexOrientation,
 			fmt.Errorf("hexOrientation %q: want \"COLUMNS\" or \"ROWS\"", m.HexOrientation)))
@@ -281,21 +264,4 @@ func resourceProblem(kind Error, first error, count int) []error {
 		first = fmt.Errorf("%w (and %d more out-of-range resources)", first, count-1)
 	}
 	return []error{errors.Join(kind, first)}
-}
-
-// layoutOffsetName names a hexg.LayoutOffset in the spelling the vendored
-// hexg.Orientation_e used, because hexg v1.3.0 gives LayoutOffset no String
-// method and the diagnostics above name the convention.
-func layoutOffsetName(o hexg.LayoutOffset) string {
-	switch o {
-	case hexg.EvenQ:
-		return "even-q"
-	case hexg.OddQ:
-		return "odd-q"
-	case hexg.EvenR:
-		return "even-r"
-	case hexg.OddR:
-		return "odd-r"
-	}
-	return fmt.Sprintf("hexg.LayoutOffset(%d)", int(o))
 }
