@@ -420,6 +420,35 @@ Saved as testdata/2025-2.06-13x11-941577-cdata-guard.wxx. The lore entries
 were added in a second session, so the file has been saved twice
 (`mapkey/@viewlevel="WORLD"`); nothing it pins depends on that.
 
+## Blank 1920x1080
+
+The Blank recipe at 1920 x 1080 hexes, for the memory tests (issue #138).
+Every hex is Blank, so the file is almost all tile grid and compresses to
+133 KB: it measures the size of the decoded map rather than the I/O.
+
+File > New World/Kingdom map
+
+Hex Orientation: Columns Line Up
+Map Projection: Flat
+  Hexes Wide: 1920
+  Hexes High: 1080
+
+Initial View Level: WORLD
+
+[x] Use suggested pixel sizes
+
+Random Seed: 941577
+
+All one terrain: Blank
+
+Generate Map
+
+### Save
+
+Before saving, ensure all layers are visible, GM Only: Show is checked, Grid: Show/Numbers/Shadows are checked.
+
+Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-blank.wxx
+
 ## Random
 
 A large generated map, for the performance and memory tests (issue #138).

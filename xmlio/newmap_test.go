@@ -64,6 +64,37 @@ func TestNewMapMatchesBlankFixture(t *testing.T) {
 	}
 }
 
+// TestNewMapMatchesFullSizeBlankFixture is TestNewMapMatchesBlankFixture at
+// 1920 x 1080, against the blank map 2.08 wrote at that size: NewMap's
+// defaults hold beyond 13 x 11. It takes about two seconds, so -short skips it.
+func TestNewMapMatchesFullSizeBlankFixture(t *testing.T) {
+	if testing.Short() {
+		t.Skip("1920 x 1080: skipped with -short")
+	}
+	const app = "2.08"
+	fixture, err := xmlio.ReadFile("../testdata/2025-2.08-1920x1080-941577-blank.wxx")
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+	fixture.Informations = &wxx.Informations_t{}
+	fixture.ShowGrid, fixture.ShowGridNumbers = true, true
+	want, err := xmlio.MarshalXML(fixture, app)
+	if err != nil {
+		t.Fatalf("marshal fixture: %v", err)
+	}
+	m, err := xmlio.NewMap(1920, 1080, xmlio.WithApp(app))
+	if err != nil {
+		t.Fatalf("NewMap: %v", err)
+	}
+	got, err := xmlio.MarshalXML(m, app)
+	if err != nil {
+		t.Fatalf("marshal NewMap: %v", err)
+	}
+	if !bytes.Equal(got, want) {
+		reportFirstDifference(t, got, want)
+	}
+}
+
 // reportFirstDifference fails t, naming the first line where got and want part.
 func reportFirstDifference(t *testing.T, got, want []byte) {
 	t.Helper()
