@@ -15,10 +15,10 @@ import (
 // that is the real implementation, which stays exported because the test units
 // requirement 5 admits call it directly (see xmlio/chimera_test.go).
 //
-// It forwards Encode but not Decode, because the dispatcher only ever asks a
-// codec to encode: xmlio's decoder reads the file's own map/@release and calls
-// this package's Decode function directly, so a forwarding method had no caller.
-// See codec.Codec.
+// It forwards Encode and NewMap but not Decode, because the dispatcher only
+// ever asks a codec to encode or to make a new map: xmlio's decoder reads the
+// file's own map/@release and calls this package's Decode function directly, so
+// a forwarding method had no caller. See codec.Codec.
 //
 // It carries the declaration alongside encode because the registry is built by
 // ASKING each codec what it accepts (issue #45 Decision 8): the mapping
@@ -31,6 +31,11 @@ func (Codec_t) Encode(m *wxx.Map_t, app string) ([]byte, error) { return Encode(
 
 // AcceptedApps returns this codec's declaration. See acceptedApps.
 func (Codec_t) AcceptedApps() appver.Set_t { return AcceptedApps() }
+
+// NewMap returns a new blank map with app's defaults. See NewMap.
+func (Codec_t) NewMap(app string, columns, rows int, hexOrientation string) (*wxx.Map_t, error) {
+	return NewMap(app, columns, rows, hexOrientation)
+}
 
 // acceptedApps declares what this codec accepts and what it writes.
 //

@@ -59,6 +59,9 @@ var byApp map[string]codec.Codec
 // what it would otherwise produce is a silently wrong file at encode time.
 // Failing at load makes it unmissable.
 //
+// It also picks the current application version, the newest registered one
+// (see CurrentApp), and refuses a registry in which there is no single newest.
+//
 // Three properties are checked. Every declaration must be valid on its own terms
 // and no application version may be accepted by two codecs, which is
 // appver.VerifyDisjoint; and every declared XML version must have a header, which
@@ -87,11 +90,18 @@ func init() {
 		panic(fmt.Sprintf("xmlio: codec xml versions: %v", err))
 	}
 	byApp = make(map[string]codec.Codec, len(all))
+	var apps []string
 	for i, c := range all {
 		for _, a := range sets[i].Apps {
 			byApp[a.Version] = c
+			apps = append(apps, a.Version)
 		}
 	}
+	app, err := newestApp(apps)
+	if err != nil {
+		panic(fmt.Sprintf("xmlio: current application version: %v", err))
+	}
+	currentApp = app
 }
 
 // verifyXMLVersions returns an error unless every declaration names an XML
