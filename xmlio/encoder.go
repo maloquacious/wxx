@@ -29,6 +29,7 @@ type EncoderOption func(*encoderOpts)
 
 type encoderOpts struct {
 	compressedOutput bool
+	gzipLevel        int
 	utf16BeOutput    bool
 	xmlHeader        bool
 	diagnostics      *EncoderDiagnostics
@@ -100,6 +101,7 @@ func NewEncoder(app string, opts ...EncoderOption) *Encoder {
 		app: app,
 		opts: encoderOpts{
 			compressedOutput: true,
+			gzipLevel:        DefaultGzipLevel,
 			utf16BeOutput:    true,
 			xmlHeader:        true,
 			diagnostics:      nil,
@@ -121,6 +123,21 @@ func WithEncoderDiagnostics(buf *EncoderDiagnostics) EncoderOption {
 func WithGzipOutput(enabled bool) EncoderOption {
 	return func(o *encoderOpts) {
 		o.compressedOutput = enabled
+	}
+}
+
+// DefaultGzipLevel is the gzip level Encode uses unless WithGzipLevel says
+// otherwise. It is 6, the level compress/gzip's DefaultCompression stands for,
+// so it writes the bytes wxx has always written.
+const DefaultGzipLevel = 6
+
+// WithGzipLevel sets the gzip compression level, from gzip.BestSpeed (1) to
+// gzip.BestCompression (9); 0 stores the data uncompressed (issue #141).
+// A lower level is faster and writes a larger file. Encode refuses a level
+// outside 0..9 before writing anything.
+func WithGzipLevel(level int) EncoderOption {
+	return func(o *encoderOpts) {
+		o.gzipLevel = level
 	}
 }
 
@@ -146,6 +163,9 @@ func (e *Encoder) Encode(w io.Writer, m *wxx.Map_t) error {
 	c, err := codecFor(e.app)
 	if err != nil {
 		return err
+	}
+	if e.opts.compressedOutput && (e.opts.gzipLevel < gzip.NoCompression || e.opts.gzipLevel > gzip.BestCompression) {
+		return errors.Join(wxx.ErrGZipFailed, fmt.Errorf("gzip level %d: want %d..%d", e.opts.gzipLevel, gzip.NoCompression, gzip.BestCompression))
 	}
 
 	// Then the map. A Map_t whose fields contradict each other is not something
@@ -224,7 +244,10 @@ func (e *Encoder) Encode(w io.Writer, m *wxx.Map_t) error {
 	if e.opts.compressedOutput {
 		// compress the encoded data, returning any errors
 		var buf bytes.Buffer
-		gz := gzip.NewWriter(&buf)
+		gz, err := gzip.NewWriterLevel(&buf, e.opts.gzipLevel)
+		if err != nil {
+			return errors.Join(wxx.ErrGZipFailed, err)
+		}
 		if _, err := gz.Write(data); err != nil {
 			return err
 		} else if err = gz.Close(); err != nil {

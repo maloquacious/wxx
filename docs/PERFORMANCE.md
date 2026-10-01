@@ -82,6 +82,25 @@ again inside `MarshalXML`. These are filed as #141, #142 and #143.
 against 200–1,500 at 1920 × 1080. The configuration, map key and XML header
 are the same at any size.
 
+## Choosing a gzip level
+
+`xmlio.WithGzipLevel(level)` sets the gzip level for an encode, from 1
+(fastest) to 9 (smallest), or 0 for no compression (#141). The default is
+`xmlio.DefaultGzipLevel`, 6, which writes the same bytes wxx always has.
+Worldographer 2.08 opened the 1920 × 1080 maps written at levels 1, 6 and 9.
+
+| map | level | encode | size |
+|---|---|---|---|
+| random 1920×1080 | 1 | 1.18 s | 13.6 MB |
+| random 1920×1080 | 6 | 3.19 s | 9.39 MB |
+| random 1920×1080 | 9 | 15.6 s | 8.74 MB |
+| blank 1920×1080 | 1 | 0.81 s | 481 KB |
+| blank 1920×1080 | 6 | 0.85 s | 133 KB |
+| blank 1920×1080 | 9 | 0.86 s | 132 KB |
+
+Times are the full encode, median of 3, on the baseline machine. Worldographer's
+own saves of these maps are 9.56 MB and 133 KB.
+
 ## Is memory a practical limit?
 
 Not at 1920 × 1080. Peak memory is under 750 MiB for any single operation.
@@ -109,6 +128,6 @@ is needed for the maps in hand.
 
 The profile findings are filed separately rather than fixed in #138:
 
-- gzip level: #141
+- gzip level: #141 (`WithGzipLevel`, above)
 - `Validate` allocates per tile and runs twice per encode: #142
 - the encode pipeline's per-tile formatting and whole-document copies: #143
