@@ -10,7 +10,6 @@ import (
 
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/xmlio/internal/appver"
-	"github.com/maloquacious/wxx/xmlio/internal/v0_77"
 	"github.com/maloquacious/wxx/xmlio/internal/v1_06"
 )
 
@@ -34,8 +33,8 @@ type codecUnderTest struct {
 	fixture string
 }
 
-// codecsUnderTest is every W2025 codec. The classic codec v0_77 is being removed
-// (issue #103) and its gate is no longer under test.
+// codecsUnderTest is every codec. The classic codec v0_77 was removed (issue
+// #103), which leaves the W2025 one.
 var codecsUnderTest = []codecUnderTest{
 	{"v1_06", v1_06.AcceptedApps(), v1_06.Encode, sample2025_206},
 }
@@ -96,8 +95,8 @@ func TestCodecRejectsUnacceptedAppVersion(t *testing.T) {
 
 // TestCodecAppSetsAreDeclaredAndDisjoint pins what each codec declares, because
 // the sets are the codec's own knowledge and nothing else states them: the
-// package path names the CODEC version, not the application versions, so v0_77 is
-// not the 1.77-only codec and no assertion may infer the set from the path.
+// package path names the CODEC version, not the application versions, so no
+// assertion may infer the set from the path.
 //
 // The map/@release each application version writes is pinned per app rather than
 // per codec. v1_06 currently maps every app it accepts to one release ("2025"),
@@ -105,9 +104,10 @@ func TestCodecRejectsUnacceptedAppVersion(t *testing.T) {
 // being the thing under test the moment a relabelled build lands on an existing
 // schema (ADR 0004, issue #45 Decision 5).
 //
-// The classic codec v0_77 is being removed (issue #103) and its declaration is no
-// longer pinned here; it is still covered by the disjointness check below, which
-// runs over every compiled-in codec.
+// With one codec left (issue #103 removed v0_77) the disjointness check at the
+// end is VerifyDisjoint's per-declaration validation plus a no-duplicates check
+// within that one set; disjointness ACROSS codecs is watched to fail on synthetic
+// tables in TestVerifyDisjointRejectsOverlap.
 func TestCodecAppSetsAreDeclaredAndDisjoint(t *testing.T) {
 	for _, tc := range []struct {
 		name           string
@@ -403,7 +403,6 @@ func formatApps(apps []appver.App_t) string {
 // drift on is which codecs exist -- which is what it is here to state.
 func codecAppSetsForTest() []appver.Set_t {
 	return []appver.Set_t{
-		v0_77.AcceptedApps(),
 		v1_06.AcceptedApps(),
 	}
 }

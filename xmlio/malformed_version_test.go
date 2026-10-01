@@ -44,7 +44,7 @@ func withMapVersion(t *testing.T, raw []byte, want string) []byte {
 //
 // FIRST, the file still decodes. Issue #32 fixed the constraint that modeling
 // these values must not make decoding stricter, so a map/@version that does not
-// fit the dotted grammar is carried, not rejected. Both codecs keep the bytes
+// fit the dotted grammar is carried, not rejected. The codec keeps the bytes
 // verbatim in Dotted.Raw, and that is what an encoder would write back.
 //
 // SECOND, the version it decodes to has NO components. Before #38 it had zero
@@ -52,13 +52,13 @@ func withMapVersion(t *testing.T, raw []byte, want string) []byte {
 // file EQUAL to "0.0" and LESS than every real version. The components were a
 // lie the type had no way to disown. Now Parsed() is false and Compare refuses.
 //
-// The two malformed strings differ, and the difference is load-bearing. The
-// dispatcher (decoder.go) routes a classic file only on a "1." prefix, so
-// "garbage" never reaches the classic codec at all -- it misses dispatch and is
-// an unsupported-metadata error. "1.x" carries the prefix and fails the dotted
-// grammar, which is what makes v0_77's fallback reachable through the public
-// API rather than only by calling it directly. release="2025" routes
-// unconditionally, so W2025 takes anything non-empty.
+// Only a W2025 file can reach a codec with a malformed version: release="2025"
+// routes unconditionally, so W2025 takes anything non-empty. A file with no
+// release is refused whatever its version (issue #103) -- as a classic map if
+// the version starts "1.", as unsupported metadata otherwise -- which
+// TestDecodeRefusesAMapWithNoRelease pins. There used to be a classic case here
+// ("1.x", which kept the classic dispatch prefix); it went with the classic
+// codec.
 func TestMalformedOnDiskVersionDecodesUnparsed(t *testing.T) {
 	for _, tc := range []struct {
 		name       string
@@ -67,13 +67,6 @@ func TestMalformedOnDiskVersionDecodesUnparsed(t *testing.T) {
 		xmlVersion string // XML declaration to read it back under
 		malformed  string // the map/@version the file will state
 	}{
-		{
-			name:       "classic",
-			fixture:    classicFixture,
-			app:        "1.77",
-			xmlVersion: "1.0",
-			malformed:  "1.x", // keeps the "1." dispatch prefix, fails the grammar
-		},
 		{
 			name:       "w2025",
 			fixture:    sample2025_206,

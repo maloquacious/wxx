@@ -385,37 +385,20 @@ func TestEncodeEmptyTargetVersionIsError(t *testing.T) {
 	}
 }
 
-// classicFixture is a classic (Worldographer 1.x) blank map. Classic is being
-// removed (issue #103), and the only tests still reading it are the ones whose
-// subject changes with the production code that removes it: the classic rows of
-// retargetCases, which exist because the registry still holds 1.73, 1.74 and
-// 1.77, and the classic case of TestMalformedOnDiskVersionDecodesUnparsed, which
-// is about how the decoder classifies a 1.x file.
-const classicFixture = "../testdata/blank-2017-1.77-1.0.wxx"
-
 // retargetCases pair a source fixture with a registered application version to
 // target it at, and are the positive half of the target contract: every
 // registered release resolves, encodes, and writes ITS OWN version string.
 //
-// Cross-family re-targeting (classic <-> W2025) is deliberately absent. That is
-// a question about what a target can express -- a downgrade -- and it is tracked
-// separately; target RESOLUTION is what is under test here. Each case therefore
-// stays within its source's schema, which is where a re-target is legitimate:
-// W2025 2.06 and 2.07 share schema 1.06 and therefore one codec, and differ only
-// in the string written to map/@version. That is ADR 0004 Decision 4's "the
-// application version is data" claim, stated as bytes.
-//
-// The classic rows are here only because the registry still holds the classic
-// versions and TestEncodeTargetsEveryRegisteredRelease demands a case for every
-// registered version; they go when the registry entries do (issue #103).
+// Target RESOLUTION is what is under test here, not what a target can express.
+// Each case stays within its source's schema: W2025 2.06 and 2.07 share schema
+// 1.06 and therefore one codec, and differ only in the string written to
+// map/@version. That is ADR 0004 Decision 4's "the application version is data"
+// claim, stated as bytes.
 var retargetCases = []struct {
 	name   string
 	path   string
 	target string
 }{
-	{"classic 1.77 as itself", classicFixture, "1.77"},
-	{"classic 1.77 -> 1.74", classicFixture, "1.74"},
-	{"classic 1.77 -> 1.73", classicFixture, "1.73"},
 	{"w2025 2.06 as itself", sample2025_206, "2.06"},
 	{"w2025 2.07 -> 2.06", sample2025_207Blank, "2.06"},
 }

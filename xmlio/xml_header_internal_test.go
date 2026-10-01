@@ -1,7 +1,8 @@
 // Copyright (c) 2026 Michael D Henderson. All rights reserved.
 
-// This is an INTERNAL test package (package xmlio, not xmlio_test), and it is the
-// only one in this directory. It exists because verifyXMLVersions is unexported
+// This is an INTERNAL test package (package xmlio, not xmlio_test), one of two
+// files in this directory that are (downgrade_internal_test.go is the other, for
+// the same reason). It exists because verifyXMLVersions is unexported
 // and must stay that way -- it is a load-time check over a compiled-in table, not
 // API -- while a guard that cannot be watched to fail is worthless.
 //

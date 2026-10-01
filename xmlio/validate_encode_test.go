@@ -32,7 +32,9 @@ func decodeValidFixture(t *testing.T, name string) *wxx.Map_t {
 // would be to stop calling it.
 //
 // It runs over every .wxx in testdata/ rather than a list, so a fixture added
-// later is covered without anyone remembering to add it here.
+// later is covered without anyone remembering to add it here. The one exception
+// is classicFixture, which is kept to be refused (issue #103) and is held to that
+// by TestDecodeRefusesAClassicMap.
 func TestEveryFixtureDecodesToAValidMap(t *testing.T) {
 	fixtures, err := filepath.Glob(filepath.Join("..", "testdata", "*.wxx"))
 	if err != nil {
@@ -43,6 +45,9 @@ func TestEveryFixtureDecodesToAValidMap(t *testing.T) {
 	}
 	for _, path := range fixtures {
 		name := filepath.Base(path)
+		if name == filepath.Base(classicFixture) {
+			continue
+		}
 		t.Run(name, func(t *testing.T) {
 			if err := decodeValidFixture(t, name).Validate(); err != nil {
 				t.Errorf("%s: decoded map fails Validate(): %v", name, err)

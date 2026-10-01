@@ -56,7 +56,7 @@ func TestDecoderDiagnostics_CodecAndSchema(t *testing.T) {
 			// The codec field must name a package that exists. The old values
 			// named deleted ones, which is what made them dangling references
 			// rather than merely odd labels.
-			if diag.Codec != "v0_77" && diag.Codec != "v1_06" {
+			if diag.Codec != "v1_06" {
 				t.Errorf("Codec = %q, want a real codec package name", diag.Codec)
 			}
 			// Guard the specific regression: the retired coinage must not come

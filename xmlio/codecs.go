@@ -12,7 +12,6 @@ import (
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/xmlio/internal/appver"
 	"github.com/maloquacious/wxx/xmlio/internal/codec"
-	"github.com/maloquacious/wxx/xmlio/internal/v0_77"
 	"github.com/maloquacious/wxx/xmlio/internal/v1_06"
 )
 
@@ -29,7 +28,6 @@ import (
 // reachable, which is the one way the guarantees below can be lost.
 func codecs() []codec.Codec {
 	return []codec.Codec{
-		v0_77.Codec_t{},
 		v1_06.Codec_t{},
 	}
 }

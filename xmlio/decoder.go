@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/maloquacious/wxx"
-	"github.com/maloquacious/wxx/xmlio/internal/v0_77"
 	"github.com/maloquacious/wxx/xmlio/internal/v1_06"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/transform"
@@ -44,10 +43,10 @@ type DecoderDiagnostics struct {
 	XMLData      []byte // everything after the declaration: the XML handed to the codec
 	MapElement   []byte
 
-	// Codec names the codec package that decoded the file: "v0_77" or
-	// "v1_06". It is a diagnostic label, not identity -- see ADR 0004 and
-	// #44. It is set only once dispatch has chosen, so it stays empty when
-	// the file's metadata matches no codec.
+	// Codec names the codec package that decoded the file: "v1_06". It is a
+	// diagnostic label, not identity -- see ADR 0004 and #44. It is set only
+	// once dispatch has chosen, so it stays empty when the file's metadata
+	// matches no codec, a refused classic file included.
 	Codec string
 
 	// Schema is the schema version the FILE stated in map/@schema, verbatim.
@@ -264,16 +263,16 @@ func (d *Decoder) Decode(r io.Reader) (*wxx.Map_t, error) {
 	case "":
 		// H2017 ("classic") files carry no release or schema attribute; they
 		// are identified solely by a "1.x" version (e.g. 1.73/1.74/1.77).
-		// Be conservative: only classic-shaped versions route here so we do
-		// not accidentally swallow unknown or future formats.
+		// wxx no longer reads them (issue #103): Worldographer 2025 converts
+		// a classic map itself, and knows its own format, so the file is
+		// refused before any of it is decoded rather than read best-effort.
 		if strings.HasPrefix(xmlMetaData.Version, "1.") {
-			if d.opts.diagnostics != nil {
-				d.opts.diagnostics.Codec = "v0_77"
-			}
-			return v0_77.Decode(data)
+			return nil, errors.Join(wxx.ErrClassicMap, fmt.Errorf("map: version %q: no release", xmlMetaData.Version))
 		}
 	}
 
+	// Anything else -- including no release with a version that is not "1.x"
+	// -- is a format we do not know, and is refused rather than guessed at.
 	return nil, errors.Join(wxx.ErrUnsupportedMapMetadata, fmt.Errorf("map: release %q: version %q: schema %q", xmlMetaData.Release, xmlMetaData.Version, xmlMetaData.Schema))
 }
 

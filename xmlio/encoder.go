@@ -42,8 +42,10 @@ type EncoderDiagnostics struct {
 
 	// Dropped is the inventory of content the source map carried that the target
 	// release cannot express (ADR 0004 Decision 7). It is empty when the encode
-	// loses nothing -- notably when the target is the release the map already
-	// states.
+	// loses nothing, which today is every encode: the one supported schema
+	// expresses everything Map_t models. It stays because the principle does --
+	// always tell the user what they lose -- and W2025-to-W2025 loss (#92) is
+	// what it will report next.
 	//
 	// Only MODELED losses appear here. A downgrade that would drop an unmodeled
 	// stub does not report, it errors: the encoder can only stay quiet about a
@@ -53,13 +55,13 @@ type EncoderDiagnostics struct {
 	// opt-in via WithEncoderDiagnostics. That is a real limit worth stating: a
 	// caller who never asks does not hear about a modeled downgrade loss. It is
 	// the enumerable, documented half of the loss -- the half a caller can
-	// reconstruct from Map_t and internal/v0_77/COVERAGE.md after the fact -- and the
+	// reconstruct from Map_t and the codec's COVERAGE.md after the fact -- and the
 	// half that cannot be reconstructed is the half that errors.
 	Dropped []DroppedFeature_t
 }
 
 // NewEncoder returns an Encoder that writes the supported application version
-// app ("1.73", "1.77", "2.06") and implements the wxx.Encoder interface. Some
+// app ("2.06") and implements the wxx.Encoder interface. Some
 // features of the encoding pipeline can be configured with options.
 //
 // app is REQUIRED and is a parameter rather than an option (issue #45 Decision
@@ -190,8 +192,7 @@ func (e *Encoder) Encode(w io.Writer, m *wxx.Map_t) error {
 	}
 
 	if e.opts.xmlHeader {
-		// The XML declaration follows the CODEC (classic opens 1.0, W2025 opens
-		// 1.1). It is a byte the encoder writes, so the encoder owns it and
+		// The XML declaration follows the CODEC (W2025 opens 1.1). It is a byte the encoder writes, so the encoder owns it and
 		// declares it: it is neither a switch on a family year nor registry data
 		// (issue #45).
 		xmlHeader, err := xmlHeaderFor(decl.XMLVersion)
@@ -264,7 +265,7 @@ func xmlHeaderFor(xmlVersion string) ([]byte, error) {
 // Parse/serialize the XML form of Map_t without transport concerns.
 
 // MarshalXML converts a Map_t to the XML the supported application version app
-// ("1.73", "1.77", "2.06") writes, without transport concerns (no header, no
+// ("2.06") writes, without transport concerns (no header, no
 // UTF-16, no gzip).
 //
 // app is an APPLICATION VERSION and nothing else. It is never a schema version

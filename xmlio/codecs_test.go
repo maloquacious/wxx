@@ -9,9 +9,7 @@ import (
 
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/xmlio"
-	"github.com/maloquacious/wxx/xmlio/internal/appver"
 	"github.com/maloquacious/wxx/xmlio/internal/codec"
-	"github.com/maloquacious/wxx/xmlio/internal/v0_77"
 	"github.com/maloquacious/wxx/xmlio/internal/v1_06"
 )
 
@@ -30,7 +28,6 @@ import (
 // state.
 func codecsForTest() []codec.Codec {
 	return []codec.Codec{
-		v0_77.Codec_t{},
 		v1_06.Codec_t{},
 	}
 }
@@ -71,9 +68,10 @@ func mustDotted(t *testing.T, s string) wxx.Dotted {
 	return d
 }
 
-// registrySamples is the registry restated as expectations: the three classic
-// builds, which one codec serves, and the W2025 2.06 baseline. These four
-// application versions are the whole registry.
+// registrySamples is the registry restated as expectations: the W2025 2.06
+// baseline is the whole registry. The classic builds 1.73, 1.74 and 1.77 were
+// removed with their codec (issue #103); TestRegistryUnknownApplicationVersion
+// holds them to the unknown-version error.
 //
 // wantRelease, wantSchema and wantXMLVersion are the exact bytes the codec that
 // writes each application version emits. They are asserted here because they used
@@ -88,9 +86,6 @@ var registrySamples = []struct {
 	wantSchema     string // map/@schema verbatim; "" means the codec writes none
 	wantXMLVersion string // the XML declaration its files open with
 }{
-	{"classic 1.73", "1.73", v0_77.Codec_t{}, "", "", "1.0"},
-	{"classic 1.74", "1.74", v0_77.Codec_t{}, "", "", "1.0"},
-	{"classic 1.77", "1.77", v0_77.Codec_t{}, "", "", "1.0"},
 	{"w2025 2.06", "2.06", v1_06.Codec_t{}, "2025", "1.06", "1.1"},
 }
 
@@ -217,6 +212,9 @@ func TestRegistryUnknownApplicationVersion(t *testing.T) {
 		{"empty", ""},
 		{"unpadded 2.06", "2.6"},
 		{"unreleased classic", "1.75"},
+		{"removed classic 1.73", "1.73"},
+		{"removed classic 1.74", "1.74"},
+		{"removed classic 1.77", "1.77"},
 		{"future w2025", "9.99"},
 		{"schema not app", "1.06"},
 		{"codec version not app", "0.77"},
@@ -251,7 +249,7 @@ func TestRegistryUnknownApplicationVersion(t *testing.T) {
 }
 
 // TestRegistryIsExactlyTheSupportedApplicationVersions asserts the compiled-in
-// registry is the four supported application versions and no others, and that no
+// registry is the supported application versions in registrySamples and no others, and that no
 // version is claimed twice.
 //
 // There is no second table to check it against any more. The registry IS the
@@ -389,34 +387,5 @@ func TestRegistryMatchesFixtures(t *testing.T) {
 				t.Errorf("%s: MetaData.Version.Schema.Raw = %q, want %q", tc.path, got, tc.wantSchema)
 			}
 		})
-	}
-}
-
-// TestCodecDeclarationsAreDisjointOverTheRealCodecs asserts, over the compiled-in
-// codecs, the property the registry's key depends on: no application version is
-// accepted by two codecs.
-//
-// It is the MERGED guard. Issue #41 kept two checks apart -- the registry's
-// duplicate-application-version check (one version must not name two RELEASES)
-// and codec disjointness (one version must not be accepted by two CODECS) --
-// because the registry had releases in it to be ambiguous about. The registry is
-// now application version -> codec, so the two are the same statement and
-// appver.VerifyDisjoint is the survivor.
-//
-// xmlio's init runs this and panics, which is why this cannot be the only
-// coverage: a panic cannot be inspected. TestVerifyDisjointRejectsOverlap in
-// appversion_test.go is where the guard is watched to fail.
-func TestCodecDeclarationsAreDisjointOverTheRealCodecs(t *testing.T) {
-	var sets []appver.Set_t
-	for _, c := range codecsForTest() {
-		sets = append(sets, c.AcceptedApps())
-	}
-	// Guard against a vacuous pass: disjointness over one set is trivially true
-	// and says nothing.
-	if len(sets) < 2 {
-		t.Fatalf("%d codec declaration(s) under test, want at least 2: disjointness needs two sets to be a property", len(sets))
-	}
-	if err := appver.VerifyDisjoint(sets...); err != nil {
-		t.Errorf("the compiled-in codec sets are not disjoint: %v", err)
 	}
 }

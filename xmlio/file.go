@@ -21,8 +21,8 @@ func ReadFile(path string, opts ...DecoderOption) (*wxx.Map_t, error) {
 	return NewDecoder(opts...).Decode(f)
 }
 
-// WriteFile encodes m as the supported application version app ("1.73", "1.77",
-// "2.06") and writes it to path (0644). Encoder behavior may be tuned with
+// WriteFile encodes m as the supported application version app ("2.06") and
+// writes it to path (0644). Encoder behavior may be tuned with
 // EncoderOption values (see NewEncoder).
 //
 // app is required, for the reason it is required on NewEncoder: writing the

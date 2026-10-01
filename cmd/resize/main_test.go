@@ -59,18 +59,18 @@ func resize(t *testing.T, args ...string) (int, string) {
 // did too, because its size check ran after the allocation it was guarding.
 func TestOverCropFailsCleanly(t *testing.T) {
 	out := filepath.Join(t.TempDir(), "out.wxx")
-	// The fixture is 5 x 3; removing 6 columns leaves -1.
+	// The fixture is 13 x 11; removing 14 columns leaves -1.
 	code, stderr := resize(t,
-		"-input", filepath.Join("..", "..", "testdata", "2017-1.77-1.0-columns-blank.wxx"),
+		"-input", filepath.Join("..", "..", "testdata", "2025-2.06-13x11-941577-blank.wxx"),
 		"-output", out,
-		"-left", "-2", "-right", "-4")
+		"-left", "-2", "-right", "-12")
 	if code == 0 {
 		t.Fatalf("exit 0, want a failure; stderr:\n%s", stderr)
 	}
 	if strings.Contains(stderr, "panic:") {
 		t.Fatalf("resize panicked:\n%s", stderr)
 	}
-	if !strings.Contains(stderr, "smaller than 2 x 2 (this resize gives -1 x 3)") {
+	if !strings.Contains(stderr, "smaller than 2 x 2 (this resize gives -1 x 11)") {
 		t.Errorf("stderr does not explain the failure:\n%s", stderr)
 	}
 	if _, err := os.Stat(out); !errors.Is(err, os.ErrNotExist) {
@@ -83,7 +83,7 @@ func TestOverCropFailsCleanly(t *testing.T) {
 func TestCrop(t *testing.T) {
 	out := filepath.Join(t.TempDir(), "out.wxx")
 	code, stderr := resize(t,
-		"-input", filepath.Join("..", "..", "testdata", "2017-1.77-1.0-columns-blank.wxx"),
+		"-input", filepath.Join("..", "..", "testdata", "2025-2.06-13x11-941577-blank.wxx"),
 		"-output", out,
 		"-left", "-2", "-bottom", "-1")
 	if code != 0 {
@@ -93,8 +93,8 @@ func TestCrop(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read output: %v", err)
 	}
-	if m.Tiles.TilesWide != 3 || m.Tiles.TilesHigh != 2 {
-		t.Errorf("output is %d x %d, want 3 x 2 (5 x 3 less 2 columns and 1 row)", m.Tiles.TilesWide, m.Tiles.TilesHigh)
+	if m.Tiles.TilesWide != 11 || m.Tiles.TilesHigh != 10 {
+		t.Errorf("output is %d x %d, want 11 x 10 (13 x 11 less 2 columns and 1 row)", m.Tiles.TilesWide, m.Tiles.TilesHigh)
 	}
 }
 

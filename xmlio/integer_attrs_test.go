@@ -58,11 +58,12 @@ func integerAttribute(values map[string]bool) bool {
 // rawAttrValues aggregates a document as element path -> attribute -> the set of
 // values it is spelled with, VERBATIM.
 //
-// It exists because xmlAggregate cannot be used here, and the reason is worth
-// stating: xmlAggregate runs every value through normVal, which reformats
-// anything parsing as a float so that "0" and "0.0" compare equal. That is
-// exactly right for the loss inventory it serves -- a re-spelled number is not
-// lost data -- and it makes it blind to the only thing this test is about. The
+// It exists because the round-trip audit harness (xmlAggregate, since removed
+// with the classic tests in issue #103) could not be used here, and the reason
+// is worth keeping: it ran every value through a normalizer that reformatted
+// anything parsing as a float so that "0" and "0.0" compared equal. That was
+// exactly right for the loss inventory it served -- a re-spelled number is not
+// lost data -- and it made it blind to the only thing this test is about. The
 // first draft of this audit did use xmlAggregate and passed while the encoder
 // emitted "-1.0"; it was caught by deliberately breaking the encoder and
 // watching the test not fail.
@@ -160,10 +161,9 @@ func auditIntegerSpelling(t *testing.T, label string, source, output []byte) int
 // when a new one is modeled. It fails on the day a regression lands rather than
 // on the day someone runs an ad-hoc diff.
 //
-// It is a spelling test and not a value test. computeLoss and the round-trip
-// audits compare values and treat "0" and "0.0" as the same attribute changing;
-// this test is the one place that cares which of the two reached the file,
-// because the application does.
+// It is a spelling test and not a value test. A value comparison treats "0" and
+// "0.0" as the same attribute; this test is the one place that cares which of
+// the two reached the file, because the application does.
 func TestW2025IntegerAttributeSpelling(t *testing.T) {
 	total := 0
 
