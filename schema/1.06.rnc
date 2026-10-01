@@ -20,15 +20,16 @@
 # ---------------------------------------------------------------------------
 # EVIDENCE
 #
-# The evidence is the six tracked 2.08 fixtures, saved by Worldographer 2.08:
+# The evidence is the seven tracked 2.08 fixtures, saved by Worldographer 2.08:
 #
-#   blank         testdata/2025-2.08-13x11-941577-blank.wxx
-#   layers        testdata/2025-2.08-13x11-941577-layers.wxx
-#   notes-shapes  testdata/2025-2.08-13x11-941577-notes-shapes.wxx
-#   populated     testdata/2025-2.08-13x11-941577-populated.wxx
-#   resources     testdata/2025-2.08-13x11-941577-resources.wxx
-#   rows          testdata/2025-2.08-13x11-941577-rows.wxx
-#   all           every one of the six
+#   blank           testdata/2025-2.08-13x11-941577-blank.wxx
+#   layers          testdata/2025-2.08-13x11-941577-layers.wxx
+#   notes-shapes    testdata/2025-2.08-13x11-941577-notes-shapes.wxx
+#   populated       testdata/2025-2.08-13x11-941577-populated.wxx
+#   resources       testdata/2025-2.08-13x11-941577-resources.wxx
+#   rows            testdata/2025-2.08-13x11-941577-rows.wxx
+#   tile-resources  testdata/2025-2.08-13x11-941577-tile-resources.wxx
+#   all             every one of the seven
 #
 # Plus the maintainer's app checks recorded in GitHub issues, cited as
 # "app check, #NN".
@@ -46,7 +47,7 @@
 # The label above a named pattern covers the element and every line inside it,
 # unless a line carries a label of its own.
 #
-# CARDINALITY. "?", "*" and "+" are claims too, and six fixtures cannot show
+# CARDINALITY. "?", "*" and "+" are claims too, and seven fixtures cannot show
 # that something is required. So:
 #
 #   - an attribute or child element that was present on every instance is
@@ -164,7 +165,7 @@ Map = element map {
   attribute showShadows { xsd:boolean }?,
   # inferred: integral in every fixture; no app check.
   attribute triangleSize { xsd:integer }?,
-  # inferred: each child is present once in all six (maplayer: eight times);
+  # inferred: each child is present once in all seven (maplayer: eight times);
   # the "?" and "*" are the looser reading.
   GridAndNumbering?,
   BlurTerrainBG?,
@@ -257,7 +258,7 @@ Tiles = element tiles {
   attribute tilesWide { xsd:integer }?,
   # inferred: integral in every fixture; no app check.
   attribute tilesHigh { xsd:integer }?,
-  # inferred: thirteen tilerows (= tilesWide) in all six; "*" is the looser
+  # inferred: thirteen tilerows (= tilesWide) in all seven; "*" is the looser
   # reading.
   TileRow*
 }
@@ -268,37 +269,39 @@ Tiles = element tiles {
 # 11 records; and the maintainer's 2.08 saves in #85, among them a ROWS map
 # 1 wide by 11 high holding one tilerow of 11 records).
 # Text: one tile record per line, fields tab-separated. Observed: records of
-# 11 fields (layers, notes-shapes, populated, resources) and of 6 fields
-# ending in "Z" (blank, layers, notes-shapes, resources, rows).
+# 11 fields (layers, notes-shapes, populated, resources, tile-resources), of
+# 6 fields ending in "Z" (blank, layers, notes-shapes, resources, rows), and
+# of 12 and 7 fields (tile-resources).
 #
-# The fields, in order. Spellings are observed: all. Meanings marked
-# "Discord" come from a post by Worldographer's author on Discord,
-# 2023-12-22, as summarized in xmlio/internal/v1_06/tiles.go (the post itself
-# is not checked here, and it predates Worldographer 2025):
-# https://discord.com/channels/535205750532997160/877285895991095369/1187771984768151653
+# The fields, in order. Spellings are observed: all. tile-resources sets
+# every field of two tiles in the app (testdata/README.md), which fixes the
+# order:
+#
+#   hex (0,0)  "0 6 1 1 7 8 9 10 11 12 13 1.0,0.0,1.0,1.0"
+#   hex (1,0)  "2 0 1 1 0 Z 1.0,0.0,1.0,1.0"   (all six resources set to 0)
 #
 #   1      terrain slot: an integer, the index of an entry in TerrainMap.
 #          observed: every slot resolves in its file's terrainmap.
 #   2      elevation: integral in every fixture (Blank 1, Water Sea -1, Flat
-#          Farmland 1000). Whether a decimal point is allowed is TBD.
-#   3      isIcy: 0 or 1. observed: notes-shapes, which sets it in the app
-#          (testdata/README.md). The Discord summary says float; no fixture
-#          spells it so.
-#   4      isGMOnly: 0 or 1. observed: notes-shapes, as 3. Set on a hex of
-#          another layer (Below All, Above Water, Above Terrain), 3 and 4
-#          stay 0 here and that layer's terrainAndLocation carries them
+#          Farmland 1000; 6 and 0 as set in tile-resources). Whether a
+#          decimal point is allowed is TBD.
+#   3      isIcy: 0 or 1. observed: notes-shapes, tile-resources.
+#   4      isGMOnly: 0 or 1. observed: notes-shapes, tile-resources. Set on a
+#          hex of another layer (Below All, Above Water, Above Terrain), 3 and
+#          4 stay 0 here and that layer's terrainAndLocation carries them
 #          (observed: notes-shapes).
-#   5      animals: an integer, 0 to 59 in the fixtures. Meaning and a range
-#          of 0 to 100: inferred: Discord.
-#   6      "Z", ending a 6-field record; or brick, in an 11-field record.
-#   7..11  crops, gems, lumber, metals, rock. Integers in every fixture; gems
-#          is 0 in every record.
-#          Names of 6..11: inferred: Discord. That "Z" stands for all six
-#          being 0: inferred: Discord; no fixture has an 11-field record with
-#          all six at 0.
-#   last   an optional custom background color, making 7 or 12 fields:
-#          inferred: Discord and the codec. No fixture has one; its spelling
-#          is TBD.
+#   5      animals: an integer. observed: tile-resources.
+#   6..11  brick, crops, gems, lumber, metals, rock: integers. observed:
+#          tile-resources. When all six are 0 the app writes the single field
+#          "Z" in their place (observed: tile-resources, hex (1,0)); no
+#          fixture writes six zeros. Range 0 to 100: inferred: Discord (a
+#          post by Worldographer's author, 2023-12-22, summarized in
+#          xmlio/internal/v1_06/tiles.go; it predates Worldographer 2025:
+#          https://discord.com/channels/535205750532997160/877285895991095369/1187771984768151653).
+#   last   custom background color ("Override BG" in the app), "r,g,b,a"
+#          (grammar header, COLORS), after the resources or after "Z", so a
+#          record with one has 12 or 7 fields. observed: tile-resources.
+#          Absent on every tile with no override set (observed: all).
 TileRow = element tilerow {
   text
 }
@@ -339,7 +342,7 @@ MapKey = element mapkey {
   # integer: the app writes it integrally (observed: app check, #64);
   # whether a decimal point stops the file opening is untested.
   attribute entryScale { xsd:integer }?,
-  # inferred: whitespace only in all six; content TBD.
+  # inferred: whitespace only in all seven; content TBD.
   text
 }
 
@@ -580,11 +583,11 @@ NoteText = element notetext {
 
 # observed: all.
 Informations = element informations {
-  # inferred: five top-level entries in all six; "*" is the looser reading.
+  # inferred: five top-level entries in all seven; "*" is the looser reading.
   Information*
 }
 
-# observed: all, nested three deep in all six: top-level entries
+# observed: all, nested three deep in all seven: top-level entries
 # (type="Information"), their children (Nation, Culture, Religion), and
 # Religion entries under Religion entries. The recursion is what the files
 # hold (#69).
@@ -614,7 +617,7 @@ Information = element information {
 
 # observed: all; children always, in this order.
 Configuration = element configuration {
-  # inferred: each child present once in all six; "?" is the looser reading.
+  # inferred: each child present once in all seven; "?" is the looser reading.
   TerrainConfig?,
   FeatureConfig?,
   TextureConfig?,
@@ -639,7 +642,7 @@ TextureConfig = element texture-config {
 
 # observed: all.
 TextConfig = element text-config {
-  # inferred: seven labelstyles in all six; "*" is the looser reading.
+  # inferred: seven labelstyles in all seven; "*" is the looser reading.
   LabelStyle*
 }
 
@@ -668,7 +671,7 @@ LabelStyle = element labelstyle {
 
 # observed: all.
 ShapeConfig = element shape-config {
-  # inferred: seven shapestyles in all six; "*" is the looser reading.
+  # inferred: seven shapestyles in all seven; "*" is the looser reading.
   ShapeStyle*
 }
 

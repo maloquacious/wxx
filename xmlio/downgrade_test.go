@@ -65,6 +65,7 @@ func TestNoLossOnSameReleaseTargets(t *testing.T) {
 		{"w2025 2.08 populated", sample2025_208Populated},
 		{"w2025 2.08 resources", sample2025_208Resources},
 		{"w2025 2.08 rows", sample2025_208Rows},
+		{"w2025 2.08 tile-resources", sample2025_208TileResources},
 	}
 
 	// Guard against a registered release drifting out of test: the claim is "no

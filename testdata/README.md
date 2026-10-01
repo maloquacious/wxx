@@ -33,8 +33,9 @@ when you touch it again, so follow these rules for every fixture:
   reordered.
 - Never open the map file again. Doing so may change the contents.
 
-Worldographer writes a `*-autosave.wxx` alongside the map and deletes it on a
-clean exit. Autosaves are transient and are git-ignored; never commit one.
+Worldographer writes a `*-autosave.wxx` alongside the map and does not remove
+it, even on a clean exit. Autosaves are git-ignored; never commit one, and
+delete it by hand.
 
 ## Inspecting a fixture
 
@@ -303,6 +304,58 @@ Tests
 Before saving, ensure all layers are visible, GM Only: Show is checked, Grid: Show/Numbers/Shadows are checked.
 
 Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-populated.wxx
+
+## Tile resources
+
+Sets every field of a tile record to a value you can pick out, on two tiles
+(issue #117): one with every resource set, and one with every resource 0 (which
+the app writes as `Z`). Both carry a custom background color.
+
+File > New World/Kingdom map
+
+Hex Orientation: Columns Line Up
+Map Projection: Flat
+  Hexes Wide: 13
+  Hexes High: 11
+
+Initial View Level: WORLD
+
+[x] Use suggested pixel sizes
+
+Random Seed: 941577
+
+All one terrain: Blank
+
+Generate Map
+
+### Add Terrain
+Open the Terrain tab and:
+
+1. Select Terrain Land from the dropdown, enable terrain fill, and fill the layer with Flat Farmland, then disable terrain fill.
+2. Hex (0,0): select Water Sea, then open the Options sub-tab and set:
+   - Icy: checked, GM Only: checked, Layer: Terrain Land
+   - Override BG: checked, the magenta swatch
+   - Elevation 6, Animals 7, Brick 8, Crops 9, Gems 10, Lumber 11, Metals 12, Rock 13
+   - Use above resources for new Terrain: checked
+
+   Click on (0,0).
+3. Hex (1,0): select Flat Desert Cold, then open the Options sub-tab and set:
+   - Icy: checked, GM Only: checked, Layer: Terrain Land
+   - Override BG: checked, the magenta swatch
+   - Elevation 0, Animals 0, Brick 0, Crops 0, Gems 0, Lumber 0, Metals 0, Rock 0
+   - Use above resources for new Terrain: checked
+
+   Click on (1,0).
+
+The color picker can name the wrong color; pick by the swatch. For (0,0) it
+showed "White" beside the magenta swatch, and the file holds magenta
+(`1.0,0.0,1.0,1.0`).
+
+### Save
+
+Before saving, ensure all layers are visible, GM Only: Show is checked, Grid: Show/Numbers/Shadows are checked.
+
+Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-tile-resources.wxx
 
 ## CDATA guard
 
