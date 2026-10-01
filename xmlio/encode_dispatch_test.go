@@ -56,6 +56,7 @@ var xmlHeaderSamples = []struct {
 	{"w2025 2.08 rows", sample2025_208Rows, "2.08", "1.06", "<?xml version='1.1' encoding='utf-16'?>\n"},
 	{"w2025 2.08 tile-resources", sample2025_208TileResources, "2.08", "1.06", "<?xml version='1.1' encoding='utf-16'?>\n"},
 	{"w2025 2.08 extraterrain-bgcolor", sample2025_208ExtraTerrainBgColor, "2.08", "1.06", "<?xml version='1.1' encoding='utf-16'?>\n"},
+	{"w2025 2.08 river-lines", sample2025_208RiverLines, "2.08", "1.06", "<?xml version='1.1' encoding='utf-16'?>\n"},
 }
 
 // wrongXMLHeaders are declarations a Worldographer file can open with that no
