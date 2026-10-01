@@ -344,8 +344,9 @@ func TestEncodeUnregisteredTargetProducesNoBytes(t *testing.T) {
 		name string
 		app  string
 	}{
-		// The licensing case from ADR 0004 Decision 5: a build that does not exist.
-		{"a future version", unlicensedTarget},
+		// The licensing case from ADR 0004 Decision 5: a build the registry does
+		// not state.
+		{"an unregistered version", unlicensedTarget},
 		// A schema version is not an application version. This is issue #41
 		// requirement 1 stated as behavior: the one string that used to select a
 		// codec here must now resolve to nothing.

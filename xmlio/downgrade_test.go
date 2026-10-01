@@ -16,7 +16,8 @@ import (
 // harness went with the classic codec (issue #103). What is left is the
 // property the loss contract rests on for the one remaining format -- a target
 // reports no loss on content it can express -- and the place the next
-// inventory's tests go: W2025-to-W2025 loss (#92). downgrade_internal_test.go
+// inventory's tests go: W2025-to-W2025 loss, once one is proven (issue #92
+// registered 2.07 and found none against 2.06). downgrade_internal_test.go
 // holds the other half, that a schema with no inventory is an error.
 
 // decodeW2025 decodes a tracked .wxx fixture through the public pipeline.
@@ -53,6 +54,11 @@ func TestNoLossOnSameReleaseTargets(t *testing.T) {
 		// report nothing: the loss is a property of the target's expressiveness,
 		// not of the content being unusual.
 		{"w2025 2.06 layers beta", sample2025_206LayersBeta},
+		{"w2025 2.07 blank", sample2025_207Blank},
+		{"w2025 2.07 layers", sample2025_207Layers},
+		{"w2025 2.07 notes-shapes", sample2025_207NotesShapes},
+		{"w2025 2.07 resources", sample2025_207Resources},
+		{"w2025 2.07 rows", sample2025_207Rows},
 	}
 
 	// Guard against a registered release drifting out of test: the claim is "no

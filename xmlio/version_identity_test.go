@@ -3,13 +3,15 @@
 package xmlio_test
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 
 	"github.com/maloquacious/wxx"
+	"github.com/maloquacious/wxx/xmlio"
 )
 
-// versionIdentitySamples pairs tracked W2025 2.06 fixtures with the version
+// versionIdentitySamples pairs tracked W2025 2.06 and 2.07 fixtures with the version
 // identity their bytes state, observed end-to-end through the public decoder
 // (ADR 0004 Decision 2).
 //
@@ -26,6 +28,11 @@ var versionIdentitySamples = []struct {
 }{
 	{"w2025 2.06 blank", sample2025_206, "2.06", 2, 6, "1.06"},
 	{"w2025 2.06 layers beta", sample2025_206LayersBeta, "2.06", 2, 6, "1.06"},
+	{"w2025 2.07 blank", sample2025_207Blank, "2.07", 2, 7, "1.06"},
+	{"w2025 2.07 layers", sample2025_207Layers, "2.07", 2, 7, "1.06"},
+	{"w2025 2.07 notes-shapes", sample2025_207NotesShapes, "2.07", 2, 7, "1.06"},
+	{"w2025 2.07 resources", sample2025_207Resources, "2.07", 2, 7, "1.06"},
+	{"w2025 2.07 rows", sample2025_207Rows, "2.07", 2, 7, "1.06"},
 }
 
 // TestVersionIdentity asserts that decoding populates MetaData.Version with the
@@ -34,6 +41,10 @@ var versionIdentitySamples = []struct {
 // For W2025 this is the first time @version reaches the model at all — the
 // superseded DataVersion had no slot for it, spending its Minor.Patch on the
 // schema — so the App assertions here are new ground rather than a restatement.
+//
+// Each sample is then encoded as the version it states and decoded again, and
+// must come back stating the same identity: a registered version written as
+// itself keeps the identity the file had (issue #92 registered 2.07).
 func TestVersionIdentity(t *testing.T) {
 	for _, tc := range versionIdentitySamples {
 		t.Run(tc.name, func(t *testing.T) {
@@ -65,6 +76,20 @@ func TestVersionIdentity(t *testing.T) {
 			if got := v.Schema.Raw; got != tc.wantSchema {
 				t.Errorf("MetaData.Version.Schema.Raw = %q, want %q", got, tc.wantSchema)
 			}
+
+			// Written as itself, the identity survives.
+			var buf bytes.Buffer
+			if err := xmlio.NewEncoder(tc.wantApp).Encode(&buf, m); err != nil {
+				t.Fatalf("encode %s as %q: %v", tc.path, tc.wantApp, err)
+			}
+			back, err := xmlio.NewDecoder().Decode(&buf)
+			if err != nil {
+				t.Fatalf("re-decode %s encoded as %q: %v", tc.path, tc.wantApp, err)
+			}
+			bv := back.MetaData.Version
+			if bv.App.Raw != tc.wantApp || bv.Schema == nil || bv.Schema.Raw != tc.wantSchema {
+				t.Errorf("%s encoded as %q re-decodes as %v, want app %s, schema %s", tc.path, tc.wantApp, bv, tc.wantApp, tc.wantSchema)
+			}
 		})
 	}
 }
@@ -75,33 +100,33 @@ func TestVersionIdentity(t *testing.T) {
 // renders those back as "2.6" and "1.6" — a different string, and therefore a
 // different file. Decoding must hand back the bytes it was given.
 func TestVersionIdentityPaddingSurvivesDecode(t *testing.T) {
-	const (
-		wantApp    = "2.06" // rendering the components would give "2.6"
-		wantSchema = "1.06" // rendering the components would give "1.6"
-	)
-
-	// Guard against a vacuous pass: this test only proves anything if the values
-	// it expects are genuinely zero-padded, i.e. if each differs from the
-	// unpadded rendering of its own parsed components. Were an expectation ever
-	// relaxed to "2.6", every assertion below would still pass while asserting
-	// nothing whatsoever about padding.
-	for _, want := range []string{wantApp, wantSchema} {
-		d, err := wxx.ParseDotted(want)
-		if err != nil {
-			t.Fatalf("ParseDotted(%q): %v", want, err)
-		}
-		if unpadded := fmt.Sprintf("%d.%d", d.Major, d.Minor); unpadded == want {
-			t.Fatalf("expected value %q is not zero-padded (renders identically as %q), so padding preservation is not under test", want, unpadded)
-		}
-	}
+	const wantSchema = "1.06" // rendering the components would give "1.6"
 
 	for _, tc := range []struct {
-		name string
-		path string
+		name    string
+		path    string
+		wantApp string // rendering the components would give "2.6" or "2.7"
 	}{
-		{"2.06/1.06 blank", sample2025_206},
-		{"2.06/1.06 layers", sample2025_206LayersBeta},
+		{"2.06/1.06 blank", sample2025_206, "2.06"},
+		{"2.06/1.06 layers", sample2025_206LayersBeta, "2.06"},
+		{"2.07/1.06 blank", sample2025_207Blank, "2.07"},
 	} {
+		wantApp := tc.wantApp
+		// Guard against a vacuous pass: this test only proves anything if the
+		// values it expects are genuinely zero-padded, i.e. if each differs from
+		// the unpadded rendering of its own parsed components. Were an
+		// expectation ever relaxed to "2.6", every assertion below would still
+		// pass while asserting nothing whatsoever about padding.
+		for _, want := range []string{wantApp, wantSchema} {
+			d, err := wxx.ParseDotted(want)
+			if err != nil {
+				t.Fatalf("ParseDotted(%q): %v", want, err)
+			}
+			if unpadded := fmt.Sprintf("%d.%d", d.Major, d.Minor); unpadded == want {
+				t.Fatalf("expected value %q is not zero-padded (renders identically as %q), so padding preservation is not under test", want, unpadded)
+			}
+		}
+
 		t.Run(tc.name, func(t *testing.T) {
 			m, err := decodeFile(t, tc.path)
 			if err != nil {

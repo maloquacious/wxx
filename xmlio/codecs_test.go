@@ -87,6 +87,7 @@ var registrySamples = []struct {
 	wantXMLVersion string // the XML declaration its files open with
 }{
 	{"w2025 2.06", "2.06", v1_06.Codec_t{}, "2025", "1.06", "1.1"},
+	{"w2025 2.07", "2.07", v1_06.Codec_t{}, "2025", "1.06", "1.1"},
 }
 
 // TestRegistryResolvesEveryApplicationVersion asserts the registry's whole job:
@@ -211,6 +212,8 @@ func TestRegistryUnknownApplicationVersion(t *testing.T) {
 	}{
 		{"empty", ""},
 		{"unpadded 2.06", "2.6"},
+		{"unpadded 2.07", "2.7"},
+		{"unregistered w2025 2.08", "2.08"},
 		{"unreleased classic", "1.75"},
 		{"removed classic 1.73", "1.73"},
 		{"removed classic 1.74", "1.74"},
@@ -312,6 +315,11 @@ var registryFixtureSamples = []struct {
 }{
 	{"w2025 2.06 blank", sample2025_206, "2.06", v1_06.Codec_t{}, "2025", "1.06"},
 	{"w2025 2.06 layers beta", sample2025_206LayersBeta, "2.06", v1_06.Codec_t{}, "2025", "1.06"},
+	{"w2025 2.07 blank", sample2025_207Blank, "2.07", v1_06.Codec_t{}, "2025", "1.06"},
+	{"w2025 2.07 layers", sample2025_207Layers, "2.07", v1_06.Codec_t{}, "2025", "1.06"},
+	{"w2025 2.07 notes-shapes", sample2025_207NotesShapes, "2.07", v1_06.Codec_t{}, "2025", "1.06"},
+	{"w2025 2.07 resources", sample2025_207Resources, "2.07", v1_06.Codec_t{}, "2025", "1.06"},
+	{"w2025 2.07 rows", sample2025_207Rows, "2.07", v1_06.Codec_t{}, "2025", "1.06"},
 }
 
 // TestRegistryMatchesFixtures grounds the registry in the files on disk rather

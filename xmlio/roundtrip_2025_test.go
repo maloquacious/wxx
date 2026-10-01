@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 	"slices"
 	"strings"
@@ -34,11 +35,51 @@ const (
 	// with inline labels, shapes with points, notes, and <extraTerrain>
 	// placements on three layers.
 	sample2025_207NotesShapes = "../testdata/2025-2.07-13x11-941577-notes-shapes.wxx" // release=2025 version=2.07 schema=1.06
+	// sample2025_207Layers, sample2025_207Resources and sample2025_207Rows are the
+	// remaining 2.07 saves (#91): map layers, resources, and a rows-oriented map.
+	sample2025_207Layers    = "../testdata/2025-2.07-13x11-941577-layers.wxx"    // release=2025 version=2.07 schema=1.06
+	sample2025_207Resources = "../testdata/2025-2.07-13x11-941577-resources.wxx" // release=2025 version=2.07 schema=1.06
+	sample2025_207Rows      = "../testdata/2025-2.07-13x11-941577-rows.wxx"      // release=2025 version=2.07 schema=1.06
 
-	// w2025Target is the application version the tests encode 2.07 maps as:
-	// 2.06 is the only W2025 release registered until issue #92 adds 2.07.
-	w2025Target = "2.06"
+	// w2025Target is the application version the tests encode 2.07 maps as: the
+	// version they state, registered by issue #92.
+	w2025Target = "2.07"
 )
+
+// sameVersionTarget returns the application version the *MatchSource tests
+// encode fixture as: the version the fixture's file name states when that
+// version is registered, so a byte comparison with the source is a same-version
+// one, and 2.06 for a 2.08 save until issue #73 registers 2.08.
+//
+// It is keyed on the file name rather than on the decoded map, and the
+// registered versions are listed rather than looked up, so that a version
+// dropping out of the registry fails these tests instead of quietly falling
+// back to 2.06.
+func sameVersionTarget(t *testing.T, fixture string) string {
+	t.Helper()
+	base := filepath.Base(fixture)
+	switch {
+	case strings.HasPrefix(base, "2025-2.06-"):
+		return "2.06"
+	case strings.HasPrefix(base, "2025-2.07-"):
+		return "2.07"
+	case strings.HasPrefix(base, "2025-2.08-"):
+		return "2.06" // 2.08 is not registered until issue #73
+	}
+	t.Fatalf("%s: no target for this fixture's version", fixture)
+	return ""
+}
+
+// fixtures207 is every tracked 2.07 save. Tests that loop over it assert they
+// visited len(fixtures207) files, and TestFixtures207AreEveryTracked207Fixture
+// holds it to the testdata directory, so a fixture cannot be skipped unnoticed.
+var fixtures207 = []string{
+	sample2025_207Blank,
+	sample2025_207Layers,
+	sample2025_207NotesShapes,
+	sample2025_207Resources,
+	sample2025_207Rows,
+}
 
 // TestW2025Decode_BothSamples documents that the public decoder accepts both
 // shipped W2025 samples.
@@ -132,9 +173,9 @@ func TestW2025PublicRoundTrip(t *testing.T) {
 // has all of them, so an encoder that drops content from any of those groups
 // surfaces here as a per-group mismatch naming the exact field.
 //
-// It is encoded as 2.06, the only W2025 release registered until issue #92
-// adds 2.07, so the identity the file states legitimately changes and the
-// MetaData group is not compared. Identity is xmlio/chimera_test.go's concern.
+// It is encoded as 2.07, the version it states (registered by issue #92), so
+// the identity it writes back is the one it read and the MetaData group is
+// compared with the rest.
 func TestW2025NotesShapesRoundTrip(t *testing.T) {
 	m1, err := decodeFile(t, sample2025_207NotesShapes)
 	if err != nil {
@@ -154,7 +195,6 @@ func TestW2025NotesShapesRoundTrip(t *testing.T) {
 
 	normalizeVolatile(m1)
 	normalizeVolatile(m2)
-	m2.MetaData = m1.MetaData
 	sortTerrainList(m1)
 	sortTerrainList(m2)
 
@@ -174,9 +214,8 @@ func TestW2025NotesShapesPublicRoundTrip(t *testing.T) {
 	}
 	requireNotesShapesContent(t, m1)
 
-	// The target is named by the caller (issue #45). It is 2.06 rather than the
-	// 2.07 the fixture states because 2.06 is the only W2025 release registered
-	// until issue #92, so MetaData is not compared.
+	// The target is named by the caller (issue #45): 2.07, the version the
+	// fixture states, so MetaData is compared with the rest.
 	var buf bytes.Buffer
 	if err := xmlio.NewEncoder(w2025Target).Encode(&buf, m1); err != nil {
 		t.Fatalf("public Encode: %v", err)
@@ -189,7 +228,6 @@ func TestW2025NotesShapesPublicRoundTrip(t *testing.T) {
 
 	normalizeVolatile(m1)
 	normalizeVolatile(m2)
-	m2.MetaData = m1.MetaData
 	sortTerrainList(m1)
 	sortTerrainList(m2)
 

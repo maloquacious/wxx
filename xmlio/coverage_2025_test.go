@@ -19,9 +19,8 @@ import (
 // It is the mechanism the coverage assertions below use to prove that what decode
 // read, encode wrote, and decode read back again.
 //
-// A 2.06 map is encoded as the application version it already states, so this
-// exercises the codec and not the app-version gate. A 2.07 map is encoded as
-// w2025Target, because 2.07 is not registered until issue #92.
+// A map is encoded as the application version it already states (w2025Target for
+// the 2.07 fixtures), so this exercises the codec and not the app-version gate.
 // TestCodecRejectsUnacceptedAppVersion covers the gate.
 //
 // Naming that version explicitly is the ONLY way to encode since issue #45: the

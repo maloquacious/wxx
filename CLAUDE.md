@@ -151,7 +151,7 @@ The decoder reads the `<map>` element's `release` attribute to dispatch to the s
 - empty `release` + a `1.x` `version` (a classic map) -> refused with `wxx.ErrClassicMap`
 - anything else -> refused with `wxx.ErrUnsupportedMapMetadata`
 
-W2025 support is baselined on 2.06 (`release="2025" version="2.06" schema="1.06"`), the first post-beta build; earlier 2025 builds are out of scope.
+W2025 support is baselined on 2.06 (`release="2025" version="2.06" schema="1.06"`), the first post-beta build; earlier 2025 builds are out of scope. 2.07 (`release="2025" version="2.07" schema="1.06"`) is also accepted, on the same `v1_06` codec (#92). 2.08 files decode, but `"2.08"` is not yet an encoder target (#73).
 
 The **encoder** dispatches the other way round, and the rule is a contract rather than a convenience (issue #41):
 

@@ -44,8 +44,9 @@ type EncoderDiagnostics struct {
 	// release cannot express (ADR 0004 Decision 7). It is empty when the encode
 	// loses nothing, which today is every encode: the one supported schema
 	// expresses everything Map_t models. It stays because the principle does --
-	// always tell the user what they lose -- and W2025-to-W2025 loss (#92) is
-	// what it will report next.
+	// always tell the user what they lose -- and W2025-to-W2025 loss, once one is
+	// proven, is what it will report next (issue #92 found none between 2.06 and
+	// 2.07).
 	//
 	// Only MODELED losses appear here. A downgrade that would drop an unmodeled
 	// stub does not report, it errors: the encoder can only stay quiet about a

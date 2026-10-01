@@ -58,6 +58,10 @@ func TestW2025InformationAttrsMatchSource(t *testing.T) {
 		"2025-2.06-13x11-941577-layers-beta.wxx",
 		"2025-2.06-13x11-941577-populated.wxx",
 		"2025-2.07-13x11-941577-blank.wxx",
+		"2025-2.07-13x11-941577-layers.wxx",
+		"2025-2.07-13x11-941577-notes-shapes.wxx",
+		"2025-2.07-13x11-941577-resources.wxx",
+		"2025-2.07-13x11-941577-rows.wxx",
 	} {
 		cases[fixture] = func(t *testing.T) pair {
 			path := filepath.Join("..", "testdata", fixture)
@@ -73,7 +77,7 @@ func TestW2025InformationAttrsMatchSource(t *testing.T) {
 			}
 			var ed xmlio.EncoderDiagnostics
 			var buf bytes.Buffer
-			if err := xmlio.NewEncoder("2.06", xmlio.WithEncoderDiagnostics(&ed)).Encode(&buf, m); err != nil {
+			if err := xmlio.NewEncoder(sameVersionTarget(t, fixture), xmlio.WithEncoderDiagnostics(&ed)).Encode(&buf, m); err != nil {
 				t.Fatalf("encode %s: %v", fixture, err)
 			}
 			return pair{dd.Converted, ed.Utf8Encoded}
@@ -144,7 +148,8 @@ func informationsElement(t *testing.T, label string, doc []byte) []byte {
 	return doc[start : end+len("</informations>")]
 }
 
-// encodeFixture decodes a tracked fixture, encodes it as "2.06", and returns
+// encodeFixture decodes a tracked fixture, encodes it as the version it states
+// (2.08 as "2.06"; see sameVersionTarget), and returns
 // the source document, the decoded map and the encoded document, all UTF-8.
 func encodeFixture(t *testing.T, fixture string) (in []byte, m *wxx.Map_t, out []byte) {
 	t.Helper()
@@ -159,7 +164,7 @@ func encodeFixture(t *testing.T, fixture string) (in []byte, m *wxx.Map_t, out [
 	if err != nil {
 		t.Fatalf("decode %s: %v", fixture, err)
 	}
-	out, err = xmlio.MarshalXML(m, "2.06")
+	out, err = xmlio.MarshalXML(m, sameVersionTarget(t, fixture))
 	if err != nil {
 		t.Fatalf("encode %s: %v", fixture, err)
 	}
@@ -167,7 +172,7 @@ func encodeFixture(t *testing.T, fixture string) (in []byte, m *wxx.Map_t, out [
 }
 
 // TestW2025InformationsMatchSource decodes every tracked W2025 fixture,
-// encodes it as "2.06", and asserts the encoded <informations> element is
+// encodes it as the version it states (2.08 as "2.06"), and asserts the encoded <informations> element is
 // byte-identical to the source's (issue #107).
 //
 // The bug this pins: every lore body was written as escaped text
