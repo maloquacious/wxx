@@ -20,8 +20,11 @@ Two generations of the program produce WXX files; we name them by year:
 2. **H2025** — "Worldographer 2025". XML 1.1, schema version stored as an
    attribute of `<map>`. The only format wxx supports.
 
-Track schema differences in package docs as they are discovered; upstream
-documentation is sparse.
+Upstream documentation is sparse. The file format is described by the wxx
+reference grammars in [`schema/`](./schema/README.md), one per schema version
+(`schema/1.06.rnc` is current). Record format facts there, each labelled
+observed or inferred, and cite the grammar and check fixture bytes when
+reasoning about the format; do not infer it from Go structs.
 
 ## Repository layout
 
@@ -37,6 +40,9 @@ documentation is sparse.
 - `cmd/` — CLI tools used to exercise the package: `bounds`, `copy`,
   `import`, `info`, `merge`, `resize`, `schema`, `server`, `version`, and
   the umbrella `wxx` tool (subcommands: `export`).
+- `schema/` — the wxx reference grammars, one per schema version
+  (`1.06.rnc`), and a test that checks every 2.08 fixture against the
+  grammar. See [schema/README.md](./schema/README.md).
 - `testdata/` — every fixture the test harness reads, flat in the root
   (e.g. `2025-2.06-13x11-941577-blank.wxx`). Tracked, so `go test ./...`
   runs from a clean clone.

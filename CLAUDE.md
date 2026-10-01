@@ -101,6 +101,10 @@ wxx/
 │   ├── schema/         # Extract XML schema hierarchy
 │   ├── server/         # Web server for hex grid visualization
 │   └── version/        # Display package version
+├── schema/             # wxx reference grammars, one per schema version
+│   ├── README.md       # how to read them, label vocabulary, format notes
+│   ├── 1.06.rnc        # schema 1.06 (Worldographer 2025 2.06, 2.07, 2.08)
+│   └── grammar_test.go # checks every 2.08 fixture against 1.06.rnc
 ├── testdata/           # Test fixtures, flat in the root; tracked
 ├── scratch/            # Local scratch: tool output, debug dumps, textures; git-ignored
 ├── tools/              # Build/utility scripts
@@ -182,6 +186,15 @@ Read these files for deeper context:
 - `PROJECT.md` - Directory structure overview
 - `README.md` - Project overview, version mapping table, pipeline documentation
 - `hexg/HEXES.md` - Hex coordinate system documentation
+- `schema/README.md` - The wxx reference grammars for the file format, their label vocabulary, and format notes
+
+## Reasoning About the File Format
+
+When a claim is about what a WXX file contains, cite `schema/1.06.rnc` (the pattern
+and its `# observed` / `# inferred` label) and check the fixture bytes
+(`gunzip -c f.wxx | iconv -f UTF-16BE -t UTF-8`). Do not infer the format from Go
+structs: `Map_t` and the codec's schema types show what wxx models, not what the file
+holds. `# inferred` and `TBD` rules are hypotheses. See `schema/README.md`.
 
 ## Important Notes
 
