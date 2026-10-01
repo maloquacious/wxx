@@ -182,8 +182,8 @@ func TestW2025ShapesMatchSource(t *testing.T) {
 }
 
 // TestW2025ShapeExtraLineZeroOmitted: a shape with all four @extraLine* at
-// zero, which is what a classic-decoded shape holds, is written with none of
-// them, as before #94. Any one non-zero writes all four. Whether the app reads
+// zero, which is what a classic-decoded shape held before issue #103, is
+// written with none of them, as before #94. Any one non-zero writes all four. Whether the app reads
 // extraLineWidth="0.0" differently from no attribute has not been tested.
 func TestW2025ShapeExtraLineZeroOmitted(t *testing.T) {
 	names := []string{"extraLineDistance", "extraLineLength", "extraLineWidth", "extraLineSeparation"}

@@ -134,20 +134,18 @@ var spellingExempt = map[string]bool{}
 //
 // Nothing caught it because the W2025 round-trip tests compare Map_t STRUCTURES
 // (decode -> encode -> decode) and decodeRgba collapsed both spellings to the
-// same nil, so the change was invisible to them by construction. The classic
-// suite compares the input document against the output document and would have
-// reported it. This test gives W2025 that comparison for the one element where
-// the drift was found.
+// same nil, so the change was invisible to them by construction. A comparison of
+// the input document against the output document would have reported it. This
+// test gives W2025 that comparison for the one element where the drift was
+// found.
 //
-// It compares parsed attributes rather than raw bytes, unlike the classic
-// TestClassicLabelStyleBytes, and both deviations are deliberate:
+// It compares parsed attributes rather than raw bytes, and both deviations from
+// a byte comparison are deliberate:
 //
 //   - INTER-ATTRIBUTE WHITESPACE. The source writes two spaces ahead of color,
 //     backgroundColor, outlineSize and dropShadowColor; this codec writes one.
 //     Whitespace between attributes is not data in XML, no value depends on it,
-//     and normalizing it is not a loss. The classic codec happens to reproduce
-//     its source's spacing, which is why the classic test can afford to be
-//     stricter.
+//     and normalizing it is not a loss.
 //   - NUMERIC SPELLING. See spellingExempt and issue #64.
 //
 // Everything else -- names, order, and values -- must match exactly.
@@ -213,10 +211,8 @@ func TestW2025LabelStyleAttrsMatchSource(t *testing.T) {
 // round trip would then be stable and still wrong, in the way that is hardest to
 // notice, because both spellings decode to something self-consistent.
 //
-// No fixture carries a black background, so the source is synthesized, in the
-// same spirit as TestClassicDowngradeScrollbarLatent synthesizing a non-zero
-// scrollbar. A guard no fixture exercises is worth having only if something
-// exercises it.
+// No fixture carries a black background, so the source is synthesized. A guard
+// no fixture exercises is worth having only if something exercises it.
 func TestW2025LabelStyleBlackBackgroundIsNotNull(t *testing.T) {
 	m := newRowsMap()
 	m.Configuration.TextConfig.LabelStyles = []*wxx.LabelStyle_t{

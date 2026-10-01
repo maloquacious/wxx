@@ -10,7 +10,6 @@ import (
 
 	"github.com/maloquacious/wxx"
 	"github.com/maloquacious/wxx/xmlio/internal/appver"
-	"github.com/maloquacious/wxx/xmlio/internal/v0_77"
 	"github.com/maloquacious/wxx/xmlio/internal/v1_06"
 )
 
@@ -34,9 +33,9 @@ type codecUnderTest struct {
 	fixture string
 }
 
-// codecsUnderTest is every codec, as the disjointness check sees them.
+// codecsUnderTest is every codec. The classic codec v0_77 was removed (issue
+// #103), which leaves the W2025 one.
 var codecsUnderTest = []codecUnderTest{
-	{"v0_77", v0_77.AcceptedApps(), v0_77.Encode, classicFixture},
 	{"v1_06", v1_06.AcceptedApps(), v1_06.Encode, sample2025_206},
 }
 
@@ -96,14 +95,19 @@ func TestCodecRejectsUnacceptedAppVersion(t *testing.T) {
 
 // TestCodecAppSetsAreDeclaredAndDisjoint pins what each codec declares, because
 // the sets are the codec's own knowledge and nothing else states them: the
-// package path names the CODEC version, not the application versions, so v0_77 is
-// not the 1.77-only codec and no assertion may infer the set from the path.
+// package path names the CODEC version, not the application versions, so no
+// assertion may infer the set from the path.
 //
 // The map/@release each application version writes is pinned per app rather than
-// per codec. Both codecs currently map every app they accept to one release
-// ("2025" for v1_06, absent for v0_77), so an assertion written per codec would
-// pass today and would silently stop being the thing under test the moment a
-// relabelled build lands on an existing schema (ADR 0004, issue #45 Decision 5).
+// per codec. v1_06 currently maps every app it accepts to one release ("2025"),
+// so an assertion written per codec would pass today and would silently stop
+// being the thing under test the moment a relabelled build lands on an existing
+// schema (ADR 0004, issue #45 Decision 5).
+//
+// With one codec left (issue #103 removed v0_77) the disjointness check at the
+// end is VerifyDisjoint's per-declaration validation plus a no-duplicates check
+// within that one set; disjointness ACROSS codecs is watched to fail on synthetic
+// tables in TestVerifyDisjointRejectsOverlap.
 func TestCodecAppSetsAreDeclaredAndDisjoint(t *testing.T) {
 	for _, tc := range []struct {
 		name           string
@@ -112,13 +116,6 @@ func TestCodecAppSetsAreDeclaredAndDisjoint(t *testing.T) {
 		wantXMLVersion string // the XML declaration its files open with
 		wantApps       []appver.App_t
 	}{
-		// Classic 1.73/1.74/1.77 share one element vocabulary, so one codec
-		// serves all three, and classic states neither schema nor release.
-		{"v0_77", v0_77.AcceptedApps(), "", "1.0", []appver.App_t{
-			{Version: "1.73", Release: ""},
-			{Version: "1.74", Release: ""},
-			{Version: "1.77", Release: ""},
-		}},
 		{"v1_06", v1_06.AcceptedApps(), "1.06", "1.1", []appver.App_t{
 			{Version: "2.06", Release: "2025"},
 		}},
@@ -406,7 +403,6 @@ func formatApps(apps []appver.App_t) string {
 // drift on is which codecs exist -- which is what it is here to state.
 func codecAppSetsForTest() []appver.Set_t {
 	return []appver.Set_t{
-		v0_77.AcceptedApps(),
 		v1_06.AcceptedApps(),
 	}
 }

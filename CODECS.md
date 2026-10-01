@@ -28,7 +28,7 @@ We encourage the version specific decoders and encoders to implement the functio
 ## High‑level: what users actually call
 
 ```go
-package h2017v
+package xmlio
 
 type Decoder struct {
     opts decoderOpts
@@ -98,14 +98,14 @@ func MarshalXML(m *wxx.Map_t, app string) ([]byte, error)
 
 > **Shipped, and it differs from the sketch above.** `MarshalXML` returns bytes
 > rather than writing to an `io.Writer`, and it takes an **application version
-> string** (`"1.73"`, `"1.77"`, `"2.06"`) naming the release to target.
+> string** (`"2.06"`) naming the release to target.
 >
 > The `app` parameter is not optional decoration. An encoder **accepts an
 > application version and never a schema version**, and a caller may request an
 > application version but **never a specific encoder** (issue #41 requirements 1
-> and 5). The registry resolves `app` to exactly one release; that release
-> supplies both the identity written into the bytes and the schema that selects
-> the codec writing them, so the two can never disagree. A signature taking no
+> and 5). The registry resolves `app` to the one codec that accepts it, and that
+> codec writes the identity of `app` into the bytes (issue #45), so the declared
+> identity and the content format can never disagree. A signature taking no
 > target at all — as sketched above — could only write the identity the map
 > already carried, which is the "target as codec hint" failure ADR 0004
 > Decision 5 rules out.

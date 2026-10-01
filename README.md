@@ -24,12 +24,22 @@ The name comes from `.wxx`, Worldographer’s default file extension.
 
 ## Worldographer versions
 
-Worldographer has two file-format families, and `wxx` reads and writes both:
+Worldographer has two file-format families. `wxx` reads and writes only the newer one:
 
-* **Classic** — the original Worldographer / Hexographer 2 format (XML 1.0, no schema version in the file).
-* **2025** — the newer Worldographer 2025 format (XML 1.1, with a schema version in the `map` element).
+* **2025** — the Worldographer 2025 format (XML 1.1, with a schema version in the `map` element).
+* **Classic** — the original Worldographer / Hexographer 2 format (XML 1.0, no schema version in the file). **No longer read or written.**
 
-**Classic support is frozen.** It will continue to read and write existing files and will receive **security bug fixes only** — no new features. **Future development focuses on the 2025 version.** (One narrow exception is in progress: reconciling classic version *identity* metadata — see the note below and `docs/adr/0004-version-struct-and-release-registry.md`.)
+Classic support was removed by [#103](https://github.com/maloquacious/wxx/issues/103)
+(see [ADR 0005](docs/adr/0005-remove-classic-format.md)). Worldographer 2025
+converts a classic map itself; convert it there, then use `wxx` on the result.
+`wxx` refuses a classic file before decoding any of it:
+
+```console
+$ dist/local/info testdata/2017-1.77-1.0-columns-blank.wxx
+info:	testdata/2017-1.77-1.0-columns-blank.wxx
+	classic (Worldographer 1.x) map: convert it in Worldographer 2025 first
+map: version "1.77": no release
+```
 
 ### Version identity
 
@@ -44,27 +54,23 @@ type Version_t struct {
 }
 ```
 
-| release | `map/@release` | `map/@version` (App) | `map/@schema` (Schema) |
-|---|---|---|---|
-| classic (Hexographer 2) | *absent* | `1.73`, `1.74`, `1.77` | *absent* → `nil` |
-| Worldographer 2025 | `2025` | `2.06` | `1.06` |
+| release | `map/@release` | `map/@version` (App) | `map/@schema` (Schema) | `wxx` |
+|---|---|---|---|---|
+| Worldographer 2025 | `2025` | `2.06` | `1.06` | reads and writes |
+| classic (Hexographer 2) | *absent* | `1.73`, `1.74`, `1.77` | *absent* | refused on read (`wxx.ErrClassicMap`): "convert it in Worldographer 2025 first" |
 
-A `nil` Schema is meaningful: it identifies the one **implicit legacy** schema
-that classic `1.73`/`1.74`/`1.77` share, rather than an unknown one.
-
-**The schema selects the codec**; the application version is caller-chosen data.
-Two application versions sharing a schema use one codec and differ only in the
-string written to `@version` — which is why classic `1.73`, `1.74` and `1.77` all
-run through one codec. Which releases are supported, and the full on-disk identity
-of each, is the [release registry](xmlio/registry.go).
+**The application version selects the codec.** Two application versions sharing
+a schema use one codec and differ only in the identity it writes. Each codec
+declares the application versions it accepts in its own `apps.go`, and the
+registry in [`xmlio/codecs.go`](xmlio/codecs.go) is built from those
+declarations. Today the only one is `2.06`, on the `v1_06` codec.
 
 Callers name an **application version**, never a schema and never a codec:
 `xmlio.MarshalXML(m, "2.06")`. The codecs themselves live under
-`xmlio/internal/`, where an external caller cannot reach them; each declares the
-application versions it accepts, and
-[`xmlio/internal/README.md`](xmlio/internal/README.md) explains why the packages
-are named `v0_77` and `v1_06`. Adding support for a further application version
-means an entry in that codec's `apps.go` **and** one in the release registry.
+`xmlio/internal/`, where an external caller cannot reach them, and
+[`xmlio/internal/README.md`](xmlio/internal/README.md) explains why the package
+is named `v1_06`. Adding support for a further application version on schema
+1.06 means an entry in `xmlio/internal/v1_06/apps.go`.
 
 These on-disk values are **not** semantic versions: `"2.06"` through a `semver`
 round-trip comes back as `"2.6"`, a different string and therefore a different
@@ -121,8 +127,8 @@ func main() {
 
 	fmt.Println(world)
 
-	// Write it back out (defaults to the release the map itself states):
-	if err := xmlio.WriteFile("world.wxx", world); err != nil {
+	// Write it back out, naming the application version to write:
+	if err := xmlio.WriteFile("world.wxx", world, "2.06"); err != nil {
 		log.Fatal(err)
 	}
 }

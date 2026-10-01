@@ -4,6 +4,13 @@ This directory holds a formal [RelaxNG](https://relaxng.org/) schema describing 
 XML structure of a Worldographer WXX map file. It is **reference and validation
 material** — it is not compiled, imported, or enforced anywhere in the build.
 
+**It describes the classic (H2017, Worldographer 1.x) format only, which wxx no
+longer reads or writes.** Issue #103 removed classic support
+([ADR 0005](../docs/adr/0005-remove-classic-format.md)): the decoder refuses a
+classic file with `wxx.ErrClassicMap`. The schema is kept as reference material,
+for the elements W2025 shares with classic and because earlier coverage work cites
+it as evidence.
+
 - `utf-8-xml.rnc` — RelaxNG in the compact (`.rnc`) syntax. This is the readable one.
 - `utf-8-xml.rng` — the same schema in the XML (`.rng`) syntax, consumable by
   RelaxNG validators such as [Jing](https://relaxng.org/jclark/jing.html) or
@@ -46,7 +53,7 @@ redistributed here under those terms. The MIT license permits copying and
 redistribution provided the copyright and permission notice are preserved; the
 original notice lives in the tnwxx repository's `LICENSE`.
 
-## Version scope — this is v1.73 (classic / H2017) only
+## Version scope — this is v1.73 (classic / H2017) only, a format wxx no longer reads
 
 The `<map version="1.73">` on the source export pins this schema to the classic
 **H2017**-era format. The schema itself types the attribute loosely as

@@ -3,9 +3,8 @@
 package xmlio
 
 import (
+	"errors"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/maloquacious/wxx"
 )
@@ -20,8 +19,8 @@ import (
 // caller that wants to key off Path, or count layers, or surface only the
 // Details to a user, can.
 type DroppedFeature_t struct {
-	// Path is the on-disk element/attribute path the loss occurs at, in the same
-	// vocabulary the round-trip audit harness prints ("map/maplayer/@opacity").
+	// Path is the on-disk element/attribute path the loss occurs at, as
+	// local-names joined with '/' ("map/maplayer/@opacity").
 	// It is the stable identifier: Detail varies per map, Path does not.
 	Path string
 
@@ -38,8 +37,7 @@ type DroppedFeature_t struct {
 	// Reason is why the target cannot express the content, cited to the format
 	// rather than to the codec. A feature the target's FORMAT has no room for is
 	// a downgrade loss; a feature the target's format has room for but our
-	// encoder does not write yet is a codec gap and does not belong here (see
-	// classicDowngradeLoss).
+	// encoder does not write yet is a codec gap and does not belong here.
 	Reason string
 }
 
@@ -52,10 +50,8 @@ func (d DroppedFeature_t) String() string {
 // errors if the loss is one the encoder cannot honestly describe.
 //
 // targetSchema is the schema the target codec writes, verbatim map/@schema
-// ("1.06"); "" is the implicit legacy (classic) schema, which files state by
-// stating no @schema at all (ADR 0004 Decision 2). It is asked of the codec rather
-// than of a registry entry because the schema is a byte the encoder writes and the
-// encoder owns it (issue #45).
+// ("1.06"). It is asked of the codec rather than of a registry entry because the
+// schema is a byte the encoder writes and the encoder owns it (issue #45).
 //
 // The schema is the right axis here even though it no longer selects the codec.
 // What can be expressed is a property of the FORMAT, not of the build that wrote
@@ -64,10 +60,8 @@ func (d DroppedFeature_t) String() string {
 // invite them to disagree.
 //
 // The question is about the TARGET's expressiveness, not about which file m was
-// read from: a map holding a W2025-native field loses it when written as classic
-// however it was built. So there is no source-schema argument here, and a map
-// that never held the field reports nothing -- which is why encoding classic as
-// classic, or W2025 as W2025, reports no loss at all.
+// read from, so there is no source-schema argument here, and a map that never held
+// a field the target lacks reports nothing.
 //
 // THE LOSS CONTRACT (settled under #32; ADR 0004 Decision 7 left it open):
 //
@@ -91,344 +85,29 @@ func (d DroppedFeature_t) String() string {
 // right to be quiet about it, because only then can it say what was lost. #34
 // did exactly this for <extraTerrain>, the last stub, so today nothing produces
 // wxx.ErrUnmodeledStubLoss. The rule stands for the next stub.
+//
+// Today there is one format. The classic schema, whose inventory this function
+// used to hold, was removed with its codec (issue #103), and the one schema left
+// expresses everything Map_t models, so every supported target reports no loss.
+// The principle outlives the downgrade it was written for -- always tell the user
+// what they lose -- and the next entries are W2025-to-W2025: a release
+// registered on a schema that cannot express something Map_t models (#92) gets
+// its own arm here, reporting what that target drops.
+//
+// A schema with no arm is an ERROR, not "no loss". Losslessness is a claim made
+// per schema, by an arm that says so; a schema nobody has inventoried has made no
+// such claim, and treating its silence as one is how a new codec would quietly
+// report every encode as lossless. Every codec the registry holds writes a schema
+// with an arm (TestNoLossOnSameReleaseTargets encodes through each of them), so
+// the error is reachable only by registering a codec without inventorying it --
+// which it then refuses on every encode, loudly, until someone does.
 func downgradeLoss(m *wxx.Map_t, targetSchema string) ([]DroppedFeature_t, error) {
-	if targetSchema != "" {
-		// Every non-classic supported schema is W2025 1.06, which expresses
-		// everything Map_t models: Map_t is the superset of the two supported
-		// schemas (ADR 0004 Decision 6) and every field classic-only content
-		// occupies exists in W2025 too. Encoding to it is therefore not a
-		// downgrade, which TestNoLossOnSameReleaseTargets pins for every
-		// supported release.
-		//
-		// This is a claim about the schemas that exist today, not a law. A future
-		// schema that cannot express something Map_t models needs its own arm
-		// here; adding the codec alone would silently claim the target is
-		// lossless.
+	switch targetSchema {
+	case "1.06":
+		// W2025 schema 1.06 expresses everything Map_t models: Map_t is built
+		// from it. Encoding to it is therefore not a downgrade, which
+		// TestNoLossOnSameReleaseTargets pins for every supported release.
 		return nil, nil
 	}
-	return classicDowngradeLoss(m)
-}
-
-// classicDowngradeLoss reports what m carries that the implicit legacy (classic)
-// schema cannot express.
-//
-// EVERY ENTRY IS EVIDENCED. The inventory was built by running the round-trip
-// audit harness (roundtrip_2017_test.go's xmlAggregate/computeLoss) over a
-// decoded W2025 2.06 fixture encoded through the classic target and diffed
-// against the W2025 original, NOT from memory -- ADR 0003's revision history
-// records what an unverified claim costs. TestClassicDowngradeLossInventory
-// re-runs that diff and holds this function to it.
-//
-// Two classes of loss the harness reports are deliberately NOT here, because
-// neither is a downgrade:
-//
-//   - TARGET IDENTITY. map/@version changes 2.06 -> 1.77 and map/@release and
-//     map/@schema disappear. That is the classic codec writing the identity of the
-//     application version the caller asked for; a classic file states no release
-//     and no schema. Nothing is lost -- the file is being told what it now is.
-//
-//   - CLASSIC CODEC GAPS. map/mapkey/@viewlevel is altered and
-//     map/informations/information is dropped -- but the classic FORMAT has room
-//     for both (RelaxNG schema/utf-8-xml.rnc defines them, classic samples carry
-//     them). Our classic ENCODER does not write them yet, which
-//     internal/v0_77/COVERAGE.md documents and the classic round-trip harness
-//     proves by losing the same two on a classic -> classic trip. They cost the
-//     caller data, but they are this codec's gaps and would not be fixed by
-//     targeting differently. Reporting them as downgrade loss would blame the
-//     format for our encoder.
-//
-//     map/configuration/text-config/labelstyle was a third such gap and is not
-//     one any more (issue #36): the classic encoder writes <labelstyle> again, so
-//     the element survives a downgrade and only the attributes classic genuinely
-//     lacks are reported -- see the @dropShadow* entry below, which that fix is
-//     what made evidenceable.
-//
-// The residual -- what the W2025 -> classic diff shows that a classic -> classic
-// and a W2025 -> W2025 diff do not -- is the inventory below.
-func classicDowngradeLoss(m *wxx.Map_t) ([]DroppedFeature_t, error) {
-	var dropped []DroppedFeature_t
-
-	// map/@hScrollbarPos, map/@vScrollbarPos -- the classic <map> element states
-	// no scrollbar position (RelaxNG defines 24 map attributes, none of them
-	// these; v0_77's XMLSchema struct has no field for either).
-	//
-	// Gated on non-zero because Map_t models these as plain float64: absent and
-	// "0.0" decode identically, so a zero cannot be reported as a loss without
-	// inventing one. Both tracked 2.06 fixtures carry 0.0, so this entry is
-	// LATENT on them -- real by format, unexercised by the samples, in the same
-	// sense internal/v0_77/COVERAGE.md means "latent-by-code". Its test synthesizes a
-	// non-zero value rather than pretending a fixture proves it.
-	const scrollbarReason = "the classic <map> element states no scrollbar position (schema/utf-8-xml.rnc defines 24 map attributes, none of them a scrollbar position)"
-	if m.HScrollbarPos != 0 {
-		dropped = append(dropped, DroppedFeature_t{
-			Path:   "map/@hScrollbarPos",
-			Field:  "Map_t.HScrollbarPos",
-			Detail: fmt.Sprintf("horizontal scrollbar position %s is dropped", floatDetail(m.HScrollbarPos)),
-			Reason: scrollbarReason,
-		})
-	}
-	if m.VScrollbarPos != 0 {
-		dropped = append(dropped, DroppedFeature_t{
-			Path:   "map/@vScrollbarPos",
-			Field:  "Map_t.VScrollbarPos",
-			Detail: fmt.Sprintf("vertical scrollbar position %s is dropped", floatDetail(m.VScrollbarPos)),
-			Reason: scrollbarReason,
-		})
-	}
-
-	// map/maplayer/@opacity -- the classic <maplayer> element has only @name and
-	// @isVisible (RelaxNG lines 63-66; v0_77.MapLayer_t has the same two
-	// fields). Note this is NOT "classic has no layers": both formats carry
-	// <maplayer> elements, and classic re-emits every one of them. Only the
-	// per-layer opacity is lost.
-	//
-	// Gated on non-zero for the same reason as the scrollbars: a classic-decoded
-	// map has Opacity == 0 on every layer, so a bare "has layers" test would
-	// report this loss on a classic -> classic encode, where nothing is lost.
-	if names := layersWithOpacity(m); len(names) > 0 {
-		dropped = append(dropped, DroppedFeature_t{
-			Path:   "map/maplayer/@opacity",
-			Field:  "Map_t.MapLayers[].Opacity",
-			Detail: fmt.Sprintf("opacity is dropped from %d of %d map layer(s): %s", len(names), len(m.MapLayers), strings.Join(names, ", ")),
-			Reason: "the classic <maplayer> element states only @name and @isVisible (schema/utf-8-xml.rnc); classic layers have no opacity",
-		})
-	}
-
-	// map/configuration/shape-config/shapestyle/@lineCap and @lineJoin -- the
-	// classic <shapestyle> element has 27 attributes and neither of these
-	// (RelaxNG lines 194-222; v0_77.ShapeStyle_t has no LineCap/LineJoin).
-	//
-	// The near-miss worth naming: classic DOES define @lineCap and @lineJoin --
-	// on <shape>, a different element (RelaxNG lines 157-158), which is why a
-	// grep for the attribute name in the classic schema finds it. The style does
-	// not carry them, so a shapestyle's caps and joins have nowhere to go.
-	//
-	// Gated on non-empty: classic decode leaves both strings "".
-	dropped = append(dropped, shapeStyleLineLoss(m)...)
-
-	// map/configuration/text-config/labelstyle/@dropShadowColor, @dropShadowRadius
-	// and @dropShadowSpread -- the classic <labelstyle> element has nine
-	// attributes and none of these (RelaxNG lines 181-190).
-	//
-	// This entry is issue #36, and it is here now because it could not be
-	// evidenced before. The classic encoder dropped the whole <labelstyle>
-	// element as a codec gap, so the harness saw `element-dropped` and could not
-	// separate "the format has no room for these attributes" from "our encoder
-	// never wrote the element". Two different claims with two different fixes, so
-	// #32 made neither rather than guess. Closing the encode gap removed the mask,
-	// and the same 2.06 -> classic diff now reports, verbatim:
-	//
-	//	attr-dropped	map/configuration/text-config/labelstyle	dropShadowColor
-	//	attr-dropped	map/configuration/text-config/labelstyle	dropShadowRadius
-	//	attr-dropped	map/configuration/text-config/labelstyle	dropShadowSpread
-	//
-	// The claim is confirmed rather than refuted, which was not a foregone
-	// conclusion and is why #36 asked for the diff instead of the schema alone.
-	dropped = append(dropped, labelStyleDropShadowLoss(m)...)
-
-	// map/features/feature/label/@dropShadow* and map/labels/label/@dropShadow*
-	// -- the same trio on <label> itself, which classic also lacks (RelaxNG
-	// lines 233-252 define sixteen label attributes, without them).
-	//
-	// Found while #34 made the layers fixture downgradable. Until then the
-	// fixture's <extraTerrain> stub failed the whole encode, so the harness never
-	// ran on it, and it is the only tracked .wxx with labels: its three features'
-	// labels carry the trio. Once the encode succeeded, the diff showed the trio
-	// dropped with nothing reporting it -- silent loss the moment #34 landed,
-	// which is why it lands with #34.
-	dropped = append(dropped, labelDropShadowLoss(m)...)
-
-	// map/blurTerrainBG -- a W2025 top-level element the classic format does not
-	// define at all (absent from the RelaxNG schema; schema/README.md
-	// independently flags it as a verified W2025 delta). Modeled as a pointer, so
-	// non-nil is exactly "the source carried one".
-	if m.BlurTerrainBG != nil {
-		b := m.BlurTerrainBG
-		dropped = append(dropped, DroppedFeature_t{
-			Path:  "map/blurTerrainBG",
-			Field: "Map_t.BlurTerrainBG",
-			Detail: fmt.Sprintf("terrain-background blur settings are dropped (blur=%t topBleed=%s bottomBleed=%s randomness=%s blurStart=%s blurEnd=%s)",
-				b.Blur, floatDetail(b.TopBleed), floatDetail(b.BottomBleed), floatDetail(b.Randomness), floatDetail(b.BlurStart), floatDetail(b.BlurEnd)),
-			Reason: "the classic format defines no <blurTerrainBG> element",
-		})
-	}
-
-	// map/extraTerrain -- the ADR 0004 terrain-layers loss.
-	//
-	// W2025 places terrain on a named layer per hex
-	// (<extraTerrain><mapLayer name="..."><terrainAndLocation location="x,y"/>),
-	// in addition to each hex's base tile. Classic binds mapLayer to features,
-	// labels and shapes but never to tiles, and defines no <extraTerrain>, so
-	// every such placement is dropped and each hex keeps only its base tile.
-	//
-	// Until #34 this entry was a hard error: Map_t held the element as opaque
-	// InnerXML, so the encoder could not say what dropping it would cost. It is
-	// modeled now, so under the loss contract it is reported and the encode
-	// succeeds. The Detail counts placements per layer, which is what the caller
-	// needs to decide whether the loss matters.
-	//
-	// An empty container -- present, no layers -- loses nothing and is not
-	// reported. A layer with no placements is reported, because the harness
-	// would show its <mapLayer> dropped.
-	if m.ExtraTerrain != nil && len(m.ExtraTerrain.MapLayers) != 0 {
-		placements := 0
-		var perLayer []string
-		for _, layer := range m.ExtraTerrain.MapLayers {
-			placements += len(layer.Terrain)
-			perLayer = append(perLayer, fmt.Sprintf("%q: %d", layer.Name, len(layer.Terrain)))
-		}
-		dropped = append(dropped, DroppedFeature_t{
-			Path:  "map/extraTerrain",
-			Field: "Map_t.ExtraTerrain",
-			Detail: fmt.Sprintf("%d terrain placement(s) on %d layer(s) are dropped (%s); each hex keeps only its base tile",
-				placements, len(m.ExtraTerrain.MapLayers), strings.Join(perLayer, ", ")),
-			Reason: "the classic format defines no <extraTerrain> element and cannot place terrain on a map layer",
-		})
-	}
-
-	return dropped, nil
-}
-
-// layersWithOpacity returns "name"=opacity for every map layer carrying a
-// non-zero opacity, in map order.
-func layersWithOpacity(m *wxx.Map_t) []string {
-	var names []string
-	for _, l := range m.MapLayers {
-		if l == nil || l.Opacity == 0 {
-			continue
-		}
-		names = append(names, fmt.Sprintf("%q=%s", l.Name, floatDetail(l.Opacity)))
-	}
-	return names
-}
-
-// shapeStyleLineLoss returns the @lineCap/@lineJoin entries for m's shape styles,
-// one per attribute, naming the styles that carry it.
-func shapeStyleLineLoss(m *wxx.Map_t) []DroppedFeature_t {
-	if m.Configuration == nil || m.Configuration.ShapeConfig == nil {
-		return nil
-	}
-	var caps, joins []string
-	for _, s := range m.Configuration.ShapeConfig.ShapeStyles {
-		if s == nil {
-			continue
-		}
-		if s.LineCap != "" {
-			caps = append(caps, fmt.Sprintf("%q=%s", s.Name, s.LineCap))
-		}
-		if s.LineJoin != "" {
-			joins = append(joins, fmt.Sprintf("%q=%s", s.Name, s.LineJoin))
-		}
-	}
-	const reason = "the classic <shapestyle> element states neither @lineCap nor @lineJoin (schema/utf-8-xml.rnc defines 27 shapestyle attributes, without them); classic defines both on <shape>, a different element, so a style's caps and joins have nowhere to go"
-	var out []DroppedFeature_t
-	if len(caps) > 0 {
-		out = append(out, DroppedFeature_t{
-			Path:   "map/configuration/shape-config/shapestyle/@lineCap",
-			Field:  "Map_t.Configuration.ShapeConfig.ShapeStyles[].LineCap",
-			Detail: fmt.Sprintf("lineCap is dropped from %d shape style(s): %s", len(caps), strings.Join(caps, ", ")),
-			Reason: reason,
-		})
-	}
-	if len(joins) > 0 {
-		out = append(out, DroppedFeature_t{
-			Path:   "map/configuration/shape-config/shapestyle/@lineJoin",
-			Field:  "Map_t.Configuration.ShapeConfig.ShapeStyles[].LineJoin",
-			Detail: fmt.Sprintf("lineJoin is dropped from %d shape style(s): %s", len(joins), strings.Join(joins, ", ")),
-			Reason: reason,
-		})
-	}
-	return out
-}
-
-// labelStyleDropShadowLoss returns the @dropShadow* entry for m's label styles,
-// naming the styles that carry the trio and what each spells.
-//
-// It is ONE entry for three attributes, where shapeStyleLineLoss is one entry
-// per attribute. The difference is in the data, not in taste: @lineCap and
-// @lineJoin are independent, and a style may carry either alone, so a caller
-// recovering one needs to know which. The drop-shadow trio is present all-or-none
-// in real data (see v1_06's encodeLabelStyle, where the same fact gates the
-// emit), so splitting it would report one feature three times and say the same
-// thing about the same styles each time.
-//
-// Gated on DropShadowColor != "" for that reason and not on the numbers: the
-// colour is "null" or an RGBA string whenever the trio is present and empty when
-// it is absent, while 0 is a legal radius and a legal spread. A classic-decoded
-// map leaves the colour empty on every style, so a classic -> classic encode
-// reports nothing here -- which is what makes this a downgrade loss rather than
-// a restatement of "this map has label styles".
-func labelStyleDropShadowLoss(m *wxx.Map_t) []DroppedFeature_t {
-	if m.Configuration == nil || m.Configuration.TextConfig == nil {
-		return nil
-	}
-	var styles []string
-	for _, ls := range m.Configuration.TextConfig.LabelStyles {
-		if ls == nil || ls.DropShadowColor == "" {
-			continue
-		}
-		styles = append(styles, fmt.Sprintf("%q=(color=%s radius=%s spread=%s)",
-			ls.Name, ls.DropShadowColor, floatDetail(ls.DropShadowRadius), floatDetail(ls.DropShadowSpread)))
-	}
-	if len(styles) == 0 {
-		return nil
-	}
-	return []DroppedFeature_t{{
-		Path:   "map/configuration/text-config/labelstyle/@dropShadow*",
-		Field:  "Map_t.Configuration.TextConfig.LabelStyles[].DropShadow{Color,Radius,Spread}",
-		Detail: fmt.Sprintf("the drop-shadow trio is dropped from %d label style(s): %s", len(styles), strings.Join(styles, ", ")),
-		Reason: "the classic <labelstyle> element states none of @dropShadowColor, @dropShadowRadius or @dropShadowSpread (schema/utf-8-xml.rnc lines 181-190 define nine labelstyle attributes, without them)",
-	}}
-}
-
-// labelDropShadowLoss reports the drop-shadow trio on feature labels and on
-// top-level labels, one entry per path. It is gated like
-// labelStyleDropShadowLoss: classic decode leaves DropShadowColor "", so a label
-// that never had the trio reports nothing.
-func labelDropShadowLoss(m *wxx.Map_t) []DroppedFeature_t {
-	const reason = "the classic <label> element states none of @dropShadowColor, @dropShadowRadius or @dropShadowSpread (schema/utf-8-xml.rnc lines 233-252 define sixteen label attributes, without them)"
-	describe := func(l *wxx.Label_t) string {
-		return fmt.Sprintf("(color=%s radius=%s spread=%s)", l.DropShadowColor, floatDetail(l.DropShadowRadius), floatDetail(l.DropShadowSpread))
-	}
-	var dropped []DroppedFeature_t
-
-	var onFeatures []string
-	for i, f := range m.Features {
-		if f == nil || f.Label == nil || f.Label.DropShadowColor == "" {
-			continue
-		}
-		onFeatures = append(onFeatures, fmt.Sprintf("feature %d %q=%s", i, f.Type, describe(f.Label)))
-	}
-	if len(onFeatures) != 0 {
-		dropped = append(dropped, DroppedFeature_t{
-			Path:   "map/features/feature/label/@dropShadow*",
-			Field:  "Map_t.Features[].Label.DropShadow{Color,Radius,Spread}",
-			Detail: fmt.Sprintf("the drop-shadow trio is dropped from %d feature label(s): %s", len(onFeatures), strings.Join(onFeatures, ", ")),
-			Reason: reason,
-		})
-	}
-
-	var onLabels []string
-	for i, l := range m.Labels {
-		if l == nil || l.DropShadowColor == "" {
-			continue
-		}
-		onLabels = append(onLabels, fmt.Sprintf("label %d %q=%s", i, l.InnerText, describe(l)))
-	}
-	if len(onLabels) != 0 {
-		dropped = append(dropped, DroppedFeature_t{
-			Path:   "map/labels/label/@dropShadow*",
-			Field:  "Map_t.Labels[].DropShadow{Color,Radius,Spread}",
-			Detail: fmt.Sprintf("the drop-shadow trio is dropped from %d label(s): %s", len(onLabels), strings.Join(onLabels, ", ")),
-			Reason: reason,
-		})
-	}
-	return dropped
-}
-
-// floatDetail renders a float for a Detail string. It is display only -- no
-// Dotted and nothing else bound for disk is ever rendered here (ADR 0004
-// Decision 1).
-func floatDetail(f float64) string {
-	return strconv.FormatFloat(f, 'g', -1, 64)
+	return nil, errors.Join(wxx.ErrUnsupportedSchemaVersion, fmt.Errorf("schema %q: no loss inventory for this target, so the encoder cannot say what it would lose", targetSchema))
 }

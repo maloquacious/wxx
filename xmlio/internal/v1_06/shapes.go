@@ -226,8 +226,8 @@ func encodeShape(i int, shape *wxx.Shape_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(" isInnerShadow=%s", xmlAttr(bools(shape.IsInnerShadow))))
 	wb.WriteString(fmt.Sprintf(" isBoxBlur=%s", xmlAttr(bools(shape.IsBoxBlur))))
 	// The four @extraLine* are written together or not at all. A shape
-	// decoded from a classic file has all four at zero, and this encoder wrote
-	// none of them before #94; whether Worldographer reads extraLineWidth="0.0"
+	// decoded from a classic file had all four at zero (classic was removed in
+	// issue #103), and this encoder wrote none of them before #94; whether Worldographer reads extraLineWidth="0.0"
 	// the same as no attribute has not been tested in the app, so all-zero
 	// keeps the old output.
 	if shape.ExtraLineDistance != 0 || shape.ExtraLineLength != 0 || shape.ExtraLineWidth != 0 || shape.ExtraLineSeparation != 0 {

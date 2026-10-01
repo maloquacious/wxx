@@ -5,6 +5,9 @@ so `go test ./...` runs from a clean clone. Scratch output, debug dumps and
 terrain textures live in `scratch/`, which is git-ignored — never put a fixture a
 test needs there.
 
+The classic (Worldographer 1.x) fixtures were removed by #103; only
+`2017-1.77-1.0-columns-blank.wxx` remains, to pin that a classic map is refused.
+
 ## File naming
 
     YEAR-VERSION-WIDTHxHEIGHT-SEED-TERRAIN.wxx

@@ -59,9 +59,9 @@ func (m *Map_t) Validate() error {
 
 	// The orientation, and the second copy of it.
 	//
-	// HexOrientation is the string the file states and the one both encoders
-	// switch on; GridOrientation is the hexg coordinate convention the decoders
-	// set from it in the same switch. Two fields holding one fact can disagree,
+	// HexOrientation is the string the file states and the one the encoder
+	// switches on; GridOrientation is the hexg coordinate convention the decoder
+	// sets from it in the same switch. Two fields holding one fact can disagree,
 	// and a map that says COLUMNS in one and odd-r in the other describes no
 	// hex grid that exists. The unset zero value (UnknownQR) is caught by the
 	// same check, which is intended: a caller who set only the string has not
@@ -84,14 +84,12 @@ func (m *Map_t) Validate() error {
 
 	// Substructures an encoder dereferences without checking.
 	//
-	// Every entry was verified to panic a codec when nil, and the two that
-	// panic only ONE of them are still required here: MapKey and Informations
-	// crash v1_06 while classic writes a hard-coded <mapkey> and ignores
-	// <informations> entirely. The invariant is a property of the model, not of
-	// a target -- Map_t is the superset of the supported schemas (ADR 0004
-	// Decision 6) -- so a map missing one is incomplete whoever is about to
-	// write it, and making the rule depend on the target would mean a map that
-	// validates for classic and crashes for W2025.
+	// Every entry was verified to panic a codec when nil. MapKey and
+	// Informations panicked only v1_06 -- the classic codec, removed in issue
+	// #103, wrote a hard-coded <mapkey> and ignored <informations> -- and were
+	// required here anyway: the invariant is a property of the model, not of a
+	// target (ADR 0004 Decision 6), so a map missing one is incomplete whoever
+	// is about to write it.
 	//
 	// Presence is all that is asked. An empty &GridAndNumbering_t{} passes, as
 	// it must: what a caller puts in these is map CONTENT and none of this
@@ -134,7 +132,7 @@ func (m *Map_t) Validate() error {
 // validate reports the ways the tile grid contradicts its own header.
 //
 // The header is <tiles tilesWide= tilesHigh=> and the grid is Tiles[col][row];
-// both encoders loop to the HEADER's dimensions and index the grid, so a header
+// the encoder loops to the HEADER's dimensions and indexes the grid, so a header
 // claiming more than the grid holds is an index-out-of-range panic mid-write --
 // after part of the document has already been emitted. That is the state this
 // rejects, and it is why the check is on the pair rather than on either alone:

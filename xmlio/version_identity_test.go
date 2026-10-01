@@ -9,26 +9,21 @@ import (
 	"github.com/maloquacious/wxx"
 )
 
-// versionIdentitySamples pairs every tracked fixture with the version identity
-// its bytes state, observed end-to-end through the public decoder (ADR 0004
-// Decision 2).
+// versionIdentitySamples pairs tracked W2025 2.06 fixtures with the version
+// identity their bytes state, observed end-to-end through the public decoder
+// (ADR 0004 Decision 2).
 //
 // wantApp and wantSchema are the exact on-disk attribute values, byte for byte
 // — these are dotted ordinals, not semver, so "2.06" is the whole point and
-// "2.6" would be a different file. An empty wantSchema means the file states no
-// @schema at all, which must decode to a nil Schema: the absence identifies the
-// one implicit legacy schema rather than an unknown one.
+// "2.6" would be a different file.
 var versionIdentitySamples = []struct {
 	name       string
 	path       string
 	wantApp    string // exact map/@version bytes
 	wantMajor  int    // parsed App.Major
 	wantMinor  int    // parsed App.Minor
-	wantSchema string // exact map/@schema bytes; "" means the file states none
+	wantSchema string // exact map/@schema bytes
 }{
-	{"classic 1.73", "../testdata/blank-2017-1.73-1.0.wxx", "1.73", 1, 73, ""},
-	{"classic 1.74", "../testdata/blank-2017-1.74-1.0.wxx", "1.74", 1, 74, ""},
-	{"classic 1.77", "../testdata/blank-2017-1.77-1.0.wxx", "1.77", 1, 77, ""},
 	{"w2025 2.06 blank", sample2025_206, "2.06", 2, 6, "1.06"},
 	{"w2025 2.06 layers beta", sample2025_206LayersBeta, "2.06", 2, 6, "1.06"},
 }
@@ -64,14 +59,6 @@ func TestVersionIdentity(t *testing.T) {
 				t.Errorf("MetaData.Version.App.Raw = %q, want it to match Worldographer.Version %q", got, want)
 			}
 
-			if tc.wantSchema == "" {
-				// A classic file states no @schema. nil is the model of that
-				// absence and identifies the one implicit legacy schema.
-				if v.Schema != nil {
-					t.Errorf("MetaData.Version.Schema = %+v, want nil (file states no @schema)", *v.Schema)
-				}
-				return
-			}
 			if v.Schema == nil {
 				t.Fatalf("MetaData.Version.Schema = nil, want %q (file states a @schema)", tc.wantSchema)
 			}

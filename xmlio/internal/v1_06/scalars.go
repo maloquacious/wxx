@@ -90,8 +90,7 @@ func (v *Int_t) UnmarshalXMLAttr(attr xml.Attr) error {
 // caller assigning 50.5 to a field the file must state as an integer. Rounding
 // it would put a value on disk the caller never asked for, and truncating it
 // would do the same more quietly. The encoder refuses instead, before writing a
-// byte, exactly as it refuses a classic ROWS map (#20) and an unmodeled stub
-// downgrade (ADR 0004 Decision 7).
+// byte, exactly as it refuses an unmodeled stub downgrade (ADR 0004 Decision 7).
 //
 // path names the attribute in the on-disk vocabulary, so the caller is told
 // which of their fields is the problem rather than which of ours.

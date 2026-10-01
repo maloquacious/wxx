@@ -367,19 +367,14 @@ type MapLayer_t struct {
 	Opacity   float64 `json:"opacity,omitempty"`
 }
 
-// Note_t is a note pinned to a point on the map.
-//
-// InnerText is the classic (H2017) codec's view of a note: the element's text,
-// and nothing else. The remaining fields are the W2025 spelling that 2.06,
-// 2.07 and 2.08 write (issue #94).
+// Note_t is a note pinned to a point on the map, in the W2025 spelling that
+// 2.06, 2.07 and 2.08 write (issue #94).
 //
 // There is no Key field. On disk, @key is "<viewLevel>,<x>,<y>" of the note's
 // <location>: the same position stated twice. The encoder derives @key from
 // Location, so the two cannot disagree in a file this package writes, and a
 // caller who moves a note moves only Location.
 type Note_t struct {
-	InnerText string `json:"innerText,omitempty"`
-
 	// attributes
 	OriginalViewLevel string  `json:"originalViewLevel,omitempty"`
 	Filename          string  `json:"filename,omitempty"`
@@ -430,14 +425,13 @@ type Point_t struct {
 	// A caller who sets IntegerXY, or moves such a point, must keep both
 	// coordinates whole numbers: the W2025 encoder refuses to write a point
 	// with IntegerXY set and a fractional coordinate rather than round it.
-	// The classic codec neither sets nor reads it.
 	IntegerXY bool `json:"integerXY,omitempty"`
 
 	// Control holds a curve point's two Bezier control points, the W2025
 	// @cx1 @cy1 @cx2 @cy2, and is nil when the point states none (issue #94).
 	// Worldographer 2.08 writes them on a curved path's type="c" points; the
 	// W2025 encoder writes all four when Control is set and none when it is
-	// nil, so a control point at 0,0 is kept. The classic codec ignores it.
+	// nil, so a control point at 0,0 is kept.
 	Control *CurveControl_t `json:"control,omitempty"`
 }
 
@@ -489,9 +483,8 @@ type Shape_t struct {
 	DsSpread              float64 `json:"dsSpread,omitempty"`
 	// ExtraLineDistance, ExtraLineLength, ExtraLineWidth and
 	// ExtraLineSeparation are the W2025 @extraLine* attributes, which 2.06,
-	// 2.07 and 2.08 write on every shape (issue #94). The classic format has
-	// none of them, so a classic-decoded shape holds all four at zero, and the
-	// W2025 encoder writes none of them when all four are zero.
+	// 2.07 and 2.08 write on every shape (issue #94). The W2025 encoder writes
+	// none of them when all four are zero.
 	ExtraLineDistance   float64 `json:"extraLineDistance,omitempty"`
 	ExtraLineLength     float64 `json:"extraLineLength,omitempty"`
 	ExtraLineWidth      float64 `json:"extraLineWidth,omitempty"`

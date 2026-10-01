@@ -34,8 +34,7 @@ func (w *spyWriter) Write(p []byte) (int, error) {
 // xmlHeaderSamples pairs a real fixture with the XML declaration the release it
 // states opens its files with, and with the schema that routes it there.
 //
-// wantSchema is the exact map/@schema bytes; "" means the fixture states none,
-// which is the implicit legacy (classic) schema.
+// wantSchema is the exact map/@schema bytes.
 var xmlHeaderSamples = []struct {
 	name       string
 	path       string
@@ -43,13 +42,21 @@ var xmlHeaderSamples = []struct {
 	wantSchema string
 	wantHeader string
 }{
-	{"classic 1.77", classicFixture, "1.77", "", "<?xml version='1.0' encoding='utf-16'?>\n"},
 	{"w2025 2.06", sample2025_206, "2.06", "1.06", "<?xml version='1.1' encoding='utf-16'?>\n"},
+}
+
+// wrongXMLHeaders are declarations a Worldographer file can open with that no
+// sample above may be written with. The XML 1.0 declaration is the one
+// Worldographer 1.x wrote; a W2025 file opening with it would be a W2025 file
+// declaring another release's transport.
+var wrongXMLHeaders = []string{
+	"<?xml version='1.0' encoding='utf-16'?>\n",
 }
 
 // TestEncodeXMLHeaderFollowsRelease asserts, at the byte level and from real
 // fixtures, that the XML declaration an encode emits follows the target RELEASE:
-// classic opens `<?xml version='1.0'`, W2025 opens `<?xml version='1.1'`.
+// W2025 opens `<?xml version='1.1'`, never the `<?xml version='1.0'` of another
+// release.
 //
 // This is the property the deleted `switch target.Major { case 2017: ...; case
 // 2025: ... }` used to guarantee. The declaration is now the CODEC's, declared
@@ -64,16 +71,20 @@ var xmlHeaderSamples = []struct {
 // be read from disk -- header included, since it is captured before the header is
 // consumed.
 func TestEncodeXMLHeaderFollowsRelease(t *testing.T) {
-	// Guard against a vacuous pass: this test discriminates only if the cases
-	// expect DIFFERENT declarations. Were they ever collapsed to one expectation,
-	// every assertion below would still pass against an encoder that hard-coded a
-	// single header -- which is precisely the regression worth catching.
-	distinct := map[string]bool{}
+	// Guard against a vacuous pass: this test discriminates only if some
+	// declaration is WRONG for a sample. With every sample expecting the same
+	// declaration, an encoder that hard-coded a single header would pass the
+	// prefix check; it is the wrong-header check that would catch it hard-coding
+	// the wrong one.
 	for _, tc := range xmlHeaderSamples {
-		distinct[tc.wantHeader] = true
+		for _, wrong := range wrongXMLHeaders {
+			if wrong == tc.wantHeader {
+				t.Fatalf("%s expects %q, which is also listed as wrong, so 'the header follows the release' is not under test", tc.name, wrong)
+			}
+		}
 	}
-	if len(distinct) < 2 {
-		t.Fatalf("all %d samples expect the same XML declaration, so 'the header follows the release' is not under test", len(xmlHeaderSamples))
+	if len(wrongXMLHeaders) == 0 {
+		t.Fatalf("no declaration is listed as wrong, so 'the header follows the release' is not under test")
 	}
 
 	for _, tc := range xmlHeaderSamples {
@@ -83,14 +94,9 @@ func TestEncodeXMLHeaderFollowsRelease(t *testing.T) {
 				t.Fatalf("public decode %s: %v", tc.path, err)
 			}
 
-			// Sanity: the fixture really does state the schema that routes it, so
-			// the two cases exercise two different releases rather than one.
+			// Sanity: the fixture really does state the schema that routes it.
 			schema := m.MetaData.Version.Schema
-			if tc.wantSchema == "" {
-				if schema != nil {
-					t.Fatalf("%s: Version.Schema = %+v, want nil; this case must exercise the implicit legacy schema", tc.path, *schema)
-				}
-			} else if schema == nil {
+			if schema == nil {
 				t.Fatalf("%s: Version.Schema = nil, want %q; this case must exercise the W2025 schema", tc.path, tc.wantSchema)
 			} else if schema.Raw != tc.wantSchema {
 				t.Fatalf("%s: Version.Schema.Raw = %q, want %q", tc.path, schema.Raw, tc.wantSchema)
@@ -119,13 +125,10 @@ func TestEncodeXMLHeaderFollowsRelease(t *testing.T) {
 				t.Errorf("encoded %s opens %q, want it to open %q: the XML declaration must follow the release",
 					tc.path, head(d.Converted, len(tc.wantHeader)), tc.wantHeader)
 			}
-			// The other release's declaration must not appear in its place.
-			for _, other := range xmlHeaderSamples {
-				if other.wantHeader == tc.wantHeader {
-					continue
-				}
-				if bytes.HasPrefix(d.Converted, []byte(other.wantHeader)) {
-					t.Errorf("encoded %s opens with %q, the declaration of a different release", tc.path, other.wantHeader)
+			// Another release's declaration must not appear in its place.
+			for _, wrong := range wrongXMLHeaders {
+				if bytes.HasPrefix(d.Converted, []byte(wrong)) {
+					t.Errorf("encoded %s opens with %q, the declaration of a different release", tc.path, wrong)
 				}
 			}
 		})
@@ -152,16 +155,16 @@ func TestEncodeUnsupportedTargetIsError(t *testing.T) {
 	// Control: the fixture encodes cleanly as itself. Guard against a vacuous
 	// pass -- if this map could not be encoded at all, every error below would be
 	// the map's fault and would say nothing about target resolution.
-	base, err := decodeFile(t, classicFixture)
+	base, err := decodeFile(t, sample2025_206)
 	if err != nil {
-		t.Fatalf("public decode %s: %v", classicFixture, err)
+		t.Fatalf("public decode %s: %v", sample2025_206, err)
 	}
 	var control bytes.Buffer
 	if err := xmlio.NewEncoder(base.MetaData.Version.App.Raw).Encode(&control, base); err != nil {
-		t.Fatalf("public encode %s as itself: %v; the unsupported-target cases below would prove nothing", classicFixture, err)
+		t.Fatalf("public encode %s as itself: %v; the unsupported-target cases below would prove nothing", sample2025_206, err)
 	}
 	if control.Len() == 0 {
-		t.Fatalf("public encode %s as itself: empty output", classicFixture)
+		t.Fatalf("public encode %s as itself: empty output", sample2025_206)
 	}
 
 	for _, tc := range []struct {
@@ -175,9 +178,9 @@ func TestEncodeUnsupportedTargetIsError(t *testing.T) {
 		{"an unreleased classic", "1.75"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			m, err := decodeFile(t, classicFixture)
+			m, err := decodeFile(t, sample2025_206)
 			if err != nil {
-				t.Fatalf("public decode %s: %v", classicFixture, err)
+				t.Fatalf("public decode %s: %v", sample2025_206, err)
 			}
 
 			var buf bytes.Buffer
@@ -209,25 +212,28 @@ func TestEncodeUnsupportedTargetIsError(t *testing.T) {
 // The doctored identity is deliberately something no codec accepts. If the
 // encoder still read the map at all, this would fail loudly rather than quietly
 // producing a slightly different file.
+//
+// The source is a 2.07 file targeted at 2.06, so even the clean map states a
+// version other than the target.
 func TestEncodeIgnoresTheMapsOwnVersion(t *testing.T) {
-	const target = "1.73"
+	const target = "2.06"
 
-	clean, err := decodeFile(t, classicFixture)
+	clean, err := decodeFile(t, sample2025_207Blank)
 	if err != nil {
-		t.Fatalf("public decode %s: %v", classicFixture, err)
+		t.Fatalf("public decode %s: %v", sample2025_207Blank, err)
 	}
 	// Guard against a vacuous pass: the fixture must state something OTHER than
 	// the target, or "the map's version is ignored" is untested -- the two would
 	// agree and either could be the source of the bytes.
 	if got := clean.MetaData.Version.App.Raw; got == target {
-		t.Fatalf("%s states version %q, the same as the target: the map's version must differ or it cannot be shown to be ignored", classicFixture, got)
+		t.Fatalf("%s states version %q, the same as the target: the map's version must differ or it cannot be shown to be ignored", sample2025_207Blank, got)
 	}
 	var want bytes.Buffer
 	if err := xmlio.NewEncoder(target).Encode(&want, clean); err != nil {
-		t.Fatalf("public encode %s targeting %q: %v", classicFixture, target, err)
+		t.Fatalf("public encode %s targeting %q: %v", sample2025_207Blank, target, err)
 	}
 	if want.Len() == 0 {
-		t.Fatalf("public encode %s targeting %q: empty output", classicFixture, target)
+		t.Fatalf("public encode %s targeting %q: empty output", sample2025_207Blank, target)
 	}
 
 	for _, tc := range []struct {
@@ -239,9 +245,9 @@ func TestEncodeIgnoresTheMapsOwnVersion(t *testing.T) {
 		{"nothing at all", wxx.Dotted{}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			m, err := decodeFile(t, classicFixture)
+			m, err := decodeFile(t, sample2025_207Blank)
 			if err != nil {
-				t.Fatalf("public decode %s: %v", classicFixture, err)
+				t.Fatalf("public decode %s: %v", sample2025_207Blank, err)
 			}
 			// Doctor the identity the map states. Every one of these would have
 			// stopped the encode dead when the encoder defaulted to it.
@@ -342,9 +348,9 @@ func TestEncodeUnlicensedTargetWritesNothing(t *testing.T) {
 // and "" being an ordinary miss is now a property of the registry rather than a
 // special case in the option.
 func TestEncodeEmptyTargetVersionIsError(t *testing.T) {
-	m, err := decodeFile(t, classicFixture)
+	m, err := decodeFile(t, sample2025_206)
 	if err != nil {
-		t.Fatalf("public decode %s: %v", classicFixture, err)
+		t.Fatalf("public decode %s: %v", sample2025_206, err)
 	}
 
 	// Guard against a vacuous pass: the map's own version must be REGISTERED, so
@@ -360,10 +366,10 @@ func TestEncodeEmptyTargetVersionIsError(t *testing.T) {
 	// behavior "" used to buy silently and must now be asked for out loud.
 	var control bytes.Buffer
 	if err := xmlio.NewEncoder(own).Encode(&control, m); err != nil {
-		t.Fatalf("public encode %s targeting its own %q: %v", classicFixture, own, err)
+		t.Fatalf("public encode %s targeting its own %q: %v", sample2025_206, own, err)
 	}
 	if control.Len() == 0 {
-		t.Fatalf("public encode %s targeting its own %q: empty output", classicFixture, own)
+		t.Fatalf("public encode %s targeting its own %q: empty output", sample2025_206, own)
 	}
 
 	var spy spyWriter
@@ -383,22 +389,18 @@ func TestEncodeEmptyTargetVersionIsError(t *testing.T) {
 // target it at, and are the positive half of the target contract: every
 // registered release resolves, encodes, and writes ITS OWN version string.
 //
-// Cross-family re-targeting (classic <-> W2025) is deliberately absent. That is
-// a question about what a target can express -- a downgrade -- and it is tracked
-// separately; target RESOLUTION is what is under test here. Each case therefore
-// stays within its source's schema, which is where a re-target is legitimate:
-// classic 1.73, 1.74 and 1.77 share one element vocabulary and therefore one
-// codec, and differ only in the string written to map/@version. That is ADR 0004
-// Decision 4's "the application version is data" claim, stated as bytes.
+// Target RESOLUTION is what is under test here, not what a target can express.
+// Each case stays within its source's schema: W2025 2.06 and 2.07 share schema
+// 1.06 and therefore one codec, and differ only in the string written to
+// map/@version. That is ADR 0004 Decision 4's "the application version is data"
+// claim, stated as bytes.
 var retargetCases = []struct {
 	name   string
 	path   string
 	target string
 }{
-	{"classic 1.77 as itself", classicFixture, "1.77"},
-	{"classic 1.77 -> 1.74", classicFixture, "1.74"},
-	{"classic 1.77 -> 1.73", classicFixture, "1.73"},
 	{"w2025 2.06 as itself", sample2025_206, "2.06"},
+	{"w2025 2.07 -> 2.06", sample2025_207Blank, "2.06"},
 }
 
 // TestEncodeTargetsEveryRegisteredRelease asserts that each registered release
@@ -406,9 +408,9 @@ var retargetCases = []struct {
 //
 // The second half is the one with teeth. The target selects the codec by schema,
 // but the codec writes the version string the Map_t carries -- the SOURCE file's
-// -- so a target that did not also set the identity would route a 1.77 map
-// through the classic codec, write version="1.77", and report success for a
-// request to write 1.73. The caller would have been told they got the release
+// -- so a target that did not also set the identity would route a 2.07 map
+// through the W2025 codec, write version="2.07", and report success for a
+// request to write 2.06. The caller would have been told they got the release
 // they asked for while holding a file that says otherwise, which is the
 // licensing guarantee failing open rather than closed.
 func TestEncodeTargetsEveryRegisteredRelease(t *testing.T) {
@@ -478,8 +480,8 @@ func TestEncodeTargetsEveryRegisteredRelease(t *testing.T) {
 // and nothing more (issue #41). Each of its cases still has a home:
 //
 //   - "a registry entry targets its release" was Lookup("1.73") then targeting
-//     it. TestEncodeTargetsEveryRegisteredRelease already targets 1.73 from the
-//     1.77 fixture by version, and asserts the same thing about the same bytes.
+//     it. TestEncodeTargetsEveryRegisteredRelease targets every registered
+//     version by version string, and asserts the same thing about the bytes.
 //   - "a nil release is an error" was the option's form of "the caller named
 //     nothing". NewEncoder("") is the surviving way to name nothing, and
 //     TestEncodeEmptyTargetVersionIsError holds it to the same contract:

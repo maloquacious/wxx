@@ -21,9 +21,9 @@ const hostile = "Salt & \"Pepper\" <Isles> 'n' tab\there\nnew line café"
 
 // TestAttributeEscaping asserts that user text containing XML's markup
 // characters is written as a well-formed attribute and reads back unchanged,
-// through both codecs (issue #71). Both write the é as caf&#233;, the decimal
-// character reference Worldographer writes for every non-ASCII attribute
-// character in classic and W2025 files alike (issue #96).
+// through the W2025 codec (issue #71). It writes the é as caf&#233;, the
+// decimal character reference Worldographer writes for every non-ASCII
+// attribute character (issue #96).
 //
 // The bug this pins: every attribute was written with fmt's %q, a Go string
 // literal. A title of `Salt & "Pepper"` came out as title="Salt & \"Pepper\"",
@@ -40,12 +40,8 @@ func TestAttributeEscaping(t *testing.T) {
 	for _, tc := range []struct {
 		fixture string
 		app     string
-		// lore reports whether the codec writes <information>. The classic
-		// encoder does not yet (v0_77/COVERAGE.md).
-		lore bool
 	}{
-		{fixture: "2025-2.06-13x11-941577-layers-beta.wxx", app: "2.06", lore: true},
-		{fixture: "2017-1.77-1.0-columns-blank.wxx", app: "1.77"},
+		{fixture: "2025-2.06-13x11-941577-layers-beta.wxx", app: "2.06"},
 	} {
 		t.Run(tc.fixture, func(t *testing.T) {
 			m, err := xmlio.ReadFile(filepath.Join("..", "testdata", tc.fixture))
@@ -70,21 +66,17 @@ func TestAttributeEscaping(t *testing.T) {
 				{"feature/@mapLayer",
 					func(m *wxx.Map_t) { m.Features[0].MapLayer = hostile },
 					func(m *wxx.Map_t) string { return m.Features[0].MapLayer }},
-			}
-			if tc.lore {
-				targets = append(targets,
-					target{"information/@title",
-						func(m *wxx.Map_t) { m.Informations.Informations[0].Title = hostile },
-						func(m *wxx.Map_t) string { return m.Informations.Informations[0].Title }},
-					target{"information/@rulers",
-						func(m *wxx.Map_t) { v := hostile; m.Informations.Informations[0].Rulers = &v },
-						func(m *wxx.Map_t) string {
-							if p := m.Informations.Informations[0].Rulers; p != nil {
-								return *p
-							}
-							return "<nil>"
-						}},
-				)
+				{"information/@title",
+					func(m *wxx.Map_t) { m.Informations.Informations[0].Title = hostile },
+					func(m *wxx.Map_t) string { return m.Informations.Informations[0].Title }},
+				{"information/@rulers",
+					func(m *wxx.Map_t) { v := hostile; m.Informations.Informations[0].Rulers = &v },
+					func(m *wxx.Map_t) string {
+						if p := m.Informations.Informations[0].Rulers; p != nil {
+							return *p
+						}
+						return "<nil>"
+					}},
 			}
 			for _, tg := range targets {
 				tg.set(m)

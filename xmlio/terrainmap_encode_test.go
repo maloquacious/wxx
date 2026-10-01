@@ -43,7 +43,6 @@ func terrainNames(t *testing.T, m *wxx.Map_t) [][]string {
 func TestTerrainMapWithGaps(t *testing.T) {
 	for _, tc := range []struct{ fixture, app string }{
 		{"../testdata/2025-2.06-13x11-941577-blank.wxx", "2.06"},
-		{"../testdata/blank-2017-1.77-1.0.wxx", "1.77"},
 	} {
 		t.Run(tc.app, func(t *testing.T) {
 			m, err := xmlio.ReadFile(tc.fixture)
@@ -110,9 +109,9 @@ func TestTerrainMapRefusals(t *testing.T) {
 		},
 			wxx.ErrInvalidTileGrid, "uses terrain index 42"},
 	} {
-		for _, app := range []string{"2.06", "1.77"} {
+		for _, app := range []string{"2.06"} {
 			t.Run(tc.name+" "+app, func(t *testing.T) {
-				fixture := map[string]string{"2.06": "../testdata/2025-2.06-13x11-941577-blank.wxx", "1.77": "../testdata/blank-2017-1.77-1.0.wxx"}[app]
+				fixture := map[string]string{"2.06": "../testdata/2025-2.06-13x11-941577-blank.wxx"}[app]
 				m, err := xmlio.ReadFile(fixture)
 				if err != nil {
 					t.Fatalf("read: %v", err)

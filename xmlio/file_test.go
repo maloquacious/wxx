@@ -9,22 +9,17 @@ import (
 	"github.com/maloquacious/wxx/xmlio"
 )
 
-// classicFixture is a classic H2017 (COLUMNS) blank map. It is safe to
-// re-encode through the 2017 codec, so it drives the ReadFile/WriteFile
-// round-trip tests.
-const classicFixture = "../testdata/blank-2017-1.77-1.0.wxx"
-
 // TestReadFile decodes a real .wxx fixture through the file-level convenience
 // API and asserts the expected map metadata.
 func TestReadFile(t *testing.T) {
-	m, err := xmlio.ReadFile(classicFixture)
+	m, err := xmlio.ReadFile(sample2025_206)
 	if err != nil {
-		t.Fatalf("ReadFile(%s): %v", classicFixture, err)
+		t.Fatalf("ReadFile(%s): %v", sample2025_206, err)
 	}
 	if m == nil {
-		t.Fatalf("ReadFile(%s): nil map", classicFixture)
+		t.Fatalf("ReadFile(%s): nil map", sample2025_206)
 	}
-	if got, want := m.MetaData.Worldographer.Version, "1.77"; got != want {
+	if got, want := m.MetaData.Worldographer.Version, "2.06"; got != want {
 		t.Errorf("MetaData.Worldographer.Version = %q, want %q", got, want)
 	}
 }
@@ -33,9 +28,9 @@ func TestReadFile(t *testing.T) {
 // WriteFile, reads that file with ReadFile, and asserts the two maps agree on
 // their key structural fields.
 func TestWriteFileReadFileRoundTrip(t *testing.T) {
-	m1, err := xmlio.ReadFile(classicFixture)
+	m1, err := xmlio.ReadFile(sample2025_206)
 	if err != nil {
-		t.Fatalf("ReadFile(%s): %v", classicFixture, err)
+		t.Fatalf("ReadFile(%s): %v", sample2025_206, err)
 	}
 
 	// The target is named explicitly: WriteFile has no default, for the reason
@@ -53,8 +48,8 @@ func TestWriteFileReadFileRoundTrip(t *testing.T) {
 	}
 
 	// The on-disk version identity must survive the write/read: same application
-	// version, and a Schema that is still the absent (implicit legacy) one rather
-	// than a schema the round-trip invented.
+	// version, and the same Schema rather than one the round-trip dropped or
+	// invented.
 	v1, v2 := m1.MetaData.Version, m2.MetaData.Version
 	if got, want := v2.App, v1.App; got != want {
 		t.Errorf("MetaData.Version.App = %+v, want %+v", got, want)

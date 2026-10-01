@@ -2,11 +2,12 @@
 
 ```
 wxx/
-├── schema/                   # RelaxNG schema (reference only, v1.73/classic; not enforced)
+├── schema/                   # RelaxNG schema (reference only: the classic v1.73 format wxx no longer reads)
 ├── xmlio/                    # packages for decoding and encoding XML data
 │   └── internal/            # codec packages; unimportable outside xmlio/
-│       ├── v0_77/           # schema-specific decoders and encoders
-│       └── v1_06/           # schema-specific decoders and encoders
+│       ├── appver/          # a codec's accepted-application-version declaration
+│       ├── codec/           # the Codec interface the dispatcher holds
+│       └── v1_06/           # W2025 (schema 1.06) decoder and encoder
 └── cmd/
     ├── copy/                 # tool to copy a Worldographer file
     │   └── main.go
