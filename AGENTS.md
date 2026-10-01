@@ -30,7 +30,7 @@ reasoning about the format; do not infer it from Go structs.
 
 - `wxx.go`, `map.go`, `errors.go`, `version.go` — top-level package: the
   `Map_t` type, the `Decoder` / `Encoder` interfaces, sentinel
-  errors, and `Version()` (semver, currently `0.44.0-alpha`).
+  errors, and `Version()` (semver, currently `0.45.0-alpha`).
 - `xmlio/` — XML decode/encode entry points and shared transforms
   (`decoder.go`, `encoder.go`, `xml_header.go`).
   - `xmlio/internal/v1_06/` — H2025 (schema 1.06) decoder, encoder, and

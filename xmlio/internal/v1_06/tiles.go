@@ -54,13 +54,9 @@ func decodeTiles(src Tiles_t, mapKeySrc MapKey_t, w *wxx.Map_t) error {
 			if layout == hexg.OddQ {
 				t.Coords = hexg.NewOffsetCoord(x, y).QOffsetToCube(false)
 			} else if layout == hexg.OddR {
-				// even=true is deliberate (issue #52): the vendored
-				// wxx/hexg's OddRCoord.ToCube used the even-r formula
-				// despite its name, and these are the cube coordinates
-				// every ROWS map has decoded to. Worldographer staggers
-				// odd rows, so this is likely wrong; that is issue #130,
-				// not fixed here.
-				t.Coords = hexg.NewOffsetCoord(x, y).ROffsetToCube(true)
+				// Worldographer staggers odd rows right (#80), which is
+				// odd-r: even=false (#130).
+				t.Coords = hexg.NewOffsetCoord(x, y).ROffsetToCube(false)
 			}
 			w.Tiles.Tiles[x][y] = t
 			y++

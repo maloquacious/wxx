@@ -123,7 +123,7 @@ Translation sections (mirroring H2017 decode order):
    - Verify the tilerow InnerText format (tab-delimited fields per line)
    - Determine if field count/order changed from H2017's `6/7/11/12` variants
    - Parse terrain index, elevation, flags, resources, optional RGBA
-   - Assign hex coordinates via `hexg.NewOddQCoord`/`hexg.NewOddRCoord`
+   - Assign hex coordinates via `hexg.NewOffsetCoord(x, y)`, then `QOffsetToCube(false)` for COLUMNS (odd-q) or `ROffsetToCube(false)` for ROWS (odd-r, #130)
 8. **MapKey** - Copy with RGBA decoding
 9. **Features** - Copy with nested location and label, RGBA decoding
 10. **Labels** - Copy with location and RGBA decoding
