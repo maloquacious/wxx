@@ -211,35 +211,42 @@ func encodeTile(tile *wxx.Tile_t, terrainRemap map[int]int, wb *bytes.Buffer) er
 	if err != nil {
 		return err
 	}
-	wb.WriteString(fmt.Sprintf("%d", terrain))
-	wb.WriteString(fmt.Sprintf("\t%d", floatd(tile.Elevation)))
-	wb.WriteString(fmt.Sprintf("\t%d", boold(tile.IsIcy)))
-	wb.WriteString(fmt.Sprintf("\t%d", boold(tile.IsGMOnly)))
-	if err := encodeTileResources(tile.Resources, wb); err != nil {
-		return err
-	}
+	// Each field is appended straight into the buffer's spare capacity rather
+	// than formatted with fmt.Sprintf, which allocated a string per field: 21-27
+	// million allocations on a 1920 x 1080 encode (issue #143). The bytes are the
+	// same ones %d wrote.
+	b := wb.AvailableBuffer()
+	b = strconv.AppendInt(b, int64(terrain), 10)
+	b = append(b, '\t')
+	b = strconv.AppendInt(b, int64(floatd(tile.Elevation)), 10)
+	b = append(b, '\t')
+	b = strconv.AppendInt(b, int64(boold(tile.IsIcy)), 10)
+	b = append(b, '\t')
+	b = strconv.AppendInt(b, int64(boold(tile.IsGMOnly)), 10)
+	b = appendTileResources(b, tile.Resources)
 	if tile.CustomBackgroundColor != nil {
-		wb.WriteString(fmt.Sprintf("\t%s", rgbas(tile.CustomBackgroundColor)))
+		b = append(b, '\t')
+		b = append(b, rgbas(tile.CustomBackgroundColor)...)
 	}
-	wb.WriteString(fmt.Sprintf("\n"))
+	b = append(b, '\n')
+	wb.Write(b)
 	return nil
 }
 
+// appendTileResources appends a tile's resource columns to b.
+//
 // Every resource is in 0..100: Map_t.Validate refuses anything else before the
 // encoder runs (issue #122), because the app does not keep a value above 100.
-func encodeTileResources(resources wxx.Resources_t, wb *bytes.Buffer) error {
+func appendTileResources(b []byte, resources wxx.Resources_t) []byte {
+	b = append(b, '\t')
+	b = strconv.AppendInt(b, int64(resources.Animal), 10)
 	// compress if there are no resources other than Animal
 	if resources.Brick == 0 && resources.Crops == 0 && resources.Gems == 0 && resources.Lumber == 0 && resources.Metals == 0 && resources.Rock == 0 {
-		wb.WriteString(fmt.Sprintf("\t%d", resources.Animal))
-		wb.WriteString(fmt.Sprintf("\tZ"))
-		return nil
+		return append(b, "\tZ"...)
 	}
-	wb.WriteString(fmt.Sprintf("\t%d", resources.Animal))
-	wb.WriteString(fmt.Sprintf("\t%d", resources.Brick))
-	wb.WriteString(fmt.Sprintf("\t%d", resources.Crops))
-	wb.WriteString(fmt.Sprintf("\t%d", resources.Gems))
-	wb.WriteString(fmt.Sprintf("\t%d", resources.Lumber))
-	wb.WriteString(fmt.Sprintf("\t%d", resources.Metals))
-	wb.WriteString(fmt.Sprintf("\t%d", resources.Rock))
-	return nil
+	for _, r := range []int{resources.Brick, resources.Crops, resources.Gems, resources.Lumber, resources.Metals, resources.Rock} {
+		b = append(b, '\t')
+		b = strconv.AppendInt(b, int64(r), 10)
+	}
+	return b
 }

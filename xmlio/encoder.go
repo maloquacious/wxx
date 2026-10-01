@@ -214,56 +214,73 @@ func (e *Encoder) Encode(w io.Writer, m *wxx.Map_t) error {
 		e.opts.diagnostics.Utf8Encoded = bdup(data)
 	}
 
+	var xmlHeader []byte
 	if e.opts.xmlHeader {
 		// The XML declaration follows the CODEC (W2025 opens 1.1). It is a byte the encoder writes, so the encoder owns it and
 		// declares it: it is neither a switch on a family year nor registry data
 		// (issue #45).
-		xmlHeader, err := xmlHeaderFor(decl.XMLVersion)
-		if err != nil {
+		if xmlHeader, err = xmlHeaderFor(decl.XMLVersion); err != nil {
 			return err
 		}
-		buf := make([]byte, 0, len(xmlHeader)+len(data))
-		buf = append(buf, xmlHeader...)
-		buf = append(buf, data...)
-		data = buf
 		if e.opts.diagnostics != nil {
-			e.opts.diagnostics.WithXmlHeader = bdup(data)
+			e.opts.diagnostics.WithXmlHeader = append(bdup(xmlHeader), data...)
 		}
 	}
 
-	if e.opts.utf16BeOutput {
-		// encode as UTF-16/BE for Worldographer
-		utf16Encoding := unicode.UTF16(unicode.BigEndian, unicode.ExpectBOM)
-		data, err = io.ReadAll(transform.NewReader(bytes.NewReader(data), utf16Encoding.NewEncoder()))
-		if err != nil {
-			return errors.Join(wxx.ErrInvalidUTF8, err)
-		}
-		if e.opts.diagnostics != nil {
-			e.opts.diagnostics.Utf16Encoded = bdup(data)
-		}
-	}
-
+	// The remaining stages stream into w: header and XML go through UTF-16 and
+	// gzip as they are written, so the document is held once, as the codec's
+	// UTF-8, rather than once per stage (issue #143). Every refusal has happened
+	// by now, and neither the UTF-16 encoder nor gzip rejects its input, so the
+	// only error left is one from w itself.
+	//
+	// The stages are built from the output end. A stage whose bytes diagnostics
+	// want also writes them into a buffer, so the copies exist only when asked
+	// for.
+	out := w
+	var compressed, utf16Encoded *bytes.Buffer
+	var gz *gzip.Writer
 	if e.opts.compressedOutput {
-		// compress the encoded data, returning any errors
-		var buf bytes.Buffer
-		gz, err := gzip.NewWriterLevel(&buf, e.opts.gzipLevel)
-		if err != nil {
+		if e.opts.diagnostics != nil {
+			compressed = &bytes.Buffer{}
+			out = io.MultiWriter(out, compressed)
+		}
+		if gz, err = gzip.NewWriterLevel(out, e.opts.gzipLevel); err != nil {
 			return errors.Join(wxx.ErrGZipFailed, err)
 		}
-		if _, err := gz.Write(data); err != nil {
-			return err
-		} else if err = gz.Close(); err != nil {
+		out = gz
+	}
+	var utf16 io.WriteCloser
+	if e.opts.utf16BeOutput {
+		if e.opts.diagnostics != nil {
+			utf16Encoded = &bytes.Buffer{}
+			out = io.MultiWriter(out, utf16Encoded)
+		}
+		// encode as UTF-16/BE for Worldographer
+		utf16 = transform.NewWriter(out, unicode.UTF16(unicode.BigEndian, unicode.ExpectBOM).NewEncoder())
+		out = utf16
+	}
+
+	if _, err = out.Write(xmlHeader); err != nil {
+		return err
+	} else if _, err = out.Write(data); err != nil {
+		return err
+	}
+	if utf16 != nil {
+		if err = utf16.Close(); err != nil {
 			return err
 		}
-		data = bdup(buf.Bytes())
-		if e.opts.diagnostics != nil {
-			e.opts.diagnostics.Compressed = bdup(data)
+	}
+	if gz != nil {
+		if err = gz.Close(); err != nil {
+			return err
 		}
 	}
 
-	_, err = w.Write(data)
-	if err != nil {
-		return err
+	if utf16Encoded != nil {
+		e.opts.diagnostics.Utf16Encoded = utf16Encoded.Bytes()
+	}
+	if compressed != nil {
+		e.opts.diagnostics.Compressed = compressed.Bytes()
 	}
 
 	return nil

@@ -107,9 +107,13 @@ Not at 1920 × 1080. Peak memory is under 750 MiB for any single operation.
 It grows about linearly with the hex count:
 
 - **The model:** about 137 bytes per hex.
-- **Peak while decoding or encoding:** about 300–350 bytes per hex. The pipeline
-  holds the whole document several times over: gzip output, UTF-16, UTF-8,
-  and the XML tree or the encoder's buffer.
+- **Peak while decoding:** about 300 bytes per hex. The decoder holds the whole
+  document several times over: gzip input, UTF-16, UTF-8, and the XML tree.
+- **Extra while encoding:** about one copy of the UTF-8 document: 12–19 bytes
+  per hex on the fixtures, up to twice that while the buffer grows. Since #143
+  the header, UTF-16 and gzip stages stream into the writer instead of each
+  holding the whole document. An encode needs a decoded or built map first, so
+  the decode or the model sets the peak.
 
 Extrapolating, which is untested:
 
@@ -120,9 +124,9 @@ Extrapolating, which is untested:
 | 16 M | 4000 × 4000 | 2.2 GB | about 6 GB |
 
 So on a machine with 8–16 GB, the limit is somewhere around 10–30 million
-hexes, mostly set by the copies the pipeline holds rather than by the model.
-Streaming the pipeline stages and storing smaller tiles would raise it. Neither
-is needed for the maps in hand.
+hexes, mostly set by the copies the decoder holds rather than by the model.
+Streaming the decoder's stages and storing smaller tiles would raise it.
+Neither is needed for the maps in hand.
 
 ## Follow-up issues
 
@@ -133,4 +137,12 @@ The profile findings are filed separately rather than fixed in #138:
   baseline machine, Encode blank 1920×1080 went from 0.85 s, 483 MB and 21.3 M
   allocs to 0.53 s, 230 MB and 10.4 M; Encode random 1920×1080 from 3.16 s,
   717 MB and 26.9 M allocs to 3.0 s, 464 MB and 16.0 M (median of 3).
-- the encode pipeline's per-tile formatting and whole-document copies: #143
+- the encode pipeline's per-tile formatting and whole-document copies: #143.
+  Fixed: tile lines are appended with `strconv` instead of `fmt.Sprintf`, and
+  the header, UTF-16 and gzip stages stream into the writer. The output is
+  byte-identical. On the baseline machine, Encode blank 1920×1080 went from
+  0.53 s, 230 MB and 10.4 M allocs to 0.16 s, 68 MB and 5.8 K; Encode random
+  1920×1080 from 2.85 s, 464 MB and 16.0 M allocs to 2.35 s, 171 MB and 127 K
+  (median of 3). Peak RSS of the encode benchmarks, which includes decoding
+  the fixture first, went from 593 MiB to 468 MiB (blank) and from 703 MiB to
+  587 MiB (random).
