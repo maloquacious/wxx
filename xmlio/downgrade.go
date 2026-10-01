@@ -92,8 +92,8 @@ func (d DroppedFeature_t) String() string {
 // The principle outlives the downgrade it was written for -- always tell the user
 // what they lose -- and the next entries are W2025-to-W2025: a release
 // registered on a schema that cannot express something Map_t models gets its
-// own arm here, reporting what that target drops. Issue #92 registered 2.07 on
-// schema 1.06 and found no such loss, so it added none.
+// own arm here, reporting what that target drops. Issues #92 and #73 registered
+// 2.07 and 2.08 on schema 1.06 and found no such loss, so they added none.
 //
 // A schema with no arm is an ERROR, not "no loss". Losslessness is a claim made
 // per schema, by an arm that says so; a schema nobody has inventoried has made no

@@ -13,16 +13,17 @@ import (
 	"github.com/maloquacious/wxx/xmlio/internal/v1_06"
 )
 
-// unacceptedApp is an application version no codec accepts: 2.08, a real build
-// that is not registered until issue #73 adds it. It is deliberately not "1.06"
-// or any other schema version -- an encoder accepts application versions and
-// never schema versions (issue #41 requirement 1), so feeding it a schema version
-// would test the wrong axis.
+// unacceptedApp is an application version no codec accepts: 2.09, a build after
+// the newest one registered (2.08, issue #73). It is deliberately not "1.06" or
+// any other schema version -- an encoder accepts application versions and never
+// schema versions (issue #41 requirement 1), so feeding it a schema version would
+// test the wrong axis.
 //
 // When a codec claims this version, the constant moves rather than the
-// assertions, as it did from 2.07 when issue #92 registered that: the tests below
-// refuse to run against a version some codec has since claimed.
-const unacceptedApp = "2.08"
+// assertions, as it did from 2.07 when issue #92 registered that and from 2.08
+// when issue #73 did: the tests below refuse to run against a version some codec
+// has since claimed.
+const unacceptedApp = "2.09"
 
 // codecUnderTest pairs a codec's declaration with its encoder and a map that
 // codec can really write, so the negative case below fails for the app version
@@ -49,7 +50,7 @@ var codecsUnderTest = []codecUnderTest{
 // Each case carries its own positive control, because a gate that rejects
 // everything is as broken as one that rejects nothing: every version the codec
 // declares must still encode. The accepted counter guards against the vacuous
-// pass where a codec declares nothing at all, in which case "it rejected 2.08"
+// pass where a codec declares nothing at all, in which case "it rejected 2.09"
 // would prove only that its set was empty.
 func TestCodecRejectsUnacceptedAppVersion(t *testing.T) {
 	for _, tc := range codecsUnderTest {
@@ -120,6 +121,7 @@ func TestCodecAppSetsAreDeclaredAndDisjoint(t *testing.T) {
 		{"v1_06", v1_06.AcceptedApps(), "1.06", "1.1", []appver.App_t{
 			{Version: "2.06", Release: "2025"},
 			{Version: "2.07", Release: "2025"},
+			{Version: "2.08", Release: "2025"},
 		}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

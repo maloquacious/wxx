@@ -56,14 +56,14 @@ type Version_t struct {
 
 | release | `map/@release` | `map/@version` (App) | `map/@schema` (Schema) | `wxx` |
 |---|---|---|---|---|
-| Worldographer 2025 | `2025` | `2.06`, `2.07` | `1.06` | reads and writes |
+| Worldographer 2025 | `2025` | `2.06`, `2.07`, `2.08` | `1.06` | reads and writes |
 | classic (Hexographer 2) | *absent* | `1.73`, `1.74`, `1.77` | *absent* | refused on read (`wxx.ErrClassicMap`): "convert it in Worldographer 2025 first" |
 
 **The application version selects the codec.** Two application versions sharing
 a schema use one codec and differ only in the identity it writes. Each codec
 declares the application versions it accepts in its own `apps.go`, and the
 registry in [`xmlio/codecs.go`](xmlio/codecs.go) is built from those
-declarations. Today they are `2.06` and `2.07`, both on the `v1_06` codec.
+declarations. Today they are `2.06`, `2.07` and `2.08`, all on the `v1_06` codec.
 
 Callers name an **application version**, never a schema and never a codec:
 `xmlio.MarshalXML(m, "2.06")`. The codecs themselves live under

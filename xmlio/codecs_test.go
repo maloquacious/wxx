@@ -68,8 +68,8 @@ func mustDotted(t *testing.T, s string) wxx.Dotted {
 	return d
 }
 
-// registrySamples is the registry restated as expectations: the W2025 2.06
-// baseline is the whole registry. The classic builds 1.73, 1.74 and 1.77 were
+// registrySamples is the registry restated as expectations: W2025 2.06, 2.07
+// and 2.08 are the whole registry. The classic builds 1.73, 1.74 and 1.77 were
 // removed with their codec (issue #103); TestRegistryUnknownApplicationVersion
 // holds them to the unknown-version error.
 //
@@ -88,6 +88,7 @@ var registrySamples = []struct {
 }{
 	{"w2025 2.06", "2.06", v1_06.Codec_t{}, "2025", "1.06", "1.1"},
 	{"w2025 2.07", "2.07", v1_06.Codec_t{}, "2025", "1.06", "1.1"},
+	{"w2025 2.08", "2.08", v1_06.Codec_t{}, "2025", "1.06", "1.1"},
 }
 
 // TestRegistryResolvesEveryApplicationVersion asserts the registry's whole job:
@@ -213,7 +214,8 @@ func TestRegistryUnknownApplicationVersion(t *testing.T) {
 		{"empty", ""},
 		{"unpadded 2.06", "2.6"},
 		{"unpadded 2.07", "2.7"},
-		{"unregistered w2025 2.08", "2.08"},
+		{"unpadded 2.08", "2.8"},
+		{"unregistered w2025 2.09", "2.09"},
 		{"unreleased classic", "1.75"},
 		{"removed classic 1.73", "1.73"},
 		{"removed classic 1.74", "1.74"},
@@ -320,6 +322,12 @@ var registryFixtureSamples = []struct {
 	{"w2025 2.07 notes-shapes", sample2025_207NotesShapes, "2.07", v1_06.Codec_t{}, "2025", "1.06"},
 	{"w2025 2.07 resources", sample2025_207Resources, "2.07", v1_06.Codec_t{}, "2025", "1.06"},
 	{"w2025 2.07 rows", sample2025_207Rows, "2.07", v1_06.Codec_t{}, "2025", "1.06"},
+	{"w2025 2.08 blank", sample2025_208Blank, "2.08", v1_06.Codec_t{}, "2025", "1.06"},
+	{"w2025 2.08 layers", sample2025_208Layers, "2.08", v1_06.Codec_t{}, "2025", "1.06"},
+	{"w2025 2.08 notes-shapes", sample2025_208NotesShapes, "2.08", v1_06.Codec_t{}, "2025", "1.06"},
+	{"w2025 2.08 populated", sample2025_208Populated, "2.08", v1_06.Codec_t{}, "2025", "1.06"},
+	{"w2025 2.08 resources", sample2025_208Resources, "2.08", v1_06.Codec_t{}, "2025", "1.06"},
+	{"w2025 2.08 rows", sample2025_208Rows, "2.08", v1_06.Codec_t{}, "2025", "1.06"},
 }
 
 // TestRegistryMatchesFixtures grounds the registry in the files on disk rather

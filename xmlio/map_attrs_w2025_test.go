@@ -9,18 +9,15 @@ import (
 )
 
 // TestW2025MapAttrsMatchSource decodes every tracked W2025 fixture, encodes it
-// as the version it states (2.08 as "2.06"; see sameVersionTarget), and asserts
-// the <map> start tag states every attribute the source does, with the same
-// names in the same order and the same values (issue #111).
+// as the version it states (see sameVersionTarget), and asserts the <map> start
+// tag states every attribute the source does, with the same names in the same
+// order and the same values (issue #111). That includes the identity: every
+// fixture's version is registered (2.08 by issue #73), so none may differ.
 //
 // The bug this pins: floats reformatted an exponent spelling with %f, so the
 // 2.07 and 2.08 rows maps' vScrollbarPos="4.263256414560601E-14" came back as
 // "0.0". No test compared <map>'s own attributes, and the 2.06 rows map states
 // "0.0", so nothing noticed.
-//
-// The one attribute allowed to differ is @version on a 2.08 save, which is
-// encoded as 2.06 until issue #73 registers 2.08; the encoder writes the
-// identity of the version it was asked for (issue #45).
 func TestW2025MapAttrsMatchSource(t *testing.T) {
 	fixtures, err := filepath.Glob(filepath.Join("..", "testdata", "2025-*.wxx"))
 	if err != nil || len(fixtures) == 0 {
@@ -32,12 +29,9 @@ func TestW2025MapAttrsMatchSource(t *testing.T) {
 		t.Run(fixture, func(t *testing.T) {
 			in, _, out := encodeFixture(t, fixture)
 			src := startTagAttrs(in, "map")
-			for i, a := range src {
-				for j := range a {
-					switch {
-					case a[j][0] == "version":
-						src[i][j][1] = sameVersionTarget(t, fixture)
-					case strings.Contains(a[j][1], "E"):
+			for _, a := range src {
+				for _, kv := range a {
+					if strings.Contains(kv[1], "E") {
 						sawExponent = true
 					}
 				}

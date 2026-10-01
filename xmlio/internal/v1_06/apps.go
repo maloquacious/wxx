@@ -34,16 +34,16 @@ func (Codec_t) AcceptedApps() appver.Set_t { return AcceptedApps() }
 
 // acceptedApps declares what this codec accepts and what it writes.
 //
-// 2.06 is the supported W2025 baseline, the first post-beta build, and 2.07 is
-// the next build on the same schema (issue #92); they are the application
-// versions on schema 1.06 that this codec accepts. The set is the codec's own
+// 2.06 is the first post-beta W2025 build, 2.07 the next build on the same
+// schema (issue #92), and 2.08 the one after it (issue #73); they are the
+// application versions on schema 1.06 that this codec accepts. The set is the codec's own
 // knowledge and must be read here rather than inferred from the package path:
 // the path is the CODEC version, which by convention matches the schema the file
-// states, and it says nothing about which builds wrote that schema. 2.07 shows
-// the rule working: a later build on the same schema is added here, not by
-// adding a package.
+// states, and it says nothing about which builds wrote that schema. 2.07 and
+// 2.08 show the rule working: a later build on the same schema is added here,
+// not by adding a package.
 //
-// 2.06 and 2.07 both write release="2025". That is stated per application
+// 2.06, 2.07 and 2.08 all write release="2025". That is stated per application
 // version rather than as a constant of the codec because map/@release is DERIVED
 // from the application version (issue #45 Decision 5): a later build on schema
 // 1.06 shipped under a different label writes a different map/@release and is
@@ -52,7 +52,8 @@ func (Codec_t) AcceptedApps() appver.Set_t { return AcceptedApps() }
 // it into one would hard-code away the relabel scenario ADR 0004 exists to keep
 // expressible.
 //
-// XMLVersion is "1.1", the declaration 2.06 and 2.07 open their files with.
+// XMLVersion is "1.1", the declaration 2.06, 2.07 and 2.08 open their files
+// with.
 var acceptedApps = appver.Set_t{
 	Codec:      "v1_06",
 	Schema:     "1.06",
@@ -60,6 +61,7 @@ var acceptedApps = appver.Set_t{
 	Apps: []appver.App_t{
 		{Version: "2.06", Release: "2025"},
 		{Version: "2.07", Release: "2025"},
+		{Version: "2.08", Release: "2025"},
 	},
 }
 

@@ -34,6 +34,7 @@ func TestDecoderDiagnostics_CodecAndSchema(t *testing.T) {
 		{"w2025 2.06 blank", "../testdata/2025-2.06-13x11-941577-blank.wxx", "v1_06", "1.06"},
 		{"w2025 2.06 layers beta", "../testdata/2025-2.06-13x11-941577-layers-beta.wxx", "v1_06", "1.06"},
 		{"w2025 2.07 notes-shapes", sample2025_207NotesShapes, "v1_06", "1.06"},
+		{"w2025 2.08 notes-shapes", sample2025_208NotesShapes, "v1_06", "1.06"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			f, err := os.Open(tc.path)
