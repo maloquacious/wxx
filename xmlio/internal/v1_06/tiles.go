@@ -42,7 +42,10 @@ func decodeTiles(src Tiles_t, mapKeySrc MapKey_t, w *wxx.Map_t) error {
 	for _, tilerow := range src.TileRows {
 		x, y := len(w.Tiles.Tiles), 0
 		w.Tiles.Tiles = append(w.Tiles.Tiles, make([]*wxx.Tile_t, w.Tiles.TilesHigh))
-		for _, line := range strings.Split(tilerow.InnerText, "\n") {
+		// The tilerow is walked with SplitSeq rather than split into a slice of
+		// lines, and each line's fields go into a fixed array, so no []string
+		// is built per tilerow or per hex (issue #152).
+		for line := range strings.SplitSeq(tilerow.InnerText, "\n") {
 			if len(line) == 0 { // ignore blank lines
 				continue
 			}
@@ -61,13 +64,20 @@ func decodeTiles(src Tiles_t, mapKeySrc MapKey_t, w *wxx.Map_t) error {
 			w.Tiles.Tiles[x][y] = t
 			y++
 			// values are TerrainMapIndex Elevation IsIcy IsGMOnly Animals (Z|(Brick Crops Gems Lumber Metals Rock)) RGBA?
-			values := strings.Split(line, "\t")
-			//fmt.Printf("tilerow: %d %d: len(inner) %d lines %d line %d values %d\n", r, i+1, len(element.InnerText), len(lines), len(line), len(values))
-			switch len(values) {
+			var fields [12]string
+			n := 0
+			for field := range strings.SplitSeq(line, "\t") {
+				if n < len(fields) {
+					fields[n] = field
+				}
+				n++
+			}
+			switch n {
 			case 6, 7, 11, 12: // allowed
 			default:
-				return fmt.Errorf("values: expected 6/7/11/12, got %d", len(values))
+				return fmt.Errorf("values: expected 6/7/11/12, got %d", n)
 			}
+			values := fields[:n]
 			if t.Terrain, err = strconv.Atoi(values[0]); err != nil {
 				return fmt.Errorf("value: terrainType: %w", err)
 			}
@@ -91,7 +101,9 @@ func decodeTiles(src Tiles_t, mapKeySrc MapKey_t, w *wxx.Map_t) error {
 				}
 			} else {
 				if t.Resources.Brick, err = strconv.Atoi(values[5]); err != nil {
-					return fmt.Errorf("value: brick: %q: %w", values, err)
+					// split afresh: passing values to fmt would move fields
+					// to the heap for every tile, not just this one
+					return fmt.Errorf("value: brick: %q: %w", strings.Split(line, "\t"), err)
 				} else if t.Resources.Brick < 0 {
 					return fmt.Errorf("value: brick: %w", fmt.Errorf("invalid value"))
 				} else if t.Resources.Brick > 100 {

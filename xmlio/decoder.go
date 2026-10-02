@@ -3,6 +3,7 @@
 package xmlio
 
 import (
+	"bufio"
 	"bytes"
 	"compress/gzip"
 	"encoding/xml"
@@ -37,7 +38,7 @@ type decoderOpts struct {
 
 type DecoderDiagnostics struct {
 	Raw          []byte // original input
-	Uncompressed []byte // input after running gunzip
+	Uncompressed []byte // input after running gunzip; on an error, as much as was read before it
 	Converted    []byte // input after converting UTF-16 to UTF-8
 	XMLHeader    []byte // the XML declaration that was removed, and only that
 	XMLData      []byte // everything after the declaration: the XML handed to the codec
@@ -131,61 +132,89 @@ func (d *Decoder) Decode(r io.Reader) (*wxx.Map_t, error) {
 	// * * Dispatch to version+schema specific Read
 	// * * Return Map_t
 
-	// read the entire input into memory
-	data, err := io.ReadAll(r)
-	if err != nil {
-		return nil, errors.Join(wxx.ErrRawReadFailed, err)
-	}
+	// The transport stages -- gunzip, then UTF-16 to UTF-8 -- are a chain of
+	// readers, and only the UTF-8 at the end of it is held in memory (issue
+	// #152). Each stage used to read its whole output before the next began,
+	// so a decode held the gzip input, the UTF-16 and the UTF-8 at once. The
+	// magic-number and BOM checks look at the first bytes of a stage through a
+	// bufio peek, before anything after them is read.
+	//
+	// Diagnostics are opt-in and cost what they always did: Raw is read whole
+	// before the chain starts, and Uncompressed is copied as the chain reads it.
+	src := r
 	if d.opts.diagnostics != nil {
-		d.opts.diagnostics.Raw = bdup(data)
+		data, err := io.ReadAll(r)
+		if err != nil {
+			return nil, errors.Join(wxx.ErrRawReadFailed, err)
+		}
+		d.opts.diagnostics.Raw = data
+		src = bytes.NewReader(data)
 	}
+	src = stageReader{r: src, stage: wxx.ErrRawReadFailed}
 
 	if d.opts.compressedInput {
 		// Uncompress the input by running gunzip on it.
 
 		// verify that the input is actually gzip data by looking for the magic number.
-		if !(len(data) >= 2 && data[0] == 0x1F && data[1] == 0x8B) {
+		br := bufio.NewReader(src)
+		magic, err := br.Peek(2)
+		if err != nil && err != io.EOF {
+			return nil, err // the raw input failed; stageReader says so
+		}
+		if !(len(magic) == 2 && magic[0] == 0x1F && magic[1] == 0x8B) {
 			return nil, wxx.ErrNotCompressed
 		}
 
 		// Create a new gzip reader to process the source.
 		// This will return an error if the input is not gzip data.
-		gzr, err := gzip.NewReader(bytes.NewReader(data))
+		gzr, err := gzip.NewReader(br)
 		if err != nil {
 			return nil, errors.Join(wxx.ErrGZipNewReaderFailed, err)
 		}
 		defer func(gzr *gzip.Reader) {
 			_ = gzr.Close() // ignore errors closing this reader
 		}(gzr)
-		// Run gunzip on the input, returning any errors.
-		data, err = io.ReadAll(gzr)
-		if err != nil {
-			return nil, errors.Join(wxx.ErrGUnZipFailed, err)
-		}
+		src = stageReader{r: gzr, stage: wxx.ErrGUnZipFailed}
 		if d.opts.diagnostics != nil {
-			d.opts.diagnostics.Uncompressed = bdup(data)
+			uncompressed := &bytes.Buffer{}
+			src = io.TeeReader(src, uncompressed)
+			// set when Decode returns, by which time the chain has read all
+			// of it, or as much as it got through before failing
+			defer func() { d.opts.diagnostics.Uncompressed = uncompressed.Bytes() }()
 		}
 	}
 
+	var data []byte
+	var err error
 	if d.opts.utf16BeInput {
 		// decode UTF-16/BE into UTF-8
 
 		// verify the BOM for UTF-16/BE
-		if bytes.HasPrefix(data, []byte{0xfe, 0xff}) {
+		br := bufio.NewReader(src)
+		bom, err := br.Peek(2)
+		if err != nil && err != io.EOF {
+			return nil, stageError(nil, err) // an earlier stage failed
+		}
+		if bytes.HasPrefix(bom, []byte{0xfe, 0xff}) {
 			// as expected
-		} else if bytes.HasPrefix(data, []byte{0xff, 0xfe}) {
+		} else if bytes.HasPrefix(bom, []byte{0xff, 0xfe}) {
 			return nil, wxx.ErrNotBigEndianUTF16Encoded
 		} else {
 			return nil, wxx.ErrMissingBOM
 		}
 
 		utf16Encoding := unicode.UTF16(unicode.BigEndian, unicode.ExpectBOM)
-		data, err = io.ReadAll(transform.NewReader(bytes.NewReader(data), utf16Encoding.NewDecoder()))
+		data, err = io.ReadAll(transform.NewReader(br, utf16Encoding.NewDecoder()))
 		if err != nil {
-			return nil, errors.Join(wxx.ErrInvalidUTF16, err)
+			return nil, stageError(wxx.ErrInvalidUTF16, err)
 		}
 		if d.opts.diagnostics != nil {
 			d.opts.diagnostics.Converted = bdup(data)
+		}
+	} else {
+		data, err = io.ReadAll(src)
+		if err != nil {
+			return nil, stageError(nil, err)
 		}
 	}
 
@@ -298,4 +327,32 @@ func bdup(src []byte) []byte {
 	dst := make([]byte, len(src))
 	copy(dst, src)
 	return dst
+}
+
+// stageReader tags a read error with the transport stage it came from. The
+// stages are chained readers, so an error from the raw input or from gunzip
+// surfaces from whichever stage is reading at the end of the chain; the tag
+// lets Decode report it as the stage that failed, as it did when each stage
+// was read whole on its own (issue #152).
+type stageReader struct {
+	r     io.Reader
+	stage wxx.Error
+}
+
+func (s stageReader) Read(p []byte) (int, error) {
+	n, err := s.r.Read(p)
+	if err != nil && err != io.EOF {
+		err = errors.Join(s.stage, err)
+	}
+	return n, err
+}
+
+// stageError returns err from the end of the transport chain. An error a
+// stageReader tagged already names its stage; any other error is the last
+// stage's own, and is joined with that stage's error, if it has one.
+func stageError(stage error, err error) error {
+	if errors.Is(err, wxx.ErrRawReadFailed) || errors.Is(err, wxx.ErrGUnZipFailed) || stage == nil {
+		return err
+	}
+	return errors.Join(stage, err)
 }

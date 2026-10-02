@@ -11,7 +11,7 @@ One Worldographer format is supported:
 
 The original H2017 ("classic", Worldographer 1.x) format is no longer read or written (issue #103, ADR 0005). The decoder refuses a classic file with `wxx.ErrClassicMap`; Worldographer 2025 converts a classic map itself.
 
-Current version: **0.50.0-beta** (see `version.go`).
+Current version: **0.51.0-beta** (see `version.go`).
 
 **Tag every version change.** When a merge to `main` changes `version.go`, tag that commit
 `v<version>` (lightweight) and push the tag. See CONTRIBUTING.md step 7.
@@ -77,7 +77,7 @@ wxx/
 ├── geometry.go         # hex centers and corners in shape coordinates (#153)
 ├── path.go             # NewPath / NewEdgePath: line shapes as the app writes them (#155)
 ├── errors.go           # Constant error types (type Error string)
-├── version.go          # Semantic version (0.50.0-beta)
+├── version.go          # Semantic version (0.51.0-beta)
 ├── xmlio/              # XML encoding/decoding pipeline
 │   ├── decoder.go      # Generic decoder with functional options
 │   ├── encoder.go      # Generic encoder with functional options
