@@ -107,8 +107,9 @@ Not at 1920 × 1080. Peak memory is under 750 MiB for any single operation.
 It grows about linearly with the hex count:
 
 - **The model:** about 137 bytes per hex.
-- **Peak while decoding:** about 300 bytes per hex. The decoder holds the whole
-  document several times over: gzip input, UTF-16, UTF-8, and the XML tree.
+- **Peak while decoding:** about 220 bytes per hex. Since #152 the gzip and
+  UTF-16 stages stream, so the decoder holds the document twice: the UTF-8,
+  and the XML tree with each `<tilerow>`'s text.
 - **Extra while encoding:** about one copy of the UTF-8 document: 12–19 bytes
   per hex on the fixtures, up to twice that while the buffer grows. Since #143
   the header, UTF-16 and gzip stages stream into the writer instead of each
@@ -124,9 +125,8 @@ Extrapolating, which is untested:
 | 16 M | 4000 × 4000 | 2.2 GB | about 6 GB |
 
 So on a machine with 8–16 GB, the limit is somewhere around 10–30 million
-hexes, mostly set by the copies the decoder holds rather than by the model.
-Streaming the decoder's stages and storing smaller tiles would raise it.
-Neither is needed for the maps in hand.
+hexes. Since #152 the model is the larger share of it; storing smaller tiles
+would raise it most. That is not needed for the maps in hand.
 
 ## Follow-up issues
 
@@ -146,3 +146,13 @@ The profile findings are filed separately rather than fixed in #138:
   (median of 3). Peak RSS of the encode benchmarks, which includes decoding
   the fixture first, went from 593 MiB to 468 MiB (blank) and from 703 MiB to
   587 MiB (random).
+- the decode pipeline's whole-document copies and per-line `strings.Split`:
+  #152. Fixed: gunzip and UTF-16 to UTF-8 are a chain of readers, and only
+  the UTF-8 is held whole; tile lines are walked with `strings.SplitSeq`
+  into a fixed array instead of a `[]string` per hex. The decoded `Map_t`
+  is identical for every fixture. On the baseline machine, Decode blank
+  1920×1080 went from 0.41 s, 742 MB and 4.18 M allocs to 0.38 s, 392 MB and
+  2.11 M; Decode random 1920×1080 from 0.68 s, 942 MB and 4.28 M allocs to
+  0.65 s, 455 MB and 2.21 M (median of 3). Peak RSS of the decode
+  benchmarks went from 475 MiB to 404 MiB (blank) and from 521 MiB to
+  436 MiB (random).
