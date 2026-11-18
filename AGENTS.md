@@ -44,6 +44,21 @@ This is a rule about **what to work on next**, not a hard interlock on every com
 When proposing bugs, rank them by whether they can produce a wrong file on disk.
 A bug that writes silently-wrong output (e.g. #45) outranks one that loses a field (#35) or misnames a diagnostic (#44).
 
+## A new Worldographer version: check the schema first
+
+When a new application version ships, check its schema against its format **before any code changes**, and report what you find to the maintainer.
+
+1. Get a first-save fixture from the new version (a blank map at minimum).
+2. Compare its `map/@schema` with the previous version's.
+3. Diff its structure against the previous version's matching fixture: elements, attributes, attribute order.
+4. **Call out a mismatch** between the two answers, and stop for the maintainer's decision:
+   - the format changed but `map/@schema` did not, or
+   - `map/@schema` changed but the format did not.
+
+Worldographer 2.09 is the example: it added `label/@lineSpacing` and `labelstyle/@lineSpacing`, and began writing `label/@textAlignment`, while still stating `schema="1.06"`, the same as 2.08.
+That was found only after code work had started (#161, #162).
+A mismatch decides how the new version is supported (a new entry in an existing codec, or a new codec), and is worth reporting upstream.
+
 ## Tag every version change
 
 When a merge to `main` changes `version.go`, tag that commit `v<version>` (lightweight) and push the tag.
