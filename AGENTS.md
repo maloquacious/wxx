@@ -1,9 +1,9 @@
 # Agent guide
 
 This project implements a Go package (`github.com/maloquacious/wxx`) to read,
-manipulate, and write Worldographer data files (WXX). See
-[PROJECT.md](./PROJECT.md) for the directory layout and [CODECS.md](./CODECS.md)
-for the codec design that decoders/encoders must follow. Follow
+manipulate, and write Worldographer data files (WXX). See *Repository
+layout* below for the directory layout and [CODECS.md](./CODECS.md) for the
+codec design that decoders/encoders must follow. Follow
 [TOOLING.md](./TOOLING.md) for when to build a reusable tool instead of
 running ad-hoc shell commands.
 
@@ -84,6 +84,29 @@ reasoning about the format; do not infer it from Go structs.
   with `Subcommands` appended, each subcommand owning its own
   `ff.NewFlagSet(...).SetParent(rootFlags)`. See [cmd/wxx](./cmd/wxx) for
   the reference layout.
+- This is transitional. Under [ADR 0007](./docs/adr/0007-starlark-script-host.md),
+  the separate `cmd/*` binaries fold into `wxx`, which becomes a Starlark
+  script host (`wxx script`, `wxx shell`), and `ff/v4` is removed. Until that
+  lands, new subcommands still follow the `ff.Command` pattern; do not add
+  Starlark or remove `ff/v4` as part of unrelated work.
+
+## Coding conventions
+
+- **Copyright header:** every `.go` file starts with
+  `// Copyright (c) <year> Michael D Henderson. All rights reserved.`
+- **Package comments:** each package has a doc comment on the `package` line.
+- **Minimal dependencies:** add no dependency that can be avoided. `go.mod` is
+  the list; this file does not repeat it.
+- **Naming:** major data types take a `_t` suffix (e.g. `Map_t`). CLI tools are
+  lowercase single-word names.
+- **Tests:** the standard `testing` package only; no external test frameworks.
+- **No CI pipelines:** "CI" means running the validation commands below
+  locally.
+- **Pipeline architecture:** encoding and decoding are composable
+  transformation stages, not monolithic functions.
+- **Diagnostics over debug logging:** optional `Diagnostics` structs capture
+  intermediate pipeline data instead of log statements.
+- **Line endings:** LF, enforced by `.gitattributes`.
 
 ## Roadmap
 

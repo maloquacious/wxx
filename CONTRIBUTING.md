@@ -132,7 +132,7 @@ convention; do not take the older shape as a model.
 
 ## Code conventions
 
-These live in `CLAUDE.md` and are summarized here only as a pointer: copyright
+These live in `AGENTS.md` and are summarized here only as a pointer: copyright
 header on every `.go` file, package doc comments, `_t` suffix on major types,
 the standard `testing` package and no external test frameworks, and a hard
 preference for adding no dependency that can be avoided. `go.mod` is the list.

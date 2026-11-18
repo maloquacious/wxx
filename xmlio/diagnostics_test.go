@@ -17,7 +17,7 @@ import (
 
 // The decoder splits the converted UTF-8 document into exactly two pieces: the
 // XML declaration and everything after it. DecoderDiagnostics is the supported
-// way to see that split (CLAUDE.md: diagnostics over debug logging), so the
+// way to see that split (AGENTS.md: diagnostics over debug logging), so the
 // fields have to hold what they are named for.
 //
 // Issue #51: XMLHeader was assigned twice, and the second assignment overwrote
