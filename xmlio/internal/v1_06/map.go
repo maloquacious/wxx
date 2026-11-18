@@ -272,7 +272,7 @@ func encodeMap(w *wxx.Map_t, target appver.App_t, schema string, wb *bytes.Buffe
 	} else if w.MapProjection == wxx.ICOSAHEDRAL {
 		wb.WriteString(fmt.Sprintf(" mapProjection=%s", xmlAttr("ICOSAHEDRAL")))
 	} else {
-		return fmt.Errorf("assert(map.projection != %q)", w.MapProjection)
+		return fmt.Errorf("assert(map.projection != %d)", w.MapProjection)
 	}
 	wb.WriteString(fmt.Sprintf(" showNotes=%s", xmlAttr(bools(w.ShowNotes))))
 	wb.WriteString(fmt.Sprintf(" showGMOnly=%s", xmlAttr(bools(w.ShowGMOnly))))
