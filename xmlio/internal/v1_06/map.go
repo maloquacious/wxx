@@ -60,6 +60,11 @@ func Decode(input []byte) (*wxx.Map_t, []Clamp_t, error) {
 		log.Printf("v1_06: %v\n", err)
 		return nil, nil, err
 	}
+	// Refuse anything the schema does not model before converting, so that
+	// nothing the file states is silently dropped (issue #161).
+	if err := refuseUnmodeledContent(m); err != nil {
+		return nil, nil, err
+	}
 	if m.Release == "" {
 		return nil, nil, fmt.Errorf("missing map.Release")
 	} else if m.Version == "" {

@@ -35,7 +35,7 @@ func decodeNotes(src Notes_t, w *wxx.Map_t) error {
 			IsKingdom:         note.IsKingdom,
 			IsProvince:        note.IsProvince,
 			Title:             note.Title,
-			NoteText:          note.NoteText,
+			NoteText:          note.NoteText.Text,
 		}
 		// Opaque black is a colour, not "null" (issue #99); see decodeFeatures.
 		if wNote.Color, err = decodeZeroableRgba(note.Color); err != nil {
