@@ -183,8 +183,17 @@ type Feature_t struct {
 	Label    *Label_t           `json:"label,omitempty"`
 }
 
+// FeatureConfig_t holds the content of one <feature-config> element exactly as
+// the file had it (issue #164).
+//
+// Worldographer writes a <featuretype> here for each feature type the map uses
+// that is not a stock, unchanged one. wxx does not model that content: no
+// fixture has any. It keeps the inner XML verbatim, so the definition survives a
+// copy or a resize. The encoder writes InnerXML back unchanged after checking
+// that it is well formed; whitespace-only content is written as the empty
+// element Worldographer writes.
 type FeatureConfig_t struct {
-	InnerText string `json:"innerText,omitempty"`
+	InnerXML string `json:"innerXML,omitempty"`
 }
 
 type FeatureLocation_t struct {
@@ -593,8 +602,19 @@ type Terrain_t struct {
 	Label string `json:"label"`
 }
 
+// TerrainConfig_t holds the content of one <terrain-config> element exactly as
+// the file had it (issue #164).
+//
+// Worldographer writes a <terraintype> here for each terrain type the map uses
+// that is not a stock, unchanged one, so a map painted with a custom terrain
+// tile carries the tile's definition in this element. wxx must accept such maps
+// (users install custom tiles), but no fixture has one, so it does not model the
+// content. It keeps the inner XML verbatim, so the definition survives a copy
+// or a resize. The encoder writes InnerXML back unchanged after checking that it
+// is well formed; whitespace-only content is written as the empty element
+// Worldographer writes.
 type TerrainConfig_t struct {
-	InnerText string `json:"innerText,omitempty"`
+	InnerXML string `json:"innerXML,omitempty"`
 }
 
 type TerrainMap_t struct {
@@ -640,8 +660,17 @@ type TextConfig_t struct {
 	InnerText   string          `json:"innerText,omitempty"`
 }
 
+// TextureConfig_t holds the content of one <texture-config> element exactly as
+// the file had it (issue #164).
+//
+// Worldographer writes a <texturetype> here for each texture type the map uses
+// that is not a stock, unchanged one. wxx does not model that content: no
+// fixture has any. It keeps the inner XML verbatim, so the definition survives a
+// copy or a resize. The encoder writes InnerXML back unchanged after checking
+// that it is well formed; whitespace-only content is written as the empty
+// element Worldographer writes.
 type TextureConfig_t struct {
-	InnerText string `json:"innerText,omitempty"`
+	InnerXML string `json:"innerXML,omitempty"`
 }
 
 type Tile_t struct {

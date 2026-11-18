@@ -30,6 +30,14 @@ type unmodeled_t struct {
 	Other      []unmodeledElement_t `xml:",any"`
 }
 
+// unmodeledAttrs_t is embedded instead of unmodeled_t in a schema struct that
+// keeps its element's content as raw inner XML (issue #164). Its children are
+// preserved, not dropped, so only an unknown attribute on the element itself is
+// refused.
+type unmodeledAttrs_t struct {
+	OtherAttrs []xml.Attr `xml:",any,attr"`
+}
+
 // unmodeledText_t is embedded in every schema struct that does not keep its
 // element's text. Whitespace is layout and is allowed; anything else would be
 // dropped, so it is refused.
@@ -44,8 +52,9 @@ type unmodeledElement_t struct {
 }
 
 var (
-	unmodeledType     = reflect.TypeOf(unmodeled_t{})
-	unmodeledTextType = reflect.TypeOf(unmodeledText_t{})
+	unmodeledType      = reflect.TypeOf(unmodeled_t{})
+	unmodeledAttrsType = reflect.TypeOf(unmodeledAttrs_t{})
+	unmodeledTextType  = reflect.TypeOf(unmodeledText_t{})
 )
 
 // refuseUnmodeledContent walks the decoded schema and returns an error naming
@@ -64,17 +73,16 @@ func refuseUnmodeledIn(v reflect.Value, path string) error {
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
 		switch f.Type {
+		case unmodeledAttrsType:
+			if err := refuseUnmodeledAttrs(v.Field(i), path); err != nil {
+				return err
+			}
 		case unmodeledType:
 			// The embedded type is unexported, so its value cannot be taken with
 			// Interface; its exported fields are read through reflect instead.
 			u := v.Field(i)
-			if attrs := u.FieldByName("OtherAttrs"); attrs.Len() != 0 {
-				a := attrs.Index(0)
-				name := a.FieldByName("Name").FieldByName("Local").String()
-				if space := a.FieldByName("Name").FieldByName("Space").String(); space != "" {
-					name = space + ":" + name
-				}
-				return errors.Join(wxx.ErrUnmodeledContent, fmt.Errorf("%s: unmodeled attribute @%s=%q; wxx does not understand it and will not drop it silently (issue #161)", path, name, a.FieldByName("Value").String()))
+			if err := refuseUnmodeledAttrs(u, path); err != nil {
+				return err
 			}
 			if other := u.FieldByName("Other"); other.Len() != 0 {
 				name := other.Index(0).FieldByName("XMLName").FieldByName("Local").String()
@@ -123,6 +131,21 @@ func refuseUnmodeledIn(v reflect.Value, path string) error {
 		}
 	}
 	return nil
+}
+
+// refuseUnmodeledAttrs returns an error naming the first attribute caught by the
+// OtherAttrs field of u, an embedded unmodeled_t or unmodeledAttrs_t.
+func refuseUnmodeledAttrs(u reflect.Value, path string) error {
+	attrs := u.FieldByName("OtherAttrs")
+	if attrs.Len() == 0 {
+		return nil
+	}
+	a := attrs.Index(0)
+	name := a.FieldByName("Name").FieldByName("Local").String()
+	if space := a.FieldByName("Name").FieldByName("Space").String(); space != "" {
+		name = space + ":" + name
+	}
+	return errors.Join(wxx.ErrUnmodeledContent, fmt.Errorf("%s: unmodeled attribute @%s=%q; wxx does not understand it and will not drop it silently (issue #161)", path, name, a.FieldByName("Value").String()))
 }
 
 // childElementName reports the element name of a field that decodes a child

@@ -650,18 +650,63 @@ Configuration = element configuration {
   ShapeConfig?
 }
 
-# observed: all, whitespace only. inferred: content TBD.
+# observed: all, whitespace only.
+# inferred: from the 2.08/2.09 writer's string constants (MapDataIO, TerrainType);
+# no fixture has one. The app writes a <terraintype> for each terrain type the
+# map uses that is not stock and unchanged, such as an installed custom tile.
+# wxx models none of this content and keeps it verbatim, accepting any
+# well-formed XML here (#164); the patterns below are the best guess at what the
+# app writes, not what wxx requires.
 TerrainConfig = element terrain-config {
+  text,
+  TerrainType*
+}
+
+# inferred: attribute order from the writer. similarTerrain is a ":::"-joined
+# list; color may be "null"; the text is a base64 image (the loader decodes one).
+TerrainType = element terraintype {
+  attribute type { xsd:string },
+  attribute elevation { xsd:string },
+  attribute similarTerrain { xsd:string },
+  attribute iconSize { xsd:string },
+  attribute isDefault { xsd:boolean },
+  attribute offsetXDecimal { xsd:string }?,
+  attribute offsetYDecimal { xsd:string }?,
+  attribute color { xsd:string }?,
   text
 }
 
-# observed: all, whitespace only. inferred: content TBD.
+# observed: all, whitespace only.
+# inferred: as TerrainConfig, one <featuretype> per non-stock feature type (#164).
 FeatureConfig = element feature-config {
+  text,
+  FeatureType*
+}
+
+# inferred: attribute order from the writer (FeatureType).
+FeatureType = element featuretype {
+  attribute type { xsd:string },
+  attribute iconSize { xsd:string },
+  attribute iconHeight { xsd:string },
+  attribute offsetX { xsd:string },
+  attribute offsetY { xsd:string },
+  attribute isDefault { xsd:boolean },
+  attribute alternateIcon { xsd:string }?,
   text
 }
 
-# observed: all, whitespace only. inferred: content TBD.
+# observed: all, whitespace only.
+# inferred: as TerrainConfig, one <texturetype> per non-stock texture type (#164).
 TextureConfig = element texture-config {
+  text,
+  TextureType*
+}
+
+# inferred: attribute order from the writer (TextureType).
+TextureType = element texturetype {
+  attribute type { xsd:string },
+  attribute width { xsd:string },
+  attribute isDefault { xsd:boolean },
   text
 }
 

@@ -4,34 +4,38 @@ package v1_06
 
 import (
 	"bytes"
+	"encoding/xml"
+	"errors"
 	"fmt"
+	"io"
+	"strings"
 
 	"github.com/maloquacious/wxx"
 )
 
 // decodeConfiguration copies the <configuration> tree into the domain map. The
-// terrain-config / feature-config / texture-config sub-sections are copied as
-// raw chardata (they are no-op(intentional) on encode); text-config/labelstyle
-// and shape-config/shapestyle are fully modeled.
+// terrain-config / feature-config / texture-config sub-sections are kept as raw
+// inner XML and written back verbatim (issue #164); text-config/labelstyle and
+// shape-config/shapestyle are fully modeled.
 func decodeConfiguration(src Configuration_t, w *wxx.Map_t) error {
 	var err error
 	w.Configuration = &wxx.Configuration_t{}
 	for _, mTerrainConfig := range src.TerrainConfig {
 		wTerrainConfig := &wxx.TerrainConfig_t{
-			InnerText: mTerrainConfig.InnerText,
+			InnerXML: mTerrainConfig.InnerXML,
 		}
 		// append the terrain configuration
 		w.Configuration.TerrainConfig = append(w.Configuration.TerrainConfig, wTerrainConfig)
 	}
 	for _, mFeatureConfig := range src.FeatureConfig {
 		wFeatureConfig := &wxx.FeatureConfig_t{
-			InnerText: mFeatureConfig.InnerText,
+			InnerXML: mFeatureConfig.InnerXML,
 		}
 		w.Configuration.FeatureConfig = append(w.Configuration.FeatureConfig, wFeatureConfig)
 	}
 	for _, mTextureConfig := range src.TextureConfig {
 		wTextureConfig := &wxx.TextureConfig_t{
-			InnerText: mTextureConfig.InnerText,
+			InnerXML: mTextureConfig.InnerXML,
 		}
 		w.Configuration.TextureConfig = append(w.Configuration.TextureConfig, wTextureConfig)
 	}
@@ -145,46 +149,80 @@ func encodeConfiguration(configuration *wxx.Configuration_t, wb *bytes.Buffer) e
 	return nil
 }
 
-// encodeTerrainConfig intentionally emits an empty <terrain-config> wrapper and
-// ignores its argument. Real Worldographer 2025 samples leave <terrain-config>
-// empty: the element carries only whitespace chardata and no child elements
-// (verified in issue #4, guarded by TestW2025ConfigSectionsEmpty). Dropping the
-// (empty) decoded content here is therefore lossless. If a future sample ever
-// populates this section, the fix is to switch the corresponding schema.go field
-// from `xml:",chardata"` to `xml:",innerxml"` and implement this encoder to emit
-// the preserved inner XML.
+// encodeTerrainConfig writes <terrain-config>, whose content wxx keeps verbatim
+// (issue #164). A map that uses a custom or edited terrain carries the
+// terrain's <terraintype> definition here; dropping it would lose the custom
+// tile from every copy and resize.
 func encodeTerrainConfig(terrainConfig []*wxx.TerrainConfig_t, wb *bytes.Buffer) error {
-	wb.WriteString("  <terrain-config>\n")
-	wb.WriteString("  </terrain-config>\n")
-	return nil
+	var inner []string
+	for _, c := range terrainConfig {
+		inner = append(inner, c.InnerXML)
+	}
+	return encodeVerbatimConfig("terrain-config", inner, wb)
 }
 
-// encodeFeatureConfig intentionally emits an empty <feature-config> wrapper and
-// ignores its argument. Real Worldographer 2025 samples leave <feature-config>
-// empty: the element carries only whitespace chardata and no child elements
-// (verified in issue #4, guarded by TestW2025ConfigSectionsEmpty). Dropping the
-// (empty) decoded content here is therefore lossless. If a future sample ever
-// populates this section, the fix is to switch the corresponding schema.go field
-// from `xml:",chardata"` to `xml:",innerxml"` and implement this encoder to emit
-// the preserved inner XML.
+// encodeFeatureConfig writes <feature-config> verbatim; see encodeTerrainConfig.
 func encodeFeatureConfig(featureConfig []*wxx.FeatureConfig_t, wb *bytes.Buffer) error {
-	wb.WriteString("  <feature-config>\n")
-	wb.WriteString("  </feature-config>\n")
+	var inner []string
+	for _, c := range featureConfig {
+		inner = append(inner, c.InnerXML)
+	}
+	return encodeVerbatimConfig("feature-config", inner, wb)
+}
+
+// encodeTextureConfig writes <texture-config> verbatim; see encodeTerrainConfig.
+func encodeTextureConfig(textureConfig []*wxx.TextureConfig_t, wb *bytes.Buffer) error {
+	var inner []string
+	for _, c := range textureConfig {
+		inner = append(inner, c.InnerXML)
+	}
+	return encodeVerbatimConfig("texture-config", inner, wb)
+}
+
+// encodeVerbatimConfig writes one <name> element for each entry of inner, with
+// that entry's inner XML between the tags unchanged.
+//
+// Whitespace-only content is layout, and is written as the empty element every
+// fixture has ("  <name>\n  </name>\n"), so a map without custom types encodes
+// byte-identical to before #164. With no entries it writes one empty element:
+// Worldographer always writes all three.
+//
+// The inner XML is not modeled, so the encoder cannot vouch for its meaning,
+// only its syntax: an entry that is not a well-formed XML fragment is refused
+// rather than written into a file Worldographer could not open.
+func encodeVerbatimConfig(name string, inner []string, wb *bytes.Buffer) error {
+	if len(inner) == 0 {
+		inner = []string{""}
+	}
+	for i, content := range inner {
+		if strings.TrimSpace(content) == "" {
+			wb.WriteString("  <" + name + ">\n")
+			wb.WriteString("  </" + name + ">\n")
+			continue
+		}
+		if err := wellFormedFragment(content); err != nil {
+			return errors.Join(wxx.ErrInvalidXML, fmt.Errorf("map/configuration/%s[%d]: content is not well-formed XML: %w", name, i+1, err))
+		}
+		wb.WriteString("  <" + name + ">")
+		wb.WriteString(content)
+		wb.WriteString("</" + name + ">\n")
+	}
 	return nil
 }
 
-// encodeTextureConfig intentionally emits an empty <texture-config> wrapper and
-// ignores its argument. Real Worldographer 2025 samples leave <texture-config>
-// empty: the element carries only whitespace chardata and no child elements
-// (verified in issue #4, guarded by TestW2025ConfigSectionsEmpty). Dropping the
-// (empty) decoded content here is therefore lossless. If a future sample ever
-// populates this section, the fix is to switch the corresponding schema.go field
-// from `xml:",chardata"` to `xml:",innerxml"` and implement this encoder to emit
-// the preserved inner XML.
-func encodeTextureConfig(textureConfig []*wxx.TextureConfig_t, wb *bytes.Buffer) error {
-	wb.WriteString("  <texture-config>\n")
-	wb.WriteString("  </texture-config>\n")
-	return nil
+// wellFormedFragment reports whether s parses as XML element content: balanced
+// tags, quoted attributes, known entities.
+func wellFormedFragment(s string) error {
+	d := xml.NewDecoder(strings.NewReader("<f>" + s + "</f>"))
+	for {
+		_, err := d.Token()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+	}
 }
 
 func encodeTextConfig(textConfig *wxx.TextConfig_t, wb *bytes.Buffer) error {
