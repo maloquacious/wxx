@@ -5,6 +5,7 @@ package xmlio_test
 import (
 	"bytes"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -239,8 +240,8 @@ func TestW2025CoverageMatrix(t *testing.T) {
 		t.Errorf("%s: ExtraTerrain.MapLayers[0] placement count drifted across round-trip: %d -> %d", ns, want, got)
 	}
 
-	// config no-op(intentional) sub-sections must stay empty after round-trip.
-	assertConfigSectionsEmpty(t, ns, p2)
+	// verbatim config sub-sections must survive the round-trip (issue #164).
+	assertConfigSectionsPreserved(t, ns, p1, p2)
 
 	// ---- Real sample: exercises the blank-but-rich elements ----
 	s1, err := decodeFile(t, sample2025_206)
@@ -336,8 +337,8 @@ func TestW2025CoverageMatrix(t *testing.T) {
 		t.Errorf("sample: expected non-empty shapestyles")
 	}
 
-	// config no-op(intentional) sub-sections must stay empty after round-trip.
-	assertConfigSectionsEmpty(t, "sample", s2)
+	// verbatim config sub-sections must survive the round-trip (issue #164).
+	assertConfigSectionsPreserved(t, "sample", s1, s2)
 }
 
 // TestW2025LabelStyleDropShadowGate guards the presence-gated emission of the
@@ -419,30 +420,35 @@ func textConfig(t *testing.T, label string, doc []byte) []byte {
 	return doc[start:end]
 }
 
-// assertConfigSectionsEmpty mirrors TestW2025ConfigSectionsEmpty's intent: the
-// terrain-config / feature-config / texture-config encoders are documented
-// no-op(intentional) sections that emit an empty wrapper. After a round-trip each
-// decoded entry must carry no non-whitespace content, so an accidental change to
-// that behavior trips.
-func assertConfigSectionsEmpty(t *testing.T, label string, m *wxx.Map_t) {
+// assertConfigSectionsPreserved checks that the terrain-config / feature-config
+// / texture-config content, which the codec keeps verbatim (issue #164), comes
+// back from a round-trip unchanged.
+func assertConfigSectionsPreserved(t *testing.T, label string, before, after *wxx.Map_t) {
 	t.Helper()
-	if m.Configuration == nil {
+	if before.Configuration == nil || after.Configuration == nil {
 		t.Fatalf("%s: Configuration = nil, want non-nil", label)
 	}
-	for i, e := range m.Configuration.TerrainConfig {
-		if got := strings.TrimSpace(e.InnerText); got != "" {
-			t.Errorf("%s: TerrainConfig[%d] unexpected content after round-trip: %q", label, i, got)
-		}
+	var b, a []string
+	for _, e := range before.Configuration.TerrainConfig {
+		b = append(b, "terrain:"+e.InnerXML)
 	}
-	for i, e := range m.Configuration.FeatureConfig {
-		if got := strings.TrimSpace(e.InnerText); got != "" {
-			t.Errorf("%s: FeatureConfig[%d] unexpected content after round-trip: %q", label, i, got)
-		}
+	for _, e := range before.Configuration.FeatureConfig {
+		b = append(b, "feature:"+e.InnerXML)
 	}
-	for i, e := range m.Configuration.TextureConfig {
-		if got := strings.TrimSpace(e.InnerText); got != "" {
-			t.Errorf("%s: TextureConfig[%d] unexpected content after round-trip: %q", label, i, got)
-		}
+	for _, e := range before.Configuration.TextureConfig {
+		b = append(b, "texture:"+e.InnerXML)
+	}
+	for _, e := range after.Configuration.TerrainConfig {
+		a = append(a, "terrain:"+e.InnerXML)
+	}
+	for _, e := range after.Configuration.FeatureConfig {
+		a = append(a, "feature:"+e.InnerXML)
+	}
+	for _, e := range after.Configuration.TextureConfig {
+		a = append(a, "texture:"+e.InnerXML)
+	}
+	if !reflect.DeepEqual(b, a) {
+		t.Errorf("%s: config sections changed across round-trip:\n before %q\n after  %q", label, b, a)
 	}
 }
 

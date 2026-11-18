@@ -173,11 +173,12 @@ type Feature struct {
 	InnerText string   `xml:",chardata"`
 }
 
+// FeatureConfig keeps its content as raw inner XML (issue #164); see
+// TerrainConfig_t.
 type FeatureConfig struct {
-	unmodeled_t
+	unmodeledAttrs_t
 
-	// elements
-	InnerText string `xml:",chardata"`
+	InnerXML string `xml:",innerxml"`
 }
 
 type Features struct {
@@ -544,11 +545,14 @@ type Shapes_t struct {
 	Shapes []Shape_t `xml:"shape"`
 }
 
+// TerrainConfig_t keeps its content as raw inner XML (issue #164). A map that
+// uses a custom or edited terrain carries <terraintype> children here, which wxx
+// does not model and must not refuse, so the struct embeds only the attribute
+// catch-all: an unknown attribute on <terrain-config> itself is still refused.
 type TerrainConfig_t struct {
-	unmodeled_t
+	unmodeledAttrs_t
 
-	// elements
-	InnerText string `xml:",chardata"`
+	InnerXML string `xml:",innerxml"`
 }
 
 type TerrainMap_t struct {
@@ -566,11 +570,12 @@ type TextConfig_t struct {
 	InnerText   string         `xml:",chardata"`
 }
 
+// TextureConfig_t keeps its content as raw inner XML (issue #164); see
+// TerrainConfig_t.
 type TextureConfig_t struct {
-	unmodeled_t
+	unmodeledAttrs_t
 
-	// elements
-	InnerText string `xml:",chardata"`
+	InnerXML string `xml:",innerxml"`
 }
 
 type Tiles_t struct {

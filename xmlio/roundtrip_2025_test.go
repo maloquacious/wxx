@@ -313,58 +313,6 @@ func requireNotesShapesContent(t *testing.T, m *wxx.Map_t) {
 	}
 }
 
-// TestW2025ConfigSectionsEmpty guards the intentional no-op encoders for the
-// <terrain-config>, <feature-config>, and <texture-config> sections
-// (encodeTerrainConfig / encodeFeatureConfig / encodeTextureConfig in
-// xmlio/internal/v1_06/encode.go). Those encoders emit an empty wrapper and drop their
-// decoded content; that is only lossless because real W2025 maps leave these
-// sections empty. This test documents-in-code that invariant by asserting that
-// every decoded config entry carries no non-whitespace content, for both the
-// 2.06 blank sample and the 2.07 notes-shapes map. If a future fixture ever populates
-// one of these sections, this test fails loudly, signaling that the encoders
-// (and the corresponding schema.go `xml:",chardata"` fields) must be upgraded to
-// preserve inner XML.
-func TestW2025ConfigSectionsEmpty(t *testing.T) {
-	sampleMap, err := decodeFile(t, sample2025_206)
-	if err != nil {
-		t.Fatalf("decode %s: %v", sample2025_206, err)
-	}
-	notesShapesMap, err := decodeFile(t, sample2025_207NotesShapes)
-	if err != nil {
-		t.Fatalf("decode %s: %v", sample2025_207NotesShapes, err)
-	}
-
-	for _, tc := range []struct {
-		name string
-		m    *wxx.Map_t
-	}{
-		{"2.07-notes-shapes", notesShapesMap},
-		{"real-sample", sampleMap},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			cfg := tc.m.Configuration
-			if cfg == nil {
-				t.Fatalf("Configuration is nil")
-			}
-			for i, e := range cfg.TerrainConfig {
-				if got := strings.TrimSpace(e.InnerText); got != "" {
-					t.Errorf("TerrainConfig[%d] has unexpected non-whitespace content: %q", i, got)
-				}
-			}
-			for i, e := range cfg.FeatureConfig {
-				if got := strings.TrimSpace(e.InnerText); got != "" {
-					t.Errorf("FeatureConfig[%d] has unexpected non-whitespace content: %q", i, got)
-				}
-			}
-			for i, e := range cfg.TextureConfig {
-				if got := strings.TrimSpace(e.InnerText); got != "" {
-					t.Errorf("TextureConfig[%d] has unexpected non-whitespace content: %q", i, got)
-				}
-			}
-		})
-	}
-}
-
 // decodeFile runs the full public decode pipeline (gunzip -> UTF-16BE -> XML)
 // on a .wxx file.
 func decodeFile(t *testing.T, path string) (*wxx.Map_t, error) {
