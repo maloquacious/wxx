@@ -7,11 +7,25 @@ stub encoder hid behind a passing round-trip test.
 
 "**implemented**" here means the round-trip **at the `Map_t` level** is proven
 by the named test: decode -> encode -> decode reproduces the same in-memory
-model. It does **not** promise byte-for-byte on-disk fidelity. Fields that are
-present in real Worldographer output but have no field in `schema.go` would be
-silently dropped on decode; because encode never re-emits them either, the
-`Map_t` round-trip still passes while the on-disk data is lost -- that class of
-gap is exactly what this matrix exists to surface.
+model. It does **not** promise byte-for-byte on-disk fidelity. Before #161, an
+attribute, element or text in real Worldographer output with no field in
+`schema.go` was silently dropped on decode; because encode never re-emitted it
+either, the `Map_t` round-trip still passed while the on-disk data was lost.
+
+**Unmodeled content is refused (#161).** Every schema struct embeds
+`unmodeled_t` (and, when it keeps no text, `unmodeledText_t`), whose catch-alls
+`xml.Unmarshal` fills with whatever the struct does not declare. Decode walks the
+result and refuses the first unmodeled attribute, child element or non-whitespace
+text with `ErrUnmodeledContent`, naming its path (`map/labels[1]/label[3]:
+unmodeled attribute @lineSpacing`). It costs no second parse (about 1% on the
+1920x1080 benchmark maps). Every tracked W2025 fixture decodes under it
+(**EveryW2025FixtureHasOnlyModeledContent**); **DecodeRefusesUnmodeledContent**
+and **DecodeRefusesUnmodeledExtraTerrain** pin the refusals. The first content
+it refuses in practice is Worldographer 2.09's label `@lineSpacing`,
+`@textAlignment` and labelstyle `@lineSpacing`, until #161 models them. This
+covers DECODE only: content a schema struct does keep can still be dropped by
+an encoder that does not write it (the **stub** and **no-op(intentional)** rows
+below).
 
 The six W2025-native fields that were formerly dropped (`maplayer/@opacity`,
 `labelstyle/@dropShadow*`, `shapestyle/@lineCap`+`@lineJoin`,
@@ -88,7 +102,7 @@ Tests referenced (in `xmlio/roundtrip_2025_test.go` unless noted, package
 | configuration `<text-config>` / `<labelstyle>` | implemented | implemented | RoundTrip, PublicRoundTrip, CoverageMatrix, **AttrsMatchSource**, **BlackBackgroundIsNotNull**, **IntegerAttributeSpelling** | 7 labelstyles in sample round-trip; `dropShadowColor` (nullable string) / `dropShadowRadius` / `dropShadowSpread` now modeled (#11). **Both nullable colours are exact as of #62**: `backgroundColor="null"` used to come back as `"0.0,0.0,0.0,1.0"` on every label style of every file this codec wrote, because `decodeRgba` folded `"null"` and opaque black into the same nil and `rgbas` rendered nil as black. Decode now uses `decodeZeroableRgba` so nil means `"null"` and nothing else, and encode uses `rgbaOrNull`; `rgbans` was rejected as the fix because it decides on the formatted string and would have laundered a genuine opaque black into `"null"` instead. `TestW2025LabelStyleAttrsMatchSource` compares every attribute against the source document — the audit the classic codec had and W2025 lacked, which is why the structural round-trip tests could not see this — and `TestW2025LabelStyleBlackBackgroundIsNotNull` synthesizes the black case no fixture carries. `dropShadowRadius` and `dropShadowSpread` are **integers on disk** and are now written as such (issue #64); they were emitted `"0.0"`, which Worldographer refuses to load. The element is byte-identical to the source apart from inter-attribute whitespace. |
 | configuration `<shape-config>` / `<shapestyle>` | implemented | implemented | RoundTrip, PublicRoundTrip, CoverageMatrix, **BlackIsNotNull** | 7 shapestyles in sample round-trip; `lineCap` / `lineJoin` now modeled (#11). The nullable `@fillPaint`, `@dscolor` and `@insColor` decode with `decodeZeroableRgba` and encode with `rgbaOrNull` (#99), so an opaque black is no longer written as `"null"`. `@strokePaint` is never `"null"` and keeps `decodeRgba`/`rgbas`, which is lossless for it. |
 | `<blurTerrainBG>` | implemented | implemented | CoverageMatrix | Optional top-level element modeled as `*BlurTerrainBG_t` (nil = absent); 6 attrs round-trip (#11). |
-| `<extraTerrain>` (+ `<mapLayer>` / `<terrainAndLocation>`) | implemented; **lossy** for a resource outside 0..100 | implemented | ExtraTerrainMatchesSource, ExtraTerrainRoundTrip, ExtraTerrainDecodeRefusals, **ExtraTerrainResourceClampedOnDecode**, **ExtraTerrainClampIsWrittenBack**, **FixturesReportNoClamps**, **ExtraTerrainResourceOutOfRangeRefused** (in `xmlio/extraterrain_clamp_test.go`) | Decode **clamps** a `@resources` value outside 0..100 and reports it; encode refuses one. See *Values clamped on decode* below (#124). Modeled structurally by #34 as `ExtraTerrain_t` → `[]ExtraTerrainLayer_t` → `[]TerrainAndLocation_t` (terrain name, integer elevation, icy, GM-only, resources, Override BG as `CustomBackgroundColor`, and `location` kept as the raw x,y point). `@bgColor` (#126) sits between `@resources` and `@location` and is written only when Override BG is set: `testdata/2025-2.08-13x11-941577-extraterrain-bgcolor.wxx` has magenta, none, and opaque black, which decodes as a colour, not nil (#99), and is pinned by **ExtraTerrainBgColor**. Before #126 the decoder refused any map using it, as an unmodeled attribute. `bgColor="null"` is refused, since nil would omit it on encode; no fixture has one. Encode reproduces the source byte for byte on all three samples. Decode refuses any child element or attribute it does not model instead of dropping it, because the element used to be carried verbatim. `…-blank.wxx` carries an empty container, `…-layers.wxx` one placement; multi-layer shapes are synthesized. |
+| `<extraTerrain>` (+ `<mapLayer>` / `<terrainAndLocation>`) | implemented; **lossy** for a resource outside 0..100 | implemented | ExtraTerrainMatchesSource, ExtraTerrainRoundTrip, ExtraTerrainDecodeRefusals, **ExtraTerrainResourceClampedOnDecode**, **ExtraTerrainClampIsWrittenBack**, **FixturesReportNoClamps**, **ExtraTerrainResourceOutOfRangeRefused** (in `xmlio/extraterrain_clamp_test.go`) | Decode **clamps** a `@resources` value outside 0..100 and reports it; encode refuses one. See *Values clamped on decode* below (#124). Modeled structurally by #34 as `ExtraTerrain_t` → `[]ExtraTerrainLayer_t` → `[]TerrainAndLocation_t` (terrain name, integer elevation, icy, GM-only, resources, Override BG as `CustomBackgroundColor`, and `location` kept as the raw x,y point). `@bgColor` (#126) sits between `@resources` and `@location` and is written only when Override BG is set: `testdata/2025-2.08-13x11-941577-extraterrain-bgcolor.wxx` has magenta, none, and opaque black, which decodes as a colour, not nil (#99), and is pinned by **ExtraTerrainBgColor**. Before #126 the decoder refused any map using it, as an unmodeled attribute. `bgColor="null"` is refused, since nil would omit it on encode; no fixture has one. Encode reproduces the source byte for byte on all three samples. Decode refuses any child element or attribute it does not model instead of dropping it, because the element used to be carried verbatim; since #161 that is the document-wide check (`ErrUnmodeledContent`) rather than one of its own. `…-blank.wxx` carries an empty container, `…-layers.wxx` one placement; multi-layer shapes are synthesized. |
 
 ## Integer attributes
 

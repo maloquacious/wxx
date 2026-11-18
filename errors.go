@@ -63,6 +63,7 @@ const (
 	ErrUnknownMapLayer             = Error("unknown map layer")
 	ErrUnknownVersion              = Error("unknown version")
 	ErrUnknownXMLHeader            = Error("unknown xml header")
+	ErrUnmodeledContent            = Error("unmodeled content")
 	ErrUnmodeledStubLoss           = Error("target cannot express an unmodeled stub")
 	ErrUnparsedDottedVersion       = Error("unparsed dotted version")
 	ErrUnsupportedHexOrientation   = Error("unsupported hex orientation")

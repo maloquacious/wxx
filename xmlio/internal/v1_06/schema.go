@@ -13,6 +13,9 @@ import (
 
 // XMLSchema defines the structure for reading a Worldographer file with the H2025v1 XML Schema
 type XMLSchema struct {
+	unmodeled_t
+	unmodeledText_t
+
 	XMLName xml.Name `xml:"map"`
 
 	// attributes
@@ -65,6 +68,9 @@ type XMLSchema struct {
 
 // BlurTerrainBG_t is the on-disk <blurTerrainBG> element (W2025-native).
 type BlurTerrainBG_t struct {
+	unmodeled_t
+	unmodeledText_t
+
 	Blur        bool    `xml:"blur,attr"`
 	TopBleed    float64 `xml:"topBleed,attr"`
 	BottomBleed float64 `xml:"bottomBleed,attr"`
@@ -76,45 +82,45 @@ type BlurTerrainBG_t struct {
 // ExtraTerrain_t is the on-disk <extraTerrain> element (W2025-native): terrain
 // placed on map layers other than the base tile (issue #34).
 //
-// Other captures any child element this schema does not model, and each level
-// also captures unmodeled attributes. Decode refuses a document where either is
-// non-empty: before #34 this element was preserved verbatim, so modeling it must
-// not start silently dropping content the model does not understand.
+// Like every schema struct, each level refuses unmodeled content (see
+// unmodeled_t); #34 introduced that rule here, before #161 extended it to the
+// whole document.
 type ExtraTerrain_t struct {
+	unmodeled_t
+	unmodeledText_t
+
 	MapLayers []ExtraTerrainLayer_t `xml:"mapLayer"`
-	Other     []unmodeledElement_t  `xml:",any"`
 }
 
 // ExtraTerrainLayer_t is <extraTerrain>/<mapLayer name="...">.
 type ExtraTerrainLayer_t struct {
-	Name       string                 `xml:"name,attr"`
-	Terrain    []TerrainAndLocation_t `xml:"terrainAndLocation"`
-	OtherAttrs []xml.Attr             `xml:",any,attr"`
-	Other      []unmodeledElement_t   `xml:",any"`
+	unmodeled_t
+	unmodeledText_t
+
+	Name    string                 `xml:"name,attr"`
+	Terrain []TerrainAndLocation_t `xml:"terrainAndLocation"`
 }
 
 // TerrainAndLocation_t is <mapLayer>/<terrainAndLocation>. Resources and
 // Location are compound values ("Z" or seven comma-separated integers; "x,y"),
 // parsed by the decoder rather than here.
 type TerrainAndLocation_t struct {
-	Name       string               `xml:"name,attr"`
-	Elevation  Int_t                `xml:"elevation,attr"`
-	Icy        bool                 `xml:"icy,attr"`
-	GmOnly     bool                 `xml:"gmOnly,attr"`
-	Resources  string               `xml:"resources,attr"`
-	BgColor    string               `xml:"bgColor,attr"` // absent reads as ""; issue #126
-	Location   string               `xml:"location,attr"`
-	OtherAttrs []xml.Attr           `xml:",any,attr"`
-	Other      []unmodeledElement_t `xml:",any"`
-}
+	unmodeled_t
+	unmodeledText_t
 
-// unmodeledElement_t records only the name of a child element a schema struct
-// does not model, so a decoder can refuse it by name.
-type unmodeledElement_t struct {
-	XMLName xml.Name
+	Name      string `xml:"name,attr"`
+	Elevation Int_t  `xml:"elevation,attr"`
+	Icy       bool   `xml:"icy,attr"`
+	GmOnly    bool   `xml:"gmOnly,attr"`
+	Resources string `xml:"resources,attr"`
+	BgColor   string `xml:"bgColor,attr"` // absent reads as ""; issue #126
+	Location  string `xml:"location,attr"`
 }
 
 type Configuration_t struct {
+	unmodeled_t
+	unmodeledText_t
+
 	// elements
 	TerrainConfig []TerrainConfig_t `xml:"terrain-config"`
 	FeatureConfig []FeatureConfig   `xml:"feature-config"`
@@ -124,6 +130,8 @@ type Configuration_t struct {
 }
 
 type Feature struct {
+	unmodeled_t
+
 	// attributes
 	Type             string  `xml:"type,attr"`
 	Rotate           float64 `xml:"rotate,attr"`
@@ -153,6 +161,9 @@ type Feature struct {
 
 	// elements
 	Location struct {
+		unmodeled_t
+		unmodeledText_t
+
 		// attributes
 		ViewLevel string  `xml:"viewLevel,attr"`
 		X         float64 `xml:"x,attr"`
@@ -163,16 +174,24 @@ type Feature struct {
 }
 
 type FeatureConfig struct {
+	unmodeled_t
+
 	// elements
 	InnerText string `xml:",chardata"`
 }
 
 type Features struct {
+	unmodeled_t
+	unmodeledText_t
+
 	// elements
 	Features []Feature `xml:"feature"`
 }
 
 type GridAndNumbering struct {
+	unmodeled_t
+	unmodeledText_t
+
 	// attributes
 	Color0                      string  `xml:"color0,attr"`
 	Color1                      string  `xml:"color1,attr"`
@@ -208,6 +227,8 @@ type GridAndNumbering struct {
 }
 
 type Information_t struct {
+	unmodeled_t
+
 	// attributes
 	Uuid       string  `xml:"uuid,attr"`
 	Type       string  `xml:"type,attr"`
@@ -229,12 +250,16 @@ type Information_t struct {
 }
 
 type Informations_t struct {
+	unmodeled_t
+
 	// elements
 	Informations []Information_t `xml:"information"`
 	InnerText    string          `xml:",chardata"`
 }
 
 type Label_t struct {
+	unmodeled_t
+
 	// attributes
 	MapLayer        string  `xml:"mapLayer,attr"`
 	Style           string  `xml:"style,attr"`
@@ -264,11 +289,17 @@ type Label_t struct {
 }
 
 type Labels_t struct {
+	unmodeled_t
+	unmodeledText_t
+
 	// elements
 	Labels []Label_t `xml:"label"`
 }
 
 type LabelStyle_t struct {
+	unmodeled_t
+	unmodeledText_t
+
 	// attributes
 	Name            string  `xml:"name,attr"`
 	FontFace        string  `xml:"fontFace,attr"`
@@ -287,6 +318,9 @@ type LabelStyle_t struct {
 }
 
 type Location_t struct {
+	unmodeled_t
+	unmodeledText_t
+
 	// attributes
 	ViewLevel string  `xml:"viewLevel,attr"`
 	X         float64 `xml:"x,attr"`
@@ -295,6 +329,9 @@ type Location_t struct {
 }
 
 type MapKey_t struct {
+	unmodeled_t
+	unmodeledText_t
+
 	// attributes
 	PositionX         float64 `xml:"positionx,attr"`
 	PositionY         float64 `xml:"positiony,attr"`
@@ -322,6 +359,9 @@ type MapKey_t struct {
 }
 
 type MapLayer_t struct {
+	unmodeled_t
+	unmodeledText_t
+
 	// attributes
 	Name      string  `xml:"name,attr"`
 	IsVisible bool    `xml:"isVisible,attr"`
@@ -331,6 +371,9 @@ type MapLayer_t struct {
 // Note_t is <note> as Worldographer 2.06, 2.07 and 2.08 write it (issue #94).
 // @key repeats the <location> as "<viewLevel>,<x>,<y>".
 type Note_t struct {
+	unmodeled_t
+	unmodeledText_t
+
 	// attributes
 	Key               string `xml:"key,attr"`
 	OriginalViewLevel string `xml:"originalViewLevel,attr"`
@@ -344,18 +387,32 @@ type Note_t struct {
 	Title             string `xml:"title,attr"`
 
 	// elements
-	NoteText string          `xml:"notetext"`
+	NoteText NoteText_t      `xml:"notetext"`
 	Location *NoteLocation_t `xml:"location"`
+}
+
+// NoteText_t is <note>/<notetext>. It is a struct, not a string, so that an
+// attribute on it is refused rather than ignored (issue #161).
+type NoteText_t struct {
+	unmodeled_t
+
+	Text string `xml:",chardata"`
 }
 
 // NoteLocation_t is <note>/<location>. Unlike a label's, it has no @scale.
 type NoteLocation_t struct {
+	unmodeled_t
+	unmodeledText_t
+
 	ViewLevel string  `xml:"viewLevel,attr"`
 	X         float64 `xml:"x,attr"`
 	Y         float64 `xml:"y,attr"`
 }
 
 type Notes_t struct {
+	unmodeled_t
+	unmodeledText_t
+
 	Notes []Note_t `xml:"note"`
 }
 
@@ -365,6 +422,9 @@ type Notes_t struct {
 // (x="2700") and a path's with a decimal point (x="1950.0"). decodeShapes
 // parses them and records the spelling in wxx.Point_t.IntegerXY (issue #94).
 type Point_t struct {
+	unmodeled_t
+	unmodeledText_t
+
 	// attributes
 	Type string `xml:"type,attr"`
 	X    string `xml:"x,attr"`
@@ -378,6 +438,9 @@ type Point_t struct {
 }
 
 type Shape_t struct {
+	unmodeled_t
+	unmodeledText_t
+
 	// attributes
 	BbHeight              float64 `xml:"bbHeight,attr"`
 	BbIterations          int     `xml:"bbIterations,attr"`
@@ -428,12 +491,17 @@ type Shape_t struct {
 }
 
 type ShapeConfig_t struct {
+	unmodeled_t
+
 	// elements
 	ShapeStyles []ShapeStyle_t `xml:"shapestyle"`
 	InnerText   string         `xml:",chardata"`
 }
 
 type ShapeStyle_t struct {
+	unmodeled_t
+	unmodeledText_t
+
 	// attributes
 	BbHeight      float64 `xml:"bbHeight,attr"`
 	BbIterations  int     `xml:"bbIterations,attr"`
@@ -469,32 +537,46 @@ type ShapeStyle_t struct {
 }
 
 type Shapes_t struct {
+	unmodeled_t
+	unmodeledText_t
+
 	// elements
 	Shapes []Shape_t `xml:"shape"`
 }
 
 type TerrainConfig_t struct {
+	unmodeled_t
+
 	// elements
 	InnerText string `xml:",chardata"`
 }
 
 type TerrainMap_t struct {
+	unmodeled_t
+
 	// elements
 	InnerText string `xml:",chardata"`
 }
 
 type TextConfig_t struct {
+	unmodeled_t
+
 	// elements
 	LabelStyles []LabelStyle_t `xml:"labelstyle"`
 	InnerText   string         `xml:",chardata"`
 }
 
 type TextureConfig_t struct {
+	unmodeled_t
+
 	// elements
 	InnerText string `xml:",chardata"`
 }
 
 type Tiles_t struct {
+	unmodeled_t
+	unmodeledText_t
+
 	// attributes
 	ViewLevel string `xml:"viewLevel,attr"`
 	TilesWide int    `xml:"tilesWide,attr"` // number of columns of tiles
@@ -505,6 +587,8 @@ type Tiles_t struct {
 }
 
 type TileRow_t struct {
+	unmodeled_t
+
 	// elements
 	InnerText string `xml:",chardata"`
 }

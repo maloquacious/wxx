@@ -4,7 +4,6 @@ package v1_06
 
 import (
 	"bytes"
-	"encoding/xml"
 	"errors"
 	"fmt"
 	"strconv"
@@ -18,10 +17,9 @@ import (
 // container decodes to a non-nil ExtraTerrain_t with no layers, so it is written
 // back.
 //
-// It refuses content the schema does not model -- an unknown child element or
-// attribute at any level -- rather than dropping it. Before #34 this element
-// was carried verbatim, so anything in it survived a round trip; modeling it
-// must not quietly change that for content nobody has seen yet.
+// Content the schema does not model -- an unknown child element or attribute
+// at any level -- has already been refused by refuseUnmodeledContent (issue
+// #161), the document-wide form of the rule #34 introduced here.
 //
 // Resource values outside 0..100 are clamped, not refused, and each one is
 // appended to clamps; see decodeExtraTerrainResources.
@@ -29,21 +27,12 @@ func decodeExtraTerrain(src *ExtraTerrain_t, w *wxx.Map_t, clamps *[]Clamp_t) er
 	if src == nil {
 		return nil
 	}
-	if err := refuseUnmodeled("map/extraTerrain", nil, src.Other); err != nil {
-		return err
-	}
 	w.ExtraTerrain = &wxx.ExtraTerrain_t{}
 	for i, layer := range src.MapLayers {
 		path := fmt.Sprintf("map/extraTerrain/mapLayer[@name=%q]", layer.Name)
-		if err := refuseUnmodeled(path, layer.OtherAttrs, layer.Other); err != nil {
-			return err
-		}
 		wLayer := &wxx.ExtraTerrainLayer_t{Name: layer.Name}
 		for j, tl := range layer.Terrain {
 			tlPath := path + "/terrainAndLocation"
-			if err := refuseUnmodeled(tlPath, tl.OtherAttrs, tl.Other); err != nil {
-				return err
-			}
 			resources, clamped, err := decodeExtraTerrainResources(tl.Resources)
 			if err != nil {
 				return fmt.Errorf("%s/@resources: %w", tlPath, err)
@@ -74,20 +63,6 @@ func decodeExtraTerrain(src *ExtraTerrain_t, w *wxx.Map_t, clamps *[]Clamp_t) er
 			})
 		}
 		w.ExtraTerrain.MapLayers = append(w.ExtraTerrain.MapLayers, wLayer)
-	}
-	return nil
-}
-
-// refuseUnmodeled reports an error naming the first unmodeled attribute or
-// child element found at path.
-func refuseUnmodeled(path string, attrs []xml.Attr, elements []unmodeledElement_t) error {
-	if len(attrs) != 0 {
-		return errors.Join(wxx.ErrInvalidXML, fmt.Errorf("%s: unmodeled attribute @%s=%q; wxx does not understand it and will not drop it silently (issue #34)",
-			path, attrs[0].Name.Local, attrs[0].Value))
-	}
-	if len(elements) != 0 {
-		return errors.Join(wxx.ErrInvalidXML, fmt.Errorf("%s: unmodeled child element <%s>; wxx does not understand it and will not drop it silently (issue #34)",
-			path, elements[0].XMLName.Local))
 	}
 	return nil
 }
