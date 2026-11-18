@@ -42,6 +42,8 @@ var versionIdentitySamples = []struct {
 	{"w2025 2.08 tile-resources", sample2025_208TileResources, "2.08", 2, 8, "1.06"},
 	{"w2025 2.08 extraterrain-bgcolor", sample2025_208ExtraTerrainBgColor, "2.08", 2, 8, "1.06"},
 	{"w2025 2.08 river-lines", sample2025_208RiverLines, "2.08", 2, 8, "1.06"},
+	{"w2025 2.09 blank", sample2025_209Blank, "2.09", 2, 9, "1.06"},
+	{"w2025 2.09 labels", sample2025_209Labels, "2.09", 2, 9, "1.06"},
 }
 
 // TestVersionIdentity asserts that decoding populates MetaData.Version with the
@@ -115,12 +117,13 @@ func TestVersionIdentityPaddingSurvivesDecode(t *testing.T) {
 	for _, tc := range []struct {
 		name    string
 		path    string
-		wantApp string // rendering the components would give "2.6", "2.7" or "2.8"
+		wantApp string // rendering the components would give "2.6", "2.7", "2.8" or "2.9"
 	}{
 		{"2.06/1.06 blank", sample2025_206, "2.06"},
 		{"2.06/1.06 layers", sample2025_206LayersBeta, "2.06"},
 		{"2.07/1.06 blank", sample2025_207Blank, "2.07"},
 		{"2.08/1.06 blank", sample2025_208Blank, "2.08"},
+		{"2.09/1.06 blank", sample2025_209Blank, "2.09"},
 	} {
 		wantApp := tc.wantApp
 		// Guard against a vacuous pass: this test only proves anything if the

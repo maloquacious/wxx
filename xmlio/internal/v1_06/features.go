@@ -84,6 +84,9 @@ func decodeFeatures(src Features, w *wxx.Map_t) error {
 				DropShadowColor:  mFeature.Label.DropShadowColor,
 				DropShadowRadius: mFeature.Label.DropShadowRadius,
 				DropShadowSpread: mFeature.Label.DropShadowSpread,
+
+				LineSpacing:   mFeature.Label.LineSpacing,
+				TextAlignment: mFeature.Label.TextAlignment,
 			}
 			if f.Label.Color, err = decodeRgba(mFeature.Label.Color); err != nil {
 				return fmt.Errorf("feature.label.color: %w", err)
@@ -107,10 +110,10 @@ func decodeFeatures(src Features, w *wxx.Map_t) error {
 }
 
 // add features
-func encodeFeatures(features []*wxx.Feature_t, wb *bytes.Buffer) error {
+func encodeFeatures(features []*wxx.Feature_t, textLayout bool, wb *bytes.Buffer) error {
 	wb.WriteString("<features>\n")
 	for _, feature := range features {
-		if err := encodeFeature(feature, wb); err != nil {
+		if err := encodeFeature(feature, textLayout, wb); err != nil {
 			return err
 		}
 	}
@@ -118,7 +121,9 @@ func encodeFeatures(features []*wxx.Feature_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeFeature(feature *wxx.Feature_t, wb *bytes.Buffer) error {
+// encodeFeature writes one <feature>. textLayout is passed through to its inline
+// label; see encodeLabel.
+func encodeFeature(feature *wxx.Feature_t, textLayout bool, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf("<feature"))
 	wb.WriteString(fmt.Sprintf(" type=%s", xmlAttr(feature.Type)))
 	wb.WriteString(fmt.Sprintf(" rotate=%s", xmlAttr(floats(feature.Rotate))))
@@ -154,7 +159,7 @@ func encodeFeature(feature *wxx.Feature_t, wb *bytes.Buffer) error {
 		}
 	}
 	if feature.Label != nil {
-		if err := encodeFeatureLabel(feature.Label, wb); err != nil {
+		if err := encodeFeatureLabel(feature.Label, textLayout, wb); err != nil {
 			return err
 		}
 	}
@@ -171,6 +176,6 @@ func encodeFeatureLocation(location *wxx.FeatureLocation_t, wb *bytes.Buffer) er
 	return nil
 }
 
-func encodeFeatureLabel(label *wxx.Label_t, wb *bytes.Buffer) error {
-	return encodeLabel(label, wb)
+func encodeFeatureLabel(label *wxx.Label_t, textLayout bool, wb *bytes.Buffer) error {
+	return encodeLabel(label, textLayout, wb)
 }

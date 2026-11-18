@@ -12,7 +12,8 @@ import (
 // as the version it states (see sameVersionTarget), and asserts the <map> start
 // tag states every attribute the source does, with the same names in the same
 // order and the same values (issue #111). That includes the identity: every
-// fixture's version is registered (2.08 by issue #73), so none may differ.
+// fixture's version is registered (2.08 by issue #73, 2.09 by issue #162), so
+// none may differ.
 //
 // The bug this pins: floats reformatted an exponent spelling with %f, so the
 // 2.07 and 2.08 rows maps' vScrollbarPos="4.263256414560601E-14" came back as

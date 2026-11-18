@@ -51,12 +51,12 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) step 7.
 
 ## Repository layout
 
-- `wxx.go`, `map.go`, `errors.go`, `version.go` — top-level package: the `Map_t` type, the `Decoder` / `Encoder` interfaces, sentinel errors, and `Version()` (semver, currently `0.54.0-beta`).
+- `wxx.go`, `map.go`, `errors.go`, `version.go` — top-level package: the `Map_t` type, the `Decoder` / `Encoder` interfaces, sentinel errors, and `Version()` (semver, currently `0.55.0-beta`).
 - `xmlio/` — XML decode/encode entry points and shared transforms (`decoder.go`, `encoder.go`, `xml_header.go`).
   - `xmlio/internal/v1_06/` — H2025 (schema 1.06) decoder, encoder, and schema types; the only codec.
 - Hex-grid math (cube/offset coordinates, layouts) is the external module `github.com/maloquacious/hexg`; `Tile_t.Coords` is a `hexg.Hex`, and `Map_t.GridOrientation()` derives the offset layout from `HexOrientation`.
 - `cmd/` — CLI tools used to exercise the package: `bounds`, `copy`, `import`, `info`, `merge`, `resize`, `schema`, `version`, and the umbrella `wxx` tool (subcommands: `export`).
-- `schema/` — the wxx reference grammars, one per schema version (`1.06.rnc`), and a test that checks every 2.08 fixture against the grammar.
+- `schema/` — the wxx reference grammars, one per schema version (`1.06.rnc`), and a test that checks every 2.08 and 2.09 fixture against the grammar.
   See [schema/README.md](./schema/README.md).
 - `testdata/` — every fixture the test harness reads, flat in the root (e.g. `2025-2.06-13x11-941577-blank.wxx`).
   Tracked, so `go test ./...` runs from a clean clone.

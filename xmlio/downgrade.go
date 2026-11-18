@@ -5,8 +5,11 @@ package xmlio
 import (
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/maloquacious/wxx"
+	"github.com/maloquacious/wxx/xmlio/internal/v1_06"
 )
 
 // DroppedFeature_t is one thing the source map carries that the target release
@@ -46,22 +49,39 @@ func (d DroppedFeature_t) String() string {
 	return fmt.Sprintf("%s (%s): %s -- %s", d.Path, d.Field, d.Detail, d.Reason)
 }
 
-// downgradeLoss reports what m carries that the target SCHEMA cannot express, and
+// downgradeLoss reports what m carries that the target cannot express, and
 // errors if the loss is one the encoder cannot honestly describe.
 //
+// The target is named twice, by targetSchema and targetApp, and both are the
+// encoder's own bytes rather than anything read from m (issue #45).
 // targetSchema is the schema the target codec writes, verbatim map/@schema
-// ("1.06"). It is asked of the codec rather than of a registry entry because the
-// schema is a byte the encoder writes and the encoder owns it (issue #45).
+// ("1.06"), asked of the codec's declaration. targetApp is the application
+// version being written, verbatim map/@version ("2.08"), already resolved by the
+// registry to that codec.
 //
-// The schema is the right axis here even though it no longer selects the codec.
-// What can be expressed is a property of the FORMAT, not of the build that wrote
-// it: two application versions sharing a schema lose exactly the same things, so
-// keying this on the application version would restate one fact per build and
-// invite them to disagree.
+// The SCHEMA picks the arm, and the APPLICATION VERSION decides what the arm
+// reports. This used to be keyed on the schema alone, on the argument that what
+// can be expressed is a property of the format, so two application versions
+// sharing a schema lose exactly the same things. Issue #161 proved that false:
+// Worldographer 2.09 writes schema 1.06, as 2.08 does, and adds label/@lineSpacing,
+// label/@textAlignment and labelstyle/@lineSpacing, which 2.08 never writes. The
+// schema number did not change, so it cannot tell the two targets apart, and an
+// inventory keyed on it alone would report a 2.09 map written as 2.08 as
+// lossless while the encoder drops all three. What a target writes is a property
+// of the BUILD; the schema says only which codec writes it, and so which arm
+// owns the question.
+//
+// The arm does not restate which builds write what. It asks the codec that
+// writes the schema (v1_06.WritesLabelTextLayout), which is the same rule the
+// encoder obeys when it decides to write or omit the attributes, so the report
+// and the bytes cannot disagree. It asks the codec package directly, as the
+// decoder does, rather than through codec.Codec: the fact is about schema 1.06's
+// labels, and an interface method would make every codec answer a question that
+// belongs to one.
 //
 // The question is about the TARGET's expressiveness, not about which file m was
-// read from, so there is no source-schema argument here, and a map that never held
-// a field the target lacks reports nothing.
+// read from, so there is no source-version argument here, and a map that never
+// held a field the target lacks reports nothing.
 //
 // THE LOSS CONTRACT (settled under #32; ADR 0004 Decision 7 left it open):
 //
@@ -87,13 +107,10 @@ func (d DroppedFeature_t) String() string {
 // wxx.ErrUnmodeledStubLoss. The rule stands for the next stub.
 //
 // Today there is one format. The classic schema, whose inventory this function
-// used to hold, was removed with its codec (issue #103), and the one schema left
-// expresses everything Map_t models, so every supported target reports no loss.
-// The principle outlives the downgrade it was written for -- always tell the user
-// what they lose -- and the next entries are W2025-to-W2025: a release
-// registered on a schema that cannot express something Map_t models gets its
-// own arm here, reporting what that target drops. Issues #92 and #73 registered
-// 2.07 and 2.08 on schema 1.06 and found no such loss, so they added none.
+// used to hold, was removed with its codec (issue #103). The losses left are
+// W2025-to-W2025: the 2.09 label text-layout attributes, written to a 1.06
+// target that predates them (labelTextLayoutLoss). Issues #92, #73 and #162
+// registered 2.07, 2.08 and 2.09 and found nothing else 2.06 lacks.
 //
 // A schema with no arm is an ERROR, not "no loss". Losslessness is a claim made
 // per schema, by an arm that says so; a schema nobody has inventoried has made no
@@ -102,13 +119,138 @@ func (d DroppedFeature_t) String() string {
 // with an arm (TestNoLossOnSameReleaseTargets encodes through each of them), so
 // the error is reachable only by registering a codec without inventorying it --
 // which it then refuses on every encode, loudly, until someone does.
-func downgradeLoss(m *wxx.Map_t, targetSchema string) ([]DroppedFeature_t, error) {
+func downgradeLoss(m *wxx.Map_t, targetSchema, targetApp string) ([]DroppedFeature_t, error) {
 	switch targetSchema {
 	case "1.06":
-		// W2025 schema 1.06 expresses everything Map_t models: Map_t is built
-		// from it. Encoding to it is therefore not a downgrade, which
-		// TestNoLossOnSameReleaseTargets pins for every supported release.
-		return nil, nil
+		// W2025 schema 1.06 expresses everything Map_t models, Map_t being built
+		// from it, except that the builds before 2.09 write no label
+		// text-layout attributes.
+		writes, err := v1_06.WritesLabelTextLayout(targetApp)
+		if err != nil {
+			return nil, err
+		}
+		if writes {
+			return nil, nil
+		}
+		return labelTextLayoutLoss(m, targetApp), nil
 	}
 	return nil, errors.Join(wxx.ErrUnsupportedSchemaVersion, fmt.Errorf("schema %q: no loss inventory for this target, so the encoder cannot say what it would lose", targetSchema))
+}
+
+// labelTextLayoutLoss reports the 2.09 label text-layout attributes m carries,
+// for a target app that does not write them (issue #161). The encoder omits
+// them for such a target; this says what that costs.
+//
+// Only values that change how a label is drawn are reported, so that a real
+// loss is not buried under the defaults every 2.09 map states:
+//
+//   - lineSpacing, on a label or a label style, when present and not 1.0. 2.09
+//     omits it at 1.0, so a stated 1.0 is a default and its loss changes
+//     nothing.
+//   - textAlignment, on a label, when present and not CENTER. 2.09 writes it on
+//     every label and writes CENTER by default; reporting every CENTER would
+//     report a loss on every label of every 2.09 map.
+//
+// That CENTER and 1.0 are what the older builds draw is the maintainer's ruling
+// (2026-11-18), not an app check.
+//
+// There is one entry per path: standalone labels and feature labels are
+// separate paths and separate entries, and each entry's Detail counts the
+// labels and gives their values.
+func labelTextLayoutLoss(m *wxx.Map_t, app string) []DroppedFeature_t {
+	var labelSpacing, labelAlign, featureSpacing, featureAlign []string
+	for _, l := range m.Labels {
+		if l == nil {
+			continue
+		}
+		if l.LineSpacing != nil && *l.LineSpacing != 1.0 {
+			labelSpacing = append(labelSpacing, doubleString(*l.LineSpacing))
+		}
+		if l.TextAlignment != "" && l.TextAlignment != "CENTER" {
+			labelAlign = append(labelAlign, l.TextAlignment)
+		}
+	}
+	for _, f := range m.Features {
+		if f == nil || f.Label == nil {
+			continue
+		}
+		if f.Label.LineSpacing != nil && *f.Label.LineSpacing != 1.0 {
+			featureSpacing = append(featureSpacing, doubleString(*f.Label.LineSpacing))
+		}
+		if f.Label.TextAlignment != "" && f.Label.TextAlignment != "CENTER" {
+			featureAlign = append(featureAlign, f.Label.TextAlignment)
+		}
+	}
+	var styleSpacing []string
+	if m.Configuration != nil && m.Configuration.TextConfig != nil {
+		for _, s := range m.Configuration.TextConfig.LabelStyles {
+			if s != nil && s.LineSpacing != nil && *s.LineSpacing != 1.0 {
+				styleSpacing = append(styleSpacing, fmt.Sprintf("%s at %s", s.Name, doubleString(*s.LineSpacing)))
+			}
+		}
+	}
+
+	spacingReason := fmt.Sprintf("Worldographer %s writes no lineSpacing; 2.09 is the first build that does (issue #161)", app)
+	alignReason := fmt.Sprintf("Worldographer %s writes no textAlignment; 2.09 is the first build that does (issue #161)", app)
+	var out []DroppedFeature_t
+	add := func(path, field, detail, reason string) {
+		out = append(out, DroppedFeature_t{Path: path, Field: field, Detail: detail, Reason: reason})
+	}
+	if len(labelSpacing) > 0 {
+		add("map/labels/label/@lineSpacing", "Map_t.Labels[].LineSpacing", countedDetail("label", "at", labelSpacing), spacingReason)
+	}
+	if len(labelAlign) > 0 {
+		add("map/labels/label/@textAlignment", "Map_t.Labels[].TextAlignment", countedDetail("label", "aligned", labelAlign), alignReason)
+	}
+	if len(featureSpacing) > 0 {
+		add("map/features/feature/label/@lineSpacing", "Map_t.Features[].Label.LineSpacing", countedDetail("feature label", "at", featureSpacing), spacingReason)
+	}
+	if len(featureAlign) > 0 {
+		add("map/features/feature/label/@textAlignment", "Map_t.Features[].Label.TextAlignment", countedDetail("feature label", "aligned", featureAlign), alignReason)
+	}
+	if len(styleSpacing) > 0 {
+		add("map/configuration/text-config/labelstyle/@lineSpacing", "Map_t.Configuration.TextConfig.LabelStyles[].LineSpacing", countedDetail("label style", "", styleSpacing), spacingReason)
+	}
+	return out
+}
+
+// countedDetail renders n values as a Detail: "1 label at 2.0", "3 labels at
+// 2.0", or "3 labels: 2 at 2.0, 1 at 1.5" when they differ, values in the order
+// they first appear. With an empty verb the values are self-describing and are
+// listed rather than counted: "1 label style: City at 2.0".
+func countedDetail(noun, verb string, values []string) string {
+	nouns := noun
+	if len(values) != 1 {
+		nouns += "s"
+	}
+	if verb == "" {
+		return fmt.Sprintf("%d %s: %s", len(values), nouns, strings.Join(values, ", "))
+	}
+	var order []string
+	counts := map[string]int{}
+	for _, v := range values {
+		if counts[v] == 0 {
+			order = append(order, v)
+		}
+		counts[v]++
+	}
+	if len(order) == 1 {
+		return fmt.Sprintf("%d %s %s %s", len(values), nouns, verb, order[0])
+	}
+	parts := make([]string, 0, len(order))
+	for _, v := range order {
+		parts = append(parts, fmt.Sprintf("%d %s %s", counts[v], verb, v))
+	}
+	return fmt.Sprintf("%d %s: %s", len(values), nouns, strings.Join(parts, ", "))
+}
+
+// doubleString spells a value for a Detail as the file would ("2.0", "1.5"):
+// the shortest exact decimal, with ".0" on an integral one. It is for reading,
+// not for writing; the codec owns the on-disk spelling.
+func doubleString(f float64) string {
+	s := strconv.FormatFloat(f, 'g', -1, 64)
+	if !strings.ContainsAny(s, ".eEnN") { // not 2.5, 1e+21, NaN, Inf
+		s += ".0"
+	}
+	return s
 }

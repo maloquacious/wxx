@@ -23,9 +23,9 @@ const unmodeledFixture = "2025-2.08-13x11-941577-populated.wxx"
 // it is (issue #161). Before #161 each of these decoded and was dropped on the
 // next write without a word.
 //
-// The first three are the attributes Worldographer 2.09 writes (from the
-// application's string constants; no 2.09 fixture exists yet). Until #161
-// models them, a 2.09 map that states them is refused rather than losing them.
+// The cases used to start with the three attributes Worldographer 2.09 writes
+// (label @lineSpacing and @textAlignment, labelstyle @lineSpacing). #161 now
+// models them, so they decode (labels_209_test.go) and are no longer examples.
 func TestDecodeRefusesUnmodeledContent(t *testing.T) {
 	src, _ := readNotesFixture(t, unmodeledFixture)
 	src = bytes.TrimLeft(stripXMLDecl(src), "\n")
@@ -35,15 +35,6 @@ func TestDecodeRefusesUnmodeledContent(t *testing.T) {
 		from, to string
 		want     []string // substrings the error must contain
 	}{
-		{"2.09 label lineSpacing",
-			`<label  mapLayer="Features"`, `<label  lineSpacing="1.0" mapLayer="Features"`,
-			[]string{"/label[", "@lineSpacing"}},
-		{"2.09 label textAlignment",
-			`<label  mapLayer="Features"`, `<label  textAlignment="CENTER" mapLayer="Features"`,
-			[]string{"/label[", "@textAlignment"}},
-		{"2.09 labelstyle lineSpacing",
-			`<labelstyle name="Nation"`, `<labelstyle name="Nation" lineSpacing="1.0"`,
-			[]string{"map/configuration[1]/text-config[1]/labelstyle[1]", "@lineSpacing"}},
 		{"attribute on map",
 			`<map `, `<map futureAttr="x" `,
 			[]string{"map: unmodeled attribute @futureAttr"}},
@@ -132,7 +123,7 @@ func TestDecodeRefusesUnmodeledExtraTerrain(t *testing.T) {
 }
 
 // TestEveryW2025FixtureHasOnlyModeledContent: every tracked W2025 fixture
-// decodes under the #161 refusal, so nothing any 2.06, 2.07 or 2.08 save states
+// decodes under the #161 refusal, so nothing any 2.06, 2.07, 2.08 or 2.09 save states
 // is outside the schema.
 func TestEveryW2025FixtureHasOnlyModeledContent(t *testing.T) {
 	paths, err := filepath.Glob(filepath.Join("..", "testdata", "2025-*.wxx"))

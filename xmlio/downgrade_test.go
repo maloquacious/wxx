@@ -15,9 +15,10 @@ import (
 // classic downgrade inventory and the tests that derived it from the audit
 // harness went with the classic codec (issue #103). What is left is the
 // property the loss contract rests on for the one remaining format -- a target
-// reports no loss on content it can express -- and the place the next
-// inventory's tests go: W2025-to-W2025 loss, once one is proven (issues #92
-// and #73 registered 2.07 and 2.08 and found none against 2.06). downgrade_internal_test.go
+// reports no loss on content it can express. The first W2025-to-W2025 loss,
+// the 2.09 label text-layout attributes written to a 2.06-2.08 target (issue
+// #161), is tested in labels_209_loss_test.go (issues #92 and #73 registered
+// 2.07 and 2.08 and found nothing lost against 2.06). downgrade_internal_test.go
 // holds the other half, that a schema with no inventory is an error.
 
 // decodeW2025 decodes a tracked .wxx fixture through the public pipeline.
@@ -68,6 +69,11 @@ func TestNoLossOnSameReleaseTargets(t *testing.T) {
 		{"w2025 2.08 tile-resources", sample2025_208TileResources},
 		{"w2025 2.08 extraterrain-bgcolor", sample2025_208ExtraTerrainBgColor},
 		{"w2025 2.08 river-lines", sample2025_208RiverLines},
+		{"w2025 2.09 blank", sample2025_209Blank},
+		// The labels fixture carries the 2.09 label text-layout attributes,
+		// which a 2.06-2.08 target reports as lost. Targeted at 2.09, the
+		// release that wrote them, it must report nothing.
+		{"w2025 2.09 labels", sample2025_209Labels},
 	}
 
 	// Guard against a registered release drifting out of test: the claim is "no

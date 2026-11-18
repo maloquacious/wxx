@@ -29,18 +29,22 @@ func TestDowngradeLossRefusesAnUninventoriedSchema(t *testing.T) {
 	// no loss. Without it, an implementation that refused everything would pass
 	// the cases below.
 	for _, c := range codecs() {
-		schema := c.AcceptedApps().Schema
-		dropped, err := downgradeLoss(m, schema)
-		if err != nil {
-			t.Fatalf("downgradeLoss(schema %q): %v; every registered codec's schema must have a loss inventory", schema, err)
-		}
-		if len(dropped) != 0 {
-			t.Errorf("downgradeLoss(schema %q) reported %d losses for an empty map, want none", schema, len(dropped))
+		decl := c.AcceptedApps()
+		schema := decl.Schema
+		for _, app := range decl.Apps {
+			dropped, err := downgradeLoss(m, schema, app.Version)
+			if err != nil {
+				t.Fatalf("downgradeLoss(schema %q, app %q): %v; every registered codec's schema must have a loss inventory", schema, app.Version, err)
+			}
+			if len(dropped) != 0 {
+				t.Errorf("downgradeLoss(schema %q, app %q) reported %d losses for an empty map, want none", schema, app.Version, len(dropped))
+			}
 		}
 	}
 
+	// The app is a real one, so that only the schema can be what is refused.
 	for _, schema := range []string{"", "1.07", "9.99", "garbage"} {
-		dropped, err := downgradeLoss(m, schema)
+		dropped, err := downgradeLoss(m, schema, "2.08")
 		if err == nil {
 			t.Errorf("downgradeLoss(schema %q) = %d losses, nil; want an error: no arm inventories this schema, so it cannot claim the target is lossless", schema, len(dropped))
 			continue

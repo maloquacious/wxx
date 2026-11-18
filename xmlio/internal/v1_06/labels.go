@@ -31,6 +31,9 @@ func decodeLabels(src Labels_t, w *wxx.Map_t) error {
 			DropShadowColor:  mLabel.DropShadowColor,
 			DropShadowRadius: mLabel.DropShadowRadius,
 			DropShadowSpread: mLabel.DropShadowSpread,
+
+			LineSpacing:   mLabel.LineSpacing,
+			TextAlignment: mLabel.TextAlignment,
 		}
 		if wLabel.Color, err = decodeRgba(mLabel.Color); err != nil {
 			return fmt.Errorf("label.color: %w", err)
@@ -64,10 +67,10 @@ func decodeLabelBackgroundColor(s string) (*wxx.RGBA_t, error) {
 	return decodeZeroableRgba(s)
 }
 
-func encodeLabels(labels []*wxx.Label_t, wb *bytes.Buffer) error {
+func encodeLabels(labels []*wxx.Label_t, textLayout bool, wb *bytes.Buffer) error {
 	wb.WriteString("<labels>\n")
 	for _, label := range labels {
-		if err := encodeLabel(label, wb); err != nil {
+		if err := encodeLabel(label, textLayout, wb); err != nil {
 			return err
 		}
 	}
@@ -75,7 +78,17 @@ func encodeLabels(labels []*wxx.Label_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeLabel(label *wxx.Label_t, wb *bytes.Buffer) error {
+// encodeLabel writes one <label>, standalone or a feature's inline label (the
+// app writes both with the same writer).
+//
+// textLayout reports whether the target writes the 2.09 text-layout attributes
+// (WritesLabelTextLayout, decided once per encode from the target's application
+// version). When it is false neither @lineSpacing nor @textAlignment is written,
+// whatever the model holds; xmlio's loss inventory reports what that drops. When
+// it is true each is written only if the model has it: 2.09 omits lineSpacing
+// at the default spacing, so nil stays absent, and "" textAlignment stays absent
+// too (a map from 2.08 written as 2.09 gains nothing it did not state).
+func encodeLabel(label *wxx.Label_t, textLayout bool, wb *bytes.Buffer) error {
 	wb.WriteString("<label")
 	wb.WriteString(fmt.Sprintf("  mapLayer=%s", xmlAttr(label.MapLayer)))
 	wb.WriteString(fmt.Sprintf(" style=%s", xmlAttr(label.Style)))       // can be null!
@@ -89,6 +102,11 @@ func encodeLabel(label *wxx.Label_t, wb *bytes.Buffer) error {
 	}
 	wb.WriteString(fmt.Sprintf(" outlineColor=%s", xmlAttr(rgbas(label.OutlineColor))))
 	wb.WriteString(fmt.Sprintf(" outlineSize=%s", xmlAttr(floats(label.OutlineSize))))
+	// 2.09 writes lineSpacing here, between outlineSize and dropShadowColor, as a
+	// Java double ("2.0"), and omits it at the default (issue #161).
+	if textLayout && label.LineSpacing != nil {
+		wb.WriteString(fmt.Sprintf(" lineSpacing=%s", xmlAttr(floats(*label.LineSpacing))))
+	}
 	// The W2025 drop-shadow trio is present all-or-none in real data;
 	// dropShadowColor is "null" or an RGBA string when present, never empty, so an
 	// empty DropShadowColor reliably means "absent from the source". Gate the whole
@@ -114,6 +132,11 @@ func encodeLabel(label *wxx.Label_t, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf(" isContinent=%s", xmlAttr(bools(label.IsContinent))))
 	wb.WriteString(fmt.Sprintf(" isKingdom=%s", xmlAttr(bools(label.IsKingdom))))
 	wb.WriteString(fmt.Sprintf(" isProvince=%s", xmlAttr(bools(label.IsProvince))))
+	// 2.09 writes textAlignment here, between isProvince and isGMOnly, on every
+	// label (issue #161). It is written verbatim.
+	if textLayout && label.TextAlignment != "" {
+		wb.WriteString(fmt.Sprintf(" textAlignment=%s", xmlAttr(label.TextAlignment)))
+	}
 	wb.WriteString(fmt.Sprintf(" isGMOnly=%s", xmlAttr(bools(label.IsGMOnly))))
 	wb.WriteString(fmt.Sprintf(" tags=%s", xmlAttr(label.Tags)))
 	wb.WriteString(">")

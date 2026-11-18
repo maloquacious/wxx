@@ -43,11 +43,11 @@ type EncoderDiagnostics struct {
 
 	// Dropped is the inventory of content the source map carried that the target
 	// release cannot express (ADR 0004 Decision 7). It is empty when the encode
-	// loses nothing, which today is every encode: the one supported schema
-	// expresses everything Map_t models. It stays because the principle does --
-	// always tell the user what they lose -- and W2025-to-W2025 loss, once one is
-	// proven, is what it will report next (issues #92 and #73 found none between
-	// 2.06, 2.07 and 2.08).
+	// loses nothing. The one loss it reports today is W2025-to-W2025: the label
+	// text-layout attributes Worldographer 2.09 added (label @lineSpacing and
+	// @textAlignment, labelstyle @lineSpacing), written to a 2.06, 2.07 or 2.08
+	// target, which writes none of them (issue #161). Issues #92 and #73 found
+	// nothing lost between 2.06, 2.07 and 2.08.
 	//
 	// Only MODELED losses appear here. A downgrade that would drop an unmodeled
 	// stub does not report, it errors: the encoder can only stay quiet about a
@@ -193,7 +193,7 @@ func (e *Encoder) Encode(w io.Writer, m *wxx.Map_t) error {
 	// loss the encoder cannot honestly describe -- an unmodeled stub -- stops it
 	// here, so w gets nothing rather than a file quietly missing content
 	// (ADR 0004 Decision 7; the contract is settled in downgradeLoss).
-	dropped, err := downgradeLoss(m, decl.Schema)
+	dropped, err := downgradeLoss(m, decl.Schema, e.app)
 	if err != nil {
 		return err
 	}
@@ -355,7 +355,7 @@ func MarshalXML(m *wxx.Map_t, app string) ([]byte, error) {
 	if err := m.Validate(); err != nil {
 		return nil, err
 	}
-	if _, err := downgradeLoss(m, c.AcceptedApps().Schema); err != nil {
+	if _, err := downgradeLoss(m, c.AcceptedApps().Schema, app); err != nil {
 		return nil, err
 	}
 	return c.Encode(m, app)

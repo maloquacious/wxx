@@ -7,11 +7,13 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
 
 	"github.com/maloquacious/wxx/xmlio"
+	"github.com/maloquacious/wxx/xmlio/internal/v1_06"
 )
 
 // w2025XMLHeader is the declaration every W2025 fixture opens with, quoting
@@ -30,10 +32,11 @@ var registeredFixtureSets = []struct {
 }{
 	{"2.07", "#92", fixtures207, nil},
 	{"2.08", "#73", fixtures208, performanceFixtures208},
+	{"2.09", "#162", fixtures209, nil},
 }
 
-// TestRegisteredFixtureListsAreEveryTrackedFixture holds fixtures207 and
-// fixtures208, with the saves deliberately excluded from them, to the testdata
+// TestRegisteredFixtureListsAreEveryTrackedFixture holds fixtures207,
+// fixtures208 and fixtures209, with the saves deliberately excluded from them, to the testdata
 // directory, so a save added later is not silently left out of the tests that
 // loop over the lists.
 func TestRegisteredFixtureListsAreEveryTrackedFixture(t *testing.T) {
@@ -68,16 +71,18 @@ func TestRegisteredFixtureListsAreEveryTrackedFixture(t *testing.T) {
 	}
 }
 
-// TestEncodeRegisteredFixturesAsThemselves is the proof for issues #92 and #73.
-// Every 2.07 and 2.08 fixture encodes as the version it states through the full
-// public pipeline, and the file it writes states exactly release="2025",
-// that version, and schema="1.06", under the XML 1.1 declaration the source
-// opens with.
+// TestEncodeRegisteredFixturesAsThemselves is the proof for issues #92, #73
+// and #162. Every 2.07, 2.08 and 2.09 fixture encodes as the version it states
+// through the full public pipeline, and the file it writes states exactly
+// release="2025", that version, and schema="1.06", under the XML 1.1
+// declaration the source opens with.
 //
-// It also pins that each version is data and not a format: the XML written as
-// "2.07" or "2.08" is the XML written as "2.06" with the one version attribute
-// changed. No difference between what the builds write is known, so none may
-// appear here (ruling on #92, kept for #73: report only proven losses).
+// It also pins that each version differs from 2.06 only by what is known: the
+// XML written as "2.07" or "2.08" is the XML written as "2.06" with the one
+// version attribute changed, and the XML written as "2.09" is that too once the
+// label text-layout attributes 2.09 added (issue #161) are taken out of it. No
+// other difference between what the builds write is known, so none may appear
+// here (ruling on #92, kept for #73 and #162: report only proven losses).
 func TestEncodeRegisteredFixturesAsThemselves(t *testing.T) {
 	for _, set := range registeredFixtureSets {
 		t.Run(set.app, func(t *testing.T) {
@@ -143,17 +148,25 @@ func encodeAsItself(t *testing.T, path, app string) {
 		t.Errorf("%s written as %q re-decodes as %v", path, app, v)
 	}
 
-	// The version and 2.06 differ in the version attribute and nothing else.
+	// The version and 2.06 differ in the version attribute and, for a target
+	// that writes them, the label text-layout attributes; nothing else.
 	xApp, err := xmlio.MarshalXML(m, app)
 	if err != nil {
 		t.Fatalf("MarshalXML(%s, %q): %v", path, app, err)
 	}
+	if !bytes.Equal(xApp, ed.Utf8Encoded) {
+		t.Errorf("%s: MarshalXML and Encode disagree on the XML for %q", path, app)
+	}
+	textLayout, err := v1_06.WritesLabelTextLayout(app)
+	if err != nil {
+		t.Fatalf("WritesLabelTextLayout(%q): %v", app, err)
+	}
+	if textLayout {
+		xApp = labelTextLayoutAttr.ReplaceAll(xApp, nil)
+	}
 	x06, err := xmlio.MarshalXML(m, "2.06")
 	if err != nil {
 		t.Fatalf("MarshalXML(%s, %q): %v", path, "2.06", err)
-	}
-	if !bytes.Equal(xApp, ed.Utf8Encoded) {
-		t.Errorf("%s: MarshalXML and Encode disagree on the XML for %q", path, app)
 	}
 	if bytes.Equal(x06, xApp) {
 		t.Fatalf("%s: the XML written as 2.06 and as %s is identical, so the version attribute was not written from the target", path, app)
@@ -168,6 +181,12 @@ func encodeAsItself(t *testing.T, path, app string) {
 			path, app, i, window(swapped, i), app, window(xApp, i))
 	}
 }
+
+// labelTextLayoutAttr matches one label text-layout attribute (issue #161)
+// with the space before it. Only <label> and <labelstyle> carry attributes of
+// these names in any fixture, so taking them out of a whole document takes out
+// exactly what 2.09 adds.
+var labelTextLayoutAttr = regexp.MustCompile(` (lineSpacing|textAlignment)="[^"]*"`)
 
 // mapIdentity returns the identity attributes the document's <map> start tag
 // states. An attribute the tag does not state is absent from the result.
