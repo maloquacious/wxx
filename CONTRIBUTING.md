@@ -5,8 +5,8 @@ existed only in the git log, discoverable by reading it; this file is the record
 
 ## What to work on next
 
-**Open bugs outrank feature work.** See the "Bugs Before Features" section of
-`CLAUDE.md` for the full rule. Rank open bugs by whether they can produce a
+**Open bugs outrank feature work.** See the "Bugs before features" section of
+`AGENTS.md` for the full rule. Rank open bugs by whether they can produce a
 wrong file on disk: a bug that writes silently-wrong output outranks one that
 loses a field, which outranks one that misnames a diagnostic.
 
@@ -38,7 +38,7 @@ feature/issue-32-version-registry
 ```
 
 Never commit directly to `main` except for the rare repository-keeping change
-(this file, a CLAUDE.md rule) that has no issue behind it.
+(this file, an AGENTS.md rule) that has no issue behind it.
 
 ### 3. One commit per pull request
 

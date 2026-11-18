@@ -28,6 +28,43 @@ reference grammars in [`schema/`](./schema/README.md), one per schema version
 observed or inferred, and cite the grammar and check fixture bytes when
 reasoning about the format; do not infer it from Go structs.
 
+When a claim is about what a WXX file contains, cite `schema/1.06.rnc` (the
+pattern and its `# observed` / `# inferred` label) and check the fixture bytes
+(`gunzip -c f.wxx | iconv -f UTF-16BE -t UTF-8`). `Map_t` and the codec's
+schema types show what wxx models, not what the file holds. `# inferred` and
+`TBD` rules are hypotheses. See [schema/README.md](./schema/README.md).
+
+## Bugs before features
+
+**Open bugs outrank feature work.** When choosing what to do next, or when
+asked to start a feature while bugs labeled `bug` are open, say so and propose
+the bugs first. Do not begin feature work on the assumption that the bug list
+will be dealt with later — that is how the identity bugs (#28, #32, #41, #45)
+accumulated behind each other.
+
+This is a rule about **what to work on next**, not a hard interlock on every
+commit:
+
+- A bug fix, a test that pins a bug, a doc correction, or a refactor in
+  service of a bug fix is never blocked.
+- Feature work proceeds only when the maintainer says so explicitly, having
+  been told what is still open. "Do the feature anyway" is a legitimate
+  answer — the requirement is that it is a decision made with the bug list in
+  view, not one made by default.
+- Do not use "it is unrelated to the open bugs" as self-authorization.
+  Independence is an argument to put to the maintainer, not a reason to skip
+  asking.
+
+When proposing bugs, rank them by whether they can produce a wrong file on
+disk. A bug that writes silently-wrong output (e.g. #45) outranks one that
+loses a field (#35) or misnames a diagnostic (#44).
+
+## Tag every version change
+
+When a merge to `main` changes `version.go`, tag that commit `v<version>`
+(lightweight) and push the tag. See [CONTRIBUTING.md](./CONTRIBUTING.md)
+step 7.
+
 ## Repository layout
 
 - `wxx.go`, `map.go`, `errors.go`, `version.go` — top-level package: the
