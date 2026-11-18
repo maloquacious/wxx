@@ -7,6 +7,7 @@ import (
 	"compress/gzip"
 	"errors"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 
@@ -157,7 +158,7 @@ func TestW2025ExtraTerrainClampIsWrittenBack(t *testing.T) {
 // app saved is never clamped: the app does not write an out-of-range value, so
 // a clamp on a real save would mean the range, or the field order, is wrong.
 func TestW2025FixturesReportNoClamps(t *testing.T) {
-	for _, path := range append(append([]string{}, fixtures207...), fixtures208...) {
+	for _, path := range slices.Concat(fixtures207, fixtures208, fixtures209) {
 		var dd xmlio.DecoderDiagnostics
 		if _, err := xmlio.ReadFile(path, xmlio.WithDecoderDiagnostics(&dd)); err != nil {
 			t.Fatalf("%s: %v", path, err)

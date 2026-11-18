@@ -1,11 +1,11 @@
 # The wxx reference grammar for Worldographer 2025 schema 1.06.
 #
 # It describes a map whose root states map/@schema="1.06", which Worldographer
-# 2025 2.06, 2.07 and 2.08 all write. Files are named by schema version, not
-# application version.
+# 2025 2.06, 2.07, 2.08 and 2.09 all write. Files are named by schema version,
+# not application version.
 #
-# It is checked against 2.08 saves only (the fixtures below). Elements and
-# attributes that only the older 1.06 writers (2.06, 2.07) produce are not
+# It is checked against 2.08 and 2.09 saves only (the fixtures below). Elements
+# and attributes that only the older 1.06 writers (2.06, 2.07) produce are not
 # covered.
 #
 # This is our best description of the XML inside such a .wxx file, built from
@@ -20,7 +20,8 @@
 # ---------------------------------------------------------------------------
 # EVIDENCE
 #
-# The evidence is the nine tracked 2.08 fixtures, saved by Worldographer 2.08:
+# Eleven 2.08 fixtures are tracked, saved by Worldographer 2.08. The evidence
+# cited below is the nine 13x11 ones:
 #
 #   blank                  testdata/2025-2.08-13x11-941577-blank.wxx
 #   extraterrain-bgcolor   testdata/2025-2.08-13x11-941577-extraterrain-bgcolor.wxx
@@ -32,6 +33,22 @@
 #   rows                   testdata/2025-2.08-13x11-941577-rows.wxx
 #   tile-resources         testdata/2025-2.08-13x11-941577-tile-resources.wxx
 #   all                    every one of the nine
+#
+# The other two are the 1920x1080 performance saves (#138),
+# testdata/2025-2.08-1920x1080-941577-blank.wxx and -random.wxx. The path test
+# checks them too, but no rule cites them, and "in all nine" claims below do
+# not count them.
+#
+# And two 2.09 fixtures, saved by Worldographer 2.09 (still schema 1.06; #161,
+# #162):
+#
+#   2.09 blank             testdata/2025-2.09-13x11-941577-blank.wxx
+#   2.09 labels            testdata/2025-2.09-13x11-941577-labels.wxx
+#
+# "all" means the nine 13x11 2.08 fixtures and does not include the 2.09 ones.
+# The 2.09 blank matches the 2.08 blank everywhere outside <informations>
+# (random lore) except map/@version and the showGridNumbers UI setting, so it
+# adds no rule of its own.
 #
 # Plus the maintainer's app checks recorded in GitHub issues, cited as
 # "app check, #NN".
@@ -118,7 +135,7 @@
 # annotations, "##" documentation comments, "|=" / "&=" combination.
 #
 # The test (schema/grammar_test.go) walks every testdata/2025-2.08-*.wxx and
-# fails if a fixture holds an element or attribute that the grammar does not
+# testdata/2025-2.09-*.wxx and fails if a fixture holds an element or attribute that the grammar does not
 # allow at that position, or non-whitespace text in an element whose pattern
 # has no "text". It checks fixture -> grammar only: names, nesting and where
 # text may appear, not values, order or cardinality, and not rules no fixture
@@ -132,9 +149,9 @@ Map = element map {
   attribute type { xsd:string }?,
   # observed: all ("2025"); the codec dispatches on this attribute.
   attribute release { xsd:string }?,
-  # observed: all ("2.08"), the application version. 2.06 and 2.07 also
-  # write schema 1.06 (the v1_06 codec's apps.go), but no fixture of theirs
-  # is checked here.
+  # observed: all ("2.08"); 2.09 labels ("2.09"). The application version.
+  # 2.06 and 2.07 also write schema 1.06 (the v1_06 codec's apps.go), but no
+  # fixture of theirs is checked here.
   attribute version { xsd:string }?,
   # observed: all ("1.06"). The literal is the scope of this file: it
   # describes schema 1.06 and nothing else.
@@ -465,6 +482,11 @@ Label = element label {
   attribute backgroundColor { xsd:string }?,
   attribute outlineColor { xsd:string }?,
   attribute outlineSize { xsd:double }?,
+  # observed: 2.09 labels (under labels; #161), sometimes: "2.0" on one label,
+  # absent on the other two. 2.09 omits it at the default spacing (1.0); 2.08
+  # and earlier never write it. No fixture has a 2.09 feature label; that it
+  # appears there too is inferred (the app writes both with one label writer).
+  attribute lineSpacing { xsd:double }?,
   # "null" in every fixture (observed: layers, notes-shapes, populated);
   # r,g,b,a when set is inferred (#83 presumes it; no app check).
   attribute dropShadowColor { xsd:string }?,
@@ -477,6 +499,11 @@ Label = element label {
   attribute isContinent { xsd:boolean }?,
   attribute isKingdom { xsd:boolean }?,
   attribute isProvince { xsd:boolean }?,
+  # observed: 2.09 labels (under labels; #161), always there ("CENTER",
+  # "RIGHT"); 2.08 and earlier never write it. LEFT was seen in a non-fixture
+  # 2.09 save. The full value set is TBD (not enumerated). No fixture has a
+  # 2.09 feature label; that it appears there too is inferred.
+  attribute textAlignment { xsd:string }?,
   attribute isGMOnly { xsd:boolean }?,
   attribute tags { xsd:string }?,
   # inferred: one location on every label; "?" is the looser reading.
@@ -736,6 +763,10 @@ LabelStyle = element labelstyle {
   # #166), so these are doubles, not integers.
   attribute dropShadowRadius { xsd:double }?,
   attribute dropShadowSpread { xsd:double }?,
+  # observed: 2.09 labels (#161), sometimes: "2.0" on City, absent on the
+  # other six. Written last, after dropShadowSpread; 2.09 omits it at the
+  # default spacing (1.0); 2.08 and earlier never write it.
+  attribute lineSpacing { xsd:double }?,
   empty
 }
 

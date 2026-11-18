@@ -339,6 +339,16 @@ type Label_t struct {
 	DropShadowRadius float64 `json:"dropShadowRadius,omitempty"`
 	DropShadowSpread float64 `json:"dropShadowSpread,omitempty"`
 
+	// W2025 2.09 attributes (issue #161; observed in
+	// testdata/2025-2.09-13x11-941577-labels.wxx). Absent and default differ on
+	// disk, so both keep presence. LineSpacing is nil when the attribute is
+	// absent: 2.09 omits it at the default spacing (1.0), and 2.06-2.08 never
+	// write it. TextAlignment is "" when the attribute is absent: 2.09 writes it
+	// on every label (CENTER, LEFT, RIGHT observed), and 2.06-2.08 never write
+	// it. TextAlignment is kept verbatim, not checked against a list.
+	LineSpacing   *float64 `json:"lineSpacing,omitempty"`
+	TextAlignment string   `json:"textAlignment,omitempty"`
+
 	Location  *LabelLocation_t `json:"location,omitempty"`
 	InnerText string           `json:"innerText,omitempty"`
 }
@@ -366,6 +376,12 @@ type LabelStyle_t struct {
 	DropShadowColor  string  `json:"dropShadowColor,omitempty"`
 	DropShadowRadius float64 `json:"dropShadowRadius,omitempty"`
 	DropShadowSpread float64 `json:"dropShadowSpread,omitempty"`
+
+	// W2025 2.09 attribute (issue #161; observed in
+	// testdata/2025-2.09-13x11-941577-labels.wxx). LineSpacing is nil when the
+	// attribute is absent: 2.09 omits it at the default spacing (1.0), and
+	// 2.06-2.08 never write it.
+	LineSpacing *float64 `json:"lineSpacing,omitempty"`
 }
 
 type MapKey_t struct {

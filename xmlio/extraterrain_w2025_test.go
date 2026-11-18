@@ -52,6 +52,8 @@ func TestW2025ExtraTerrainMatchesSource(t *testing.T) {
 		"2025-2.08-13x11-941577-river-lines.wxx",
 		"2025-2.08-13x11-941577-rows.wxx",
 		"2025-2.08-13x11-941577-tile-resources.wxx",
+		"2025-2.09-13x11-941577-blank.wxx",
+		"2025-2.09-13x11-941577-labels.wxx",
 	} {
 		cases[fixture] = func(t *testing.T) pair {
 			f, err := os.Open(filepath.Join("..", "testdata", fixture))

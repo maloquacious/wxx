@@ -193,6 +193,8 @@ func TestW2025IntegerAttributeSpelling(t *testing.T) {
 		"2025-2.08-13x11-941577-populated.wxx",
 		"2025-2.08-13x11-941577-resources.wxx",
 		"2025-2.08-13x11-941577-rows.wxx",
+		"2025-2.09-13x11-941577-blank.wxx",
+		"2025-2.09-13x11-941577-labels.wxx",
 	}
 	for _, fixture := range fixtures {
 		t.Run(fixture, func(t *testing.T) {

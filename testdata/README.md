@@ -67,6 +67,12 @@ Generate Map
 
 Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-blank.wxx
 
+The 2.09 fixture (`2025-2.09-13x11-941577-blank.wxx`, issue #162) was built
+from this recipe. Outside `<informations>`, whose lore Worldographer generates
+afresh each time, it matches the 2.08 blank except for `map/@version` and
+`showGridNumbers="false"`: it was saved with the grid numbers hidden, a UI
+setting rather than a 2.09 default.
+
 ## Layers
 
 File > New World/Kingdom map
@@ -531,3 +537,32 @@ same seed.
 Before saving, ensure all layers are visible, GM Only: Show is checked, Grid: Show/Numbers/Shadows are checked.
 
 Save as testdata/YEAR-VERSION-WIDTHxHEIGHT-SEED-river-lines.wxx
+
+## Labels (2.09)
+
+The label text-layout attributes Worldographer 2.09 added (issue #161):
+`label/@lineSpacing`, `label/@textAlignment` and `labelstyle/@lineSpacing`.
+Only a 2.09 fixture exists; 2.06-2.08 write none of them.
+
+`2025-2.09-13x11-941577-labels.wxx` is the Blank recipe with three standalone
+labels and one edited label style. Outside `<informations>` it matches the
+2.09 blank except for these:
+
+- a label with the custom style left at its defaults ("Custom Style /
+  Default"): `textAlignment="CENTER"`, no `lineSpacing`;
+- a label with the custom style, line spacing 2 and right alignment ("Custom
+  Style / Line Spacing 2 / Align Right"): `lineSpacing="2.0"` and
+  `textAlignment="RIGHT"`;
+- a label using the City style ("City Style / Default"):
+  `textAlignment="CENTER"`, no `lineSpacing`;
+- the City label style set to line spacing 2 in the Configure Label Styles
+  dialog: `lineSpacing="2.0"`, written last. The other six styles state no
+  `lineSpacing`.
+
+So 2.09 writes `textAlignment` on every label and omits `lineSpacing` at the
+default spacing.
+
+The dialog's Apply also rewrote Village's and City's `outlineColor` from
+`"null"` to white (`1.0,1.0,1.0,1.0`). That is a side effect of Apply, not a
+2.09 trait: the 2.09 blank states `"null"` for both, as the earlier blanks do.
+Like the 2.09 blank, it states `showGridNumbers="false"`.

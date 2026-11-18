@@ -2,7 +2,8 @@
 
 // Package schema holds the wxx reference grammars for Worldographer files. It
 // has no Go API: this test keeps 1.06.rnc honest by checking every tracked 2.08
-// fixture against it, fixture -> grammar. A fixture element or attribute that
+// and 2.09 fixture against it, fixture -> grammar (2.09 still writes schema
+// 1.06, issue #161). A fixture element or attribute that
 // the grammar does not allow at that position fails the test, and so does
 // non-whitespace text inside an element whose pattern has no `text`. Grammar
 // rules no fixture exercises do not.
@@ -32,26 +33,32 @@ import (
 const (
 	// grammarPath is the grammar under test.
 	grammarPath = "1.06.rnc"
-	// fixtureGlob selects the fixtures checked against it. The grammar is
-	// checked against 2.08 saves only.
+	// fixtureGlob selects the 2.08 fixtures checked against it.
 	fixtureGlob = "../testdata/2025-2.08-*.wxx"
 	// minFixtures is the number of 2.08 fixtures tracked when the grammar was
 	// written. Fewer matches means the glob or the tree is wrong.
 	minFixtures = 6
+	// fixtureGlob209 selects the 2.09 fixtures, which also write schema 1.06
+	// (issue #161).
+	fixtureGlob209 = "../testdata/2025-2.09-*.wxx"
+	// minFixtures209 is the number of 2.09 fixtures tracked when 2.09 was added
+	// to the evidence (the labels fixture).
+	minFixtures209 = 1
 	// minElements and minAttributes guard against a vacuous pass: the
 	// smallest tracked fixture visits 97 elements and 686 attributes.
 	minElements   = 50
 	minAttributes = 300
 )
 
-// TestGrammarCoversFixtures walks every 2.08 fixture and reports each element
-// or attribute that the grammar does not allow where the fixture has it.
+// TestGrammarCoversFixtures walks every 2.08 and 2.09 fixture and reports each
+// element or attribute that the grammar does not allow where the fixture has it.
 func TestGrammarCoversFixtures(t *testing.T) {
 	g := loadGrammar(t, grammarPath)
-	checkFixtures(t, g, fixtureGlob)
+	checkFixtures(t, g, fixtureGlob, minFixtures)
+	checkFixtures(t, g, fixtureGlob209, minFixtures209)
 }
 
-func checkFixtures(t *testing.T, g *grammar, glob string) {
+func checkFixtures(t *testing.T, g *grammar, glob string, minFixtures int) {
 	t.Helper()
 	paths, err := filepath.Glob(glob)
 	if err != nil {

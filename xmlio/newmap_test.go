@@ -30,10 +30,10 @@ func blankFixture(app string) string {
 //   - <informations>: the app fills it with lore generated from the random
 //     seed, and NewMap leaves it empty.
 //   - showGrid and showGridNumbers: UI settings, saved as the grid stood when
-//     the fixture was saved (hidden in the 2.06 one), and NewMap always shows
-//     the grid.
+//     the fixture was saved (the grid hidden in the 2.06 one, its numbers in
+//     the 2.09 one), and NewMap always shows the grid and its numbers.
 func TestNewMapMatchesBlankFixture(t *testing.T) {
-	for _, app := range []string{"2.06", "2.07", "2.08"} {
+	for _, app := range []string{"2.06", "2.07", "2.08", "2.09"} {
 		t.Run(app, func(t *testing.T) {
 			fixture, err := xmlio.ReadFile(blankFixture(app))
 			if err != nil {
@@ -173,10 +173,10 @@ func TestNewMapTiles(t *testing.T) {
 // registered version and the newest one.
 func TestNewMapCurrentApp(t *testing.T) {
 	current := xmlio.CurrentApp()
-	if current != "2.08" {
-		// 2.08 is the newest registered version today (#73). Registering a
+	if current != "2.09" {
+		// 2.09 is the newest registered version today (#162). Registering a
 		// newer one moves CurrentApp, and this pin with it.
-		t.Errorf("CurrentApp() = %q, want %q", current, "2.08")
+		t.Errorf("CurrentApp() = %q, want %q", current, "2.09")
 	}
 	m, err := xmlio.NewMap(13, 11)
 	if err != nil {

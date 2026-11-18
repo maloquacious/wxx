@@ -13,17 +13,17 @@ import (
 	"github.com/maloquacious/wxx/xmlio/internal/v1_06"
 )
 
-// unacceptedApp is an application version no codec accepts: 2.09, a build after
-// the newest one registered (2.08, issue #73). It is deliberately not "1.06" or
+// unacceptedApp is an application version no codec accepts: 2.10, a build after
+// the newest one registered (2.09, issue #162). It is deliberately not "1.06" or
 // any other schema version -- an encoder accepts application versions and never
 // schema versions (issue #41 requirement 1), so feeding it a schema version would
 // test the wrong axis.
 //
 // When a codec claims this version, the constant moves rather than the
-// assertions, as it did from 2.07 when issue #92 registered that and from 2.08
-// when issue #73 did: the tests below refuse to run against a version some codec
-// has since claimed.
-const unacceptedApp = "2.09"
+// assertions, as it did from 2.07 when issue #92 registered that, from 2.08
+// when issue #73 did and from 2.09 when issue #162 did: the tests below refuse
+// to run against a version some codec has since claimed.
+const unacceptedApp = "2.10"
 
 // codecUnderTest pairs a codec's declaration with its encoder and a map that
 // codec can really write, so the negative case below fails for the app version
@@ -50,7 +50,7 @@ var codecsUnderTest = []codecUnderTest{
 // Each case carries its own positive control, because a gate that rejects
 // everything is as broken as one that rejects nothing: every version the codec
 // declares must still encode. The accepted counter guards against the vacuous
-// pass where a codec declares nothing at all, in which case "it rejected 2.09"
+// pass where a codec declares nothing at all, in which case "it rejected 2.10"
 // would prove only that its set was empty.
 func TestCodecRejectsUnacceptedAppVersion(t *testing.T) {
 	for _, tc := range codecsUnderTest {
@@ -122,6 +122,7 @@ func TestCodecAppSetsAreDeclaredAndDisjoint(t *testing.T) {
 			{Version: "2.06", Release: "2025"},
 			{Version: "2.07", Release: "2025"},
 			{Version: "2.08", Release: "2025"},
+			{Version: "2.09", Release: "2025"},
 		}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

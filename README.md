@@ -55,12 +55,13 @@ type Version_t struct {
 
 | release | `map/@release` | `map/@version` (App) | `map/@schema` (Schema) | `wxx` |
 |---|---|---|---|---|
-| Worldographer 2025 | `2025` | `2.06`, `2.07`, `2.08` | `1.06` | reads and writes |
+| Worldographer 2025 | `2025` | `2.06`, `2.07`, `2.08`, `2.09` | `1.06` | reads and writes |
 | classic (Hexographer 2) | *absent* | `1.73`, `1.74`, `1.77` | *absent* | refused on read (`wxx.ErrClassicMap`): "convert it in Worldographer 2025 first" |
 
 **The application version selects the codec.** Two application versions sharing a schema use one codec and differ only in the identity it writes.
 Each codec declares the application versions it accepts in its own `apps.go`, and the registry in [`xmlio/codecs.go`](xmlio/codecs.go) is built from those declarations.
-Today they are `2.06`, `2.07` and `2.08`, all on the `v1_06` codec.
+Today they are `2.06`, `2.07`, `2.08` and `2.09`, all on the `v1_06` codec.
+`2.09` is the newest and the baseline new work targets; it writes the label text-layout attributes (`lineSpacing`, `textAlignment`) the earlier builds do not, and writing a map that carries them as `2.06`-`2.08` reports their loss.
 
 Callers name an **application version**, never a schema and never a codec: `xmlio.MarshalXML(m, "2.06")`.
 The codecs themselves live under `xmlio/internal/`, where an external caller cannot reach them, and [`xmlio/internal/README.md`](xmlio/internal/README.md) explains why the package is named `v1_06`.
@@ -136,12 +137,12 @@ Each dimension must be at least 2.
 
 The defaults belong to an application version, so `NewMap` takes one.
 `WithApp` names it verbatim, as `MarshalXML` does, and an unregistered version is the same error (`wxx.ErrUnsupportedMapVersion`).
-Without `WithApp`, `NewMap` uses `xmlio.CurrentApp()`: the newest version the registry accepts (`2.08` today).
+Without `WithApp`, `NewMap` uses `xmlio.CurrentApp()`: the newest version the registry accepts (`2.09` today).
 Registering a newer version moves it, so a tool can offer `-app current` and print `CurrentApp()` to say which version that means.
 
 A 13 x 11 map from `NewMap`, written as a version, is that version's `testdata/2025-<version>-13x11-941577-blank.wxx` written the same way, with two differences.
 Worldographer fills `<informations>` with lore generated from its random seed, and `NewMap` leaves it empty.
-The `show*` flags are UI settings, saved as they stood at the time (the 2.06 fixture was saved with the grid hidden), and `NewMap` always shows the grid and its numbers.
+The `show*` flags are UI settings, saved as they stood at the time (the 2.06 fixture was saved with the grid hidden, the 2.09 one with its numbers hidden), and `NewMap` always shows the grid and its numbers.
 
 ### Hex geometry
 

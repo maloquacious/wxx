@@ -54,6 +54,11 @@ const (
 	sample2025_208TileResources       = "../testdata/2025-2.08-13x11-941577-tile-resources.wxx"       // release=2025 version=2.08 schema=1.06
 	sample2025_208ExtraTerrainBgColor = "../testdata/2025-2.08-13x11-941577-extraterrain-bgcolor.wxx" // release=2025 version=2.08 schema=1.06
 	sample2025_208RiverLines          = "../testdata/2025-2.08-13x11-941577-river-lines.wxx"          // release=2025 version=2.08 schema=1.06
+	// The 2.09 saves (#161, #162): the blank map, made like the other blank
+	// fixtures, and labels, three labels and an edited City label style that
+	// carry the label text-layout attributes 2.09 added.
+	sample2025_209Blank  = "../testdata/2025-2.09-13x11-941577-blank.wxx"  // release=2025 version=2.09 schema=1.06
+	sample2025_209Labels = "../testdata/2025-2.09-13x11-941577-labels.wxx" // release=2025 version=2.09 schema=1.06
 
 	// w2025Target is the application version the tests encode 2.07 maps as: the
 	// version they state, registered by issue #92.
@@ -63,7 +68,8 @@ const (
 // sameVersionTarget returns the application version the *MatchSource tests
 // encode fixture as: the version the fixture's file name states, so a byte
 // comparison with the source is a same-version one. Every W2025 version with a
-// tracked fixture is registered: 2.06, 2.07 (issue #92) and 2.08 (issue #73).
+// tracked fixture is registered: 2.06, 2.07 (issue #92), 2.08 (issue #73) and
+// 2.09 (issue #162).
 //
 // It is keyed on the file name rather than on the decoded map, and the
 // registered versions are listed rather than looked up, so that a version
@@ -79,6 +85,8 @@ func sameVersionTarget(t *testing.T, fixture string) string {
 		return "2.07"
 	case strings.HasPrefix(base, "2025-2.08-"):
 		return "2.08"
+	case strings.HasPrefix(base, "2025-2.09-"):
+		return "2.09"
 	}
 	t.Fatalf("%s: no target for this fixture's version", fixture)
 	return ""
@@ -107,6 +115,13 @@ var fixtures208 = []string{
 	sample2025_208TileResources,
 	sample2025_208ExtraTerrainBgColor,
 	sample2025_208RiverLines,
+}
+
+// fixtures209 is every tracked 2.09 save, held to the testdata directory as
+// fixtures207 is.
+var fixtures209 = []string{
+	sample2025_209Blank,
+	sample2025_209Labels,
 }
 
 // performanceFixtures208 are the 1920 x 1080 saves the benchmarks read (issue

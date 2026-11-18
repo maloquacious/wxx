@@ -248,6 +248,17 @@ func Encode(w *wxx.Map_t, app string) ([]byte, error) {
 // "2.6" (ADR 0004 Decision 1). target.Version is the app argument itself: App
 // matched it by string equality, so the two are the same string.
 func encodeMap(w *wxx.Map_t, target appver.App_t, schema string, wb *bytes.Buffer) error {
+	// Whether this target writes the 2.09 label text-layout attributes is decided
+	// once, from target.Version, by the codec's one rule (WritesLabelTextLayout),
+	// and handed to every writer of a <label> or <labelstyle>. It is never read
+	// from w: a map decoded from a 2.09 file and written as 2.08 must not carry
+	// them, and a map from 2.08 written as 2.09 states them only where the model
+	// has them.
+	textLayout, err := WritesLabelTextLayout(target.Version)
+	if err != nil {
+		return err
+	}
+
 	wb.WriteString(fmt.Sprintf("<map"))
 	wb.WriteString(fmt.Sprintf(" type=%s", xmlAttr(w.Type)))
 	wb.WriteString(fmt.Sprintf(" release=%s", xmlAttr(target.Release)))
@@ -312,7 +323,7 @@ func encodeMap(w *wxx.Map_t, target appver.App_t, schema string, wb *bytes.Buffe
 		return err
 	}
 
-	if err := encodeFeatures(w.Features, wb); err != nil {
+	if err := encodeFeatures(w.Features, textLayout, wb); err != nil {
 		return err
 	}
 
@@ -320,7 +331,7 @@ func encodeMap(w *wxx.Map_t, target appver.App_t, schema string, wb *bytes.Buffe
 		return err
 	}
 
-	if err := encodeLabels(w.Labels, wb); err != nil {
+	if err := encodeLabels(w.Labels, textLayout, wb); err != nil {
 		return err
 	}
 
@@ -336,7 +347,7 @@ func encodeMap(w *wxx.Map_t, target appver.App_t, schema string, wb *bytes.Buffe
 		return err
 	}
 
-	if err := encodeConfiguration(w.Configuration, wb); err != nil {
+	if err := encodeConfiguration(w.Configuration, textLayout, wb); err != nil {
 		return err
 	}
 

@@ -52,6 +52,7 @@ func decodeConfiguration(src Configuration_t, w *wxx.Map_t) error {
 				DropShadowColor:  mLabelStyle.DropShadowColor,
 				DropShadowRadius: mLabelStyle.DropShadowRadius,
 				DropShadowSpread: mLabelStyle.DropShadowSpread,
+				LineSpacing:      mLabelStyle.LineSpacing,
 			}
 			if wLabelStyle.Color, err = decodeRgba(mLabelStyle.Color); err != nil {
 				return fmt.Errorf("labelStyle.color: %w", err)
@@ -128,7 +129,9 @@ func decodeConfiguration(src Configuration_t, w *wxx.Map_t) error {
 	return nil
 }
 
-func encodeConfiguration(configuration *wxx.Configuration_t, wb *bytes.Buffer) error {
+// encodeConfiguration writes <configuration>. textLayout is passed through to
+// the label styles; see encodeLabelStyle.
+func encodeConfiguration(configuration *wxx.Configuration_t, textLayout bool, wb *bytes.Buffer) error {
 	wb.WriteString(fmt.Sprintf("<configuration>\n"))
 	if err := encodeTerrainConfig(configuration.TerrainConfig, wb); err != nil {
 		return err
@@ -139,7 +142,7 @@ func encodeConfiguration(configuration *wxx.Configuration_t, wb *bytes.Buffer) e
 	if err := encodeTextureConfig(configuration.TextureConfig, wb); err != nil {
 		return err
 	}
-	if err := encodeTextConfig(configuration.TextConfig, wb); err != nil {
+	if err := encodeTextConfig(configuration.TextConfig, textLayout, wb); err != nil {
 		return err
 	}
 	if err := encodeShapeConfig(configuration.ShapeConfig, wb); err != nil {
@@ -225,10 +228,10 @@ func wellFormedFragment(s string) error {
 	}
 }
 
-func encodeTextConfig(textConfig *wxx.TextConfig_t, wb *bytes.Buffer) error {
+func encodeTextConfig(textConfig *wxx.TextConfig_t, textLayout bool, wb *bytes.Buffer) error {
 	wb.WriteString("  <text-config>\n")
 	for _, labelStyle := range textConfig.LabelStyles {
-		if err := encodeLabelStyle(labelStyle, wb); err != nil {
+		if err := encodeLabelStyle(labelStyle, textLayout, wb); err != nil {
 			return err
 		}
 	}
@@ -236,7 +239,14 @@ func encodeTextConfig(textConfig *wxx.TextConfig_t, wb *bytes.Buffer) error {
 	return nil
 }
 
-func encodeLabelStyle(labelStyle *wxx.LabelStyle_t, wb *bytes.Buffer) error {
+// encodeLabelStyle writes one <labelstyle>.
+//
+// textLayout reports whether the target writes the 2.09 @lineSpacing
+// (WritesLabelTextLayout, decided once per encode from the target's application
+// version). When it is false the attribute is not written, whatever the model
+// holds, and xmlio's loss inventory reports the drop; when it is true it is
+// written only if the model has it, since 2.09 omits it at the default.
+func encodeLabelStyle(labelStyle *wxx.LabelStyle_t, textLayout bool, wb *bytes.Buffer) error {
 	wb.WriteString("<labelstyle")
 	wb.WriteString(fmt.Sprintf(" name=%s", xmlAttr(labelStyle.Name)))
 	wb.WriteString(fmt.Sprintf(" fontFace=%s", xmlAttr(labelStyle.FontFace)))
@@ -261,6 +271,11 @@ func encodeLabelStyle(labelStyle *wxx.LabelStyle_t, wb *bytes.Buffer) error {
 		wb.WriteString(fmt.Sprintf(" dropShadowColor=%s", xmlAttr(color))) // nullable string ("null")
 		wb.WriteString(fmt.Sprintf(" dropShadowRadius=%s", xmlAttr(dropShadowNumber(color, labelStyle.DropShadowRadius))))
 		wb.WriteString(fmt.Sprintf(" dropShadowSpread=%s", xmlAttr(dropShadowNumber(color, labelStyle.DropShadowSpread))))
+	}
+	// 2.09 writes lineSpacing last, after dropShadowSpread, as a Java double, and
+	// omits it at the default (issue #161).
+	if textLayout && labelStyle.LineSpacing != nil {
+		wb.WriteString(fmt.Sprintf(" lineSpacing=%s", xmlAttr(floats(*labelStyle.LineSpacing))))
 	}
 	wb.WriteString(" />\n")
 	return nil

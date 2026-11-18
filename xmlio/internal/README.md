@@ -113,8 +113,10 @@ encoder. See the package comment on [`codec/codec.go`](codec/codec.go).
 3. Add it to `codecs()` in `xmlio/codecs.go`. **A codec missing from that list
    is not checked against the others and is not reachable.**
 4. Give its schema an arm in `downgradeLoss` (`xmlio/downgrade.go`) stating what
-   that schema cannot express. A schema with no arm is an encode error, never a
-   silent "no loss".
+   that schema's targets cannot express. The arm also receives the target
+   application version, because builds sharing a schema can differ (2.08 and
+   2.09, issue #161). A schema with no arm is an encode error, never a silent
+   "no loss".
 
 Supporting a further application version on an **existing** schema is **not a new
 package**: it is an entry in that codec's `apps.go`. See the caution above.

@@ -6,7 +6,7 @@ one RELAX NG compact (`.rnc`) grammar per Worldographer schema version
 
 | grammar | describes | written by | evidence | status |
 |---|---|---|---|---|
-| [`1.06.rnc`](1.06.rnc) | `map/@schema="1.06"` | Worldographer 2025 2.06, 2.07, 2.08 | 2.08 saves in `testdata/` | **current** |
+| [`1.06.rnc`](1.06.rnc) | `map/@schema="1.06"` | Worldographer 2025 2.06, 2.07, 2.08, 2.09 | 2.08 and 2.09 saves in `testdata/` | **current** |
 
 A grammar here is our best description of the files, built from a small sample.
 It is **not the official schema**. The format belongs to Worldographer's author;
@@ -53,7 +53,8 @@ go test ./schema/
 go test -v -run TestGrammarCoversFixtures ./schema/   # per-fixture counts
 ```
 
-`grammar_test.go` walks every `testdata/2025-2.08-*.wxx` and fails on any
+`grammar_test.go` walks every `testdata/2025-2.08-*.wxx` and
+`testdata/2025-2.09-*.wxx` and fails on any
 element, attribute or non-whitespace text that the grammar does not allow at that
 position. It checks one direction only, fixture to grammar. It does not check
 values, child order or cardinality, and a rule that no fixture exercises passes.
@@ -71,8 +72,8 @@ A failure reads like:
 <fixture>: grammar does not allow attribute foo in pattern Map/Tiles (first at /map/tiles[1]; 1 occurrence(s))
 ```
 
-The test reads only `testdata/2025-2.08-*.wxx`, so a new file is checked once
-it is tracked there under that name.
+The test reads only `testdata/2025-2.08-*.wxx` and `testdata/2025-2.09-*.wxx`,
+so a new file is checked once it is tracked there under such a name.
 
 1. Confirm the file is a genuine save from the app, and check the bytes
    yourself with the `gunzip | iconv` command above.
@@ -99,7 +100,8 @@ A fixture the test reads must live in `testdata/` and be tracked.
   Before you write one in a comment, doc, issue or commit message, check the
   fixture bytes with the `gunzip | iconv` command above.
 - **When a file contradicts an inferred rule, suspect the grammar first.** The
-  grammar is built from nine saves; the app wrote the file.
+  grammar is built from eleven saves (nine 2.08, two 2.09); the app wrote
+  the file.
 - **Do not infer the format from Go structs.** `Map_t` and the codec's schema
   types show what wxx models, not what the file holds.
 

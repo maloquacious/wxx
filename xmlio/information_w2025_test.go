@@ -68,6 +68,8 @@ func TestW2025InformationAttrsMatchSource(t *testing.T) {
 		"2025-2.08-13x11-941577-populated.wxx",
 		"2025-2.08-13x11-941577-resources.wxx",
 		"2025-2.08-13x11-941577-rows.wxx",
+		"2025-2.09-13x11-941577-blank.wxx",
+		"2025-2.09-13x11-941577-labels.wxx",
 	} {
 		cases[fixture] = func(t *testing.T) pair {
 			path := filepath.Join("..", "testdata", fixture)

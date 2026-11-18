@@ -284,6 +284,16 @@ type Label_t struct {
 	DropShadowRadius float64 `xml:"dropShadowRadius,attr"`
 	DropShadowSpread float64 `xml:"dropShadowSpread,attr"`
 
+	// W2025 2.09 attributes (issue #161; observed in
+	// testdata/2025-2.09-13x11-941577-labels.wxx). 2.09 writes lineSpacing as a
+	// double between outlineSize and dropShadowColor and omits it at the default
+	// spacing (1.0), so nil is the absent attribute. It writes textAlignment
+	// (CENTER, LEFT, RIGHT, ...) on every label between isProvince and isGMOnly;
+	// 2.06-2.08 never write it, so "" is the absent attribute. The value is kept
+	// verbatim, not checked against a list.
+	LineSpacing   *float64 `xml:"lineSpacing,attr"`
+	TextAlignment string   `xml:"textAlignment,attr"`
+
 	// elements
 	Location  Location_t `xml:"location"`
 	InnerText string     `xml:",chardata"`
@@ -319,6 +329,12 @@ type LabelStyle_t struct {
 	DropShadowColor  string  `xml:"dropShadowColor,attr"`
 	DropShadowRadius float64 `xml:"dropShadowRadius,attr"`
 	DropShadowSpread float64 `xml:"dropShadowSpread,attr"`
+
+	// W2025 2.09 attribute (issue #161; observed in
+	// testdata/2025-2.09-13x11-941577-labels.wxx). 2.09 writes lineSpacing as a
+	// double, last, after dropShadowSpread, and omits it at the default spacing
+	// (1.0), so nil is the absent attribute. There is no textAlignment here.
+	LineSpacing *float64 `xml:"lineSpacing,attr"`
 }
 
 type Location_t struct {
