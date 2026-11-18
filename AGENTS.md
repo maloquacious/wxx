@@ -51,7 +51,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) step 7.
 
 ## Repository layout
 
-- `wxx.go`, `map.go`, `errors.go`, `version.go` — top-level package: the `Map_t` type, the `Decoder` / `Encoder` interfaces, sentinel errors, and `Version()` (semver, currently `0.53.0-beta`).
+- `wxx.go`, `map.go`, `errors.go`, `version.go` — top-level package: the `Map_t` type, the `Decoder` / `Encoder` interfaces, sentinel errors, and `Version()` (semver, currently `0.54.0-beta`).
 - `xmlio/` — XML decode/encode entry points and shared transforms (`decoder.go`, `encoder.go`, `xml_header.go`).
   - `xmlio/internal/v1_06/` — H2025 (schema 1.06) decoder, encoder, and schema types; the only codec.
 - Hex-grid math (cube/offset coordinates, layouts) is the external module `github.com/maloquacious/hexg`; `Tile_t.Coords` is a `hexg.Hex`, and `Map_t.GridOrientation()` derives the offset layout from `HexOrientation`.

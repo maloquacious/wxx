@@ -313,9 +313,12 @@ type LabelStyle_t struct {
 	OutlineColor    string  `xml:"outlineColor,attr"`
 
 	// W2025 drop-shadow attributes. dropShadowColor can be the literal "null".
-	DropShadowColor  string `xml:"dropShadowColor,attr"`
-	DropShadowRadius Int_t  `xml:"dropShadowRadius,attr"`
-	DropShadowSpread Int_t  `xml:"dropShadowSpread,attr"`
+	// The radius and spread are numbers the app spells two ways (issue #166):
+	// the literal "0" for a style with no shadow, and a double ("75.0") for one
+	// with a shadow. Both decode here; encodeLabelStyle writes the same split.
+	DropShadowColor  string  `xml:"dropShadowColor,attr"`
+	DropShadowRadius float64 `xml:"dropShadowRadius,attr"`
+	DropShadowSpread float64 `xml:"dropShadowSpread,attr"`
 }
 
 type Location_t struct {

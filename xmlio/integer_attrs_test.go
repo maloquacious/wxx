@@ -253,15 +253,6 @@ func TestW2025NonIntegralValueRefused(t *testing.T) {
 	}{
 		{"mapkey height", func(m *wxx.Map_t) { m.MapKey.Height = 50.5 }, "map/mapkey/@height"},
 		{"mapkey titleScale", func(m *wxx.Map_t) { m.MapKey.TitleScale = 79.5 }, "map/mapkey/@titleScale"},
-		{
-			"labelstyle dropShadowRadius",
-			func(m *wxx.Map_t) {
-				m.Configuration.TextConfig.LabelStyles = []*wxx.LabelStyle_t{
-					{Name: "Nation", DropShadowColor: "null", DropShadowRadius: 1.5},
-				}
-			},
-			"labelstyle/@dropShadowRadius",
-		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			m := newRowsMap()

@@ -730,12 +730,12 @@ LabelStyle = element labelstyle {
   # "null" in every fixture (observed: all); r,g,b,a when set is inferred
   # (#83 presumes it; no app check).
   attribute dropShadowColor { xsd:string }?,
-  # integer here: the app writes both integrally (observed: app check, #64);
-  # whether a decimal point stops the file opening is untested. Unlike
-  # label/@dropShadowRadius and @dropShadowSpread, spelled "0.0" (observed:
-  # layers, notes-shapes, populated), which #64 did not check.
-  attribute dropShadowRadius { xsd:integer }?,
-  attribute dropShadowSpread { xsd:integer }?,
+  # observed: all, "0" with dropShadowColor="null". The app writes that case
+  # as a constant; a style with a shadow writes doubles ("75.0", "1.0";
+  # observed: 2.09 labels first save, #166). 2.08 opens "0.0" here (app check,
+  # #166), so these are doubles, not integers.
+  attribute dropShadowRadius { xsd:double }?,
+  attribute dropShadowSpread { xsd:double }?,
   empty
 }
 
