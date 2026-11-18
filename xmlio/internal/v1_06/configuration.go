@@ -50,8 +50,8 @@ func decodeConfiguration(src Configuration_t, w *wxx.Map_t) error {
 				IsItalic:         mLabelStyle.IsItalic,
 				OutlineSize:      mLabelStyle.OutlineSize,
 				DropShadowColor:  mLabelStyle.DropShadowColor,
-				DropShadowRadius: float64(mLabelStyle.DropShadowRadius),
-				DropShadowSpread: float64(mLabelStyle.DropShadowSpread),
+				DropShadowRadius: mLabelStyle.DropShadowRadius,
+				DropShadowSpread: mLabelStyle.DropShadowSpread,
 			}
 			if wLabelStyle.Color, err = decodeRgba(mLabelStyle.Color); err != nil {
 				return fmt.Errorf("labelStyle.color: %w", err)
@@ -254,27 +254,38 @@ func encodeLabelStyle(labelStyle *wxx.LabelStyle_t, wb *bytes.Buffer) error {
 	// (ADR 0002: never emit what was not on input). Do not gate on the numeric
 	// fields: 0 is a legal radius/spread value.
 	if labelStyle.DropShadowColor != "" {
-		// The radius and spread are integers on disk, not floats: Worldographer
-		// reads them with Integer.parseInt and will not open a file that spells
-		// them "0.0" (issue #64; see Int_t).
-		radius, err := toInt("map/configuration/text-config/labelstyle/@dropShadowRadius", labelStyle.DropShadowRadius)
-		if err != nil {
-			return err
-		}
-		spread, err := toInt("map/configuration/text-config/labelstyle/@dropShadowSpread", labelStyle.DropShadowSpread)
-		if err != nil {
-			return err
-		}
 		color, err := rgbaAttr("map/configuration/text-config/labelstyle/@dropShadowColor", labelStyle.DropShadowColor, true)
 		if err != nil {
 			return err
 		}
 		wb.WriteString(fmt.Sprintf(" dropShadowColor=%s", xmlAttr(color))) // nullable string ("null")
-		wb.WriteString(fmt.Sprintf(" dropShadowRadius=%s", xmlAttr(radius.String())))
-		wb.WriteString(fmt.Sprintf(" dropShadowSpread=%s", xmlAttr(spread.String())))
+		wb.WriteString(fmt.Sprintf(" dropShadowRadius=%s", xmlAttr(dropShadowNumber(color, labelStyle.DropShadowRadius))))
+		wb.WriteString(fmt.Sprintf(" dropShadowSpread=%s", xmlAttr(dropShadowNumber(color, labelStyle.DropShadowSpread))))
 	}
 	wb.WriteString(" />\n")
 	return nil
+}
+
+// dropShadowNumber spells a <labelstyle> dropShadowRadius or dropShadowSpread as
+// Worldographer does (issue #166).
+//
+// The app has two cases, the same in 2.06 through 2.09: a style with no shadow
+// is written with the constant `dropShadowColor="null" dropShadowRadius="0"
+// dropShadowSpread="0"`, and a style with a shadow writes the values as Java
+// doubles ("75.0", "1.0"; observed in a 2.09 first save). So zero under a "null"
+// colour is the integer "0", and everything else is a double.
+//
+// These are not integer attributes. Issue #64 treated them as integers, but its
+// experiment failed on <mapkey> before the loader reached <labelstyle>. Tested
+// alone (app check, #166), 2.08 opens a style spelled "0.0".
+//
+// A nonzero value under a "null" colour never comes from the app. It is written
+// as a double rather than dropped.
+func dropShadowNumber(color string, v float64) string {
+	if color == "null" && v == 0 {
+		return "0"
+	}
+	return floats(v)
 }
 
 func encodeShapeConfig(shapeConfig *wxx.ShapeConfig_t, wb *bytes.Buffer) error {

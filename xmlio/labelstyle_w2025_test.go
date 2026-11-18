@@ -106,10 +106,10 @@ func sameNumber(a, b string) bool {
 //
 // It used to hold dropShadowRadius and dropShadowSpread, because Worldographer
 // writes them "0" where this codec wrote "0.0" and nobody had established which
-// spelling the application required. The experiment settled it: the decimal
-// spelling is a hard load failure -- Integer.parseInt throws and the file does
-// not open -- so the codec now states them as integers and there is nothing left
-// to tolerate.
+// spelling the application required. #64's experiment was taken to settle it,
+// but it failed on <mapkey> before the loader reached <labelstyle>. Tested alone
+// (issue #166), 2.08 opens "0.0" here. The codec now writes the app's own
+// spelling: "0" for a style with no shadow, a double for one with a shadow.
 //
 // It is kept rather than deleted because the exemption mechanism is the honest
 // way to hold a test open over an unsettled question, and the next one will want
