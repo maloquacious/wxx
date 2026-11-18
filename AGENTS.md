@@ -3,7 +3,9 @@
 This project implements a Go package (`github.com/maloquacious/wxx`) to read,
 manipulate, and write Worldographer data files (WXX). See
 [PROJECT.md](./PROJECT.md) for the directory layout and [CODECS.md](./CODECS.md)
-for the codec design that decoders/encoders must follow.
+for the codec design that decoders/encoders must follow. Follow
+[TOOLING.md](./TOOLING.md) for when to build a reusable tool instead of
+running ad-hoc shell commands.
 
 ## Worldographer background
 

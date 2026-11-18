@@ -18,7 +18,8 @@ The name comes from `.wxx`, Worldographer’s default file extension.
 **Planned — not built yet:**
 
 * Folding the separate binaries into `wxx` and retiring them
-* Turning `wxx` into a Lua script host using [GopherLua](https://github.com/yuin/gopher-lua)
+* Turning `wxx` into a [Starlark](https://github.com/google/starlark-go) script host
+  ([ADR 0007](docs/adr/0007-starlark-script-host.md))
 * Interactive scripting against a loaded map
 * Validating maps ([#20](https://github.com/maloquacious/wxx/issues/20))
 
@@ -319,26 +320,35 @@ The full set is `bounds`, `copy`, `import`, `info`, `merge`, `resize`,
 
 ### Where this is going *(planned)*
 
-Those separate binaries fold into `wxx` and are retired, and `wxx` becomes a Lua
+Those separate binaries fold into `wxx` and are retired, and `wxx` becomes a Starlark
 script host rather than a subcommand tree. That also drops the `ff/v4`
 dependency, which exists only to parse subcommands.
 
 So the current subcommand surface is transitional and not worth learning.
 
-## Lua scripting *(planned)*
+## Starlark scripting *(planned)*
 
-**Not implemented.** GopherLua is not a dependency, and there is no `script`,
-`run` or `shell` subcommand.
+**Not implemented.** Starlark is not a dependency yet, and there is no `script`
+or `shell` subcommand.
 
-The intent is for `wxx` to embed Lua using
-[GopherLua](https://github.com/yuin/gopher-lua) so that scripts can inspect and
-modify Worldographer data, with `wxx` acting as the script host. An interactive
-shell against a loaded map is part of the same idea. This keeps `wxx` as the name
-of the overall project while treating scripting and the shell as parts of a
-broader toolkit.
+`wxx` will embed [Starlark](https://github.com/google/starlark-go), a small
+Python-like language, so that scripts can inspect and modify Worldographer data:
+`wxx script <path>` runs a script, and `wxx shell` is an interactive shell
+with the same API. This keeps `wxx` as the name of the overall project while
+treating scripting and the shell as parts of a broader toolkit.
+[ADR 0007](docs/adr/0007-starlark-script-host.md) records why Starlark was
+chosen over GopherLua and a custom language, and sketches the script API,
+including `wxx.versions()`, which tells a script which application versions it
+may write ([#46](https://github.com/maloquacious/wxx/issues/46)).
 
-The API a script would use to discover which application versions it may write is
-being designed in [#46](https://github.com/maloquacious/wxx/issues/46).
+A sketch of what a script will look like:
+
+```python
+m = wxx.read("world.wxx")
+for col in range(m.columns):
+    m.tile(col, 0).elevation = 100
+m.write("world-out.wxx", app=wxx.current_app())
+```
 
 ## Why `wxx`?
 
@@ -350,6 +360,6 @@ Using `wxx` leaves room for the project to cover the full Worldographer workflow
 
 * Use the Go package in other applications
 * Inspect or convert files from the command line
-* Automate changes with Lua scripts
+* Automate changes with Starlark scripts
 * Explore map data through an interactive shell
 

@@ -161,7 +161,7 @@ The **encoder** dispatches the other way round, and the rule is a contract rathe
 
 ## Coding Conventions
 
-- **Go version**: 1.24.4 (specified in `go.mod`)
+- **Go version**: 1.27 (specified in `go.mod`)
 - **Copyright header**: Every `.go` file starts with `// Copyright (c) <year> Michael D Henderson. All rights reserved.`
 - **Package comments**: Each package has a doc comment on the `package` line
 - **Minimal dependencies**: Add no dependency that can be avoided. `go.mod` is the list; this file does not repeat it.
@@ -194,6 +194,7 @@ holds. `# inferred` and `TBD` rules are hypotheses. See `schema/README.md`.
 
 - The W2025 decoder (`xmlio/internal/v1_06/`) is incomplete and a work in progress
 - The `cmd/import` and `cmd/merge` tools are also WIP
+- `wxx script` / `wxx shell` will embed Starlark (`go.starlark.net`), not Lua; see ADR 0007 and #46. Nothing is implemented yet
 - An Sqlite3 data store is planned for the future (after xmlio codecs are complete)
 - `Map_t` models the W2025 format, the only one wxx reads; decoders target it, encoders source from it. It carries no fields for formats wxx does not read (the classic-only ones were removed by #103)
 - WXX files are binary (gzip-compressed); every fixture a test reads lives flat in `testdata/` and is tracked, so the suite runs from a clean clone. Do not add a fixture the tests need to `scratch/` — it is git-ignored
